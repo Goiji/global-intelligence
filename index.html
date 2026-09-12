@@ -17,6 +17,7 @@
 .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:16px}.metric{background:var(--panel2);border:1px solid var(--line);padding:14px;border-radius:14px}.metric .name{font-size:12px;color:var(--muted)}.metric .num{font-size:25px;font-weight:850;margin:4px 0}.up{color:var(--good)}.down{color:var(--bad)}.flat{color:var(--warn)}
 .full{grid-column:1/-1}.events{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.event{border:1px solid var(--line);background:var(--panel2);border-radius:14px;padding:15px}.event .rank{font-size:11px;color:var(--accent);font-weight:800}.event h3{font-size:15px;margin:7px 0}.event p{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 10px}.impact{font-size:12px;font-weight:800}.brief{font-size:15px;line-height:1.75;color:#d9e0ef}.watch{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.watch div{padding:14px;background:var(--panel2);border:1px solid var(--line);border-radius:13px}.watch b{display:block;font-size:14px;margin-bottom:4px}.footer{margin-top:18px;color:#68758e;font-size:12px;line-height:1.6}
 @media(max-width:800px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.events,.watch{grid-template-columns:1fr}.top{flex-direction:column}.date{text-align:left}.barrow{grid-template-columns:100px 1fr 36px}.full{grid-column:auto}}
+@media(max-width:480px){.metrics{grid-template-columns:1fr}.hero{flex-direction:column;align-items:flex-start;gap:12px}}
 
 .action-btn{
   background: #121a2d;
@@ -1298,7 +1299,7 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
 
   // ---------- interpolation helper ----------
   function interpScore(value, points){
-    if(isNaN(value) || !isFinite(value)) return 5;
+    if(isNaN(value) || !isFinite(value)) return null;
     if(value <= points[0][0]) return points[0][1];
     if(value >= points[points.length-1][0]) return points[points.length-1][1];
     for(let i=0;i<points.length-1;i++){
@@ -1317,7 +1318,7 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
   const MVRV_POINTS  = [[0.8,10],[1,9],[1.5,7],[2,5.5],[2.5,4],[3.5,2],[4.5,1]];
 
   function nuplZoneLabel(v){
-    if(isNaN(v)) return '';
+    if(isNaN(v) || !isFinite(v)) return '';
     if(v<0) return 'Capitulation — โซนตื่นตระหนก';
     if(v<0.25) return 'Hope / Fear — เริ่มมีความหวัง';
     if(v<0.5) return 'Optimism / Belief — เชื่อมั่น';
@@ -1325,7 +1326,7 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
     return 'Euphoria / Greed — คลั่งไคล้ (เสี่ยง)';
   }
   function zZoneLabel(v){
-    if(isNaN(v)) return '';
+    if(isNaN(v) || !isFinite(v)) return '';
     if(v<0) return 'Undervalued อย่างมาก';
     if(v<1) return 'โซนถูก';
     if(v<3) return 'มูลค่ากลาง (Fair)';
@@ -1334,7 +1335,7 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
     return 'Extreme Euphoria (จุดสูงสุดในอดีต)';
   }
   function mZoneLabel(v){
-    if(isNaN(v)) return '';
+    if(isNaN(v) || !isFinite(v)) return '';
     if(v<1) return 'ต่ำกว่าราคาต้นทุนเฉลี่ยของตลาด';
     if(v<1.5) return 'โซนถูก';
     if(v<2.5) return 'มูลค่ากลาง (Fair)';
@@ -1343,6 +1344,7 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
   }
 
   function scoreColor(s){
+    if(s==null) return 'var(--sub)';
     if(s>=7) return 'var(--green)';
     if(s>=4) return 'var(--amber)';
     return 'var(--red)';
@@ -1425,38 +1427,49 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
     if(mins < 1) return 'เมื่อสักครู่';
     if(mins < 60) return mins + ' นาทีที่แล้ว';
     const hrs = Math.round(mins / 60);
-    return hrs + ' ชม.ที่แล้ว';
+    if(hrs < 24) return hrs + ' ชม.ที่แล้ว';
+    const days = Math.round(hrs / 24);
+    return days + ' วันที่แล้ว';
   }
 
   function recompute(){
-    const nupl = parseFloat(nuplNum.value);
-    const z = parseFloat(zNum.value);
-    const m = parseFloat(mNum.value);
-    const price = parseFloat(priceInput.value);
-    const ath = parseFloat(athInput.value);
+    const nupl = parseFloat(nuplNum ? nuplNum.value : '');
+    const z = parseFloat(zNum ? zNum.value : '');
+    const m = parseFloat(mNum ? mNum.value : '');
+    const price = parseFloat(priceInput ? priceInput.value : '');
+    const ath = parseFloat(athInput ? athInput.value : '');
 
     const sNupl = interpScore(nupl, NUPL_POINTS);
     const sZ = interpScore(z, Z_POINTS);
     const sM = interpScore(m, MVRV_POINTS);
 
-    nuplDisplay.textContent = isNaN(nupl) ? '–' : nupl.toFixed(3);
-    zDisplay.textContent = isNaN(z) ? '–' : z.toFixed(2);
-    mDisplay.textContent = isNaN(m) ? '–' : m.toFixed(2);
+    if(nuplDisplay) nuplDisplay.textContent = isNaN(nupl) ? '–' : nupl.toFixed(3);
+    if(zDisplay) zDisplay.textContent = isNaN(z) ? '–' : z.toFixed(2);
+    if(mDisplay) mDisplay.textContent = isNaN(m) ? '–' : m.toFixed(2);
 
-    nuplPill.textContent = sNupl.toFixed(1);
-    nuplPill.style.background = 'transparent'; nuplPill.style.color = scoreColor(sNupl);
-    nuplPill.style.border = '1px solid ' + scoreColor(sNupl);
-    nuplZone.textContent = nuplZoneLabel(nupl);
+    if(nuplPill){
+      nuplPill.textContent = sNupl != null ? sNupl.toFixed(1) : '–';
+      nuplPill.style.background = 'transparent';
+      nuplPill.style.color = scoreColor(sNupl);
+      nuplPill.style.border = '1px solid ' + scoreColor(sNupl);
+    }
+    if(nuplZone) nuplZone.textContent = nuplZoneLabel(nupl);
 
-    zPill.textContent = sZ.toFixed(1);
-    zPill.style.background='transparent'; zPill.style.color = scoreColor(sZ);
-    zPill.style.border = '1px solid ' + scoreColor(sZ);
-    zZone.textContent = zZoneLabel(z);
+    if(zPill){
+      zPill.textContent = sZ != null ? sZ.toFixed(1) : '–';
+      zPill.style.background='transparent';
+      zPill.style.color = scoreColor(sZ);
+      zPill.style.border = '1px solid ' + scoreColor(sZ);
+    }
+    if(zZone) zZone.textContent = zZoneLabel(z);
 
-    mPill.textContent = sM.toFixed(1);
-    mPill.style.background='transparent'; mPill.style.color = scoreColor(sM);
-    mPill.style.border = '1px solid ' + scoreColor(sM);
-    mZone.textContent = mZoneLabel(m);
+    if(mPill){
+      mPill.textContent = sM != null ? sM.toFixed(1) : '–';
+      mPill.style.background='transparent';
+      mPill.style.color = scoreColor(sM);
+      mPill.style.border = '1px solid ' + scoreColor(sM);
+    }
+    if(mZone) mZone.textContent = mZoneLabel(m);
 
     let dd = null;
     if(price && ath && ath>0){
@@ -1466,38 +1479,47 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
     let bonus = 0;
     if(dd!=null) bonus = athBonus(dd);
 
-    const avg = (sNupl + sZ + sM) / 3;
-    let final = avg + bonus;
-    final = Math.min(10, Math.max(1, final));
+    const validScores = [sNupl, sZ, sM].filter(v => v != null);
+    const avg = validScores.length ? (validScores.reduce((a,b)=>a+b,0) / validScores.length) : null;
+    let final = avg != null ? (avg + bonus) : null;
+    if(final != null) final = Math.min(10, Math.max(1, final));
 
-    pxDisplay.textContent = price ? fmtUSD(price) : '—';
-    athDisplay.textContent = ath ? fmtUSD(ath) : '—';
+    if(pxDisplay) pxDisplay.textContent = price ? fmtUSD(price) : '—';
+    if(athDisplay) athDisplay.textContent = ath ? fmtUSD(ath) : '—';
     const ddStr = dd!=null ? (dd > 0 ? '-' + dd.toFixed(1) + '%' : '0.0%') : '—';
-    ddDisplay.textContent = ddStr;
-    ddBig.textContent = ddStr;
-    ddBar.style.width = dd!=null ? Math.min(100, dd) + '%' : '0%';
+    if(ddDisplay) ddDisplay.textContent = ddStr;
+    if(ddBig) ddBig.textContent = ddStr;
+    if(ddBar) ddBar.style.width = dd!=null ? Math.min(100, dd) + '%' : '0%';
 
-    scoreNumber.textContent = final.toFixed(1);
-    scoreNumber.style.color = scoreColor(final);
+    if(scoreNumber){
+      scoreNumber.textContent = final != null ? final.toFixed(1) : '–';
+      scoreNumber.style.color = scoreColor(final);
+    }
 
     let verdictText, verdictColor;
-    if(final>=8){ verdictText='โซนน่าซื้อมาก (Strong Buy Zone)'; verdictColor='var(--green)'; }
+    if(final == null){ verdictText='กรอกค่าตัวชี้วัดด้านขวาเพื่อคำนวณ'; verdictColor='var(--sub)'; }
+    else if(final>=8){ verdictText='โซนน่าซื้อมาก (Strong Buy Zone)'; verdictColor='var(--green)'; }
     else if(final>=6.5){ verdictText='น่าสนใจทยอยซื้อ (Accumulate)'; verdictColor='var(--green)'; }
     else if(final>=4){ verdictText='กลาง ๆ รอจังหวะ (Neutral)'; verdictColor='var(--amber)'; }
     else if(final>=2.5){ verdictText='เริ่มแพง ระวัง (Caution)'; verdictColor='var(--red)'; }
     else{ verdictText='โซนความโลภสูง (Euphoria — เสี่ยงสูง)'; verdictColor='var(--red)'; }
-    verdict.textContent = verdictText;
-    verdict.style.borderColor = verdictColor;
-    verdict.style.color = verdictColor;
 
-    breakdown.innerHTML = `
-      <div><span>NUPL score</span><span class="v">${sNupl.toFixed(1)}</span></div>
-      <div><span>MVRV Z-Score score</span><span class="v">${sZ.toFixed(1)}</span></div>
-      <div><span>MVRV Ratio score</span><span class="v">${sM.toFixed(1)}</span></div>
-      <div><span>ค่าเฉลี่ย 3 ตัวชี้วัด</span><span class="v">${avg.toFixed(1)}</span></div>
-      <div><span>โบนัส ATH drawdown</span><span class="v">+${bonus.toFixed(1)}</span></div>
-      <div><span>รวมสุดท้าย</span><span class="v">${final.toFixed(1)} / 10</span></div>
-    `;
+    if(verdict){
+      verdict.textContent = verdictText;
+      verdict.style.borderColor = verdictColor;
+      verdict.style.color = verdictColor;
+    }
+
+    if(breakdown){
+      breakdown.innerHTML = `
+        <div><span>NUPL score</span><span class="v">${sNupl != null ? sNupl.toFixed(1) : '–'}</span></div>
+        <div><span>MVRV Z-Score score</span><span class="v">${sZ != null ? sZ.toFixed(1) : '–'}</span></div>
+        <div><span>MVRV Ratio score</span><span class="v">${sM != null ? sM.toFixed(1) : '–'}</span></div>
+        <div><span>ค่าเฉลี่ยตัวชี้วัด</span><span class="v">${avg != null ? avg.toFixed(1) : '–'}</span></div>
+        <div><span>โบนัส ATH drawdown</span><span class="v">+${bonus.toFixed(1)}</span></div>
+        <div><span>รวมสุดท้าย</span><span class="v">${final != null ? final.toFixed(1) + ' / 10' : '–'}</span></div>
+      `;
+    }
   }
 
   let saveTimer=null;
@@ -1505,9 +1527,12 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
     clearTimeout(saveTimer);
     saveTimer = setTimeout(async ()=>{
       await storageSet('btc-score-inputs', JSON.stringify({
-        nupl: nuplNum.value, z: zNum.value, m: mNum.value,
-        price: priceInput.value, ath: athInput.value,
-        bgToken: el('bgToken').value
+        nupl: nuplNum ? nuplNum.value : '',
+        z: zNum ? zNum.value : '',
+        m: mNum ? mNum.value : '',
+        price: priceInput ? priceInput.value : '',
+        ath: athInput ? athInput.value : '',
+        bgToken: el('bgToken') ? el('bgToken').value : ''
       }));
     }, 400);
   }
@@ -1517,12 +1542,12 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
       const raw = await storageGet('btc-score-inputs');
       if(raw){
         const d = JSON.parse(raw);
-        if(d.nupl!=null){ nuplNum.value=d.nupl; nuplRange.value=d.nupl; }
-        if(d.z!=null){ zNum.value=d.z; zRange.value=d.z; }
-        if(d.m!=null){ mNum.value=d.m; mRange.value=d.m; }
-        if(d.price) priceInput.value=d.price;
-        if(d.ath) athInput.value=d.ath;
-        if(d.bgToken) el('bgToken').value=d.bgToken;
+        if(d.nupl!=null && nuplNum){ nuplNum.value=d.nupl; if(nuplRange) nuplRange.value=d.nupl; }
+        if(d.z!=null && zNum){ zNum.value=d.z; if(zRange) zRange.value=d.z; }
+        if(d.m!=null && mNum){ mNum.value=d.m; if(mRange) mRange.value=d.m; }
+        if(d.price && priceInput) priceInput.value=d.price;
+        if(d.ath && athInput) athInput.value=d.ath;
+        if(d.bgToken && el('bgToken')) el('bgToken').value=d.bgToken;
       }
     }catch(e){ /* no saved data yet */ }
     recompute();
@@ -1537,8 +1562,8 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
       const price = data && data.market_data && data.market_data.current_price && data.market_data.current_price.usd;
       const ath = data && data.market_data && data.market_data.ath && data.market_data.ath.usd;
       if(price && isFinite(price)){
-        priceInput.value = Math.round(price);
-        if(ath && isFinite(ath)) athInput.value = Math.round(ath);
+        if(priceInput) priceInput.value = Math.round(price);
+        if(ath && isFinite(ath) && athInput) athInput.value = Math.round(ath);
         return true;
       }
     }catch(e){}
@@ -1549,8 +1574,8 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
       const j2 = await r2.json();
       const p = parseFloat(j2.price);
       if(p && isFinite(p)){
-        priceInput.value = Math.round(p);
-        if(!athInput.value) athInput.value = 108000;
+        if(priceInput) priceInput.value = Math.round(p);
+        if(athInput && !athInput.value) athInput.value = 108000;
         return true;
       }
     }catch(e){}
@@ -1569,7 +1594,10 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
     ).join('<hr style="border-color:var(--line); margin:6px 0;">');
   }
 
-  function bgToken(){ return (el('bgToken').value || '').trim(); }
+  function bgToken(){
+    const b = el('bgToken');
+    return (b ? b.value : '').trim();
+  }
   function bgUrl(slug){
     const t = bgToken();
     return 'https://api.bgeometrics.com/v1/' + slug + (t ? ('?token=' + encodeURIComponent(t)) : '');
@@ -1680,9 +1708,9 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
     debugLog = [];
 
     const [nuplOk, zOk, mOk] = await Promise.all([
-      resolveMetric('nupl', BG_SLUGS.nupl, v => { nuplNum.value = v.toFixed(3); nuplRange.value = Math.max(-0.5,Math.min(1,v)); }, force),
-      resolveMetric('z',    BG_SLUGS.z,    v => { zNum.value = v.toFixed(2); zRange.value = Math.max(-2,Math.min(9,v)); }, force),
-      resolveMetric('m',    BG_SLUGS.m,    v => { mNum.value = v.toFixed(2); mRange.value = Math.max(0.8,Math.min(4.5,v)); }, force)
+      resolveMetric('nupl', BG_SLUGS.nupl, v => { if(nuplNum) nuplNum.value = v.toFixed(3); if(nuplRange) nuplRange.value = Math.max(-0.5,Math.min(1,v)); }, force),
+      resolveMetric('z',    BG_SLUGS.z,    v => { if(zNum) zNum.value = v.toFixed(2); if(zRange) zRange.value = Math.max(-2,Math.min(9,v)); }, force),
+      resolveMetric('m',    BG_SLUGS.m,    v => { if(mNum) mNum.value = v.toFixed(2); if(mRange) mRange.value = Math.max(0.8,Math.min(4.5,v)); }, force)
     ]);
 
     renderDebugLog();
@@ -1776,26 +1804,34 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
         const r = await fetchWithTimeout(attempt.url, 6000);
         if(!r.ok) throw new Error('HTTP ' + r.status);
         const { v, cls, src } = await attempt.parse(r);
-        el('fngNum').textContent = v;
-        el('fngNum').style.color = v>=75 ? 'var(--red)' : v<=25 ? 'var(--green)' : 'var(--amber)';
+        if(el('fngNum')){
+          el('fngNum').textContent = v;
+          el('fngNum').style.color = v>=75 ? 'var(--red)' : v<=25 ? 'var(--green)' : 'var(--amber)';
+        }
         const isCMC = /coinmarketcap/i.test(src);
-        el('fngLabel').textContent = (cls || '') + (isCMC ? ' · CoinMarketCap' : ' · ' + src);
-        el('fngLabel').title = 'อัปเดตอัตโนมัติจาก ' + src + ' · ' + new Date().toLocaleTimeString('th-TH');
+        if(el('fngLabel')){
+          el('fngLabel').textContent = (cls || '') + (isCMC ? ' · CoinMarketCap' : ' · ' + src);
+          el('fngLabel').title = 'อัปเดตอัตโนมัติจาก ' + src + ' · ' + new Date().toLocaleTimeString('th-TH');
+        }
         fngDone = true;
         break;
       }catch(e){ /* try next source */ }
     }
-    if(!fngDone) el('fngLabel').textContent = 'ดึงไม่สำเร็จ';
+    if(!fngDone && el('fngLabel')) el('fngLabel').textContent = 'ดึงไม่สำเร็จ';
 
     // 2) Funding Rate
     try{
       const r = await fetchWithTimeout('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT', 5000);
       const j = await r.json();
       const fr = parseFloat(j.lastFundingRate) * 100;
-      el('fundingNum').textContent = (fr>=0?'+':'') + fr.toFixed(4) + '%';
-      el('fundingNum').style.color = Math.abs(fr) > 0.03 ? 'var(--red)' : 'var(--green)';
-      el('fundingLabel').textContent = Math.abs(fr) > 0.03 ? 'สูงผิดปกติ — เลเวอเรจฝั่งเดียวหนาแน่น' : 'ปกติ';
-    }catch(e){ el('fundingLabel').textContent = 'ดึงไม่สำเร็จ'; }
+      if(el('fundingNum')){
+        el('fundingNum').textContent = (fr>=0?'+':'') + fr.toFixed(4) + '%';
+        el('fundingNum').style.color = Math.abs(fr) > 0.03 ? 'var(--red)' : 'var(--green)';
+      }
+      if(el('fundingLabel')){
+        el('fundingLabel').textContent = Math.abs(fr) > 0.03 ? 'สูงผิดปกติ — เลเวอเรจฝั่งเดียวหนาแน่น' : 'ปกติ';
+      }
+    }catch(e){ if(el('fundingLabel')) el('fundingLabel').textContent = 'ดึงไม่สำเร็จ'; }
 
     // 3) Open Interest
     let oiDone = false;
@@ -1813,15 +1849,17 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
           byExchange[t.market] = (byExchange[t.market] || 0) + oi;
         });
 
-        const price = parseFloat(priceInput.value) || null;
+        const price = parseFloat(priceInput ? priceInput.value : '') || null;
         const totalBtc = price ? totalUsd / price : null;
 
-        el('oiNum').textContent = totalBtc
-          ? totalBtc.toLocaleString(undefined,{maximumFractionDigits:0}) + ' BTC'
-          : '$' + totalUsd.toLocaleString(undefined,{maximumFractionDigits:0});
+        if(el('oiNum')){
+          el('oiNum').textContent = totalBtc
+            ? totalBtc.toLocaleString(undefined,{maximumFractionDigits:0}) + ' BTC'
+            : '$' + totalUsd.toLocaleString(undefined,{maximumFractionDigits:0});
+        }
 
         const top3 = Object.entries(byExchange).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([name])=>name);
-        el('oiLabel').textContent = 'รวม ' + Object.keys(byExchange).length + ' ตลาด (' + top3.join(', ') + ')';
+        if(el('oiLabel')) el('oiLabel').textContent = 'รวม ' + Object.keys(byExchange).length + ' ตลาด (' + top3.join(', ') + ')';
         oiDone = true;
       }
     }catch(e){}
@@ -1832,13 +1870,13 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
         const j = await r.json();
         const oiBtc = parseFloat(j.openInterest);
         if(oiBtc && isFinite(oiBtc)){
-          el('oiNum').textContent = oiBtc.toLocaleString(undefined,{maximumFractionDigits:0}) + ' BTC';
-          el('oiLabel').textContent = 'Binance BTCUSDT futures';
+          if(el('oiNum')) el('oiNum').textContent = oiBtc.toLocaleString(undefined,{maximumFractionDigits:0}) + ' BTC';
+          if(el('oiLabel')) el('oiLabel').textContent = 'Binance BTCUSDT futures';
           oiDone = true;
         }
       }catch(e){}
     }
-    if(!oiDone) el('oiLabel').textContent = 'ดึงไม่สำเร็จ';
+    if(!oiDone && el('oiLabel')) el('oiLabel').textContent = 'ดึงไม่สำเร็จ';
   }
 
   const HALVING_BLOCK = 1050000;
@@ -1847,8 +1885,8 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
   function renderHalvingFromDate(){
     const now = new Date();
     const days = Math.max(0, Math.ceil((HALVING_ESTIMATED_DATE - now) / 86400000));
-    el('halvingDays').textContent = days.toLocaleString();
-    el('halvingBlockInfo').textContent = 'ประมาณการจากวันที่ (~17 เม.ย. 2028) · block เป้าหมาย 1,050,000';
+    if(el('halvingDays')) el('halvingDays').textContent = days.toLocaleString();
+    if(el('halvingBlockInfo')) el('halvingBlockInfo').textContent = 'ประมาณการจากวันที่ (~17 เม.ย. 2028) · block เป้าหมาย 1,050,000';
   }
 
   async function refineHalvingFromBlockHeight(){
@@ -1858,8 +1896,8 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
       if(raw){
         const c = JSON.parse(raw);
         if(c.date === today){
-          el('halvingDays').textContent = c.days.toLocaleString();
-          el('halvingBlockInfo').textContent = 'Block ปัจจุบัน: ' + c.height.toLocaleString() + ' · เหลืออีก ' + c.blocksRemaining.toLocaleString() + ' บล็อก (แคชไว้วันนี้)';
+          if(el('halvingDays')) el('halvingDays').textContent = c.days.toLocaleString();
+          if(el('halvingBlockInfo')) el('halvingBlockInfo').textContent = 'Block ปัจจุบัน: ' + c.height.toLocaleString() + ' · เหลืออีก ' + c.blocksRemaining.toLocaleString() + ' บล็อก (แคชไว้วันนี้)';
           return;
         }
       }
@@ -1872,8 +1910,8 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
       if(isNaN(height)) throw new Error('bad height');
       const blocksRemaining = Math.max(0, HALVING_BLOCK - height);
       const days = Math.ceil((blocksRemaining * 600) / 86400);
-      el('halvingDays').textContent = days.toLocaleString();
-      el('halvingBlockInfo').textContent = 'Block ปัจจุบัน: ' + height.toLocaleString() + ' · เหลืออีก ' + blocksRemaining.toLocaleString() + ' บล็อก';
+      if(el('halvingDays')) el('halvingDays').textContent = days.toLocaleString();
+      if(el('halvingBlockInfo')) el('halvingBlockInfo').textContent = 'Block ปัจจุบัน: ' + height.toLocaleString() + ' · เหลืออีก ' + blocksRemaining.toLocaleString() + ' บล็อก';
       await storageSet('halving-cache', JSON.stringify({ date: today, height, blocksRemaining, days }));
     }catch(e){}
   }
@@ -1884,21 +1922,24 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
   }
 
   async function refreshAll(force){
-    statusEl.textContent = 'กำลังดึงข้อมูลอัตโนมัติ…';
+    if(statusEl) statusEl.textContent = 'กำลังดึงข้อมูลอัตโนมัติ…';
     const priceOk = await fetchPrice();
     const [metricsOk] = await Promise.all([fetchOnChainMetrics(force), fetchSentimentLeverage(), fetchHalvingCountdown()]);
     recompute();
     save();
-    if(priceOk && metricsOk){
-      statusEl.textContent = 'อัปเดตอัตโนมัติสำเร็จทั้งหมด · ' + new Date().toLocaleTimeString('th-TH');
-    }else if(priceOk){
-      statusEl.textContent = 'อัปเดตราคาแล้ว แต่ตัวชี้วัด on-chain ดึงไม่สำเร็จตอนนี้ (กรอกเองได้ในช่องที่ขึ้น "กรอกเอง")';
-    }else{
-      statusEl.textContent = 'ดึงอัตโนมัติไม่สำเร็จ — กรอกค่าต่าง ๆ ได้เองด้านล่าง';
+    if(statusEl){
+      if(priceOk && metricsOk){
+        statusEl.textContent = 'อัปเดตอัตโนมัติสำเร็จทั้งหมด · ' + new Date().toLocaleTimeString('th-TH');
+      }else if(priceOk){
+        statusEl.textContent = 'อัปเดตราคาแล้ว แต่ตัวชี้วัด on-chain ดึงไม่สำเร็จตอนนี้ (กรอกเองได้ในช่องที่ขึ้น "กรอกเอง")';
+      }else{
+        statusEl.textContent = 'ดึงอัตโนมัติไม่สำเร็จ — กรอกค่าต่าง ๆ ได้เองด้านล่าง';
+      }
     }
   }
 
-  el('refreshBtn').addEventListener('click', () => refreshAll(true));
+  const refreshBtn = el('refreshBtn');
+  if(refreshBtn) refreshBtn.addEventListener('click', () => refreshAll(true));
 
   setInterval(fetchSentimentLeverage, 60*60*1000);
   document.addEventListener('visibilitychange', () => {
@@ -2030,6 +2071,8 @@ document.getElementById('today').textContent = new Date().toLocaleDateString('th
       }else{
         const input = document.createElement('input');
         input.value = url;
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
         document.body.appendChild(input);
         input.select();
         document.execCommand('copy');
