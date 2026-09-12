@@ -6,7 +6,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { __test } = require('./news-feed.js');
+const { __test } = require('../netlify/functions/news-feed.js');
 
 const { parseRssItems, decodeEntities, stripTags, cleanText } = __test;
 

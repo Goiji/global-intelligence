@@ -112,7 +112,7 @@ Site configuration → Environment variables → Add a variable:
 - ฝั่งเซิร์ฟเวอร์: 15 นาทีในวันประกาศตัวเลข (CPI ช่วงวันที่ 10–16, jobs report ศุกร์แรก, วันแถลง FOMC)
   และ 3 ชั่วโมงในวันปกติ + ส่ง `Cache-Control` ให้ Netlify CDN แคชซ้อนอีกชั้น
 - ฝั่งเบราว์เซอร์: แคชตาม `refreshAfter` ที่เซิร์ฟเวอร์สั่ง (ไม่ใช่ "วันละครั้ง" แบบเดิม) · โพลซ้ำทุก
-  10 นาที · ดึงใหม่ทันทีเมื่อสลับกลับเข้ามาที่แท็บ (`visibilitychange`) · มีปุ่ม `↻ ดึงค่าสดใหม่`
+  10 นาที · ดึงใหม่ทันทีเมื่อสลับกลับเข้ามาที่แท็บ (`visibilitychange`)
 - ถ้าทุกแหล่งล่มพร้อมกัน จะคืนค่าล่าสุดที่เคยดึงได้พร้อม `stale:true` (HTTP 200) แทนการขึ้น error
 
 **เช็คว่าทำงานไหม:** เปิด `https://<your-site>.netlify.app/.netlify/functions/fred-data`
@@ -144,8 +144,16 @@ Functions จะตอบ JSON แบบ graceful failure ซึ่งก็ค�
 ## รันเทสต์ในเครื่อง
 
 ```bash
-npm test        # = node --test "netlify/functions/*.test.js" "tests/*.test.js"   (57 เคส)
+npm test        # = node --test   (สแกนหา *.test.js ทั้งโปรเจกต์)
 ```
+
+> หมายเหตุ 2 ข้อ:
+> 1. เทสต์ของทุก function ถูกเก็บรวมใน `tests/` (ไม่ใช่ใน `netlify/functions/`)
+>    เพราะ Netlify สแกนไฟล์ในโฟลเดอร์นั้นเป็น function — ไฟล์ชื่อ `x.test.js` มีจุดในชื่อ
+>    ทำให้ deploy ล้มได้จึงต้องแยกออกไป
+> 2. สั่ง `node --test` แบบไม่มี argument (ไมใช่ glob) เพราะ `--test` รองรับ glob
+>    เฉพาะ Node 21+ แต่ CI รันบน Node 20 → glob ถูกตีความเป็นชื่อไฟล์จริงแล้วเจ๊ง
+>    การไม่ผ่าน argument ให้ node สแกนเองจะทำงานเหมือนกันทุกเวอร์ชัน
 
 ชุดเทสต์เป็น `node:test` ล้วนๆ ไม่ต้องติดตั้งอะไรเพิ่ม (ไม่ต้องมี node_modules) และไม่มีการเรียก
 เครือข่ายออกไปเลย — ครอบคลุมตัว parser ของ FRED/BLS/Google News RSS, การคำนวณ CPI YoY แบบ
