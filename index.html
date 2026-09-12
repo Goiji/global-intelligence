@@ -336,14 +336,19 @@ body{margin:0}
 <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line);">
   <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
     <h3 style="font-size:14px; margin-bottom:0;">🔍 วิเคราะห์: ตัวเลขออกมาดี/แย่แค่ไหน เทียบกับที่คาด</h3>
-    <span class="muted" style="font-size:10px;">สร้างอัตโนมัติจากตัวเลขสดด้านบน (ไม่ใช้ข้อความเขียนมือ)</span>
+    <span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+      <span class="muted" style="font-size:10px;">สร้างอัตโนมัติจากตัวเลขสดด้านบน (ไม่ใช้ข้อความเขียนมือ)</span>
+      <button id="consensusEditBtn" type="button" class="tabbtn" style="padding:3px 10px; font-size:11px; border-radius:8px; line-height:1.5;">✏️ แก้ค่า "ที่คาด" เอง</button>
+    </span>
   </div>
   <div class="muted" style="font-size:11px; margin:-2px 0 12px; line-height:1.6;">
     ตัวเลขในบทวิเคราะห์ด้านล่างดึงสดจาก FRED/BLS และคำนวณใหม่เองทุกครั้งที่ค่าเปลี่ยน —
     ส่วน "ที่คาด" (consensus) ดึงจาก <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="https://th.investing.com/economic-calendar/%E0%B8%94%E0%B8%B1%E0%B8%8A%E0%B8%99%E0%B8%B5%E0%B8%A3%E0%B8%B2%E0%B8%84%E0%B8%B2%E0%B8%9C%E0%B8%B9%E0%B9%89%E0%B8%9A%E0%B8%A3%E0%B8%B4%E0%B9%82%E0%B8%A0%E0%B8%84-(cpi)-733">Investing.com</a>
     ให้อัตโนมัติ (แคช 3 ชม.) และมีค่าสำรองฝังไว้ในหน้าเว็บเพื่อกันกรณีดึงไม่ได้
-    — ท้ายการ์ดจะบอกเสมอว่ากำลังใช้ชุดไหน ณ วันที่เท่าไร พร้อมลิงก์ให้ตรวจเอง
+    — ท้ายการ์ดจะบอกเสมอว่ากำลังใช้ชุดไหน ณ วันที่เท่าไร พร้อมลิงก์ให้ตรวจเอง ·
+    อยากแก้ตัวเลข "ที่คาด" เอง กดปุ่ม ✏️ ด้านบนได้เลย ไม่ต้องแก้โค้ดหรือเปิด GitHub
   </div>
+  <div id="consensusEditPanel" style="display:none; margin:0 0 12px; padding:12px; background:var(--panel2); border:1px solid var(--line); border-radius:10px;"></div>
   <div id="fedAnalysis" style="display:flex; flex-direction:column; gap:12px;">
     <div class="muted" style="font-size:11.5px;">⏳ กำลังดึงตัวเลขจริงเพื่อวิเคราะห์…</div>
   </div>
@@ -944,7 +949,8 @@ window.setHeaderStamp();
   //    - หน้าเว็บจะลองดึงค่าสดจาก /.netlify/functions/consensus ก่อน (อ่าน Investing.com เหมือนกัน
   //      แคชไว้ 3 ชม.) ถ้าดึงไม่ได้ (เช่น Netlify โดน Cloudflare บล็อก) จึงใช้ค่าที่ฝังไว้ตรงนี้
   //      — หมายเหตุท้ายการ์ดจะบอกเสมอว่ากำลังใช้ชุดไหน ณ วันที่เท่าไร
-  //    - อยากอัปเดตเอง: แก้ตัวเลข + asOf ในบล็อกนี้ (ไม่ต้องแตะโค้ดส่วนอื่นเลย)
+  //    - อยากแก้ตัวเลขเอง **ไม่ต้องแตะไฟล์นี้**: กดปุ่ม "✏️ แก้ค่า ที่คาด เอง" ใต้หัวข้อวิเคราะห์
+  //      (เก็บใน localStorage ของเบราว์เซอร์นั้น) · จะแก้ในไฟล์ตรงนี้ก็ได้ ถ้าอยากให้ทุกคนเห็นค่าใหม่
   const CONSENSUS = {
     asOf: '2026-09-12',
     source: 'Investing.com',
@@ -987,23 +993,241 @@ window.setHeaderStamp();
   // รวมค่าที่จะใช้จริง: ค่าสด (ถ้ามี) ทับค่าที่ฝังไว้ทีละฟิลด์
   function activeConsensus(){
     const live = LIVE_CONSENSUS || {};
+    const ov = CONSENSUS_OVERRIDE || {};
     const num = (v, fb) => (isValidNum(v) ? v : fb);
     const liveFedHi = live.fed && isValidNum(live.fed.hi) ? live.fed.hi : null;
     const liveFedLo = live.fed && isValidNum(live.fed.lo) ? live.fed.lo : null;
+    const overridden = CONSENSUS_FIELDS.map(f => f.key).filter(k => isValidNum(ov[k]));
     return {
       live: !!LIVE_CONSENSUS,
+      // ค่าที่ผู้ใช้แก้เองในหน้าเว็บ (ถ้ามี) ชนะทั้งค่าสดและค่าที่ฝังไว้ — ทีละช่อง ไม่ใช่ทั้งชุด
+      override: overridden.length > 0,
+      overridden: overridden,
+      savedAt: ov.savedAt || null,
       source: live.source || CONSENSUS.source,
-      asOf: live.asOf || CONSENSUS.asOf,
-      cpi: num(live.cpi, CONSENSUS.cpi),
-      coreCpi: num(live.coreCpi, CONSENSUS.coreCpi),
-      unrate: num(live.unrate, CONSENSUS.unrate),
-      nfp: num(live.nfp, CONSENSUS.nfp),
-      fedHi: num(liveFedHi, CONSENSUS.fed.hi),
-      fedLo: num(liveFedLo, CONSENSUS.fed.lo),
+      asOf: ov.asOf || live.asOf || CONSENSUS.asOf,
+      cpi: num(ov.cpi, num(live.cpi, CONSENSUS.cpi)),
+      coreCpi: num(ov.coreCpi, num(live.coreCpi, CONSENSUS.coreCpi)),
+      unrate: num(ov.unrate, num(live.unrate, CONSENSUS.unrate)),
+      nfp: num(ov.nfp, num(live.nfp, CONSENSUS.nfp)),
+      fedHi: num(ov.fedHi, num(liveFedHi, CONSENSUS.fed.hi)),
+      fedLo: num(ov.fedLo, num(liveFedLo, CONSENSUS.fed.lo)),
       // ค่า "ตามจริง" ของรอบล่าสุดจาก Investing.com — ใช้ตรวจว่า consensus ตรงรอบกับตัวเลขบนการ์ด
       actuals: live.actuals || null
     };
   }
+
+  // ── แก้ค่า "ที่คาด" ได้จากในหน้าเว็บเลย (ไม่ต้องแตะโค้ด ไม่ต้องมี GitHub) ─────────────────────
+  // เก็บไว้ใน localStorage ของเบราว์เซอร์นี้ · ลำดับความสำคัญทีละช่อง:
+  //   ค่าที่คุณตั้งเอง  >  ค่าสดจาก Investing.com  >  ค่าที่ฝังในไฟล์ index.html
+  // หมายเหตุ: ค่าที่ตั้งเองจะถูกใช้ต่อไปจนกว่าจะกด "คืนค่าเริ่มต้น" (ระบบไม่ลบทิ้งให้เอง)
+  const OVERRIDE_KEY = 'giConsensusOverride.v1';
+  const CONSENSUS_FIELDS = [
+    // min/max คือหน่วยที่ *พิมพ์* (ไม่ใช่หน่วยที่เก็บ) — nfp พิมพ์เป็น "พันตำแหน่ง" แล้วคูณ scale ตอนเก็บ
+    { key:'cpi',     label:'CPI YoY',                unit:'%',  step:0.1,  min:0,     max:30,    scale:1 },
+    { key:'coreCpi', label:'Core CPI YoY',           unit:'%',  step:0.1,  min:0,     max:30,    scale:1 },
+    { key:'unrate',  label:'ว่างงาน',                 unit:'%',  step:0.1,  min:0,     max:30,    scale:1 },
+    { key:'nfp',     label:'จ้างงานใหม่',             unit:'พัน', step:1,    min:-2000, max:2000,  scale:1000 },
+    { key:'fedLo',   label:'Fed ขอบล่าง',            unit:'%',  step:0.25, min:0,     max:25,    scale:1 },
+    { key:'fedHi',   label:'Fed ขอบบน',              unit:'%',  step:0.25, min:0,     max:25,    scale:1 }
+  ];
+  const OVERRIDE_LABELS = { cpi:'CPI', coreCpi:'Core CPI', unrate:'ว่างงาน', nfp:'NFP', fedLo:'Fed ขอบล่าง', fedHi:'Fed ขอบบน' };
+  function consensusField(key){ return CONSENSUS_FIELDS.filter(f => f.key === key)[0] || null; }
+
+  function readConsensusOverride(){
+    try{
+      const raw = localStorage.getItem(OVERRIDE_KEY);
+      if(!raw) return null;
+      const o = JSON.parse(raw);
+      if(!o || typeof o !== 'object') return null;
+      const out = {};
+      CONSENSUS_FIELDS.forEach(f => {
+        const v = Number(o[f.key]);
+        if(!isValidNum(v)) return;
+        const disp = v / f.scale;
+        if(disp < f.min || disp > f.max) return;   // ค่าเพี้ยน/ถูกแก้จากภายนอก = ทิ้ง
+        out[f.key] = v;
+      });
+      if(typeof o.asOf === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(o.asOf)) out.asOf = o.asOf;
+      if(!CONSENSUS_FIELDS.some(f => isValidNum(out[f.key])) && !out.asOf) return null;
+      out.savedAt = (typeof o.savedAt === 'string') ? o.savedAt : null;
+      return out;
+    }catch(e){ return null; }
+  }
+  function getConsensusOverride(){
+    if(!CONSENSUS_OVERRIDE) return null;
+    const copy = {};
+    Object.keys(CONSENSUS_OVERRIDE).forEach(k => { copy[k] = CONSENSUS_OVERRIDE[k]; });
+    return copy;
+  }
+  // patch = { cpi: 3.5, fedHi: 4, asOf: '2026-09-12' } · ส่ง null/'' เพื่อล้างช่องนั้นกลับไปใช้ค่าเดิม
+  function setConsensusOverride(patch){
+    if(!patch || typeof patch !== 'object') return getConsensusOverride();
+    const o = Object.assign({}, CONSENSUS_OVERRIDE || {});
+    let touched = false;
+    CONSENSUS_FIELDS.forEach(f => {
+      if(!(f.key in patch)) return;
+      const raw = patch[f.key];
+      if(raw === null || raw === undefined || raw === ''){
+        if(f.key in o) delete o[f.key];
+        touched = true;
+        return;
+      }
+      const disp = Number(raw);
+      if(!isValidNum(disp) || disp < f.min || disp > f.max) return;   // ค่าที่เป็นไปไม่ได้ = ไม่บันทึก
+      o[f.key] = disp * f.scale;
+      touched = true;
+    });
+    if('asOf' in patch){
+      if(patch.asOf) o.asOf = String(patch.asOf).slice(0, 10);
+      else delete o.asOf;
+      touched = true;
+    }
+    if(!touched) return getConsensusOverride();
+    if(!CONSENSUS_FIELDS.some(f => isValidNum(o[f.key])) && !o.asOf){
+      CONSENSUS_OVERRIDE = null;                       // ไม่เหลือค่าที่ตั้งเองแล้ว → กลับไปใช้ค่าอัตโนมัติ
+      try{ localStorage.removeItem(OVERRIDE_KEY); }catch(e){}
+    }else{
+      o.savedAt = new Date().toISOString().slice(0, 10);
+      CONSENSUS_OVERRIDE = o;
+      try{ localStorage.setItem(OVERRIDE_KEY, JSON.stringify(o)); }catch(e){}
+    }
+    afterConsensusChange(false);
+    return getConsensusOverride();
+  }
+  function clearConsensusOverride(){
+    CONSENSUS_OVERRIDE = null;
+    try{ localStorage.removeItem(OVERRIDE_KEY); }catch(e){}
+    afterConsensusChange(true);
+  }
+  function afterConsensusChange(retryLive){
+    try{ if(lastFedPayload) renderFedAnalysis(lastFedPayload); }catch(e){ /* best-effort */ }
+    try{ refreshConsensusEditorState(); }catch(e){ /* best-effort */ }
+    if(retryLive){ try{ loadConsensus(); }catch(e){} }   // ล้างค่าเองแล้วให้ลองดึงค่าสดใหม่อีกครั้ง
+  }
+  let CONSENSUS_OVERRIDE = readConsensusOverride();
+
+  // ── หน้าตาของช่องแก้ค่า ─────────────────────────────────────────────────────────────────────
+  let consensusEditorOpen = false;
+
+  function fmtConsensusNum(key, v){
+    if(!isValidNum(v)) return '—';
+    if(key === 'nfp') return fmtJobs(v) + ' ตำแหน่ง';
+    // ทศนิยม 1 ตำแหน่งตามที่ Investing.com รายงาน (3.75 = กรอบ Fed ให้แสดง 2 ตำแหน่ง)
+    const r = Number(v.toFixed(2));
+    return r.toFixed(Math.round(r * 10) / 10 === r ? 1 : 2) + '%';
+  }
+  function consensusSummaryLine(){
+    const C = activeConsensus();
+    const mark = k => (C.overridden.indexOf(k) >= 0 ? '✏️ ' : '');
+    return 'ตอนนี้ใช้: ' + mark('cpi') + 'CPI ' + fmtConsensusNum('cpi', C.cpi)
+      + ' · ' + mark('coreCpi') + 'Core ' + fmtConsensusNum('coreCpi', C.coreCpi)
+      + ' · ' + mark('unrate') + 'ว่างงาน ' + fmtConsensusNum('unrate', C.unrate)
+      + ' · ' + mark('nfp') + 'NFP ' + fmtConsensusNum('nfp', C.nfp)
+      + ' · ' + mark('fedLo') + mark('fedHi') + 'Fed ' + fmtConsensusNum('fedLo', C.fedLo) + '–' + fmtConsensusNum('fedHi', C.fedHi);
+  }
+  const EDIT_INPUT_STYLE = 'width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--text); font-family:var(--mono); font-size:12px; padding:5px 7px;';
+  const EDIT_BTN_STYLE = 'padding:3px 10px; font-size:11px; border-radius:8px; line-height:1.5;';
+
+  function renderConsensusEditor(){
+    const panel = el('consensusEditPanel');
+    if(!panel) return;
+    const C = activeConsensus();
+    const ov = CONSENSUS_OVERRIDE || {};
+    const focused = (typeof document !== 'undefined' && document.activeElement && document.activeElement.dataset)
+      ? document.activeElement.dataset.ckey : null;
+    const input = f => {
+      const mine = isValidNum(ov[f.key]);
+      const show = mine ? (ov[f.key] / f.scale) : '';
+      const auto = isValidNum(C[f.key]) ? (C[f.key] / f.scale) : '';
+      return '<label class="muted" style="display:flex; flex-direction:column; gap:3px; font-size:10px;">'
+        + f.label + ' (' + f.unit + ')'
+        + '<input type="number" inputmode="decimal" step="' + f.step + '" data-ckey="' + f.key + '"'
+        + ' value="' + (show === '' ? '' : show) + '" placeholder="' + auto + '"'
+        + ' title="' + (mine ? 'ใช้ค่าที่คุณตั้งเอง' : 'ว่าง = ใช้ค่าอัตโนมัติ') + '"'
+        + ' style="' + EDIT_INPUT_STYLE + (mine ? ' border-color:var(--amber);' : '') + '"></label>';
+    };
+    panel.innerHTML =
+      '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap;">'
+      + '<b style="font-size:12px;">✏️ แก้ค่า "ที่คาด" ที่ใช้ตัดสินว่าดี/แย่กว่าคาด</b>'
+      + '<span class="muted" style="font-size:10px;">บันทึกทันทีที่แก้ · ไม่ต้องกดบันทึก</span>'
+      + '</div>'
+      + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(118px,1fr)); gap:8px; margin-top:10px;">'
+      + CONSENSUS_FIELDS.map(input).join('')
+      + '</div>'
+      + '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;">'
+      + '<label class="muted" style="font-size:10px;">วันที่อ้างอิง<input type="date" data-ckey="asOf" value="' + esc(ov.asOf || '') + '" style="' + EDIT_INPUT_STYLE + '"></label>'
+      + '<button type="button" id="consensusResetBtn" class="tabbtn" style="' + EDIT_BTN_STYLE + '">↺ คืนค่าเริ่มต้น (ใช้ค่าจาก Investing.com)</button>'
+      + '<button type="button" id="consensusCloseBtn" class="tabbtn" style="' + EDIT_BTN_STYLE + '">✕ ปิด</button>'
+      + '</div>'
+      + '<div class="muted" style="font-size:10.5px; margin-top:9px; line-height:1.6;">' + esc(consensusSummaryLine()) + '</div>'
+      + '<div class="muted" style="font-size:10px; margin-top:6px; line-height:1.6; opacity:.85;">'
+      + 'ช่องที่เว้นว่าง = ใช้ค่าอัตโนมัติ · ช่องที่ใส่ค่า = ใช้ค่าของคุณแทน (✏️) · เลขในวงเล็บคือหน่วย '
+      + '(การจ้างงานกรอกเป็น "พันตำแหน่ง" เช่น 55 = 55,000 ตำแหน่ง)<br>'
+      + 'ค่าที่ตั้งเองเก็บไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น — เปิดจากเครื่อง/เบราว์เซอร์อื่นจะยังเห็นค่าอัตโนมัติ'
+      + '</div>';
+
+    const inputs = panel.querySelectorAll ? panel.querySelectorAll('input[data-ckey]') : [];
+    Array.prototype.forEach.call(inputs, function(inp){
+      inp.addEventListener('change', function(){
+        const key = inp.dataset.ckey;
+        const raw = String(inp.value == null ? '' : inp.value).trim();
+        if(key === 'asOf'){ setConsensusOverride({ asOf: raw || null }); return; }
+        const f = consensusField(key);
+        if(!f) return;
+        const patch = {};
+        patch[key] = (raw === '') ? null : (Number(raw) * f.scale);
+        setConsensusOverride(patch);
+      });
+    });
+    const resetBtn = panel.querySelector ? panel.querySelector('#consensusResetBtn') : null;
+    if(resetBtn) resetBtn.addEventListener('click', function(){ clearConsensusOverride(); });
+    const closeBtn = panel.querySelector ? panel.querySelector('#consensusCloseBtn') : null;
+    if(closeBtn) closeBtn.addEventListener('click', function(){ setConsensusEditorOpen(false); });
+    if(focused){
+      const again = panel.querySelector ? panel.querySelector('[data-ckey="' + focused + '"]') : null;
+      if(again && again.focus) again.focus();
+    }
+  }
+
+  function updateConsensusEditBtn(){
+    const btn = el('consensusEditBtn');
+    if(!btn) return;
+    btn.textContent = consensusEditorOpen
+      ? '✕ ปิดช่องแก้ค่า "ที่คาด"'
+      : (CONSENSUS_OVERRIDE ? '✏️ แก้ค่า "ที่คาด" (ตั้งเองอยู่)' : '✏️ แก้ค่า "ที่คาด" เอง');
+    btn.style.color = CONSENSUS_OVERRIDE ? 'var(--amber)' : '';
+    btn.style.borderColor = CONSENSUS_OVERRIDE ? 'var(--amber)' : '';
+  }
+  function refreshConsensusEditorState(){
+    if(consensusEditorOpen) renderConsensusEditor();
+    updateConsensusEditBtn();
+  }
+  function setConsensusEditorOpen(open){
+    consensusEditorOpen = !!open;
+    const panel = el('consensusEditPanel');
+    if(panel) panel.style.display = consensusEditorOpen ? 'block' : 'none';
+    if(consensusEditorOpen) renderConsensusEditor();
+    updateConsensusEditBtn();
+  }
+  function initConsensusEditor(){
+    const btn = el('consensusEditBtn');
+    if(btn) btn.addEventListener('click', function(){ setConsensusEditorOpen(!consensusEditorOpen); });
+    renderConsensusEditor();          // สร้างเนื้อหาไว้ล่วงหน้า (ซ่อนอยู่) กดแล้วเห็นทันที
+    setConsensusEditorOpen(false);
+  }
+
+  // ให้เทสต์ (และคอนโซลของเบราว์เซอร์) เรียกใช้ได้โดยตรง
+  // เช่น consensusOverride.set({ cpi: 3.5 }) แล้วบทวิเคราะห์จะถูกสร้างใหม่ทันที
+  window.consensusOverride = {
+    key: OVERRIDE_KEY,
+    fields: CONSENSUS_FIELDS.map(f => f.key),
+    get: getConsensusOverride,
+    set: setConsensusOverride,
+    clear: clearConsensusOverride,
+    open: function(){ setConsensusEditorOpen(true); },
+    close: function(){ setConsensusEditorOpen(false); }
+  };
 
   async function loadConsensus(){
     if(LIVE_CONSENSUS && (Date.now() - consensusFetchedAt) < CONSENSUS_TTL_MS) return;
@@ -1159,9 +1383,15 @@ window.setHeaderStamp();
     }
 
     const link = (href, text) => '<a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="' + esc(href) + '">' + text + '</a>';
-    const srcLine = C.live
-      ? 'ที่คาด: ' + esc(C.source) + ' (ดึงสด · รอบล่าสุด ' + esc(C.asOf) + ')'
-      : 'ที่คาด: ' + esc(C.source) + ' (ค่าที่ฝังไว้ ณ ' + esc(C.asOf) + ' — รอบนี้ดึงสดไม่ได้ ระบบจะลองใหม่เอง)';
+    const autoLine = C.live
+      ? esc(C.source) + ' (ดึงสด · รอบล่าสุด ' + esc(C.asOf) + ')'
+      : esc(C.source) + ' (ค่าที่ฝังไว้ ณ ' + esc(C.asOf) + ' — รอบนี้ดึงสดไม่ได้ ระบบจะลองใหม่เอง)';
+    const srcLine = C.override
+      ? 'ที่คาด: ✏️ ค่าที่คุณตั้งเอง (' + C.overridden.map(k => OVERRIDE_LABELS[k] || k).join(', ') + ')'
+        + (C.savedAt ? ' เมื่อ ' + esc(C.savedAt) : '')
+        + ' — อัตโนมัติ: ' + autoLine
+        + ' · <a href="#" id="consensusResetInline" style="color:#7c9cff; border-bottom:1px dotted #7c9cff; text-decoration:none;">↺ คืนค่าเริ่มต้น</a>'
+      : 'ที่คาด: ' + autoLine;
     const linkLine = 'ตรวจ/อัปเดตได้ที่ ' + [
       link(CONSENSUS.links.cpi, 'CPI'), link(CONSENSUS.links.coreCpi, 'Core CPI'),
       link(CONSENSUS.links.nfp, 'การจ้างงาน'), link(CONSENSUS.links.unrate, 'ว่างงาน'),
@@ -1178,6 +1408,10 @@ window.setHeaderStamp();
     if(missing.length) foot += '<br>⚠️ วิเคราะห์จากช่องที่ดึงได้เท่านั้น (ที่ดึงไม่ได้: ' + esc(missing.join(', ')) + ')';
 
     box.innerHTML = cards.join('') + '<div class="muted" style="font-size:10px; line-height:1.6; opacity:.8;">' + foot + '</div>';
+
+    // ลิงก์ "คืนค่าเริ่มต้น" ในบรรทัดท้ายการ์ด (สร้างใหม่ทุกครั้งที่ render จึงต้องผูกใหม่ทุกครั้ง)
+    const inlineReset = el('consensusResetInline');
+    if(inlineReset) inlineReset.addEventListener('click', function(ev){ if(ev && ev.preventDefault) ev.preventDefault(); clearConsensusOverride(); });
 
     // แจ้งเตือนในหน้าเฉพาะเมื่อตัวเลขขยับจากการ์ดครั้งก่อน (ผู้ใช้ที่เปิดหน้านานๆ จะรู้ว่าเลขใหม่มา)
     if(lastFedSignature && lastFedSignature !== fedSignature(d)){
@@ -1269,6 +1503,9 @@ window.setHeaderStamp();
 
   const fedRefreshBtn = el('fedRefreshBtn');
   if(fedRefreshBtn) fedRefreshBtn.addEventListener('click', function(){ refreshFedData({ force:true }); });
+
+  // ช่องแก้ค่า "ที่คาด" ในหน้าเว็บ (ปุ่ม ✏️) — พร้อมใช้ทันที ไม่ต้องรอข้อมูลจากเซิร์ฟเวอร์
+  initConsensusEditor();
 
   el('newsRefreshBtn').addEventListener('click', refreshNews);
 
