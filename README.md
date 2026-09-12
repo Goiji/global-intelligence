@@ -1,15 +1,20 @@
 # วิธี Deploy ขึ้น Netlify (มี Function ซ่อน API key)
 
-## โครงสร้างไฟล์
+## โครงสร้างไฟล์ (repo นี้ = โฟลเดอร์ที่ deploy ได้เลย)
 ```
-netlify-site/
-├── index.html                          ← หน้าเว็บหลัก
-├── netlify.toml                        ← ตั้งค่า Netlify
-└── netlify/
-    └── functions/
-        ├── fred-data.js                ← Fed Rate / CPI (+core) / Unemployment / Payrolls
-        ├── oil-price.js                ← ราคาน้ำมัน WTI (สำรอง)
-        └── news-feed.js                ← ข่าว RSS
+.
+├── index.html                          ← หน้าเว็บหลัก (2 แท็บ: ข่าวโลก&AI · BTC Buy Score)
+├── netlify.toml                        ← ตั้งค่า Netlify (publish ".", NODE_VERSION, security headers)
+├── package.json                        ← มีไว้ให้ `npm test` ทำงานเท่านั้น (ไม่มี dependency/ไม่มี build)
+├── README.md
+├── REVIEW-2026-09.md                   ← รายงานตรวจโค้ดรอบ ก.ย. 2026 (แก้แล้วอะไร / เหลืออะไร)
+└── netlify/functions/
+    ├── fred-data.js                    ← Fed Rate / EFFR / CPI(+core) / Unemployment / Payrolls
+    ├── cmc-fear-greed.js               ← Fear & Greed (CoinMarketCap keyless → alternative.me)
+    ├── news-feed.js                    ← พาดหัวข่าว: อ่าน Google News RSS ฝั่งเซิร์ฟเวอร์เอง
+    ├── onchain.js                      ← NUPL / MVRV Z-Score / MVRV Ratio (BGeometrics, แคช 8 ชม.)
+    ├── oil-price.js                    ← ราคา WTI ผ่าน Alpha Vantage (ตัวสำรองชั้นสุดท้าย)
+    └── *.test.js                       ← ชุดเทสต์ (node:test) ของแต่ละ function
 ```
 
 ## ทำไมต้องใช้วิธีนี้ (ไม่ใช่ลากไฟล์ธรรมดา)
@@ -40,9 +45,13 @@ netlify-site/
 
 ถ้าอยากใส่ key (เพื่อโควตาที่สูงขึ้นและใช้ API ทางการก่อน) ให้ไปที่
 Site configuration → Environment variables → Add a variable:
-   - `FRED_API_KEY` = key จาก [fred.stlouisfed.org](https://fred.stlouisfed.org/docs/api/api_key.html)
-   - `ALPHAVANTAGE_API_KEY` = key จาก [alphavantage.co](https://www.alphavantage.co/support/#api-key) *(เฉพาะราคาน้ำมันสำรอง — ปกติใช้ Binance/OKX/Hyperliquid ฟรีอยู่แล้ว)*
-   - `RSS2JSON_API_KEY` = key จาก [rss2json.com](https://rss2json.com/docs) *(ไม่ใส่ก็ได้ ใช้โควตาฟรีแทน)*
+
+| ตัวแปร | จำเป็นไหม | ใช้ทำอะไร |
+|---|---|---|
+| `FRED_API_KEY` | ไม่ | ให้ `fred-data.js` ใช้ FRED API ทางการก่อน (มีโควต้าสูงกว่า CSV สาธารณะ) |
+| `BGEOMETRICS_TOKEN` | **แนะนำ** | ให้ `onchain.js` ใช้โควต้าตัวแทน 8 ครั้ง/ชม. · 15 ครั้ง/วัน/IP — ตั้งครั้งเดียวทั้งเว็บใช้ร่วมกัน (ไม่ตั้ง = ยังทำงานได้ แต่แชร์โควต้าสาธารณะ) |
+| `ALPHAVANTAGE_API_KEY` | ไม่ | เฉพาะ Fallback น้ำมันชั้นสุดท้าย (ปกติใช้ Binance/OKX/Hyperliquid ที่ไม่ต้องมี key อยู่แล้ว) |
+| `RSS2JSON_API_KEY` | ไม่ | ไม่ต้องใส่แล้ว — `news-feed.js` อ่าน Google News RSS เอง ตัวนี้เป็นแค่ fallback ถ้า Google ตอบหน้าผิด |
 
 > ⚠️ ใส่ key แล้วต้อง **Trigger deploy** ใหม่เสมอ และเช็ค *Deploy contexts* ให้ครอบคลุม
 > Deploy previews ด้วย ไม่งั้น preview จะมองไม่เห็น key (นี่คือสาเหตุที่ก่อนหน้านี้ขึ้น
@@ -50,8 +59,12 @@ Site configuration → Environment variables → Add a variable:
 
 ### 4. เสร็จแล้ว!
 เข้า URL ของเว็บที่ Netlify ให้มา (เช่น `your-site.netlify.app`) — ทุกคนที่เข้ามาจะเห็นข้อมูลชุดเดียวกัน
-ไม่มีใครแก้ไขอะไรได้ (ไม่มีปุ่ม/ช่องกรอกให้แก้แล้ว) และไม่มีใครเห็น API key ของคุณเลย
-แม้จะกด "View Page Source" ดู
+และ **ไม่มีใครเห็น API key ของคุณเลย** แม้จะกด "View Page Source" ดู
+
+> หมายเหตุ: แท็บ **BTC Buy Score** ยังมีช่องกรอก/สไลเดอร์ให้ "แก้เองชั่วคราว" ได้ (NUPL, MVRV, ราคา, ATH)
+>โดยตั้งใจ — เอาไว้ใช้ตอนดึงอัตโนมัติไม่ได้ และค่าที่กรอกจะถูกเก็บไว้ในเบราว์เซอร์ของผู้ใช้คนนั้นเท่านั้น
+>ไม่กระทบคนอื่น ส่วนช่อง BGeometrics token ในหน้าเว็บไม่จำเป็นต้องใช้แล้ว (แนะนำให้ตั้ง
+>`BGEOMETRICS_TOKEN` เป็น env var ที่ Netlify แทน) และตัวเลขเศรษฐกิจทั้งหมดดึงสดอัตโนมัติ
 
 ## ข้อมูลเศรษฐกิจสหรัฐ (Fed / CPI / ว่างงาน / จ้างงาน) อัปเดตเองยังไง
 
@@ -85,6 +98,37 @@ Site configuration → Environment variables → Add a variable:
 - ค่า Fed Rate / CPI / Unemployment / Payrolls ถูกแคช 15 นาที–3 ชั่วโมงตามรอบประกาศตัวเลข
   (memory ของ Function + CDN + localStorage ฝั่งผู้ใช้) — ต่อให้มีคนเข้าพร้อมกันเยอะ ก็ยิง upstream
   จริงๆ แค่ไม่กี่ครั้งต่อวัน
-- ราคา Gold, USD/THB, JPY/THB, CNY/THB, Oil (ผ่าน Binance/OKX/Hyperliquid), BTC ทุกอย่างในแท็บ BTC
-  ยังคงดึงตรงจากเบราว์เซอร์ผู้ใช้เหมือนเดิม เพราะ API พวกนั้นไม่ติด CORS และไม่มี key ที่ต้องซ่อนอยู่แล้ว
+- ราคา Gold (PAXG), USD/THB, JPY/THB, CNY/THB, BTC price/ATH, Funding Rate, Open Interest
+  ยังคงดึงตรงจากเบราว์เซอร์ผู้ใช้เหมือนเดิม เพราะ API พวกนั้นไม่ติด CORS และไม่มี key ที่ต้องซ่อน
+- ตัวชี้วัด on-chain (NUPL / MVRV Z-Score / MVRV Ratio) **เปลี่ยนมาดึงผ่าน `onchain.js` ก่อน**
+  (เดิมต้องพึ่ง CORS proxy ฟรีอย่าง allorigins ซึ่งล่มบ่อย) แล้วค่อย fallback ไปยิงตรง/ผ่าน proxy
+  — ถ้าเซิร์ฟเวอร์ดึงไม่ได้จริงๆ หน้าเว็บยังมีค่าเก่าใน localStorage + ช่องกรอกเองให้ใช้ต่อ
 - Netlify free tier ให้ Functions ฟรี 125,000 ครั้ง/เดือน — เพียงพอมากสำหรับเว็บนี้
+
+## รันเทสต์ในเครื่อง
+
+```bash
+npm test        # = node --test "netlify/functions/*.test.js" "tests/*.test.js"   (32 เคส)
+```
+
+ชุดเทสต์เป็น `node:test` ล้วนๆ ไม่ต้องติดตั้งอะไรเพิ่ม (ไม่ต้องมี node_modules) และไม่มีการเรียก
+เครือข่ายออกไปเลย — ครอบคลุมตัว parser ของ FRED/BLS/Google News RSS, การคำนวณ CPI YoY แบบ
+"เทียบตามวันที่จริง" (เคสเดือน ต.ค. 2025 หาย), การคำนวณ payrolls, ปฏิทิน FOMC 2026–2027 และ
+`tests/index-html.test.js` ที่รันสคริปต์ inline ทั้งหมดของ index.html กับ DOM จำลอง
+(จับ typo / id ที่ไม่มีจริง / ลืม escape ข้อความจาก feed)
+
+## รอบแก้ไข ก.ย. 2026 (สรุปสั้น)
+
+- แก้ **BLS series ของ payrolls ที่ผิด** (`CES0500000003` = รายได้เฉลี่ยต่อชั่วโมง ไม่ใช่จำนวนตำแหน่งงาน)
+  → `CES0000000001` (Total Nonfarm) ทำให้ fallback ทำงานได้จริง
+- แก้ **ฟอนต์ของแท็บ BTC ไม่เคยโหลด**: `@import` ถูกวางผิดตำแหน่งใน `<style>` (CSS บังคับว่าต้องเป็น
+  กฎแรกสุด) → ย้ายไป `<link rel="stylesheet">` ใน `<head>` พร้อม preconnect
+- **ข่าวไม่ต้องพึ่ง rss2json อีกต่อไป** (`news-feed.js` อ่าน Google News RSS เอง มี rss2json เป็น fallback)
+  + ตั้ง timeout 8 วิ + จำกัดความยาว query + แคช CDN 10 นาที (เดิมยิงทุกครั้งที่เปิด/รีเฟรชหน้า)
+- **อุดช่อง XSS จาก feed**: พาดหัว/คำอธิบายจาก RSS ถูกใส่ `innerHTML` ดิบๆ → ใส่ `esc()` ครบทุกฟิลด์
+- เพิ่ม **2027 FOMC dates** (เดิมการ์ดนับถอยหลังจะว่างเปล่าตั้งแต่ 1 ม.ค. 2027 และ TTL วันประกาศจะหยุดทำงาน)
+- **Lazy-load TradingView** (สคริปต์ ~1 MB โหลดเฉพาะตอนกดแท็บ BTC), **deep link `#btc`**, **OG tags** สำหรับแชร์
+- **ราคา/ATH ที่ผู้ใช้กรอกเองไม่ถูกทับอีกแล้ว** + ปุ่ม "↻ ใช้ราคาสด"
+- เพิ่ม **security headers** ใน `netlify.toml` และ pin `NODE_VERSION=20`
+
+รายละเอียดทั้งหมด + สิ่งที่ยังไม่ได้แก้: ดู [`REVIEW-2026-09.md`](./REVIEW-2026-09.md)

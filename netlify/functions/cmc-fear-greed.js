@@ -25,6 +25,8 @@ async function fetchJsonWithTimeout(url, ms = 5000) {
   }
 }
 
+// NOTE: `time_until_update` (which CMC also returns) is a number of SECONDS until the next
+// refresh, not a timestamp — never map it into the `timestamp` field.
 function normalizeCmcResponse(j) {
   // รองรับทั้ง { data: { value, value_classification, timestamp } } และ { data: [ { value, ... } ] }
   let entry = null;
@@ -40,8 +42,11 @@ function normalizeCmcResponse(j) {
   if (!entry) throw new Error('CMC: no data entry');
   const value = parseInt(entry.value ?? entry.score ?? entry.fear_and_greed ?? '', 10);
   const classification = entry.value_classification || entry.classification || entry.valueClassification || '';
-  const timestamp = entry.timestamp || entry.update_time || entry.time_until_update || null;
+  const timestamp = entry.timestamp || entry.update_time || null;
   if (!isFinite(value)) throw new Error('CMC: value is not a number');
+  // ค่าที่ถูกต้องคือ 0-100 เท่านั้น ถ้า CMC เปลี่ยนสคีมาแล้ว parse ได้เลขเพี้ยน ให้ throw เพื่อตกไปใช้
+  // alternative.me แทน — ดีกว่าปล่อยตัวเลขแปลกๆ ขึ้นหน้าจอ
+  if (value < 0 || value > 100) throw new Error(`CMC: value ${value} out of the 0-100 range`);
   return { value, classification, timestamp, raw: entry, source: 'coinmarketcap' };
 }
 

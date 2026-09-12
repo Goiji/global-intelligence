@@ -3,8 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Global Intelligence</title>
+<title>Global Intelligence — World Risk, Macro &amp; BTC Dashboard</title>
+<meta name="description" content="แดชบอร์ดสรุปความเสี่ยงโลกจากพาดหัวข่าวสด ตัวเลขเศรษฐกิจสหรัฐฯ (Fed / CPI / ว่างงาน / จ้างงาน) ราคาสินทรัพย์จริง และคะแนนน่าซื้อ BTC — ฟรี ไม่มีค่าใช้จ่าย ไม่ใช่คำแนะนำการลงทุน">
+<meta name="theme-color" content="#0b1020">
+<!-- เปิดแชร์ลิงก์แล้วมี preview สวยๆ (ก่อนหน้านี้แชร์ไปขึ้นเป็นลิงก์เปล่าเพราะไม่มี tag พวกนี้) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Global Intelligence — World Risk, Macro &amp; BTC Dashboard">
+<meta property="og:description" content="ความเสี่ยงโลกจากข่าวสด · Fed / CPI / การจ้างงานสหรัฐฯ · ราคาทอง–น้ำมัน–ค่าเงิน · BTC Buy Score">
+<meta property="og:locale" content="th_TH">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Global Intelligence — World Risk, Macro &amp; BTC Dashboard">
+<meta name="twitter:description" content="ความเสี่ยงโลกจากข่าวสด · Fed / CPI / การจ้างงานสหรัฐฯ · ราคาทอง–น้ำมัน–ค่าเงิน · BTC Buy Score">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23F7931A'/%3E%3Ctext x='50' y='69' font-size='58' font-family='Arial, sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3E%E2%82%BF%3C/text%3E%3C/svg%3E">
+<!-- ฟอนต์ของแท็บ BTC: ย้ายมาจากกฎ at-import ที่เคยอยู่ในบล็อกสไตล์ก้อนที่ 2 ซึ่ง "อยู่ผิดตำแหน่ง"
+     ตามสเปก CSS (ต้องมาก่อนกฎอื่นทั้งหมด ถ้าไม่ใช่ เบราว์เซอร์จะเมินทิ้งทั้งบรรทัด) ผลคือที่ผ่านมา
+     Space Grotesk / JetBrains Mono ไม่เคยถูกโหลดเลย ตัวเลขทุกตัวเลย fallback ไปใช้ฟอนต์ระบบ -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
 <style>
 
 #newsTab{--bg:#0b1020;--panel:#121a2d;--panel2:#0e1628;--text:#eef3ff;--muted:#8e9bb5;--line:#24304a;--good:#45d483;--warn:#ffca58;--bad:#ff6577;--accent:#7c9cff}
@@ -23,7 +39,8 @@ body{margin:0}
 .tabbtn.active{background:#243451;color:#fff;border-color:#7c9cff}
 .tabpage{display:none}.tabpage.active{display:block}
 
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+  /* ฟอนต์ (Space Grotesk / JetBrains Mono) ย้ายไป <link> ใน <head> แล้ว —
+     กฎ at-import ที่เคยอยู่ตรงนี้ไม่เคยถูกโหลดเลย เพราะมันไม่ได้เป็นกฎแรกสุดของ stylesheet */
 
   #btcTab{
     --bg: #0b1020;
@@ -224,7 +241,7 @@ body{margin:0}
 
 <div class="wrap">
 <header class="top">
-<div><div class="eyebrow">GLOBAL INTELLIGENCE</div><div class="title">Daily World Dashboard</div><div class="sub" id="newsSub">อัปเดตวันละครั้งตอนเช้า</div></div>
+<div><div class="eyebrow">GLOBAL INTELLIGENCE</div><div class="title">Daily World Dashboard</div><div class="sub" id="newsSub">ข่าว + ตัวเลขเศรษฐกิจอัปเดตอัตโนมัติ (ข่าวแคช 30 นาที · เศรษฐกิจ 10 นาที–3 ชม. ตามรอบประกาศ)</div></div>
 <div class="date">อัปเดตล่าสุด<br><b id="today"></b></div>
 </header>
 
@@ -278,8 +295,8 @@ body{margin:0}
   </div>
 </div>
 <div class="muted" style="font-size:10px; margin-top:10px; line-height:1.6;">
-  Gold ใช้ราคา <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" href="https://www.binance.com/en/trade/PAXG_USDT">PAXG</a> (โทเคนหนุนหลังด้วยทองคำจริง 1 ทรอยออนซ์/เหรียญ) จาก Binance เป็นตัวแทนราคาทองสด · USD/THB, JPY/THB และ CNY/THB จาก frankfurter.app (อัตราแลกเปลี่ยนสด ฟรี) ·
-  Oil WTI จาก <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" href="https://www.alphavantage.co">Alpha Vantage</a> (ต้องมี free key เพราะ Alpha Vantage ไม่รองรับ CORS โดยตรง เลยต้องผ่าน CORS proxy)
+  Gold ใช้ราคา <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" href="https://www.binance.com/en/trade/PAXG_USDT">PAXG</a> (โทเคนหนุนหลังด้วยทองคำจริง 1 ทรอยออนซ์/เหรียญ) จาก Binance เป็นตัวแทนราคาทองสด · USD/THB, JPY/THB และ CNY/THB จาก frankfurter.dev (อัตราแลกเปลี่ยนสด ฟรี) ·
+  Oil WTI (perpetual อ้างราคา CME WTI) ไล่ลำดับจากแหล่งฟรีไม่ต้องใช้ key ก่อน: Binance <code>CLUSDT</code> → OKX <code>CL-USDT-SWAP</code> → Hyperliquid <code>XYZ:CL-USD</code> ถ้าล้มทั้งหมดจึงค่อยเรียกผ่านเซิร์ฟเวอร์ไปที่ Alpha Vantage (ต้องมี free key — ไม่มีก็ไม่เป็นไร แค่ไม่มีตัวสำรองชั้นสุดท้าย)
 </div>
 </section>
 
@@ -378,7 +395,16 @@ body{margin:0}
 </div>
 </div>
 <script>
-document.getElementById('today').textContent=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+// Single source of truth for the "อัปเดตล่าสุด" stamp.
+// There used to be THREE separate inline scripts writing this one element, and the last one (near
+// the bottom of the file) wrote a date-only string — so the time of day was always wiped out.
+window.setHeaderStamp = function(){
+  var el = document.getElementById('today');
+  if(!el) return;
+  el.textContent = new Date().toLocaleDateString('th-TH',
+    { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+};
+window.setHeaderStamp();
 </script>
 <script>
 (function(){
@@ -421,12 +447,12 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   ];
 
   async function fetchFeed(feed){
-    // Goes through our own Netlify Function instead of calling rss2json directly — the
-    // RSS2JSON key (if you set one in Netlify env vars) stays on the server, never visible
-    // to visitors, and everyone shares your quota instead of the public anonymous one.
+    // Goes through our own Netlify Function, which now reads Google News RSS server-side and
+    // parses it there. rss2json is only a fallback inside that function, so there is no key to
+    // configure here any more and no anonymous quota to run into.
     const url = '/.netlify/functions/news-feed?q=' + encodeURIComponent(feed.q);
     try{
-      const r = await fetchWithTimeout(url, 8000);
+      const r = await fetchWithTimeout(url, 10000);
       const j = await r.json();
       if(j.status !== 'ok') return { ...feed, titles: [], items: [] };
       const items = (j.items || []).slice(0, 5).map(it => ({
@@ -445,8 +471,46 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   // กลับมาในฟิลด์ translatedText ทำให้ Top Events โชว์ข้อความเตือนแทนพาดหัวข่าว
   // วิธีแก้: ตรวจจับ warning, เพิ่ม email เพื่อขยายโควต้า (anonymous 1k → 50k words/day),
   // แคชคำแปลซ้ำ, และถ้าโดน limit ให้พักการเรียก API 4 ชม. แล้วโชว์ภาษาอังกฤษแทน
+  //
+  // ⚠️ TRANSLATE_EMAIL: MyMemory ให้โควต้าต่ออีเมล (ไม่ใส่ = โควต้าไม่ระบุตัวตน/day ไม่กี่พันคำ)
+  // ค่านี้ "มองเห็นได้จากซอร์สของหน้าเว็บ" (และถูกส่งไปที่ mymemory.translated.net) — ถ้าไม่อยากให้
+  // อีเมลตัวเองโผล่ต่อสาธารณะ ให้เปลี่ยนเป็นอีเมลกลางหรือเว้นเป็น '' ที่เดียวตรงนี้ (โควต้าจะลดลง)
+  const TRANSLATE_EMAIL = 'global.intelligence.cache@gmail.com';
+
   const _translationCache = new Map();
+  const TRANSLATION_CACHE_KEY = 'news-translation-cache-v1';
+  const TRANSLATION_CACHE_MAX = 400;   // กันไม่ให้ localStorage บวม
   let _translationBlockedUntil = 0;
+  let _translationSaveTimer = null;
+
+  // แคชคำแปลเดิมอยู่ในหน่วยความจำอย่างเดียว — ทุกครั้งที่รีเฟรชหน้าจึงแปลซ้ำใหม่หมด (กินโควต้า
+  // MyMemory ทิ้งเปล่าๆ) ตอนนี้เก็บลง localStorage ด้วย อายุ 7 วัน แล้วโหลดกลับตอนเปิดหน้า
+  function persistTranslationCache(){
+    clearTimeout(_translationSaveTimer);
+    _translationSaveTimer = setTimeout(function(){
+      try{
+        const entries = Array.from(_translationCache.entries()).slice(-TRANSLATION_CACHE_MAX);
+        localStorage.setItem(TRANSLATION_CACHE_KEY, JSON.stringify({ ts: Date.now(), entries: entries }));
+      }catch(e){ /* โควต้าเต็ม — ข้ามไป ไม่กระทบการแสดงผล */ }
+    }, 1200);
+  }
+  (function loadTranslationCache(){
+    try{
+      const raw = localStorage.getItem(TRANSLATION_CACHE_KEY);
+      if(!raw) return;
+      const c = JSON.parse(raw);
+      if(!c || !Array.isArray(c.entries)) return;
+      if(c.ts && (Date.now() - c.ts) > 7 * 24 * 60 * 60 * 1000) return; // เก่าเกิน 7 วัน = ทิ้ง
+      c.entries.slice(-TRANSLATION_CACHE_MAX).forEach(function(pair){
+        if(Array.isArray(pair) && pair.length === 2) _translationCache.set(pair[0], pair[1]);
+      });
+    }catch(e){ /* ไม่มีแคชเก่า */ }
+  })();
+  function cacheTranslation(key, value){
+    _translationCache.set(key, value);
+    persistTranslationCache();
+  }
+
   async function translateToThai(text){
     if(!text) return '';
     if(_translationCache.has(text)) return _translationCache.get(text);
@@ -455,7 +519,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       return text;
     }
     try{
-      const r = await fetchWithTimeout('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=en|th&email=global.intelligence.cache@gmail.com', 6000);
+      const r = await fetchWithTimeout('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=en|th' + (TRANSLATE_EMAIL ? '&email=' + encodeURIComponent(TRANSLATE_EMAIL) : ''), 6000);
       const j = await r.json();
       const t = j && j.responseData && j.responseData.translatedText;
       if(!t){
@@ -484,7 +548,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         _translationCache.set(text, text);
         return text;
       }
-      _translationCache.set(text, t);
+      cacheTranslation(text, t);  // คำแปลที่สำเร็จถูกเก็บลง localStorage ด้วย → รีเฟรชหน้าแล้วไม่ต้องแปลซ้ำ
       return t;
     }catch(e){
       _translationCache.set(text, text);
@@ -603,15 +667,19 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     }).join('');
 
     // กันกรณีแคชเก่ายังมีข้อความ MYMEMORY WARNING ค้างอยู่ — ถ้า titleTh มีคำว่า MYMEMORY ให้ตกกลับไปใช้ title ภาษาอังกฤษแทน
+    //
+    // 🔒 ทุกฟิลด์ที่มาจากภายนอก (พาดหัวข่าว / คำอธิบาย / ผลแปล จาก RSS ของ Google News) ต้องผ่าน esc()
+    // ก่อนใส่ innerHTML เสมอ — เดิมโค้ดนี้ต่อสตริงดิบ พาดหัวที่ฝัง markup หรือ onerror= มาได้จะรันทันที
+    // (self-XSS/stored-XSS ผ่าน feed) esc() ถูกประกาศไว้ในสคริปต์เดียวกันอยู่แล้ว
     el('topEvents').innerHTML = (d.topEvents || []).map(ev => {
       const safeTitleTh = (ev.titleTh && !/MYMEMORY/i.test(ev.titleTh)) ? ev.titleTh : ev.title;
       const safeDescTh = (ev.descriptionTh && !/MYMEMORY/i.test(ev.descriptionTh)) ? ev.descriptionTh : ev.description;
       return `<div class="event">
-        <div class="rank">0${ev.rank} · ${ev.category}</div>
-        <h3>${safeTitleTh}</h3>
-        <div class="muted" style="font-size:11px; margin-top:-6px; margin-bottom:8px;">${ev.title}</div>
-        <p>${safeDescTh}</p>
-        <div class="impact">Market impact · ${ev.marketImpact}/100</div>
+        <div class="rank">0${esc(ev.rank)} · ${esc(ev.category)}</div>
+        <h3>${esc(safeTitleTh)}</h3>
+        <div class="muted" style="font-size:11px; margin-top:-6px; margin-bottom:8px;">${esc(ev.title)}</div>
+        <p>${esc(safeDescTh)}</p>
+        <div class="impact">Market impact · ${esc(ev.marketImpact)}/100</div>
       </div>`;
     }).join('');
 
@@ -671,21 +739,24 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   }
 
   // ---------- FOMC meeting countdown ----------
-  // Pure date math, no network call — official 2026 FOMC statement dates (2:00pm ET, day 2
-  // of each 2-day meeting) per federalreserve.gov. Update this list when the 2027 calendar
-  // is published.
-  const FOMC_DATES_2026 = [
+  // Pure date math, no network call — FOMC statement dates (2:00pm ET, day 2 of each 2-day
+  // meeting) per federalreserve.gov. The Fed publishes roughly two years ahead, so 2027 is
+  // already known; without it the card went blank on 2027-01-01 ("ยังไม่มีตารางปี 2027").
+  // ต้องตรงกับ FOMC_STATEMENT_DATES ใน netlify/functions/fred-data.js (ใช้ตัดสิน TTL วันประกาศ)
+  const FOMC_STATEMENT_DATES = [
     '2026-01-28','2026-03-18','2026-04-29','2026-06-17',
-    '2026-07-29','2026-09-16','2026-10-28','2026-12-09'
+    '2026-07-29','2026-09-16','2026-10-28','2026-12-09',
+    '2027-01-27','2027-03-17','2027-04-28','2027-06-09',
+    '2027-07-28','2027-09-15','2027-10-27','2027-12-08'
   ];
   function renderFomcCountdown(){
     const now = new Date();
-    const next = FOMC_DATES_2026
-      .map(d => new Date(d + 'T19:00:00Z')) // ~2pm ET in UTC
+    const next = FOMC_STATEMENT_DATES
+      .map(d => new Date(d + 'T19:00:00Z')) // ~2pm ET in UTC (19:00 UTC = 14:00 EST)
       .find(d => d > now);
     if(!next){
       el('fomcDays').textContent = '–';
-      el('fomcDateLabel').textContent = 'ยังไม่มีตารางปี 2027';
+      el('fomcDateLabel').textContent = 'ยังไม่มีตารางปี 2028 — ต้องอัปเดตรายการวันที่';
       return;
     }
     const days = Math.ceil((next - now) / 86400000);
@@ -717,7 +788,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       const feedResults = await Promise.all(RSS_FEEDS.map(fetchFeed));
       const gotAny = feedResults.some(f => f.titles.length > 0);
       if(!gotAny){
-        el('newsStatus').textContent = 'ดึงข่าวไม่สำเร็จ (ลองใส่ RSS2JSON key ใน "ตั้งค่าเพิ่มเติม") — แสดงข้อมูลล่าสุดที่เคยดึงได้แทน';
+        el('newsStatus').textContent = 'ดึงข่าวไม่สำเร็จ (เซิร์ฟเวอร์ /.netlify/functions/news-feed ตอบไม่ได้ — เปิดหน้านี้ผ่าน Netlify เท่านั้น) — แสดงข้อมูลล่าสุดที่เคยดึงได้แทน';
         return;
       }
       el('newsStatus').textContent = 'กำลังคำนวณคะแนน (ฟรี ไม่มีค่าใช้จ่าย)…';
@@ -738,25 +809,32 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       await recordScoreHistory(d.worldRiskScore);
       await storageSet('news-dashboard-cache', JSON.stringify({ data: d, ts: Date.now() }));
       el('newsStatus').textContent = 'อัปเดตล่าสุด · ' + new Date().toLocaleTimeString();
-      document.getElementById('today').textContent = new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+      if(window.setHeaderStamp) window.setHeaderStamp();
     }catch(e){
       el('newsStatus').textContent = 'เกิดข้อผิดพลาด: ' + e.message + ' — ลองกดรีเฟรชอีกครั้ง';
     }
   }
 
+  // Cache age is returned so the caller can decide whether a network refresh is worth it.
+  // (Before this, every single page load re-fetched all 5 feeds, reload or not.)
   async function loadCache(){
+    let ageMs = null;
     try{
       const raw = await storageGet('news-dashboard-cache');
       if(raw){
         const c = JSON.parse(raw);
         renderData(c.data);
-        el('newsStatus').textContent = 'ข้อมูลจากแคช (' + new Date(c.ts).toLocaleTimeString() + ') กำลังรีเฟรช…';
+        ageMs = Date.now() - c.ts;
+        const mins = Math.round(ageMs / 60000);
+        el('newsStatus').textContent = 'ข้อมูลจากแคช (' + new Date(c.ts).toLocaleTimeString()
+          + (mins > 0 ? ' · ' + mins + ' นาทีที่แล้ว' : '') + ')';
       }
     }catch(e){ /* no cache yet */ }
     try{
       const hraw = await storageGet('news-score-history');
       if(hraw) renderSparkline(JSON.parse(hraw));
     }catch(e){ /* no history yet */ }
+    return ageMs;
   }
 
   // ---------- Live US macro data: Fed funds, CPI (headline + core), unemployment, payrolls ----------
@@ -777,7 +855,8 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   }
 
   function hasAnyFedField(d){
-    return !!(d && (d.upper || d.lower || d.effr || d.cpi || d.unrate || d.nfp));
+    // coreCpi ต้องนับด้วย ไม่งั้น response ที่ได้แต่ core CPI จะถูกมองว่า "ไม่มีข้อมูลเลย" แล้วตกไป error
+    return !!(d && (d.upper || d.lower || d.effr || d.cpi || d.coreCpi || d.unrate || d.nfp));
   }
 
   const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -793,7 +872,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   const SOURCE_LABEL = { 'fred-api':'FRED API', 'fred-csv':'FRED (สาธารณะ)', 'bls':'BLS' };
   function sourceLabel(data){
     const seen = [];
-    ['cpi','unrate','nfp','effr','upper'].forEach(k => {
+    ['cpi','coreCpi','unrate','nfp','effr','upper'].forEach(k => {
       const s = data && data[k] && data[k].source;
       if(s && seen.indexOf(s) === -1) seen.push(s);
     });
@@ -869,7 +948,10 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         el('fedAsOf').innerHTML = '🔄 อัปเดตอัตโนมัติจาก ' + esc(sourceLabel(data)) + ' — ' + esc(bits.join(' · '))
           + ' · โพลทุก ' + Math.round(FED_POLL_MS / 60000) + ' นาที (วันประกาศตัวเลข เซิร์ฟเวอร์จะแคชสั้นลงเหลือ 15 นาที) · '
           + '<a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="https://fred.stlouisfed.org/series/CPIAUCSL">FRED</a>'
-          + (warnBits.length ? '<br><span style="color:var(--warn);">⚠️ ' + esc(warnBits.join(' · ')) + '</span>' : '');
+          + (warnBits.length ? '<br><span style="color:var(--warn);">⚠️ ' + esc(warnBits.join(' · ')) + '</span>' : '')
+          // หมายเหตุเรื่องนิยาม: ตัวเลขนี้ไม่ใช่ "พาดหัวข่าว" เป๊ะๆ เพราะคำนวณจากส่วนต่างของระดับ
+          // PAYEMS ที่ปรับฤดูกาลแล้ว (ซึ่งรวมการปรับปรุงย้อนหลังของเดือนก่อนๆ เข้าไปแล้ว)
+          + (nfp && isValidNum(nfp.value) ? '<br><span style="opacity:.75;">ℹ️ ตัวเลขจ้างงาน = ส่วนต่างเดือนต่อเดือนของระดับ PAYEMS (ปรับฤดูกาลแล้ว) จึงเป็นการเปลี่ยนแปลงสุทธิหลังปรับปรุงย้อนหลัง อาจต่างจากพาดหัวข่าวที่รายงานครั้งแรกได้เล็กน้อย</span>' : '');
       }
     }catch(e){ /* never let a render hiccup break the page */ }
     return applied;
@@ -997,8 +1079,10 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       el('lpUsdThb').textContent = 'ดึงไม่สำเร็จ';
       el('lpJpyThb').textContent = 'ดึงไม่สำเร็จ';
       el('lpCnyThb').textContent = 'ดึงไม่สำเร็จ';
-      const noteEl = document.querySelector('#livePrices').nextElementSibling;
-      if(noteEl) noteEl.innerHTML += '<br><span style="color:#ff8b98;">Debug: ' + e.message + '</span>';
+      // ระวัง null: ถ้า markup เปลี่ยนแล้ว selector ไม่เจอ ของเดิมจะ throw ทับ error จริงที่กำลังจะรายงาน
+      const priceBox = document.querySelector('#livePrices');
+      const noteEl = priceBox && priceBox.nextElementSibling;
+      if(noteEl) noteEl.innerHTML += '<br><span style="color:#ff8b98;">Debug: ' + esc(e.message) + '</span>';
     }
   }
   fetchLivePrices();
@@ -1117,7 +1201,17 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   fetchOilPrice();
 
   renderFomcCountdown(); // instant, pure date math, no network needed
-  loadCache().then(refreshNews);
+  // Cache-first: the news cache is good for 30 minutes, and the 🇹🇭 button / the "รีเฟรชข่าว"
+  // button always force a live pull. Re-fetching 5 feeds on every reload was pure waste — and it
+  // burned through the (then rss2json) quota for visitors who just refreshed the page a few times.
+  const NEWS_CACHE_TTL_MS = 30 * 60 * 1000;
+  loadCache().then(function(ageMs){
+    if(ageMs != null && ageMs < NEWS_CACHE_TTL_MS){
+      el('newsStatus').textContent += ' — ยังไม่ถึงรอบดึงใหม่ (แคช 30 นาที) กด "🔄 รีเฟรชข่าว" เพื่อดึงสด';
+      return;
+    }
+    return refreshNews();
+  });
 })();
 </script>
 
@@ -1162,7 +1256,13 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
             <a class="metric-link" target="_blank" href="https://portal.bgeometrics.com/login">สมัครฟรี ↗</a>
           </div>
           <input type="text" id="bgToken" placeholder="ไม่ใส่ก็ได้ ระบบดึงอัตโนมัติให้อยู่แล้ว" style="width:100%; background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--text); font-family:var(--mono); font-size:12px; padding:8px 10px;">
-          <div class="metric-zone" style="margin-top:6px;">ระบบดึงผ่าน CORS proxy (allorigins.win) ให้อัตโนมัติเพราะ BGeometrics ไม่เปิด CORS ตรงๆ · ใส่ token เฉพาะถ้าอยากได้โควตาที่เสถียรขึ้น (8 ครั้ง/ชม. ส่วนตัว แทนที่จะแชร์โควตากับคนอื่น) — ไม่ใส่แอปก็ทำงานปกติ · แคชค่าไว้ 8 ชม./ครั้ง ไม่ดึงถี่เกินจำเป็น</div>
+          <div class="metric-zone" style="margin-top:6px;">
+            ปกติระบบดึงให้อัตโนมัติผ่านเซิร์ฟเวอร์ของเรา (<code>/.netlify/functions/onchain</code>) ซึ่งแคชค่าไว้ 8 ชม. ใช้ร่วมกันทุกคนและไม่ติดปัญหา CORS —
+            ถ้าเซิร์ฟเวอร์ดึงไม่ได้จึงค่อยไล่ไปยิงตรง/ผ่าน CORS proxy (allorigins.win) เป็นตัวสำรอง<br>
+            <b>แนะนำ:</b> ตั้ง <code>BGEOMETRICS_TOKEN</code> เป็น environment variable ที่ Netlify (Site configuration → Environment variables)
+            เพื่อยกโควต้าจาก 8 ครั้ง/ชม. · 15 ครั้ง/วัน (ต่อ IP) ให้ทั้งเว็บใช้ร่วมกัน — <u>ไม่ต้อง</u> พิมพ์ token ในช่องนี้
+            ช่องด้านล่างมีไว้เผื่อกรณีรันไฟล์นี้ตรงๆ โดยไม่มี Netlify Functions (ผู้ใช้แต่ละคนใช้โควต้าตัวเอง)
+          </div>
         </div>
       </details>
 
@@ -1241,6 +1341,10 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         <div>
           <label>All-Time High (USD)</label>
           <input type="number" id="athInput" placeholder="auto-fetch">
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button type="button" id="useLivePriceBtn" class="tabbtn" style="padding:8px 12px; font-size:12px; border-radius:6px; font-family:var(--mono);">↻ ใช้ราคาสด</button>
         </div>
       </div>
       <div style="flex-basis:100%; font-size:11px; color:var(--sub); line-height:1.6;">
@@ -1430,8 +1534,10 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   syncPair(nuplRange, nuplNum);
   syncPair(zRange, zNum);
   syncPair(mRange, mNum);
-  priceInput.addEventListener('input', ()=>{ recompute(); save(); });
-  athInput.addEventListener('input', ()=>{ recompute(); save(); });
+  // จำว่าผู้ใช้พิมพ์ราคา/ATH เองหรือเปล่า — ไม่งั้นทุกครั้งที่รีเฟรช ระบบ auto-fetch จะทับค่าที่พิมพ์เอง
+  // เงียบๆ (ป้ายบนหน้าจอเขียนว่า "แก้เองได้เสมอ" แต่ของเดิมโดนทับทุกครั้ง)
+  priceInput.addEventListener('input', ()=>{ priceInput.dataset.manual='1'; recompute(); save(); });
+  athInput.addEventListener('input', ()=>{ athInput.dataset.manual='1'; recompute(); save(); });
 
   function fmtUSD(n){
     if(n==null || isNaN(n)) return '—';
@@ -1486,8 +1592,9 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     if(dd!=null) bonus = athBonus(dd);
 
     const avg = (sNupl + sZ + sM) / 3;
-    let final = avg + bonus;
-    final = Math.min(10, Math.max(1, final));
+    const rawTotal = avg + bonus;
+    let final = rawTotal;
+    final = Math.min(10, Math.max(1, final)); // เพดาน 10 / พื้น 1
 
     // update price / dd UI
     pxDisplay.textContent = price ? fmtUSD(price) : '—';
@@ -1516,7 +1623,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       <div><span>MVRV Ratio score</span><span class="v">${sM.toFixed(1)}</span></div>
       <div><span>ค่าเฉลี่ย 3 ตัวชี้วัด</span><span class="v">${avg.toFixed(1)}</span></div>
       <div><span>โบนัส ATH drawdown</span><span class="v">+${bonus.toFixed(1)}</span></div>
-      <div><span>รวมสุดท้าย</span><span class="v">${final.toFixed(1)} / 10</span></div>
+      <div><span>รวมสุดท้าย</span><span class="v">${final.toFixed(1)} / 10${Math.abs(rawTotal - final) > 0.05 ? ' <span class="muted">(ก่อนจำกัดเพดาน ' + rawTotal.toFixed(1) + ')</span>' : ''}</span></div>
     `;
   }
 
@@ -1528,6 +1635,9 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       await storageSet('btc-score-inputs', JSON.stringify({
         nupl: nuplNum.value, z: zNum.value, m: mNum.value,
         price: priceInput.value, ath: athInput.value,
+        // เก็บ flag ไว้ด้วย ไม่งั้นเปิดหน้าใหม่แล้วราคาที่พิมพ์เองจะถูก auto-fetch ทับ
+        priceManual: priceInput.dataset.manual === '1',
+        athManual: athInput.dataset.manual === '1',
         bgToken: el('bgToken').value
       }));
     }, 400);
@@ -1543,6 +1653,8 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         if(d.m!=null){ mNum.value=d.m; mRange.value=d.m; }
         if(d.price) priceInput.value=d.price;
         if(d.ath) athInput.value=d.ath;
+        if(d.priceManual) priceInput.dataset.manual='1';
+        if(d.athManual) athInput.dataset.manual='1';
         if(d.bgToken) el('bgToken').value=d.bgToken;
       }
     }catch(e){ /* no saved data yet */ }
@@ -1551,18 +1663,38 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   el('bgToken').addEventListener('change', save);
 
   // ---------- fetch live price/ATH ----------
+  // ราคาสดล่าสุดที่ดึงได้ ใช้คำนวณ Open Interest (USD → BTC) เสมอ แม้ช่องกรอกจะถูกผู้ใช้แก้เองอยู่
+  let lastLivePrice = null;
+
   async function fetchPrice(){
     try{
       const r = await fetchWithTimeout('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&community_data=false&developer_data=false', 6000);
       const data = await r.json();
       const price = data.market_data.current_price.usd;
       const ath = data.market_data.ath.usd;
-      priceInput.value = Math.round(price);
-      athInput.value = Math.round(ath);
+      if(!isFinite(price) || !isFinite(ath)) throw new Error('no price in CoinGecko response');
+      lastLivePrice = Math.round(price);
+      // ไม่ทับค่าที่ผู้ใช้พิมพ์เอง (ถ้าอยากกลับไปใช้ค่าสด กดปุ่ม "↻ ใช้ราคาสด" ที่การ์ด ATH)
+      if(priceInput.dataset.manual !== '1') priceInput.value = Math.round(price);
+      if(athInput.dataset.manual !== '1') athInput.value = Math.round(ath);
       return true;
     }catch(e){
       return false;
     }
+  }
+
+  // ปุ่ม "↻ ใช้ราคาสด" — ล้าง flag ที่ว่าผู้ใช้แก้เอง แล้วดึงราคาตลาดกลับมาใส่ช่องกรอก
+  const useLivePriceBtn = el('useLivePriceBtn');
+  if(useLivePriceBtn){
+    useLivePriceBtn.addEventListener('click', async ()=>{
+      delete priceInput.dataset.manual;
+      delete athInput.dataset.manual;
+      useLivePriceBtn.textContent = '⏳ กำลังดึงราคาสด…';
+      const ok = await fetchPrice();
+      useLivePriceBtn.textContent = ok ? '↻ ใช้ราคาสด' : '↻ ลองใหม่';
+      if(!ok) statusEl.textContent = 'ดึงราคาสดไม่สำเร็จ — ลองกด "รีเฟรชทั้งหมด" อีกครั้ง';
+      recompute(); save();
+    });
   }
 
   // ---------- fetch on-chain metrics (NUPL / MVRV Z-Score / MVRV Ratio) ----------
@@ -1584,11 +1716,16 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   function logAttempt(label, url, result){
     debugLog.push({ label, url, result, ts: new Date().toLocaleTimeString() });
   }
+  // escape ก่อนยัดลง innerHTML — d.result/d.url มีข้อความจาก response ของ API ภายนอก (และจาก token
+  // ที่ผู้ใช้พิมพ์เอง) ปนอยู่ จึงไม่ควรถือว่าเป็น HTML ที่ปลอดภัย
+  function dbgEsc(s){
+    return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  }
   function renderDebugLog(){
     const box = el('debugLog');
     if(!box) return;
     box.innerHTML = debugLog.map(d =>
-      `<div>${d.ts} · <b>${d.label}</b> → ${d.result}<br><span style="opacity:0.6;">${d.url}</span></div>`
+      `<div>${dbgEsc(d.ts)} · <b>${dbgEsc(d.label)}</b> → ${dbgEsc(d.result)}<br><span style="opacity:0.6;">${dbgEsc(d.url)}</span></div>`
     ).join('<hr style="border-color:var(--line); margin:6px 0;">');
   }
 
@@ -1657,6 +1794,33 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     m: ['mvrv/last', 'mvrv']
   };
 
+  // ชั้นแรก (เพิ่มใหม่): ให้เซิร์ฟเวอร์ของเราดึงให้ผ่าน /.netlify/functions/onchain
+  // เหตุผล: api.bgeometrics.com ไม่ส่ง CORS header → เบราว์เซอร์ยิงตรงไม่เคยได้ ต้องพึ่ง proxy ฟรี
+  // (allorigins) ซึ่งหลุดบ่อย และโควต้า BGeometrics (8 ครั้ง/ชม. · 15 ครั้ง/วัน/IP) เป็น "ต่อ IP"
+  // → ผู้ใช้แต่ละคนกินโควต้าตัวเอง แถมยิง 2 นาทีต่อ 1 ค่า (ยิงตรงที่ต้องโดนบล็อก + ยิงผ่าน proxy)
+  // พอย้ายมาฝั่งเซิร์ฟเวอร์: ไม่มี CORS, แคช 8 ชม. ใช้ร่วมกันทุกคน, และถ้าตั้ง env BGEOMETRICS_TOKEN
+  // ไว้ที่ Netlify ก็ใช้โควต้าตัวนั้น — ผู้ใช้ไม่ต้องพิมพ์ token ในหน้าเว็บอีก
+  const SERVER_METRIC = { nupl: 'nupl', z: 'mvrv-zscore', m: 'mvrv' };
+  async function tryServerMetric(key){
+    const metric = SERVER_METRIC[key];
+    if(!metric) return null;
+    const url = '/.netlify/functions/onchain?metric=' + metric;
+    try{
+      const r = await fetchWithTimeout(url, 8000);
+      const j = await r.json();
+      const v = parseFloat(j && j.value);
+      if(!isFinite(v)){
+        const why = (j && j.error) ? j.error + (j.details && j.details.length ? ' — ' + j.details.join(' | ') : '') : 'no value in response';
+        throw new Error(why);
+      }
+      logAttempt(key, url, 'OK (เซิร์ฟเวอร์' + (j.cached ? ' · แคช' : '') + (j.stale ? ' · ค่าเก่า' : '') + ') → ' + v);
+      return v;
+    }catch(e){
+      logAttempt(key, url, 'เซิร์ฟเวอร์ดึงไม่ได้: ' + e.message);
+      return null;
+    }
+  }
+
   // ---------- per-metric 8-hour cache ----------
   // These metrics only actually update ~once/day at the source, so refetching more often
   // than every 8h just burns the free BGeometrics quota for nothing. Each metric caches
@@ -1688,7 +1852,9 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         return true;
       }
     }
-    const v = await tryBgSlugs(slugs);
+    // ลำดับ: เซิร์ฟเวอร์เรา → ยิงตรง (เผื่อ CORS เปิดแล้ว) → ผ่าน proxy allorigins
+    let v = await tryServerMetric(key);
+    if(v == null) v = await tryBgSlugs(slugs);
     if(v != null){
       applyFn(v);
       await setCache(key, v);
@@ -1834,7 +2000,8 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         byExchange[t.market] = (byExchange[t.market] || 0) + oi;
       });
 
-      const price = parseFloat(priceInput.value) || null;
+      // ใช้ราคาตลาดล่าสุดที่ดึงได้ก่อนเสมอ แล้วค่อย fallback ไปใช้ค่าที่อยู่ในช่องกรอก
+      const price = lastLivePrice || parseFloat(priceInput.value) || null;
       const totalBtc = price ? totalUsd / price : null;
 
       el('oiNum').textContent = totalBtc
@@ -1903,12 +2070,15 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     const [metricsOk] = await Promise.all([fetchOnChainMetrics(force), fetchSentimentLeverage(), fetchHalvingCountdown()]);
     recompute();
     save();
+    // บอกให้ชัดเมื่อค่าที่ใช้คำนวณไม่ใช่ราคาสด (ผู้ใช้พิมพ์เอง) — ไม่งั้นจะเข้าใจผิดว่าคะแนนมาจากราคาตลาด
+    const manualNote = (priceInput.dataset.manual === '1' || athInput.dataset.manual === '1')
+      ? ' · ℹ️ ใช้ราคา/ATH ที่คุณกรอกเอง (กด "↻ ใช้ราคาสด" เพื่อกลับไปใช้ค่าตลาด)' : '';
     if(priceOk && metricsOk){
-      statusEl.textContent = 'อัปเดตอัตโนมัติสำเร็จทั้งหมด · ' + new Date().toLocaleTimeString();
+      statusEl.textContent = 'อัปเดตอัตโนมัติสำเร็จทั้งหมด · ' + new Date().toLocaleTimeString() + manualNote;
     }else if(priceOk){
-      statusEl.textContent = 'อัปเดตราคาแล้ว แต่ตัวชี้วัด on-chain ดึงไม่สำเร็จตอนนี้ (กรอกเองได้ในช่องที่ขึ้น "กรอกเอง")';
+      statusEl.textContent = 'อัปเดตราคาแล้ว แต่ตัวชี้วัด on-chain ดึงไม่สำเร็จตอนนี้ (กรอกเองได้ในช่องที่ขึ้น "กรอกเอง")' + manualNote;
     }else{
-      statusEl.textContent = 'ดึงอัตโนมัติไม่สำเร็จ — กรอกค่าต่าง ๆ ได้เองด้านล่าง';
+      statusEl.textContent = 'ดึงอัตโนมัติไม่สำเร็จ — กรอกค่าต่าง ๆ ได้เองด้านล่าง' + manualNote;
     }
   }
 
@@ -1928,7 +2098,10 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   // own free account save, no Charting Library approval needed. We also preload a
   // default EMA study every load so at least a baseline indicator never "disappears",
   // even for someone not signed in.
+  let tvStarted = false;
   function loadTradingViewChart(){
+    if(tvStarted) return;   // เรียกซ้ำได้ ไม่โหลดสคริปต์/สร้าง widget ซ้ำ
+    tvStarted = true;
     const container = el('tv_chart_container');
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/tv.js';
@@ -1963,7 +2136,8 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     };
     document.body.appendChild(script);
   }
-  loadTradingViewChart();
+  // ไม่โหลดทันทีแล้ว — ถูกเรียกจากแท็บสวิตช์เชอร์ตอนกดแท็บ BTC ครั้งแรก (และทันทีถ้าเปิดมาที่ #btc)
+  window.loadTvChart = loadTradingViewChart;
 
   load().then(()=>{
     refreshAll(false);
@@ -1978,20 +2152,37 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
 (function(){
   const buttons = document.querySelectorAll('.tabbtn');
   const pages = document.querySelectorAll('.tabpage');
+  const TAB_IDS = ['newsTab', 'btcTab'];
+
   function activate(tabId){
     buttons.forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
     pages.forEach(p => p.classList.toggle('active', p.id === tabId));
     document.body.classList.toggle('theme-btc', tabId === 'btcTab');
+    // The TradingView widget is ~1 MB of third-party script; it used to be fetched on every page
+    // load even for visitors who never open the BTC tab. Now it loads on first open instead.
+    if(tabId === 'btcTab' && typeof window.loadTvChart === 'function') window.loadTvChart();
   }
-  buttons.forEach(btn => btn.addEventListener('click', () => activate(btn.dataset.tab)));
-  activate('newsTab');
+
+  function tabFromHash(){
+    const h = (location.hash || '').replace(/^#/, '').toLowerCase();
+    if(h === 'btc' || h === 'btctab') return 'btcTab';
+    if(h === 'news' || h === 'newstab') return 'newsTab';
+    return null;
+  }
+
+  // Deep link: #btc opens the BTC tab directly, and clicking a tab keeps the URL in sync so the
+  // ปุ่ม "แชร์ลิงก์" (which copies window.location.href) shares the tab the user is actually on.
+  buttons.forEach(btn => btn.addEventListener('click', () => {
+    const id = btn.dataset.tab;
+    if(location.hash !== '#' + id.replace('Tab', '').toLowerCase()){
+      try{ history.replaceState(null, '', '#' + id.replace('Tab', '').toLowerCase()); }catch(e){}
+    }
+    activate(id);
+  }));
+  window.addEventListener('hashchange', () => activate(tabFromHash() || 'newsTab'));
+
+  activate(tabFromHash() || (TAB_IDS.indexOf('newsTab') === -1 ? TAB_IDS[0] : 'newsTab'));
 })();
-</script>
-
-<script>
-
-document.getElementById('today').textContent=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
-
 </script>
 
 <!-- ---------- Site-wide footer: disclaimer + share/social buttons ---------- -->

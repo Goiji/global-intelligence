@@ -2,5 +2,28 @@
   functions = "netlify/functions"
   publish = "."
 
+# Every function uses the global fetch()/AbortController (Node 18+) and structured Web APIs, so
+# pin the runtime instead of inheriting whatever Netlify's default happens to be that month.
+[build.environment]
+  NODE_VERSION = "20"
+
 [functions]
   node_bundler = "esbuild"
+
+# Basic hardening. Deliberately NOT setting X-Frame-Options / CSP frame-ancestors: this page is
+# opened inside preview iframes (Arena/Netlify Deploy Preview), and frame blocking would break
+# those. A full Content-Security-Policy is possible but needs every third party whitelisted
+# (tradingview, binance, okx, coingecko, hyperliquid, allorigins, mymemory, rss.google, fonts…),
+# so it is listed as a follow-up in REVIEW-2026-09.md rather than shipped half-broken.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+
+# The dashboard changes with every deploy — don't let a browser hold an old copy of the HTML.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

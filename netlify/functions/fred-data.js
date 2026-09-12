@@ -44,9 +44,15 @@ const ATTEMPT_TIMEOUT_MS = 5000;
 const HARD_DEADLINE_MS = 8500;
 
 // Official FOMC statement dates (day 2 of each meeting, 2:00pm ET) — mirrors index.html.
+// The Fed publishes its calendar ~2 years ahead, so 2027 is already fixed:
+// Jan 26–27, Mar 16–17, Apr 27–28, Jun 8–9, Jul 27–28, Sep 14–15, Oct 26–27, Dec 7–8.
+// Without the 2027 entries the "release day → 15 min TTL" shortcut silently stopped working on
+// 2027-01-01 (the countdown card in index.html would also go blank). Add 2028 when published.
 const FOMC_STATEMENT_DATES = [
   '2026-01-28', '2026-03-18', '2026-04-29', '2026-06-17',
-  '2026-07-29', '2026-09-16', '2026-10-28', '2026-12-09'
+  '2026-07-29', '2026-09-16', '2026-10-28', '2026-12-09',
+  '2027-01-27', '2027-03-17', '2027-04-28', '2027-06-09',
+  '2027-07-28', '2027-09-15', '2027-10-27', '2027-12-08'
 ];
 
 // series id per source. `bls` is only used for monthly series (BLS has no daily rates).
@@ -57,7 +63,12 @@ const TARGETS = {
   unrate: { fred: 'UNRATE', bls: 'LNS14000000', cadence: 'monthly' },
   cpi: { fred: 'CPIAUCSL', bls: 'CUUR0000SA0', cadence: 'monthly' },
   coreCpi: { fred: 'CPILFESL', bls: 'CUUR0000SA0L1E', cadence: 'monthly' },
-  payrolls: { fred: 'PAYEMS', bls: 'CES0500000003', cadence: 'monthly' }
+  // FIX (verified Sep 2026): this used to be CES0500000003, which is "Average HOURLY EARNINGS of
+  // All Employees, Total Private" (~$37/hour) — not employment at all. payrollsMetric() filters
+  // levels to 50,000–500,000 (thousands of jobs), so that series was always thrown away and the
+  // BLS fallback could only ever fail with "no usable PAYEMS level". The correct BLS id for the
+  // headline payroll number (FRED: PAYEMS) is CES0000000001 — "All Employees, Total Nonfarm".
+  payrolls: { fred: 'PAYEMS', bls: 'CES0000000001', cadence: 'monthly' }
 };
 
 // Cheap sanity ranges: if a "value" falls outside these we treat the fetch as failed instead of
@@ -263,6 +274,27 @@ async function levelMetric(key, apiKey, deadline) {
   return { value: hit.value, date: hit.date, source };
 }
 
+// By-date YoY from a raw level series (e.g. CPIAUCSL). Pulled out as a pure function so it can be
+// unit-tested without the network — this is the exact bug class that made Oct-2025's missing CPI
+// print skew the number (index-12 lookup instead of a real date lookup).
+function yoyFromLevels(obs, source) {
+  const latest = latestOf(obs, [1, 10000]);
+  const target = yearAgoIso(latest.date);
+  const prior = obs.find((o) => o.date === target);
+  if (!prior || !prior.value) return { error: `no year-ago level for ${target}` };
+  return {
+    result: {
+      value: ((latest.value - prior.value) / prior.value) * 100,
+      date: latest.date,
+      level: latest.value,
+      yearAgoDate: prior.date,
+      yearAgoLevel: prior.value,
+      source,
+      method: 'computed-from-levels-by-date'
+    }
+  };
+}
+
 // Inflation YoY: prefer the official pc1 transform, then verify it against a by-date computation
 // from raw levels. If the two disagree materially we trust the by-date math and flag it.
 async function yoyMetric(key, apiKey, deadline) {
@@ -280,22 +312,9 @@ async function yoyMetric(key, apiKey, deadline) {
   let computed = null;
   if (levels && levels.obs.length) {
     try {
-      const latest = latestOf(levels.obs, [1, 10000]);
-      const target = yearAgoIso(latest.date);
-      const prior = levels.obs.find((o) => o.date === target);
-      if (prior && prior.value) {
-        computed = {
-          value: ((latest.value - prior.value) / prior.value) * 100,
-          date: latest.date,
-          level: latest.value,
-          yearAgoDate: prior.date,
-          yearAgoLevel: prior.value,
-          source: levels.source,
-          method: 'computed-from-levels-by-date'
-        };
-      } else {
-        trail.push(`no year-ago level for ${target}`);
-      }
+      const r = yoyFromLevels(levels.obs, levels.source);
+      if (r.result) computed = r.result;
+      else trail.push(r.error);
     } catch (e) {
       trail.push(`levels: ${e.message}`);
     }
@@ -332,10 +351,11 @@ async function yoyMetric(key, apiKey, deadline) {
 
 // Nonfarm payrolls: monthly *change* in jobs, derived from the PAYEMS level (thousands of jobs).
 // The previous month is matched by date too, so a missing month can't masquerade as a huge swing.
-async function payrollsMetric(apiKey, deadline) {
-  const { obs, source } = await getObservations('payrolls', { apiKey, deadline });
+// Pure (no network) so the tests can pin down the behaviour — including the case where a caller
+// hands us a series that is plainly not an employment level.
+function payrollsFromLevels(obs, source) {
   const levels = obs.filter((o) => o.value > 50000 && o.value < 500000); // PAYEMS is ~150-170k (thousands)
-  const latest = levels[0];
+  const latest = levels[0]; // parsers return newest-first
   if (!latest) throw new Error('no usable PAYEMS level');
   const prevDate = monthBeforeIso(latest.date);
   const prev = levels.find((o) => o.date === prevDate);
@@ -351,8 +371,14 @@ async function payrollsMetric(apiKey, deadline) {
     prevLevel: Math.round(prev.value * 1000),
     unit: 'jobs',
     source,
-    method: 'PAYEMS month-over-month change'
+    method: 'PAYEMS month-over-month change',
+    note: 'MoM change of the seasonally-adjusted PAYEMS level, so it is the net change after prior months are revised — it can differ slightly from the originally published headline print.'
   };
+}
+
+async function payrollsMetric(apiKey, deadline) {
+  const { obs, source } = await getObservations('payrolls', { apiKey, deadline });
+  return payrollsFromLevels(obs, source);
 }
 
 async function buildPayload(apiKey) {
@@ -457,7 +483,11 @@ module.exports.__test = {
   monthBeforeIso,
   isReleaseDay,
   inRange,
+  yoyFromLevels,
+  payrollsFromLevels,
   TARGETS,
+  SANITY,
+  FOMC_STATEMENT_DATES,
   // Lets tests exercise the "every source failed" path without waiting out the TTL.
   _expireCache: () => { memCache.expiresAt = 0; }
 };
