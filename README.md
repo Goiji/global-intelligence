@@ -144,12 +144,16 @@ Functions จะตอบ JSON แบบ graceful failure ซึ่งก็ค�
 ## รันเทสต์ในเครื่อง
 
 ```bash
-npm test        # = node --test "tests/*.test.js"
+npm test        # = node --test   (สแกนหา *.test.js ทั้งโปรเจกต์)
 ```
 
-> หมายเหตุ: เทสต์ของทุก function ถูกเก็บรวมใน `tests/` (ไม่ใช่ใน `netlify/functions/`)
-> เพราะ Netlify สแกนไฟล์ในโฟลเดอร์นั้นเป็น function — ไฟล์ชื่อ `x.test.js` มีจุดในชื่อ
-> ทำให้ deploy ล้มได้จึงต้องแยกออกไป
+> หมายเหตุ 2 ข้อ:
+> 1. เทสต์ของทุก function ถูกเก็บรวมใน `tests/` (ไม่ใช่ใน `netlify/functions/`)
+>    เพราะ Netlify สแกนไฟล์ในโฟลเดอร์นั้นเป็น function — ไฟล์ชื่อ `x.test.js` มีจุดในชื่อ
+>    ทำให้ deploy ล้มได้จึงต้องแยกออกไป
+> 2. สั่ง `node --test` แบบไม่มี argument (ไมใช่ glob) เพราะ `--test` รองรับ glob
+>    เฉพาะ Node 21+ แต่ CI รันบน Node 20 → glob ถูกตีความเป็นชื่อไฟล์จริงแล้วเจ๊ง
+>    การไม่ผ่าน argument ให้ node สแกนเองจะทำงานเหมือนกันทุกเวอร์ชัน
 
 ชุดเทสต์เป็น `node:test` ล้วนๆ ไม่ต้องติดตั้งอะไรเพิ่ม (ไม่ต้องมี node_modules) และไม่มีการเรียก
 เครือข่ายออกไปเลย — ครอบคลุมตัว parser ของ FRED/BLS/Google News RSS, การคำนวณ CPI YoY แบบ
