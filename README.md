@@ -13,6 +13,7 @@
 └── netlify/functions/
     ├── fred-data.js                    ← Fed Rate / EFFR / CPI(+core) / Unemployment / Payrolls
     ├── consensus.js                    ← ค่า "ที่คาด" (consensus) จาก Investing.com (แคช 3 ชม.)
+    ├── consensus-override.js           ← ที่เก็บ "ค่าที่คาดที่แก้เอง" ฝั่งเซิร์ฟเวอร์ (ทุกคนเห็นค่าเดียวกัน · แก้ต้องใส่รหัส)
     ├── cmc-fear-greed.js               ← Fear & Greed (CoinMarketCap keyless → alternative.me)
     ├── news-feed.js                    ← พาดหัวข่าว: อ่าน Google News RSS ฝั่งเซิร์ฟเวอร์เอง
     ├── onchain.js                      ← NUPL / MVRV Z-Score / MVRV Ratio (BGeometrics, แคช 8 ชม.)
@@ -51,6 +52,7 @@ Site configuration → Environment variables → Add a variable:
 
 | ตัวแปร | จำเป็นไหม | ใช้ทำอะไร |
 |---|---|---|
+| `CONSENSUS_OVERRIDE_PASSWORD` | **แนะนำ** | รหัสสำหรับแก้ค่า "ที่คาด" ที่แชร์กับทุกคน (function `consensus-override`) — ไม่ตั้ง = ปุ่ม ✏️ ยังใช้ได้ดี แต่ค่าที่แก้จะเห็นในเครื่องเดียว (fallback localStorage แบบเดิม) |
 | `FRED_API_KEY` | ไม่ | ให้ `fred-data.js` ใช้ FRED API ทางการก่อน (มีโควต้าสูงกว่า CSV สาธารณะ) |
 | `BGEOMETRICS_TOKEN` | **แนะนำ** | ให้ `onchain.js` ใช้โควต้าตัวแทน 8 ครั้ง/ชม. · 15 ครั้ง/วัน/IP — ตั้งครั้งเดียวทั้งเว็บใช้ร่วมกัน (ไม่ตั้ง = ยังทำงานได้ แต่แชร์โควต้าสาธารณะ) |
 | `ALPHAVANTAGE_API_KEY` | ไม่ | เฉพาะ Fallback น้ำมันชั้นสุดท้าย (ปกติใช้ Binance/OKX/Hyperliquid ที่ไม่ต้องมี key อยู่แล้ว) |
@@ -68,6 +70,25 @@ Site configuration → Environment variables → Add a variable:
 >โดยตั้งใจ — เอาไว้ใช้ตอนดึงอัตโนมัติไม่ได้ และค่าที่กรอกจะถูกเก็บไว้ในเบราว์เซอร์ของผู้ใช้คนนั้นเท่านั้น
 >ไม่กระทบคนอื่น ส่วนช่อง BGeometrics token ในหน้าเว็บไม่จำเป็นต้องใช้แล้ว (แนะนำให้ตั้ง
 >`BGEOMETRICS_TOKEN` เป็น env var ที่ Netlify แทน) และตัวเลขเศรษฐกิจทั้งหมดดึงสดอัตโนมัติ
+
+## ค่า "ที่คาด" ที่แก้ในหน้าเว็บ — ให้ทุกคนเห็นค่าเดียวกัน
+
+ปุ่ม **✏️ แก้ค่า "ที่คาด" เอง** ใต้หัวข้อบทวิเคราะห์ (แท็บข่าวโลก) แก้ตัวเลข consensus ได้โดยไม่แตะโค้ด:
+
+- **ค่าที่ถูกแก้จะถูกบันทึกฝั่งเซิร์ฟเวอร์** (function `consensus-override`) — ทุกเครื่อง/ทุกคนที่เข้าเว็บ
+  จะเห็นค่าชุดเดียวกัน หมายเหตุท้ายการ์ดจะบอกเสมอว่าค่ามาจากไหน (☁️ แชร์ / ✏️ เครื่องนี้ / อัตโนมัติ)
+- **แก้/ลบต้องใส่รหัส** — กันคนเปิดเว็บบังเอิญไปแก้ค่าที่คนอื่นเห็น: ตั้งค่าครั้งเดียว
+  Site configuration → Environment variables → `CONSENSUS_OVERRIDE_PASSWORD` = รหัสที่ต้องการ
+  → **Trigger deploy** (รหัสไม่อยู่ในไฟล์โค้ดเพราะ repo นี้เป็น public) รหัสค้างอยู่ใน session นั้นๆ
+  เท่านั้น (ไม่เขียนลง localStorage ของเบราว์เซอร์)
+- **ที่เก็บ = ไฟล์ `data/consensus-override.json` ใน repo นี้** — Netlify ฝาก `GITHUB_TOKEN` มาให้อัตโนมัติ
+  จึงไม่ต้องตั้งค่าเพิ่ม · การบันทึกแต่ละครั้ง = commit เล็กๆ บน branch หลัก (ชื่อ commit ขึ้นต้นด้วย
+  `chore(data):`) · การอ่านใช้ raw.githubusercontent.com (CDN) ค่าเลยไม่ช้า
+  · ถ้าบันทึกแล้วขึ้น "store-write-failed" (token ไม่มีสิทธิ์เขียน) ให้ตั้ง env `GITHUB_TOKEN`
+  เป็น PAT (fine-grained, สิทธิ์ Contents: read/write เฉพาะ repo นี้) ทับอัตโนมัติของ Netlify
+- **fallback:** ถ้าเซิร์ฟเวอร์/ฟังก์ชันไม่พร้อม (เช่น เปิด index.html จากดิสก์) ค่าที่แก้จะเก็บใน
+  localStorage ของเครื่องนั้นเหมือนเดิม และแผงแก้ค่าจะขึ้นเตือนว่า "ที่เก็บค่ากลางยังไม่พร้อม"
+- ลำดับความสำคัญ (ทีละช่อง): ค่าที่ตั้งเองในเครื่อง > ค่าที่แชร์ (เซิร์ฟเวอร์) > ค่าสดจาก Investing.com > ค่าที่ฝังในไฟล์
 
 ## ข้อมูลเศรษฐกิจสหรัฐ (Fed / CPI / ว่างงาน / จ้างงาน) อัปเดตเองยังไง
 

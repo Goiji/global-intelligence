@@ -19,6 +19,12 @@ const ROOT = path.join(__dirname, '..');
 const FUNCTIONS_DIR = path.join(ROOT, 'netlify', 'functions');
 const PORT = Number(process.env.PORT || 8080);
 
+// The shared consensus-override store always lives in a local file under this dev server, even
+// if the machine's environment happens to contain a GITHUB_TOKEN (which would otherwise make
+// the function try to commit to the real repo from a laptop).
+process.env.OVERRIDE_STORE_FILE = process.env.OVERRIDE_STORE_FILE ||
+  path.join(ROOT, 'data', 'consensus-override.json');
+
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -57,7 +63,7 @@ function isBlocked(pathname) {
   });
 }
 
-async function serveFunction(name, url, res) {
+async function serveFunction(name, url, res, { method = 'GET', body = '', headers = {} } = {}) {
   const file = path.join(FUNCTIONS_DIR, `${name}.js`);
   if (!path.resolve(file).startsWith(FUNCTIONS_DIR) || !fs.existsSync(file)) {
     return send(res, 404, { 'Content-Type': 'application/json' }, JSON.stringify({ error: `no function named ${name}` }));
@@ -72,12 +78,16 @@ async function serveFunction(name, url, res) {
   if (typeof mod.handler !== 'function') {
     return send(res, 500, { 'Content-Type': 'application/json' }, JSON.stringify({ error: 'function has no exports.handler' }));
   }
+  // Forward method/headers/body like Netlify does, so functions with POST endpoints
+  // (e.g. consensus-override) behave the same locally as in production.
   const event = {
-    httpMethod: 'GET',
+    httpMethod: method,
     path: url.pathname,
     rawQuery: url.search.slice(1),
     queryStringParameters: Object.fromEntries(url.searchParams.entries()),
-    headers: {}
+    headers,
+    body,
+    isBase64Encoded: false
   };
   try {
     const out = await mod.handler(event, {});
@@ -93,19 +103,36 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   console.log(`${req.method} ${url.pathname}${url.search}`);
 
-  const fn = /^\/\.netlify\/functions\/([\w-]+)$/.exec(url.pathname);
-  if (fn) return serveFunction(fn[1], url, res);
+  // Collect the request body (capped) so functions can read POST/PUT payloads.
+  const chunks = [];
+  let tooBig = false;
+  req.on('data', (chunk) => {
+    if (tooBig) return;
+    chunks.push(chunk);
+    if (chunks.reduce((n, c) => n + c.length, 0) > 1024 * 1024) tooBig = true;
+  });
+  req.on('end', async () => {
+    const fn = /^\/\.netlify\/functions\/([\w-]+)$/.exec(url.pathname);
+    if (fn) {
+      const body = tooBig ? '' : Buffer.concat(chunks).toString('utf8');
+      return serveFunction(fn[1], url, res, { method: req.method, body, headers: req.headers });
+    }
 
-  if (isBlocked(url.pathname)) {
-    return send(res, 404, { 'Content-Type': 'text/plain; charset=utf-8' }, 'not found (blocked by _redirects)');
-  }
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      return send(res, 405, { 'Content-Type': 'application/json' }, JSON.stringify({ error: 'method not allowed for static files' }));
+    }
+    if (isBlocked(url.pathname)) {
+      return send(res, 404, { 'Content-Type': 'text/plain; charset=utf-8' }, 'not found (blocked by _redirects)');
+    }
 
-  const rel = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '');
-  const file = path.join(ROOT, rel);
-  if (!path.resolve(file).startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
-    return send(res, 404, { 'Content-Type': 'text/plain; charset=utf-8' }, 'not found');
-  }
-  send(res, 200, { 'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream' }, fs.readFileSync(file));
+    const rel = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '');
+    const file = path.join(ROOT, rel);
+    if (!path.resolve(file).startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
+      return send(res, 404, { 'Content-Type': 'text/plain; charset=utf-8' }, 'not found');
+    }
+    send(res, 200, { 'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream' }, fs.readFileSync(file));
+  });
+  req.on('error', () => { try { res.destroy(); } catch (e) { /* already gone */ } });
 });
 
 server.listen(PORT, '0.0.0.0', () => {
