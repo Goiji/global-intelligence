@@ -300,21 +300,27 @@ body{margin:0}
     <span id="fomcDateLabel" style="font-size:11px; color:var(--muted);"></span>
   </div>
 </div>
-<div id="fredFetchStatus" class="muted" style="margin-bottom:10px; font-size:11px;"></div>
+<div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+  <div id="fredFetchStatus" class="muted" style="font-size:11px;"></div>
+  <button id="fedRefreshBtn" type="button" class="tabbtn" style="padding:3px 10px; font-size:11px; border-radius:8px; line-height:1.5;">↻ ดึงค่าสดใหม่</button>
+</div>
 <div class="metrics" id="fedMetrics">
   <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">3.50–3.75%</div></div>
   <div class="metric"><div class="name">Effective Fed Funds Rate</div><div class="num" id="fedEffr">3.63%</div></div>
-  <div class="metric"><div class="name">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.40%</div></div>
+  <div class="metric"><div class="name">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.35%</div></div>
   <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">4.1%</div></div>
-  <div class="metric"><div class="name">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num" id="nfp" style="color:#ff6577;">-23,000</div></div>
+  <div class="metric"><div class="name">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num up" id="nfp">+162,000</div></div>
 </div>
 <div class="muted" style="margin-top:12px; font-size:11px; line-height:1.6;" id="fedAsOf">
-  ข้อมูล ณ การประชุม FOMC 28-29 ก.ค. 2026 (คงอัตราดอกเบี้ยไว้) และ jobs report ก.ค. 2026 (เผยแพร่ 7 ส.ค. 2026) — รายงานจ้างงานฉบับถัดไป 4 ก.ย. 2026 ·
-  เช็คค่าสดได้จาก <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" href="https://fred.stlouisfed.org/series/FEDFUNDS">FRED</a> หรือ <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" href="https://www.bls.gov/news.release/empsit.nr0.htm">BLS</a>
+  การ์ดด้านบนดึงค่าสดอัตโนมัติจาก FRED / BLS (ไม่ต้องใช้ API key แล้ว) และโพลซ้ำเองทุก 10 นาที — วันประกาศตัวเลข (CPI / jobs report / FOMC) จะถี่ขึ้นเป็นทุก 15 นาที ·
+  เช็คค่าสดด้วยตัวเองได้จาก <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="https://fred.stlouisfed.org/series/CPIAUCSL">FRED</a> หรือ <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="https://www.bls.gov/news.release/empsit.nr0.htm">BLS</a>
 </div>
 
 <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line);">
-  <h3 style="font-size:14px; margin-bottom:12px;">🔍 วิเคราะห์: ตัวเลขออกมาดี/แย่แค่ไหน เทียบกับที่คาด</h3>
+    <h3 style="font-size:14px; margin-bottom:12px;">🔍 วิเคราะห์: ตัวเลขออกมาดี/แย่แค่ไหน เทียบกับที่คาด</h3>
+    <div class="muted" style="font-size:11px; margin:-6px 0 12px; line-height:1.6;">
+      หมายเหตุ: การ์ดตัวเลขด้านบนอัปเดตสดอัตโนมัติจาก FRED/BLS เสมอ ส่วนบทวิเคราะห์ด้านล่างเขียนค้างไว้รอบการประกาศเดือน ก.ค. 2026 (NFP -23,000 · CPI +3.4%) — เมื่อตัวเลขรอบใหม่มาแล้วเนื้อหาส่วนนี้อาจไม่ตรงกับการ์ด
+    </div>
 
   <div style="display:flex; flex-direction:column; gap:12px;">
 
@@ -711,56 +717,71 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     }catch(e){ /* no history yet */ }
   }
 
-  // ---------- Fed Funds Rate & Employment (optional live data via free FRED API key) ----------
-  // FRED (St. Louis Fed) requires a free API key even for personal/non-commercial use, so unlike
-  // the other free sources in this app we can't call it with zero setup. Static "last known"
-  // values (kept up to date manually) are shown by default; if the person adds a free key,
-  async function refreshFedData(){
-    const statusEl = el('fredFetchStatus');
-
-    const today = new Date().toISOString().slice(0,10);
-    const CACHE_KEY = 'fed-data-cache-v2'; // v2: busts old cache that may hold null CPI values
-    try{
-      const raw = await storageGet(CACHE_KEY);
-      if(raw){
-        const c = JSON.parse(raw);
-        if(c.date === today){
-          const n = applyFedData(c.data);
-          if(statusEl) statusEl.textContent = n > 0
-            ? 'ใช้ค่าที่ดึงไว้วันนี้แล้ว (แคช · อัปเดต ' + n + ' ช่อง)'
-            : 'แคชวันนี้ใช้ไม่ได้ กำลังดึงใหม่…';
-          if(n > 0) return; // already fetched today, skip network
-        }
-      }
-    }catch(e){}
-
-    if(statusEl) statusEl.textContent = 'กำลังดึงจากเซิร์ฟเวอร์…';
-    try{
-      const r = await fetchWithTimeout('/.netlify/functions/fred-data', 15000);
-      const data = await r.json();
-      if(data.error && !data.upper && !data.cpi && !data.unrate && !data.effr) throw new Error(data.error);
-      const n = applyFedData(data);
-      await storageSet(CACHE_KEY, JSON.stringify({ date: today, data }));
-      const errBits = data.errors ? Object.entries(data.errors).map(([k,msg]) => k + ': ' + msg) : [];
-      if(statusEl){
-        const prefix = data.cached ? 'ใช้ค่าแคชฝั่งเซิร์ฟเวอร์ · ' : '✅ ดึงสดสำเร็จ (' + n + ' ช่อง) · ';
-        statusEl.textContent = prefix + new Date().toLocaleTimeString('th-TH')
-          + (errBits.length ? ' · ⚠️ บางค่าดึงไม่สำเร็จ — ' + errBits.join(' | ') : '');
-      }
-    }catch(e){
-      // Show the REAL error instead of failing silently, so we can actually diagnose it.
-      if(statusEl) statusEl.textContent = '❌ ดึงไม่สำเร็จ: ' + e.message + ' (ยังใช้ค่าสำรองด้านบนอยู่)';
-    }
-  }
+  // ---------- Live US macro data: Fed funds, CPI (headline + core), unemployment, payrolls ----------
+  // Everything comes from /.netlify/functions/fred-data, which no longer requires an API key: it
+  // tries the keyed FRED API first (if FRED_API_KEY is configured), then FRED's public graph CSV,
+  // then the BLS public API — so it works in production, deploy previews and branch deploys alike.
+  // The server also tells us when the numbers could next change (`refreshAfter`): ~15 min on
+  // CPI / jobs-report / FOMC days, ~3 h otherwise. We re-poll on that schedule, plus whenever the
+  // tab becomes visible again. Only the pre-load placeholders in the markup above are hardcoded.
+  const FED_CACHE_KEY = 'fed-data-cache-v3';  // v3: TTL-based cache, adds nfp/coreCpi fields
+  const FED_POLL_MS = 10 * 60 * 1000;         // safety-net poll; the server TTL usually decides
+  let fedNextFetchAt = 0;
 
   function isValidNum(v){ return typeof v === 'number' && isFinite(v); }
 
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  }
+
+  function hasAnyFedField(d){
+    return !!(d && (d.upper || d.lower || d.effr || d.cpi || d.unrate || d.nfp));
+  }
+
+  const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  function thMonth(dateStr){
+    const m = /^(\d{4})-(\d{2})/.exec(String(dateStr || ''));
+    return m ? TH_MONTHS[parseInt(m[2], 10) - 1] + ' ' + m[1] : String(dateStr || '');
+  }
+  function thDay(dateStr){
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dateStr || ''));
+    return m ? parseInt(m[3], 10) + ' ' + TH_MONTHS[parseInt(m[2], 10) - 1] + ' ' + m[1] : String(dateStr || '');
+  }
+
+  const SOURCE_LABEL = { 'fred-api':'FRED API', 'fred-csv':'FRED (สาธารณะ)', 'bls':'BLS' };
+  function sourceLabel(data){
+    const seen = [];
+    ['cpi','unrate','nfp','effr','upper'].forEach(k => {
+      const s = data && data[k] && data[k].source;
+      if(s && seen.indexOf(s) === -1) seen.push(s);
+    });
+    return seen.length ? seen.map(s => SOURCE_LABEL[s] || s).join(' + ') : 'FRED/BLS';
+  }
+
+  // Payrolls are a signed change in jobs — keep the sign and the thousands separators.
+  function fmtJobs(v){
+    const n = Math.round(v);
+    return (n >= 0 ? '+' : '−') + Math.abs(n).toLocaleString('en-US');
+  }
+
+  function fedStatusText(data, n, kind){
+    const when = new Date().toLocaleTimeString('th-TH');
+    const src = sourceLabel(data);
+    if(data && data.stale){
+      return '⚠️ แหล่งข้อมูลตอบช้า — แสดงค่าล่าสุดที่เคยดึงได้ (' + n + ' การ์ด จาก ' + src + ') · ' + when;
+    }
+    if(kind === 'cache') return '💾 ใช้ค่าที่แคชไว้ (' + n + ' การ์ด · ' + src + ') — จะดึงใหม่อัตโนมัติเมื่อถึงรอบ';
+    if(kind === 'server-cache') return '✅ ใช้ค่าแคชฝั่งเซิร์ฟเวอร์ (' + n + ' การ์ด · ' + src + ') · ' + when;
+    return '✅ ดึงสดสำเร็จ (' + n + ' การ์ด จาก ' + src + ') · ' + when;
+  }
+
   function applyFedData(data){
-    // Each field applied independently with validation — one bad value (historically:
-    // CPI coming back as null/NaN from a "." observation) must never abort the rest.
+    // Each field is applied independently with validation — one bad value must never abort the
+    // rest (that was the original CPI "." bug: one null took down every card after it).
     let applied = 0;
     try{
-      const { upper, lower, effr, cpi, unrate } = data || {};
+      const { upper, lower, effr, cpi, coreCpi, unrate, nfp } = data || {};
+
       if(upper && lower && isValidNum(upper.value) && isValidNum(lower.value)){
         el('fedRange').textContent = lower.value.toFixed(2) + '–' + upper.value.toFixed(2) + '%';
         applied++;
@@ -777,19 +798,114 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         el('unrate').textContent = unrate.value.toFixed(1) + '%';
         applied++;
       }
-      const dateBits = [];
-      if(unrate && unrate.date) dateBits.push('Unemployment ณ ' + unrate.date);
-      if(cpi && cpi.date && isValidNum(cpi.value)) dateBits.push('CPI ณ ' + cpi.date);
-      if(effr && effr.date) dateBits.push('EFFR ณ ' + effr.date);
-      if(dateBits.length){
-        el('fedAsOf').innerHTML = 'ดึงสดจาก FRED ล่าสุด (' + dateBits.join(', ') + ') · เช็คอัตโนมัติวันละครั้ง · '
-          + '<a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" href="https://fred.stlouisfed.org/series/FEDFUNDS">FRED</a>';
+      if(nfp && isValidNum(nfp.value)){
+        const node = el('nfp');
+        node.textContent = fmtJobs(nfp.value);
+        node.className = 'num ' + (nfp.value >= 0 ? 'up' : 'down');
+        node.style.color = '';   // let the up/down class decide instead of a hardcoded colour
+        applied++;
       }
-    }catch(e){ /* never let a render hiccup break the page */}
+
+      // "as of" line — real dates and the real source, so freshness is visible at a glance.
+      const bits = [];
+      if(cpi && cpi.date && isValidNum(cpi.value)){
+        bits.push('CPI ' + thMonth(cpi.date) + ' ' + cpi.value.toFixed(2) + '%'
+          + (coreCpi && isValidNum(coreCpi.value) ? ' (core ' + coreCpi.value.toFixed(2) + '%)' : ''));
+      }
+      if(unrate && unrate.date){
+        bits.push('ว่างงาน ' + thMonth(unrate.date) + (isValidNum(unrate.value) ? ' ' + unrate.value.toFixed(1) + '%' : ''));
+      }
+      if(nfp && nfp.date){
+        bits.push('จ้างงาน ' + thMonth(nfp.date) + (isValidNum(nfp.value) ? ' ' + fmtJobs(nfp.value) : ''));
+      }
+      if(effr && effr.date) bits.push('EFFR ' + thDay(effr.date));
+
+      if(bits.length){
+        const warnBits = [];
+        if(cpi && cpi.warning) warnBits.push('CPI: ' + cpi.warning);
+        if(data.stale) warnBits.push('แหล่งข้อมูลตอบช้า (' + (data.staleReason || 'ไม่ทราบสาเหตุ') + ')');
+        el('fedAsOf').innerHTML = '🔄 อัปเดตอัตโนมัติจาก ' + esc(sourceLabel(data)) + ' — ' + esc(bits.join(' · '))
+          + ' · โพลทุก ' + Math.round(FED_POLL_MS / 60000) + ' นาที (วันประกาศตัวเลข เซิร์ฟเวอร์จะแคชสั้นลงเหลือ 15 นาที) · '
+          + '<a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="https://fred.stlouisfed.org/series/CPIAUCSL">FRED</a>'
+          + (warnBits.length ? '<br><span style="color:var(--warn);">⚠️ ' + esc(warnBits.join(' · ')) + '</span>' : '');
+      }
+    }catch(e){ /* never let a render hiccup break the page */ }
     return applied;
   }
 
+  async function refreshFedData(opts){
+    const force = !!(opts && opts.force);
+    const statusEl = el('fredFetchStatus');
+    const now = Date.now();
+
+    // 1) Local cache — but only while the server says the numbers can't have changed yet.
+    let cached = null;
+    try{
+      const raw = await storageGet(FED_CACHE_KEY);
+      if(raw) cached = JSON.parse(raw);
+    }catch(e){ cached = null; }
+
+    if(cached && cached.data && !force){
+      const n = applyFedData(cached.data);
+      if(n > 0 && cached.refreshAfter > now){
+        fedNextFetchAt = cached.refreshAfter;
+        if(statusEl) statusEl.textContent = fedStatusText(cached.data, n, 'cache');
+        return;
+      }
+    }
+
+    // 2) Throttle — don't re-hit the network until the TTL says it's worth it.
+    if(!force && now < fedNextFetchAt) return;
+    fedNextFetchAt = now + FED_POLL_MS;
+
+    if(statusEl) statusEl.textContent = '⏳ กำลังดึงข้อมูลสด (Fed / CPI / การจ้างงาน)…';
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/fred-data', 15000);
+      let data;
+      try{
+        data = await r.json();
+      }catch(parseErr){
+        throw new Error('เซิร์ฟเวอร์ตอบกลับมาไม่ใช่ JSON (HTTP ' + r.status + ') — หน้านี้ต้องรันบน Netlify จึงจะใช้ Functions ได้ (เปิด index.html ตรงๆ จากดิสก์จะดึงสดไม่ได้)');
+      }
+      if(data && data.error && !hasAnyFedField(data)) throw new Error(data.error);
+      if(!r.ok && !hasAnyFedField(data)) throw new Error('HTTP ' + r.status);
+
+      const n = applyFedData(data);
+      fedNextFetchAt = (isValidNum(data.refreshAfter) && data.refreshAfter > now) ? data.refreshAfter : now + FED_POLL_MS;
+      try{ await storageSet(FED_CACHE_KEY, JSON.stringify({ data: data, refreshAfter: fedNextFetchAt, savedAt: now })); }catch(e){}
+
+      if(statusEl){
+        statusEl.textContent = fedStatusText(data, n, (data.cached && !data.stale) ? 'server-cache' : 'live');
+        if(data.errors){
+          const failed = Object.keys(data.errors);
+          if(failed.length) statusEl.textContent += ' · ⚠️ ดึงไม่ได้บางช่อง: ' + failed.join(', ');
+        }
+      }
+    }catch(e){
+      fedNextFetchAt = now + FED_POLL_MS;
+      const reason = (e && e.message) ? e.message : String(e);
+      // Prefer the last payload we actually saved over the hardcoded placeholders.
+      if(cached && cached.data && applyFedData(cached.data) > 0){
+        const mins = cached.savedAt ? Math.max(1, Math.round((Date.now() - cached.savedAt) / 60000)) : 0;
+        if(statusEl) statusEl.textContent = '⚠️ ดึงสดไม่สำเร็จ (' + reason + ') — แสดงค่าล่าสุดที่เคยดึงได้'
+          + (mins ? ' (เมื่อ ' + mins + ' นาทีที่แล้ว)' : '')
+          + ' · จะลองใหม่อัตโนมัติทุก ' + Math.round(FED_POLL_MS / 60000) + ' นาที';
+      }else if(statusEl){
+        statusEl.textContent = '❌ ดึงไม่สำเร็จ: ' + reason
+          + ' — ยังแสดงค่าสำรองด้านบน และจะลองใหม่อัตโนมัติทุก ' + Math.round(FED_POLL_MS / 60000) + ' นาที';
+      }
+    }
+  }
+
   refreshFedData();
+
+  // Keep the cards honest while the tab stays open, and re-check the moment the user comes back
+  // to a backgrounded tab — that's usually right after a release landed.
+  setInterval(function(){ refreshFedData(); }, FED_POLL_MS);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) refreshFedData(); });
+
+  const fedRefreshBtn = el('fedRefreshBtn');
+  if(fedRefreshBtn) fedRefreshBtn.addEventListener('click', function(){ refreshFedData({ force:true }); });
 
   el('newsRefreshBtn').addEventListener('click', refreshNews);
 
