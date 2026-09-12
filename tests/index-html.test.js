@@ -13,93 +13,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const vm = require('node:vm');
-
-const HTML = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-const SCRIPTS = [...HTML.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
-
-function makeElement(id) {
-  const el = {
-    id,
-    textContent: '',
-    innerHTML: '',
-    value: '',
-    className: '',
-    title: '',
-    style: {},
-    dataset: {},
-    nextElementSibling: null,
-    classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
-    addEventListener() {},
-    removeEventListener() {},
-    appendChild() {},
-    setAttribute() {},
-    getAttribute() { return null; },
-    querySelector() { return null; },
-    querySelectorAll() { return []; },
-    focus() {},
-    click() {}
-  };
-  return el;
-}
-
-// Fresh sandbox per script so one script's side effects cannot mask another's failure.
-function makeSandbox() {
-  const elements = new Map();
-  const store = new Map();
-  const sandbox = {
-    console,
-    setTimeout: (fn) => { if (typeof fn === 'function') fn(); return 0; }, // run timers immediately
-    clearTimeout() {},
-    setInterval: () => 0,
-    clearInterval() {},
-    AbortController,
-    Promise,
-    Date,
-    Math,
-    JSON,
-    Map,
-    Set,
-    URL,
-    encodeURIComponent,
-    decodeURIComponent,
-    isFinite,
-    parseInt,
-    parseFloat,
-    addEventListener() {},
-    removeEventListener() {},
-    location: { hash: '', href: 'https://example.test/', replace() {} },
-    history: { replaceState() {} },
-    navigator: {},
-    localStorage: {
-      getItem: (k) => (store.has(k) ? store.get(k) : null),
-      setItem: (k, v) => store.set(k, String(v)),
-      removeItem: (k) => store.delete(k)
-    },
-    // Every request fails fast: the page must handle that without throwing (it is the state a
-    // visitor gets when the Netlify Functions are not reachable).
-    fetch: async () => ({ ok: false, status: 503, json: async () => ({}), text: async () => '' }),
-    document: {
-      hidden: false,
-      body: makeElement('body'),
-      getElementById: (id) => {
-        if (!elements.has(id)) elements.set(id, makeElement(id));
-        return elements.get(id);
-      },
-      // Mimic the real DOM for `#id` selectors (the page uses them in a couple of error paths).
-      querySelector: (sel) => (typeof sel === 'string' && sel.startsWith('#') ? (elements.has(sel.slice(1)) ? elements.get(sel.slice(1)) : (elements.set(sel.slice(1), makeElement(sel.slice(1))), elements.get(sel.slice(1)))) : null),
-      querySelectorAll: () => [],
-      createElement: () => makeElement('created'),
-      addEventListener() {},
-      documentElement: makeElement('html')
-    }
-  };
-  sandbox.window = sandbox;
-  sandbox.globalThis = sandbox;
-  return sandbox;
-}
+const { HTML, SCRIPTS, makeSandbox } = require('./dom-stub.js');
 
 test('index.html has inline scripts and they all parse', () => {
   assert.ok(SCRIPTS.length >= 3, `expected several inline scripts, found ${SCRIPTS.length}`);
@@ -150,6 +65,15 @@ test('no duplicate ids and no unclosed tags', () => {
     const close = (markup.match(new RegExp(`</${tag}>`, 'g')) || []).length;
     assert.equal(open, close, `<${tag}> is unbalanced (${open} open vs ${close} close)`);
   }
+});
+
+test('the Fed analysis section is generated, not hand-written', () => {
+  // The old version of this block was a hand-written article about the July 2026 print with the
+  // numbers baked into the prose. It must stay gone.
+  assert.match(HTML, /id="fedAnalysis"/, 'the analysis container is missing');
+  assert.doesNotMatch(HTML, /ออกมาจริง<b>ติดลบ 23,000<\/b>/, 'the hand-written July-2026 NFP paragraph is back');
+  assert.doesNotMatch(HTML, /เขียนไว้ ณ ตอนที่ทำฟีเจอร์นี้/, 'the hand-written analysis footer is back');
+  assert.match(HTML, /const CONSENSUS/, 'the CONSENSUS block (the only thing a human edits) is missing');
 });
 
 test('regressions that were fixed once must not come back', () => {
