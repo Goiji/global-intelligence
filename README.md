@@ -5,9 +5,11 @@
 .
 ├── index.html                          ← หน้าเว็บหลัก (2 แท็บ: ข่าวโลก&AI · BTC Buy Score)
 ├── netlify.toml                        ← ตั้งค่า Netlify (publish ".", NODE_VERSION, security headers)
-├── package.json                        ← มีไว้ให้ `npm test` ทำงานเท่านั้น (ไม่มี dependency/ไม่มี build)
+├── _redirects                          ← บล็อกไม่ให้ไฟล์ซอร์ส/เอกสารถูกเสิร์ฟเป็นไฟล์สาธารณะ (404)
+├── package.json                        ← มีไว้ให้ `npm test` / `npm run dev` ทำงาน (ไม่มี dependency)
 ├── README.md
 ├── REVIEW-2026-09.md                   ← รายงานตรวจโค้ดรอบ ก.ย. 2026 (แก้แล้วอะไร / เหลืออะไร)
+├── tools/dev-server.js                 ← เซิร์ฟเวอร์ทดสอบในเครื่อง (static + Functions จริง)
 └── netlify/functions/
     ├── fred-data.js                    ← Fed Rate / EFFR / CPI(+core) / Unemployment / Payrolls
     ├── cmc-fear-greed.js               ← Fear & Greed (CoinMarketCap keyless → alternative.me)
@@ -104,6 +106,18 @@ Site configuration → Environment variables → Add a variable:
   (เดิมต้องพึ่ง CORS proxy ฟรีอย่าง allorigins ซึ่งล่มบ่อย) แล้วค่อย fallback ไปยิงตรง/ผ่าน proxy
   — ถ้าเซิร์ฟเวอร์ดึงไม่ได้จริงๆ หน้าเว็บยังมีค่าเก่าใน localStorage + ช่องกรอกเองให้ใช้ต่อ
 - Netlify free tier ให้ Functions ฟรี 125,000 ครั้ง/เดือน — เพียงพอมากสำหรับเว็บนี้
+
+## รันในเครื่อง (ไม่ต้องมี netlify-cli)
+
+```bash
+npm run dev     # → http://localhost:8080  (เปิด index.html + เรียก Functions ตัวจริงให้เลย)
+PORT=3000 npm run dev
+```
+
+`tools/dev-server.js` เป็นเซิร์ฟเวอร์เล็กๆ ที่ไม่มี dependency: เสิร์ฟไฟล์ static จาก root
+และเรียก handler ใน `netlify/functions/` ตรงๆ (เช่น `http://localhost:8080/.netlify/functions/fred-data`)
+พร้อมอ่าน `_redirects` เพื่อปิดพาธที่ไม่ควรเปิดเหมือนบน Netlify — ถ้าเครื่องรันไม่มีเน็ตออกนอก
+Functions จะตอบ JSON แบบ graceful failure ซึ่งก็คือพฤติกรรมจริงเวลาต้นทางล่มนั่นเอง
 
 ## รันเทสต์ในเครื่อง
 

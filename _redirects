@@ -1,0 +1,17 @@
+# ปิดไม่ให้ไฟล์ที่ไม่ใช่เว็บถูกเสิร์ฟเป็นไฟล์สาธารณะ
+#
+# publish directory ของโปรเจกต์นี้คือ "." (root ของ repo) เพราะ index.html อยู่ที่ราก — ผลคือ
+# ถ้าไม่บล็อก ใครก็เปิด https://<site>/netlify/functions/fred-data.js หรือ /README.md หรือ
+# /tests/... ดูได้ (ไม่ถึงขั้นมี API key รั่ว เพราะ key อยู่ใน env var แต่ก็ไม่ควรเปิดอ่านซอร์ส
+# และบันทึกภายในให้คนนอก)
+#
+# หมายเหตุ: พาธของ Functions จริงคือ /.netlify/functions/* (มีจุดนำหน้า) ซึ่ง "ไม่" ถูกบล็อกที่นี่
+
+/netlify/*            /  404
+/tools/*              /  404
+/tests/*              /  404
+/package.json         /  404
+/package-lock.json    /  404
+/netlify.toml         /  404
+/README.md            /  404
+/REVIEW-2026-09.md    /  404
