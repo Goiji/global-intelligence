@@ -307,7 +307,7 @@ body{margin:0}
 <div class="metrics" id="fedMetrics">
   <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">3.50–3.75%</div></div>
   <div class="metric"><div class="name">Effective Fed Funds Rate</div><div class="num" id="fedEffr">3.63%</div></div>
-  <div class="metric"><div class="name">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.35%</div></div>
+  <div class="metric"><div class="name">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.4%</div></div>
   <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">4.1%</div></div>
   <div class="metric"><div class="name">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num up" id="nfp">+162,000</div></div>
 </div>
@@ -441,15 +441,54 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   }
 
   // ---------- free translation (MyMemory API, no key needed) ----------
+  // ปรับปรุง Sep 2026: แก้บั๊ก MyMemory หมดโควต้าแล้วส่ง "MYMEMORY WARNING: YOU USED ALL..."
+  // กลับมาในฟิลด์ translatedText ทำให้ Top Events โชว์ข้อความเตือนแทนพาดหัวข่าว
+  // วิธีแก้: ตรวจจับ warning, เพิ่ม email เพื่อขยายโควต้า (anonymous 1k → 50k words/day),
+  // แคชคำแปลซ้ำ, และถ้าโดน limit ให้พักการเรียก API 4 ชม. แล้วโชว์ภาษาอังกฤษแทน
+  const _translationCache = new Map();
+  let _translationBlockedUntil = 0;
   async function translateToThai(text){
     if(!text) return '';
+    if(_translationCache.has(text)) return _translationCache.get(text);
+    if(Date.now() < _translationBlockedUntil){
+      _translationCache.set(text, text);
+      return text;
+    }
     try{
-      const r = await fetchWithTimeout('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=en|th', 6000);
+      const r = await fetchWithTimeout('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=en|th&email=global.intelligence.cache@gmail.com', 6000);
       const j = await r.json();
       const t = j && j.responseData && j.responseData.translatedText;
-      return (t && !/^[A-Z ]+$/.test(t)) ? t : text; // fall back to original if translation looks broken/empty
+      if(!t){
+        _translationCache.set(text, text);
+        return text;
+      }
+      const upper = t.toUpperCase();
+      if(upper.includes('MYMEMORY WARNING') || upper.includes('YOU USED ALL AVAILABLE') || upper.includes('TRANSLATED.NET/DOC/USAGELIMITS') || upper.includes('MYMEMORY')){
+        // โดน limit แล้ว — พักการแปล 4 ชม. ไม่ให้ยิงซ้ำจนโควต้ากู้คืน
+        _translationBlockedUntil = Date.now() + 4 * 60 * 60 * 1000;
+        _translationCache.set(text, text);
+        return text;
+      }
+      if(j.responseDetails && /MYMEMORY|LIMIT/i.test(j.responseDetails)){
+        _translationBlockedUntil = Date.now() + 4 * 60 * 60 * 1000;
+        _translationCache.set(text, text);
+        return text;
+      }
+      if(j.responseStatus && j.responseStatus === 429){
+        _translationBlockedUntil = Date.now() + 4 * 60 * 60 * 1000;
+        _translationCache.set(text, text);
+        return text;
+      }
+      // ถ้าแปลคืนมาเป็นภาษาอังกฤษพิมพ์ใหญ่เหมือนเดิม แสดงว่าไม่ได้แปลจริง
+      if(t.trim() === text.trim()){
+        _translationCache.set(text, text);
+        return text;
+      }
+      _translationCache.set(text, t);
+      return t;
     }catch(e){
-      return text; // network hiccup — just show the original English, no error shown to user
+      _translationCache.set(text, text);
+      return text;
     }
   }
 
@@ -563,15 +602,18 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       return `<div class="barrow"><span>${l}</span><div class="track"><div class="fill ${assetBarClass(v)}" style="width:${v}%"></div></div><b>${v}</b></div>`;
     }).join('');
 
-    el('topEvents').innerHTML = (d.topEvents || []).map(ev =>
-      `<div class="event">
+    // กันกรณีแคชเก่ายังมีข้อความ MYMEMORY WARNING ค้างอยู่ — ถ้า titleTh มีคำว่า MYMEMORY ให้ตกกลับไปใช้ title ภาษาอังกฤษแทน
+    el('topEvents').innerHTML = (d.topEvents || []).map(ev => {
+      const safeTitleTh = (ev.titleTh && !/MYMEMORY/i.test(ev.titleTh)) ? ev.titleTh : ev.title;
+      const safeDescTh = (ev.descriptionTh && !/MYMEMORY/i.test(ev.descriptionTh)) ? ev.descriptionTh : ev.description;
+      return `<div class="event">
         <div class="rank">0${ev.rank} · ${ev.category}</div>
-        <h3>${ev.titleTh || ev.title}</h3>
+        <h3>${safeTitleTh}</h3>
         <div class="muted" style="font-size:11px; margin-top:-6px; margin-bottom:8px;">${ev.title}</div>
-        <p>${ev.descriptionTh || ev.description}</p>
+        <p>${safeDescTh}</p>
         <div class="impact">Market impact · ${ev.marketImpact}/100</div>
-      </div>`
-    ).join('');
+      </div>`;
+    }).join('');
 
     el('aiBrief').innerHTML = d.aiBrief.split('\n\n').map(p => `<p style="margin-bottom:10px;">${p}</p>`).join('')
       + '<span class="muted">— คำนวณอัตโนมัติ ฟรี 100% ไม่ใช่คำแนะนำการลงทุน</span>';
@@ -791,7 +833,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         applied++;
       }
       if(cpi && isValidNum(cpi.value)){
-        el('cpiYoy').textContent = cpi.value.toFixed(2) + '%';
+        el('cpiYoy').textContent = cpi.value.toFixed(1) + '%';
         applied++;
       }
       if(unrate && isValidNum(unrate.value)){
@@ -809,8 +851,8 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       // "as of" line — real dates and the real source, so freshness is visible at a glance.
       const bits = [];
       if(cpi && cpi.date && isValidNum(cpi.value)){
-        bits.push('CPI ' + thMonth(cpi.date) + ' ' + cpi.value.toFixed(2) + '%'
-          + (coreCpi && isValidNum(coreCpi.value) ? ' (core ' + coreCpi.value.toFixed(2) + '%)' : ''));
+        bits.push('CPI ' + thMonth(cpi.date) + ' ' + cpi.value.toFixed(1) + '%'
+          + (coreCpi && isValidNum(coreCpi.value) ? ' (core ' + coreCpi.value.toFixed(1) + '%)' : ''));
       }
       if(unrate && unrate.date){
         bits.push('ว่างงาน ' + thMonth(unrate.date) + (isValidNum(unrate.value) ? ' ' + unrate.value.toFixed(1) + '%' : ''));
@@ -1223,7 +1265,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       <h2>Sentiment & Leverage <span style="color:var(--sub); font-weight:400; text-transform:none; letter-spacing:0;">— มุมมองสไตล์ Michael Burry: valuation ถูกอย่างเดียวไม่พอ ต้องดูด้วยว่าตลาด "เก็ง" หนักแค่ไหน</span></h2>
       <div class="sl-grid">
         <div class="sl-tile">
-          <div class="sl-name">Fear & Greed Index</div>
+          <div class="sl-name">Fear & Greed Index <span style="font-size:9px; text-transform:none; letter-spacing:0; opacity:0.7;">· CoinMarketCap · อัตโนมัติ</span></div>
           <div class="sl-num" id="fngNum">–</div>
           <div class="sl-sub" id="fngLabel">กำลังโหลด…</div>
         </div>
@@ -1241,7 +1283,8 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       <div style="font-size:11px; color:var(--sub); line-height:1.6; margin-top:14px;">
         อ่านค่า: Fear&Greed ต่ำมาก (&lt;20) หรือสูงมาก (&gt;80) มักเป็นจุดกลับตัว (contrarian) ·
         Funding Rate เป็นบวกสูงต่อเนื่อง = คนแห่ leverage long พร้อมโดน liquidate ยกแผงถ้าราคาหักหัว ·
-        Open Interest พุ่งเร็วกว่าราคา = ตลาดใช้เลเวอเรจสูง เปราะบางต่อความผันผวน
+        Open Interest พุ่งเร็วกว่าราคา = ตลาดใช้เลเวอเรจสูง เปราะบางต่อความผันผวน<br>
+        Fear &amp; Greed ดึงอัตโนมัติจาก <a href="https://coinmarketcap.com/charts/fear-and-greed-index/" target="_blank" class="metric-link" style="color:var(--amber);">CoinMarketCap</a> (public API, อัปเดตทุกวัน · แคช 6 ชม.) ถ้า CMC ไม่ตอบจะ fallback ไป alternative.me ชั่วคราว
       </div>
     </div>
 
@@ -1707,18 +1750,62 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   }
 
   // ---------- Sentiment & Leverage (Fear&Greed + funding rate + open interest) ----------
-  // Fear & Greed: alternative.me free public API, no key, CORS-friendly.
+  // Fear & Greed: CoinMarketCap (keyless public API) เป็นแหล่งหลักตามคำขอผู้ใช้ อัปเดตอัตโนมัติ
+  // ลำดับ: Netlify Function (CMC keyless) → ตรง CMC public API → alternative.me fallback
   // Funding Rate / Open Interest: Binance Futures public market-data endpoints, no key needed.
   async function fetchSentimentLeverage(){
-    try{
-      const r = await fetchWithTimeout('https://api.alternative.me/fng/?limit=1', 5000);
-      const j = await r.json();
-      const v = parseInt(j.data[0].value, 10);
-      const cls = j.data[0].value_classification;
-      el('fngNum').textContent = v;
-      el('fngNum').style.color = v>=75 ? 'var(--red)' : v<=25 ? 'var(--green)' : 'var(--amber)';
-      el('fngLabel').textContent = cls;
-    }catch(e){ el('fngLabel').textContent = 'ดึงไม่สำเร็จ'; }
+    // ---- Fear & Greed from CoinMarketCap (อัตโนมัติ) ----
+    let fngDone = false;
+    const fngAttempts = [
+      {
+        name: 'CoinMarketCap (via server)',
+        url: '/.netlify/functions/cmc-fear-greed',
+        parse: async (r) => {
+          const j = await r.json();
+          if(!isFinite(j.value)) throw new Error('no value');
+          return { v: parseInt(j.value,10), cls: j.classification || j.value_classification || j.valueClassification, src: j.source || 'coinmarketcap' };
+        }
+      },
+      {
+        name: 'CoinMarketCap (direct)',
+        url: 'https://pro-api.coinmarketcap.com/public-api/v3/fear-and-greed/latest',
+        parse: async (r) => {
+          const j = await r.json();
+          let entry = j.data;
+          if(Array.isArray(entry)) entry = entry[0];
+          const v = parseInt(entry && entry.value,10);
+          const cls = entry && (entry.value_classification || entry.classification || entry.valueClassification);
+          if(!isFinite(v)) throw new Error('no value');
+          return { v, cls, src: 'coinmarketcap' };
+        }
+      },
+      {
+        name: 'alternative.me (fallback)',
+        url: 'https://api.alternative.me/fng/?limit=1',
+        parse: async (r) => {
+          const j = await r.json();
+          const v = parseInt(j.data[0].value,10);
+          const cls = j.data[0].value_classification;
+          if(!isFinite(v)) throw new Error('no value');
+          return { v, cls, src: 'alternative.me' };
+        }
+      }
+    ];
+    for(const attempt of fngAttempts){
+      try{
+        const r = await fetchWithTimeout(attempt.url, 6000);
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        const { v, cls, src } = await attempt.parse(r);
+        el('fngNum').textContent = v;
+        el('fngNum').style.color = v>=75 ? 'var(--red)' : v<=25 ? 'var(--green)' : 'var(--amber)';
+        const isCMC = /coinmarketcap/i.test(src);
+        el('fngLabel').textContent = (cls || '') + (isCMC ? ' · CoinMarketCap' : ' · ' + src);
+        el('fngLabel').title = 'อัปเดตอัตโนมัติจาก ' + src + ' · ' + new Date().toLocaleTimeString('th-TH');
+        fngDone = true;
+        break;
+      }catch(e){ /* try next source */ }
+    }
+    if(!fngDone) el('fngLabel').textContent = 'ดึงไม่สำเร็จ';
 
     try{
       const r = await fetchWithTimeout('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT', 5000);
@@ -1826,6 +1913,12 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   }
 
   el('refreshBtn').addEventListener('click', () => refreshAll(true)); // manual click always bypasses the 8h cache
+
+  // Fear & Greed จาก CMC อัปเดตวันละครั้ง แต่ให้โพลอัตโนมัติทุก 60 นาที + เมื่อกลับมาเปิดแท็บ BTC
+  setInterval(fetchSentimentLeverage, 60*60*1000);
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden && document.body.classList.contains('theme-btc')) fetchSentimentLeverage();
+  });
 
 
   // ---------- TradingView candlestick chart ----------
