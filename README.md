@@ -1,15 +1,23 @@
 # วิธี Deploy ขึ้น Netlify (มี Function ซ่อน API key)
 
-## โครงสร้างไฟล์
+## โครงสร้างไฟล์ (repo นี้ = โฟลเดอร์ที่ deploy ได้เลย)
 ```
-netlify-site/
-├── index.html                          ← หน้าเว็บหลัก
-├── netlify.toml                        ← ตั้งค่า Netlify
-└── netlify/
-    └── functions/
-        ├── fred-data.js                ← Fed Rate / CPI (+core) / Unemployment / Payrolls
-        ├── oil-price.js                ← ราคาน้ำมัน WTI (สำรอง)
-        └── news-feed.js                ← ข่าว RSS
+.
+├── index.html                          ← หน้าเว็บหลัก (2 แท็บ: ข่าวโลก&AI · BTC Buy Score)
+├── netlify.toml                        ← ตั้งค่า Netlify (publish ".", NODE_VERSION, security headers)
+├── _redirects                          ← บล็อกไม่ให้ไฟล์ซอร์ส/เอกสารถูกเสิร์ฟเป็นไฟล์สาธารณะ (404)
+├── package.json                        ← มีไว้ให้ `npm test` / `npm run dev` ทำงาน (ไม่มี dependency)
+├── README.md
+├── REVIEW-2026-09.md                   ← รายงานตรวจโค้ดรอบ ก.ย. 2026 (แก้แล้วอะไร / เหลืออะไร)
+├── tools/dev-server.js                 ← เซิร์ฟเวอร์ทดสอบในเครื่อง (static + Functions จริง)
+└── netlify/functions/
+    ├── fred-data.js                    ← Fed Rate / EFFR / CPI(+core) / Unemployment / Payrolls
+    ├── consensus.js                    ← ค่า "ที่คาด" (consensus) จาก Investing.com (แคช 3 ชม.)
+    ├── cmc-fear-greed.js               ← Fear & Greed (CoinMarketCap keyless → alternative.me)
+    ├── news-feed.js                    ← พาดหัวข่าว: อ่าน Google News RSS ฝั่งเซิร์ฟเวอร์เอง
+    ├── onchain.js                      ← NUPL / MVRV Z-Score / MVRV Ratio (BGeometrics, แคช 8 ชม.)
+    ├── oil-price.js                    ← ราคา WTI ผ่าน Alpha Vantage (ตัวสำรองชั้นสุดท้าย)
+    └── *.test.js                       ← ชุดเทสต์ (node:test) ของแต่ละ function
 ```
 
 ## ทำไมต้องใช้วิธีนี้ (ไม่ใช่ลากไฟล์ธรรมดา)
@@ -40,9 +48,13 @@ netlify-site/
 
 ถ้าอยากใส่ key (เพื่อโควตาที่สูงขึ้นและใช้ API ทางการก่อน) ให้ไปที่
 Site configuration → Environment variables → Add a variable:
-   - `FRED_API_KEY` = key จาก [fred.stlouisfed.org](https://fred.stlouisfed.org/docs/api/api_key.html)
-   - `ALPHAVANTAGE_API_KEY` = key จาก [alphavantage.co](https://www.alphavantage.co/support/#api-key) *(เฉพาะราคาน้ำมันสำรอง — ปกติใช้ Binance/OKX/Hyperliquid ฟรีอยู่แล้ว)*
-   - `RSS2JSON_API_KEY` = key จาก [rss2json.com](https://rss2json.com/docs) *(ไม่ใส่ก็ได้ ใช้โควตาฟรีแทน)*
+
+| ตัวแปร | จำเป็นไหม | ใช้ทำอะไร |
+|---|---|---|
+| `FRED_API_KEY` | ไม่ | ให้ `fred-data.js` ใช้ FRED API ทางการก่อน (มีโควต้าสูงกว่า CSV สาธารณะ) |
+| `BGEOMETRICS_TOKEN` | **แนะนำ** | ให้ `onchain.js` ใช้โควต้าตัวแทน 8 ครั้ง/ชม. · 15 ครั้ง/วัน/IP — ตั้งครั้งเดียวทั้งเว็บใช้ร่วมกัน (ไม่ตั้ง = ยังทำงานได้ แต่แชร์โควต้าสาธารณะ) |
+| `ALPHAVANTAGE_API_KEY` | ไม่ | เฉพาะ Fallback น้ำมันชั้นสุดท้าย (ปกติใช้ Binance/OKX/Hyperliquid ที่ไม่ต้องมี key อยู่แล้ว) |
+| `RSS2JSON_API_KEY` | ไม่ | ไม่ต้องใส่แล้ว — `news-feed.js` อ่าน Google News RSS เอง ตัวนี้เป็นแค่ fallback ถ้า Google ตอบหน้าผิด |
 
 > ⚠️ ใส่ key แล้วต้อง **Trigger deploy** ใหม่เสมอ และเช็ค *Deploy contexts* ให้ครอบคลุม
 > Deploy previews ด้วย ไม่งั้น preview จะมองไม่เห็น key (นี่คือสาเหตุที่ก่อนหน้านี้ขึ้น
@@ -50,8 +62,12 @@ Site configuration → Environment variables → Add a variable:
 
 ### 4. เสร็จแล้ว!
 เข้า URL ของเว็บที่ Netlify ให้มา (เช่น `your-site.netlify.app`) — ทุกคนที่เข้ามาจะเห็นข้อมูลชุดเดียวกัน
-ไม่มีใครแก้ไขอะไรได้ (ไม่มีปุ่ม/ช่องกรอกให้แก้แล้ว) และไม่มีใครเห็น API key ของคุณเลย
-แม้จะกด "View Page Source" ดู
+และ **ไม่มีใครเห็น API key ของคุณเลย** แม้จะกด "View Page Source" ดู
+
+> หมายเหตุ: แท็บ **BTC Buy Score** ยังมีช่องกรอก/สไลเดอร์ให้ "แก้เองชั่วคราว" ได้ (NUPL, MVRV, ราคา, ATH)
+>โดยตั้งใจ — เอาไว้ใช้ตอนดึงอัตโนมัติไม่ได้ และค่าที่กรอกจะถูกเก็บไว้ในเบราว์เซอร์ของผู้ใช้คนนั้นเท่านั้น
+>ไม่กระทบคนอื่น ส่วนช่อง BGeometrics token ในหน้าเว็บไม่จำเป็นต้องใช้แล้ว (แนะนำให้ตั้ง
+>`BGEOMETRICS_TOKEN` เป็น env var ที่ Netlify แทน) และตัวเลขเศรษฐกิจทั้งหมดดึงสดอัตโนมัติ
 
 ## ข้อมูลเศรษฐกิจสหรัฐ (Fed / CPI / ว่างงาน / จ้างงาน) อัปเดตเองยังไง
 
@@ -85,6 +101,83 @@ Site configuration → Environment variables → Add a variable:
 - ค่า Fed Rate / CPI / Unemployment / Payrolls ถูกแคช 15 นาที–3 ชั่วโมงตามรอบประกาศตัวเลข
   (memory ของ Function + CDN + localStorage ฝั่งผู้ใช้) — ต่อให้มีคนเข้าพร้อมกันเยอะ ก็ยิง upstream
   จริงๆ แค่ไม่กี่ครั้งต่อวัน
-- ราคา Gold, USD/THB, JPY/THB, CNY/THB, Oil (ผ่าน Binance/OKX/Hyperliquid), BTC ทุกอย่างในแท็บ BTC
-  ยังคงดึงตรงจากเบราว์เซอร์ผู้ใช้เหมือนเดิม เพราะ API พวกนั้นไม่ติด CORS และไม่มี key ที่ต้องซ่อนอยู่แล้ว
+- ราคา Gold (PAXG), USD/THB, JPY/THB, CNY/THB, BTC price/ATH, Funding Rate, Open Interest
+  ยังคงดึงตรงจากเบราว์เซอร์ผู้ใช้เหมือนเดิม เพราะ API พวกนั้นไม่ติด CORS และไม่มี key ที่ต้องซ่อน
+- ตัวชี้วัด on-chain (NUPL / MVRV Z-Score / MVRV Ratio) **เปลี่ยนมาดึงผ่าน `onchain.js` ก่อน**
+  (เดิมต้องพึ่ง CORS proxy ฟรีอย่าง allorigins ซึ่งล่มบ่อย) แล้วค่อย fallback ไปยิงตรง/ผ่าน proxy
+  — ถ้าเซิร์ฟเวอร์ดึงไม่ได้จริงๆ หน้าเว็บยังมีค่าเก่าใน localStorage + ช่องกรอกเองให้ใช้ต่อ
 - Netlify free tier ให้ Functions ฟรี 125,000 ครั้ง/เดือน — เพียงพอมากสำหรับเว็บนี้
+
+## รันในเครื่อง (ไม่ต้องมี netlify-cli)
+
+```bash
+npm run dev     # → http://localhost:8080  (เปิด index.html + เรียก Functions ตัวจริงให้เลย)
+PORT=3000 npm run dev
+```
+
+`tools/dev-server.js` เป็นเซิร์ฟเวอร์เล็กๆ ที่ไม่มี dependency: เสิร์ฟไฟล์ static จาก root
+และเรียก handler ใน `netlify/functions/` ตรงๆ (เช่น `http://localhost:8080/.netlify/functions/fred-data`)
+พร้อมอ่าน `_redirects` เพื่อปิดพาธที่ไม่ควรเปิดเหมือนบน Netlify — ถ้าเครื่องรันไม่มีเน็ตออกนอก
+Functions จะตอบ JSON แบบ graceful failure ซึ่งก็คือพฤติกรรมจริงเวลาต้นทางล่มนั่นเอง
+
+## รันเทสต์ในเครื่อง
+
+```bash
+npm test        # = node --test "netlify/functions/*.test.js" "tests/*.test.js"   (57 เคส)
+```
+
+ชุดเทสต์เป็น `node:test` ล้วนๆ ไม่ต้องติดตั้งอะไรเพิ่ม (ไม่ต้องมี node_modules) และไม่มีการเรียก
+เครือข่ายออกไปเลย — ครอบคลุมตัว parser ของ FRED/BLS/Google News RSS, การคำนวณ CPI YoY แบบ
+"เทียบตามวันที่จริง" (เคสเดือน ต.ค. 2025 หาย), การคำนวณ payrolls, ปฏิทิน FOMC 2026–2027 และ
+`tests/index-html.test.js` ที่รันสคริปต์ inline ทั้งหมดของ index.html กับ DOM จำลอง
+(จับ typo / id ที่ไม่มีจริง / ลืม escape ข้อความจาก feed) และ `tests/fed-analysis.test.js`
+ที่ป้อนข้อมูลจำลองเข้าไปแล้วตรวจว่าบทวิเคราะห์เปลี่ยนตามตัวเลขจริง
+
+## ค่า consensus ("ที่คาด") มาจากไหน และอัปเดตยังไง
+
+| ระดับ | ที่มา | หมายเหตุ |
+|---|---|---|
+| 1 | **ค่าที่คุณแก้เองในหน้าเว็บ** (ปุ่ม ✏️) | เก็บใน `localStorage` ของเบราว์เซอร์นั้น · ใช้เฉพาะเครื่องที่แก้ · ทับค่าอื่นทีละช่อง |
+| 2 | `/.netlify/functions/consensus` | อ่าน Investing.com สดๆ ฝั่งเซิร์ฟเวอร์ (ไม่มี CORS) แคช 3 ชม. · ไม่ต้องใช้ key |
+| 3 | ค่าคงที่ `CONSENSUS` ใน `index.html` | ค่าที่คัดมาจาก Investing.com เมื่อ 12 ก.ย. 2026 ใช้เมื่อระดับ 1–2 ใช้ไม่ได้ |
+
+หน้าเว็บจะบอกท้ายการ์ดวิเคราะห์เสมอว่าใช้ระดับไหน และค่า "ตามจริง" ของ Investing.com ตรงกับตัวเลข
+บนการ์ดหรือไม่ (ถ้าไม่ตรง = FRED ตามหลังอยู่หนึ่งรอบ จะขึ้นคำเตือนไว้ ไม่เทียบข้ามรอบเงียบๆ)
+
+**ถ้าอยากแก้ค่า "ที่คาด" เอง — แก้ได้จากในหน้าเว็บเลย ไม่ต้องแตะโค้ด**: กดปุ่ม
+**✏️ แก้ค่า "ที่คาด" เอง** ใต้หัวข้อ "🔍 วิเคราะห์" แล้วกรอกตัวเลขได้ทันที (บันทึกอัตโนมัติทันทีที่แก้)
+- ช่องไหนเว้นว่าง = ช่องนั้นใช้ค่าอัตโนมัติ (ค่าอัตโนมัติจะโชว์เป็นตัวอย่างจางๆ ในช่อง)
+- ปุ่ม **↺ คืนค่าเริ่มต้น (ใช้ค่าจาก Investing.com)** = ล้างค่าที่ตั้งเองทั้งหมด
+- ค่าที่ตั้งเองเก็บใน `localStorage` ของเบราว์เซอร์เครื่องนั้น — เครื่อง/เบราว์เซอร์อื่นยังเห็นค่าอัตโนมัติ
+- ท้ายการ์ดวิเคราะห์จะขึ้นว่า `✏️ ค่าที่คุณตั้งเอง (...)` เสมอ เพื่อไม่ให้สับสนว่ากำลังเทียบกับชุดไหน
+
+ถ้าอยากให้ **ทุกคน** ที่เปิดเว็บเห็นค่าใหม่ (ไม่ใช่แค่เครื่องตัวเอง) ให้แก้ตัวเลขในบล็อก `CONSENSUS`
+(`cpi`, `coreCpi`, `unrate`, `nfp`, `fed`, `asOf`) ใน `index.html` ที่เดียว — ไม่ต้องแตะโค้ดส่วนอื่น
+
+## รอบแก้ไข ก.ย. 2026 (สรุปสั้น)
+
+- **บทวิเคราะห์ "ตัวเลขออกมาดี/แย่แค่ไหน เทียบกับที่คาด" สร้างอัตโนมัติแล้ว** — เดิมเป็นข้อความเขียนมือ
+  ค้างไว้รอบ ก.ค. 2026 (ตัวเลขฝังในเนื้อความ) ตอนนี้สร้างจากตัวเลขสดทุกครั้งที่ค่าเปลี่ยน โดยเทียบกับ
+  consensus + เดือนก่อน + ค่าเฉลี่ย 3 เดือน
+- **ค่า "ที่คาด" มาจาก Investing.com** — `consensus.js` อ่านหน้า economic calendar ของ Investing.com
+  ฝั่งเซิร์ฟเวอร์ (CPI 733 · Core CPI 736 · NFP 227 · ว่างงาน 300 · Fed 168) แคช 3 ชม. ใช้ร่วมกันทุกคน
+  ถ้าดึงไม่ได้ (Cloudflare บล็อก/หน้าเว็บเปลี่ยน) หน้าเว็บจะถอยไปใช้ค่าสำรองที่ฝังไว้ และ **บอกผู้ใช้เสมอ**
+  ว่ากำลังใช้ชุดไหน ณ วันไหน พร้อมลิงก์ให้ตรวจเอง · ระบบยังเทียบค่า "ตามจริง" ของ Investing.com กับ
+  ตัวเลขบนการ์ดด้วย ถ้าไม่ตรงรอบกันจะขึ้นคำเตือน ไม่เทียบข้ามรอบเงียบๆ
+- **แก้ค่า "ที่คาด" ได้จากในหน้าเว็บ** — ปุ่ม ✏️ ใต้หัวข้อวิเคราะห์ เปิดช่องให้กรอก CPI / Core CPI /
+  ว่างงาน / การจ้างงาน / กรอบ Fed / วันที่อ้างอิง แล้วบทวิเคราะห์สร้างใหม่ทันที · เก็บใน `localStorage`
+  ของเบราว์เซอร์นั้น (ไม่ต้องมีเซิร์ฟเวอร์ ไม่ต้องมีรหัสผ่าน) · ค่าที่ตั้งเองชนะค่าสดจาก Investing.com
+  ทีละช่อง และท้ายการ์ดระบุชัดว่า `✏️ ค่าที่คุณตั้งเอง` พร้อมปุ่มคืนค่าเริ่มต้น
+- แก้ **BLS series ของ payrolls ที่ผิด** (`CES0500000003` = รายได้เฉลี่ยต่อชั่วโมง ไม่ใช่จำนวนตำแหน่งงาน)
+  → `CES0000000001` (Total Nonfarm) ทำให้ fallback ทำงานได้จริง
+- แก้ **ฟอนต์ของแท็บ BTC ไม่เคยโหลด**: `@import` ถูกวางผิดตำแหน่งใน `<style>` (CSS บังคับว่าต้องเป็น
+  กฎแรกสุด) → ย้ายไป `<link rel="stylesheet">` ใน `<head>` พร้อม preconnect
+- **ข่าวไม่ต้องพึ่ง rss2json อีกต่อไป** (`news-feed.js` อ่าน Google News RSS เอง มี rss2json เป็น fallback)
+  + ตั้ง timeout 8 วิ + จำกัดความยาว query + แคช CDN 10 นาที (เดิมยิงทุกครั้งที่เปิด/รีเฟรชหน้า)
+- **อุดช่อง XSS จาก feed**: พาดหัว/คำอธิบายจาก RSS ถูกใส่ `innerHTML` ดิบๆ → ใส่ `esc()` ครบทุกฟิลด์
+- เพิ่ม **2027 FOMC dates** (เดิมการ์ดนับถอยหลังจะว่างเปล่าตั้งแต่ 1 ม.ค. 2027 และ TTL วันประกาศจะหยุดทำงาน)
+- **Lazy-load TradingView** (สคริปต์ ~1 MB โหลดเฉพาะตอนกดแท็บ BTC), **deep link `#btc`**, **OG tags** สำหรับแชร์
+- **ราคา/ATH ที่ผู้ใช้กรอกเองไม่ถูกทับอีกแล้ว** + ปุ่ม "↻ ใช้ราคาสด"
+- เพิ่ม **security headers** ใน `netlify.toml` และ pin `NODE_VERSION=20`
+
+รายละเอียดทั้งหมด + สิ่งที่ยังไม่ได้แก้: ดู [`REVIEW-2026-09.md`](./REVIEW-2026-09.md)

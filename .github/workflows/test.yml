@@ -1,0 +1,18 @@
+name: tests
+
+# รันชุดเทสต์เองทุกครั้งที่มี push/PR — ไม่ต้องมีใครมานั่งจำว่า "ต้องรัน npm test ก่อน merge"
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: npm test (ไม่ใช้ dependency ภายนอก จึงไม่ต้อง npm install)
+        run: npm test
