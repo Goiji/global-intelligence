@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Global Intelligence</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23F7931A'/%3E%3Ctext x='50' y='69' font-size='58' font-family='Arial, sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3E%E2%82%BF%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 
 #newsTab{--bg:#0b1020;--panel:#121a2d;--panel2:#0e1628;--text:#eef3ff;--muted:#8e9bb5;--line:#24304a;--good:#45d483;--warn:#ffca58;--bad:#ff6577;--accent:#7c9cff}
@@ -15,15 +18,32 @@
 .full{grid-column:1/-1}.events{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.event{border:1px solid var(--line);background:var(--panel2);border-radius:14px;padding:15px}.event .rank{font-size:11px;color:var(--accent);font-weight:800}.event h3{font-size:15px;margin:7px 0}.event p{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 10px}.impact{font-size:12px;font-weight:800}.brief{font-size:15px;line-height:1.75;color:#d9e0ef}.watch{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.watch div{padding:14px;background:var(--panel2);border:1px solid var(--line);border-radius:13px}.watch b{display:block;font-size:14px;margin-bottom:4px}.footer{margin-top:18px;color:#68758e;font-size:12px;line-height:1.6}
 @media(max-width:800px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.events,.watch{grid-template-columns:1fr}.top{flex-direction:column}.date{text-align:left}.barrow{grid-template-columns:100px 1fr 36px}.full{grid-column:auto}}
 
+.action-btn{
+  background: #121a2d;
+  border: 1px solid #24304a;
+  color: #eef3ff;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+.action-btn:hover{
+  border-color: #7c9cff;
+  background: #1a253e;
+  color: #fff;
+}
+.action-btn:active{
+  transform: scale(0.97);
+}
 
-*{box-sizing:border-box}
-body{margin:0}
 .tabbar{position:sticky;top:0;z-index:1000;display:flex;gap:8px;padding:12px 18px;background:#090e18;border-bottom:1px solid #24304a}
-.tabbtn{border:1px solid #24304a;background:#121a2d;color:#9aa8bf;padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:750}
-.tabbtn.active{background:#243451;color:#fff;border-color:#7c9cff}
+.tabbar .tabbtn{border:1px solid #24304a;background:#121a2d;color:#9aa8bf;padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:750;font-family:inherit;transition:all 0.15s ease;}
+.tabbar .tabbtn.active{background:#243451;color:#fff;border-color:#7c9cff}
+.tabbar .tabbtn:hover:not(.active){border-color:#3d4e73;color:#eef3ff;}
 .tabpage{display:none}.tabpage.active{display:block}
-
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
   #btcTab{
     --bg: #0b1020;
@@ -39,7 +59,6 @@ body{margin:0}
     --disp: 'Space Grotesk', system-ui, sans-serif;
   }
 
-  *{box-sizing:border-box; margin:0; padding:0;}
   body.theme-btc{
     min-height:100vh;
     background: linear-gradient(180deg,#0a0f1d,#0d1425);
@@ -278,8 +297,8 @@ body{margin:0}
   </div>
 </div>
 <div class="muted" style="font-size:10px; margin-top:10px; line-height:1.6;">
-  Gold ใช้ราคา <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" href="https://www.binance.com/en/trade/PAXG_USDT">PAXG</a> (โทเคนหนุนหลังด้วยทองคำจริง 1 ทรอยออนซ์/เหรียญ) จาก Binance เป็นตัวแทนราคาทองสด · USD/THB, JPY/THB และ CNY/THB จาก frankfurter.app (อัตราแลกเปลี่ยนสด ฟรี) ·
-  Oil WTI จาก <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" href="https://www.alphavantage.co">Alpha Vantage</a> (ต้องมี free key เพราะ Alpha Vantage ไม่รองรับ CORS โดยตรง เลยต้องผ่าน CORS proxy)
+  Gold ใช้ราคา <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="https://www.binance.com/en/trade/PAXG_USDT">PAXG</a> (โทเคนหนุนหลังด้วยทองคำจริง 1 ทรอยออนซ์/เหรียญ) จาก Binance/CoinGecko เป็นตัวแทนราคาทองสด · USD/THB, JPY/THB และ CNY/THB จาก frankfurter / ECB (อัตราแลกเปลี่ยนสด ฟรี) ·
+  Oil WTI อัปเดตสดจาก FRED / Alpha Vantage
 </div>
 </section>
 
@@ -302,7 +321,7 @@ body{margin:0}
 </div>
 <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
   <div id="fredFetchStatus" class="muted" style="font-size:11px;"></div>
-  <button id="fedRefreshBtn" type="button" class="tabbtn" style="padding:3px 10px; font-size:11px; border-radius:8px; line-height:1.5;">↻ ดึงค่าสดใหม่</button>
+  <button id="fedRefreshBtn" type="button" class="action-btn" style="padding:3px 10px; font-size:11px; line-height:1.5;">↻ ดึงค่าสดใหม่</button>
 </div>
 <div class="metrics" id="fedMetrics">
   <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">3.50–3.75%</div></div>
@@ -373,21 +392,22 @@ body{margin:0}
 <div class="footer">
   <span id="newsStatus">กำลังโหลดข่าว…</span> ·
   วิเคราะห์อัตโนมัติจากพาดหัวข่าวสด (Google News RSS) ด้วยระบบให้คะแนนคำสำคัญ — ฟรี 100% ไม่มีค่าใช้จ่ายแอบแฝง ไม่ใช่คำแนะนำการลงทุน ·
-  <button id="newsRefreshBtn" style="padding:4px 10px; font-size:11px;">🔄 รีเฟรชข่าว</button>
-  <div style="margin-top:6px; font-size:10px; opacity:0.7;">ℹ️ ใช้แค่ RSS feed ฟรี + คำนวณคะแนนในเบราว์เซอร์ด้วย keyword-matching ไม่มีการเรียก AI/LLM แบบเสียเงินเลย — เอาไฟล์นี้ไป host เองที่ไหนก็ทำงานได้ปกติ ไม่ต้องพึ่ง Claude artifact</div>
+  <button id="newsRefreshBtn" type="button" class="action-btn" style="padding:4px 10px; font-size:11px;">🔄 รีเฟรชข่าว</button>
+  <div style="margin-top:6px; font-size:10px; opacity:0.7;">ℹ️ ใช้แค่ RSS feed ฟรี + คำนวณคะแนนในเบราว์เซอร์ด้วย keyword-matching ไม่มีการเรียก AI/LLM แบบเสียเงินเลย — เอาไฟล์นี้ไป host เองที่ไหนก็ทำงานได้ปกติ</div>
 </div>
 </div>
 <script>
-document.getElementById('today').textContent=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+document.getElementById('today').textContent = new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
 </script>
 <script>
 (function(){
   const el = id => document.getElementById(id);
 
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  }
+
   // ---------- storage: window.storage (Claude artifact) with localStorage fallback ----------
-  // window.storage only exists inside Claude's own artifact runtime, and even there it can be
-  // unavailable in some preview contexts. Every save/load below goes through this so nothing
-  // silently fails to persist (this was the root cause of the RSS/FRED key not sticking).
   async function storageGet(key){
     try{
       if(window.storage){ const r = await window.storage.get(key); return r ? r.value : null; }
@@ -421,9 +441,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   ];
 
   async function fetchFeed(feed){
-    // Goes through our own Netlify Function instead of calling rss2json directly — the
-    // RSS2JSON key (if you set one in Netlify env vars) stays on the server, never visible
-    // to visitors, and everyone shares your quota instead of the public anonymous one.
     const url = '/.netlify/functions/news-feed?q=' + encodeURIComponent(feed.q);
     try{
       const r = await fetchWithTimeout(url, 8000);
@@ -441,10 +458,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   }
 
   // ---------- free translation (MyMemory API, no key needed) ----------
-  // ปรับปรุง Sep 2026: แก้บั๊ก MyMemory หมดโควต้าแล้วส่ง "MYMEMORY WARNING: YOU USED ALL..."
-  // กลับมาในฟิลด์ translatedText ทำให้ Top Events โชว์ข้อความเตือนแทนพาดหัวข่าว
-  // วิธีแก้: ตรวจจับ warning, เพิ่ม email เพื่อขยายโควต้า (anonymous 1k → 50k words/day),
-  // แคชคำแปลซ้ำ, และถ้าโดน limit ให้พักการเรียก API 4 ชม. แล้วโชว์ภาษาอังกฤษแทน
   const _translationCache = new Map();
   let _translationBlockedUntil = 0;
   async function translateToThai(text){
@@ -464,7 +477,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       }
       const upper = t.toUpperCase();
       if(upper.includes('MYMEMORY WARNING') || upper.includes('YOU USED ALL AVAILABLE') || upper.includes('TRANSLATED.NET/DOC/USAGELIMITS') || upper.includes('MYMEMORY')){
-        // โดน limit แล้ว — พักการแปล 4 ชม. ไม่ให้ยิงซ้ำจนโควต้ากู้คืน
         _translationBlockedUntil = Date.now() + 4 * 60 * 60 * 1000;
         _translationCache.set(text, text);
         return text;
@@ -479,7 +491,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         _translationCache.set(text, text);
         return text;
       }
-      // ถ้าแปลคืนมาเป็นภาษาอังกฤษพิมพ์ใหญ่เหมือนเดิม แสดงว่าไม่ได้แปลจริง
       if(t.trim() === text.trim()){
         _translationCache.set(text, text);
         return text;
@@ -492,10 +503,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     }
   }
 
-  // ---------- FREE local scoring engine (no paid API calls at all) ----------
-  // Simple keyword-weighted heuristic run entirely in the browser on the RSS
-  // headlines already fetched. Not as nuanced as an LLM read, but costs nothing
-  // and needs no key/quota beyond the free RSS feed itself.
+  // ---------- FREE local scoring engine ----------
   const HIGH_RISK_WORDS = ['war','conflict','crisis','attack','strike','sanction','invasion','tension',
     'crash','recession','default','shutdown','emergency','collapse','threat','missile','nuclear',
     'bankruptcy','layoff','selloff','sell-off','plunge','surge in inflation','rate hike','hike rates',
@@ -528,7 +536,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     const totalHeadlines = feedResults.reduce((a,f)=>a+f.titles.length,0);
     const confidence = Math.min(100, totalHeadlines * 4);
 
-    // Simple heuristic asset outlook derived from category scores (NOT live prices).
     const geo = categories.geopolitical, econ = categories.economic, energy = categories.energy;
     const assets = {
       gold:    Math.max(0, Math.min(100, Math.round(50 + (worldRiskScore-50)*0.6))),
@@ -538,7 +545,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       stocks:  Math.max(0, Math.min(100, Math.round(100 - worldRiskScore)))
     };
 
-    // Top events: highest-scoring categories' first real headline (deterministic, no AI paraphrase).
     const sorted = [...feedResults].sort((a,b)=>categories[b.key]-categories[a.key]);
     const topEvents = sorted.filter(f=>f.titles.length>0).slice(0,3).map((f,i)=>({
       rank: i+1, category: f.label.toUpperCase(), title: f.titles[0],
@@ -578,8 +584,9 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
 
   function assetBarClass(v){
     if(v >= 70) return 'green';
-    if(v >= 50) return 'blue';
-    return 'yellow';
+    if(v >= 45) return 'blue';
+    if(v >= 30) return 'yellow';
+    return 'red';
   }
 
   function renderData(d){
@@ -602,16 +609,15 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       return `<div class="barrow"><span>${l}</span><div class="track"><div class="fill ${assetBarClass(v)}" style="width:${v}%"></div></div><b>${v}</b></div>`;
     }).join('');
 
-    // กันกรณีแคชเก่ายังมีข้อความ MYMEMORY WARNING ค้างอยู่ — ถ้า titleTh มีคำว่า MYMEMORY ให้ตกกลับไปใช้ title ภาษาอังกฤษแทน
     el('topEvents').innerHTML = (d.topEvents || []).map(ev => {
       const safeTitleTh = (ev.titleTh && !/MYMEMORY/i.test(ev.titleTh)) ? ev.titleTh : ev.title;
       const safeDescTh = (ev.descriptionTh && !/MYMEMORY/i.test(ev.descriptionTh)) ? ev.descriptionTh : ev.description;
       return `<div class="event">
-        <div class="rank">0${ev.rank} · ${ev.category}</div>
-        <h3>${safeTitleTh}</h3>
-        <div class="muted" style="font-size:11px; margin-top:-6px; margin-bottom:8px;">${ev.title}</div>
-        <p>${safeDescTh}</p>
-        <div class="impact">Market impact · ${ev.marketImpact}/100</div>
+        <div class="rank">0${ev.rank} · ${esc(ev.category)}</div>
+        <h3>${esc(safeTitleTh)}</h3>
+        <div class="muted" style="font-size:11px; margin-top:-6px; margin-bottom:8px;">${esc(ev.title)}</div>
+        <p>${esc(safeDescTh)}</p>
+        <div class="impact">Market impact · ${esc(ev.marketImpact)}/100</div>
       </div>`;
     }).join('');
 
@@ -619,13 +625,10 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       + '<span class="muted">— คำนวณอัตโนมัติ ฟรี 100% ไม่ใช่คำแนะนำการลงทุน</span>';
 
     el('watchList').innerHTML = (d.watch || []).map(w =>
-      `<div><b>${w.title}</b><span class="muted">${w.subtitle}</span></div>`
+      `<div><b>${esc(w.title)}</b><span class="muted">${esc(w.subtitle)}</span></div>`
     ).join('');
   }
 
-  // ---------- World Risk Score history + trend sparkline ----------
-  // Every successful score computation gets appended (1 point/day, capped 30 days) so we
-  // can show a trend line instead of just today's single number. Pure local storage, no API.
   async function recordScoreHistory(score){
     const today = new Date().toISOString().slice(0,10);
     let hist = [];
@@ -633,13 +636,14 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       const raw = await storageGet('news-score-history');
       if(raw) hist = JSON.parse(raw);
     }catch(e){ hist = []; }
+    if(!Array.isArray(hist)) hist = [];
 
     if(hist.length && hist[hist.length-1].date === today){
-      hist[hist.length-1].score = score; // update today's point instead of duplicating
+      hist[hist.length-1].score = score;
     }else{
       hist.push({ date: today, score });
     }
-    hist = hist.slice(-30); // keep last 30 days
+    hist = hist.slice(-30);
 
     await storageSet('news-score-history', JSON.stringify(hist));
     renderSparkline(hist);
@@ -661,7 +665,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       return x.toFixed(1) + ',' + y.toFixed(1);
     }).join(' ');
     const trendUp = scores[scores.length-1] >= scores[0];
-    const color = trendUp ? '#ff6577' : '#45d483'; // risk score UP = worse (red), DOWN = better (green)
+    const color = trendUp ? '#ff6577' : '#45d483';
     box.innerHTML = `
       <svg viewBox="0 0 ${w} ${h}" style="width:100%; height:${h}px; display:block;">
         <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
@@ -670,10 +674,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     `;
   }
 
-  // ---------- FOMC meeting countdown ----------
-  // Pure date math, no network call — official 2026 FOMC statement dates (2:00pm ET, day 2
-  // of each 2-day meeting) per federalreserve.gov. Update this list when the 2027 calendar
-  // is published.
   const FOMC_DATES_2026 = [
     '2026-01-28','2026-03-18','2026-04-29','2026-06-17',
     '2026-07-29','2026-09-16','2026-10-28','2026-12-09'
@@ -681,7 +681,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   function renderFomcCountdown(){
     const now = new Date();
     const next = FOMC_DATES_2026
-      .map(d => new Date(d + 'T19:00:00Z')) // ~2pm ET in UTC
+      .map(d => new Date(d + 'T19:00:00Z'))
       .find(d => d > now);
     if(!next){
       el('fomcDays').textContent = '–';
@@ -699,10 +699,10 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       const raw = await storageGet('news-yesterday-score');
       if(raw) baseline = JSON.parse(raw);
     }catch(e){ /* none yet */ }
+    if(typeof baseline !== 'object' || baseline === null || !isFinite(baseline.score)) baseline = null;
 
     const today = new Date().toISOString().slice(0,10);
     if(!baseline || baseline.date !== today){
-      // roll baseline forward once per day
       const prevScore = baseline ? baseline.score : newScore;
       await storageSet('news-yesterday-score', JSON.stringify({ date: today, score: prevScore }));
       const diff = newScore - prevScore;
@@ -717,7 +717,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       const feedResults = await Promise.all(RSS_FEEDS.map(fetchFeed));
       const gotAny = feedResults.some(f => f.titles.length > 0);
       if(!gotAny){
-        el('newsStatus').textContent = 'ดึงข่าวไม่สำเร็จ (ลองใส่ RSS2JSON key ใน "ตั้งค่าเพิ่มเติม") — แสดงข้อมูลล่าสุดที่เคยดึงได้แทน';
+        el('newsStatus').textContent = 'ดึงข่าวไม่สำเร็จ — แสดงข้อมูลล่าสุดที่เคยดึงได้แทน';
         return;
       }
       el('newsStatus').textContent = 'กำลังคำนวณคะแนน (ฟรี ไม่มีค่าใช้จ่าย)…';
@@ -726,18 +726,18 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       const diff = await computeChangeLabel(d.worldRiskScore);
       el('riskChange').textContent = (diff >= 0 ? '▲ +' : '▼ ') + diff + ' จากฐานวันนี้';
 
-      renderData(d); // render English-first immediately so the page isn't blank while translating
+      renderData(d);
 
       el('newsStatus').textContent = 'กำลังแปลพาดหัวข่าวเป็นไทย…';
       await Promise.all(d.topEvents.map(async ev => {
         ev.titleTh = await translateToThai(ev.title);
         if(ev.rawDescription) ev.descriptionTh = await translateToThai(ev.rawDescription);
       }));
-      renderData(d); // re-render with Thai translations filled in
+      renderData(d);
 
       await recordScoreHistory(d.worldRiskScore);
       await storageSet('news-dashboard-cache', JSON.stringify({ data: d, ts: Date.now() }));
-      el('newsStatus').textContent = 'อัปเดตล่าสุด · ' + new Date().toLocaleTimeString();
+      el('newsStatus').textContent = 'อัปเดตล่าสุด · ' + new Date().toLocaleTimeString('th-TH');
       document.getElementById('today').textContent = new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
     }catch(e){
       el('newsStatus').textContent = 'เกิดข้อผิดพลาด: ' + e.message + ' — ลองกดรีเฟรชอีกครั้ง';
@@ -750,7 +750,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       if(raw){
         const c = JSON.parse(raw);
         renderData(c.data);
-        el('newsStatus').textContent = 'ข้อมูลจากแคช (' + new Date(c.ts).toLocaleTimeString() + ') กำลังรีเฟรช…';
+        el('newsStatus').textContent = 'ข้อมูลจากแคช (' + new Date(c.ts).toLocaleTimeString('th-TH') + ') กำลังรีเฟรช…';
       }
     }catch(e){ /* no cache yet */ }
     try{
@@ -759,22 +759,11 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     }catch(e){ /* no history yet */ }
   }
 
-  // ---------- Live US macro data: Fed funds, CPI (headline + core), unemployment, payrolls ----------
-  // Everything comes from /.netlify/functions/fred-data, which no longer requires an API key: it
-  // tries the keyed FRED API first (if FRED_API_KEY is configured), then FRED's public graph CSV,
-  // then the BLS public API — so it works in production, deploy previews and branch deploys alike.
-  // The server also tells us when the numbers could next change (`refreshAfter`): ~15 min on
-  // CPI / jobs-report / FOMC days, ~3 h otherwise. We re-poll on that schedule, plus whenever the
-  // tab becomes visible again. Only the pre-load placeholders in the markup above are hardcoded.
-  const FED_CACHE_KEY = 'fed-data-cache-v3';  // v3: TTL-based cache, adds nfp/coreCpi fields
-  const FED_POLL_MS = 10 * 60 * 1000;         // safety-net poll; the server TTL usually decides
+  const FED_CACHE_KEY = 'fed-data-cache-v3';
+  const FED_POLL_MS = 10 * 60 * 1000;
   let fedNextFetchAt = 0;
 
   function isValidNum(v){ return typeof v === 'number' && isFinite(v); }
-
-  function esc(s){
-    return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
-  }
 
   function hasAnyFedField(d){
     return !!(d && (d.upper || d.lower || d.effr || d.cpi || d.unrate || d.nfp));
@@ -800,7 +789,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     return seen.length ? seen.map(s => SOURCE_LABEL[s] || s).join(' + ') : 'FRED/BLS';
   }
 
-  // Payrolls are a signed change in jobs — keep the sign and the thousands separators.
   function fmtJobs(v){
     const n = Math.round(v);
     return (n >= 0 ? '+' : '−') + Math.abs(n).toLocaleString('en-US');
@@ -818,8 +806,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   }
 
   function applyFedData(data){
-    // Each field is applied independently with validation — one bad value must never abort the
-    // rest (that was the original CPI "." bug: one null took down every card after it).
     let applied = 0;
     try{
       const { upper, lower, effr, cpi, coreCpi, unrate, nfp } = data || {};
@@ -844,11 +830,10 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         const node = el('nfp');
         node.textContent = fmtJobs(nfp.value);
         node.className = 'num ' + (nfp.value >= 0 ? 'up' : 'down');
-        node.style.color = '';   // let the up/down class decide instead of a hardcoded colour
+        node.style.color = '';
         applied++;
       }
 
-      // "as of" line — real dates and the real source, so freshness is visible at a glance.
       const bits = [];
       if(cpi && cpi.date && isValidNum(cpi.value)){
         bits.push('CPI ' + thMonth(cpi.date) + ' ' + cpi.value.toFixed(1) + '%'
@@ -880,7 +865,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     const statusEl = el('fredFetchStatus');
     const now = Date.now();
 
-    // 1) Local cache — but only while the server says the numbers can't have changed yet.
     let cached = null;
     try{
       const raw = await storageGet(FED_CACHE_KEY);
@@ -896,7 +880,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       }
     }
 
-    // 2) Throttle — don't re-hit the network until the TTL says it's worth it.
     if(!force && now < fedNextFetchAt) return;
     fedNextFetchAt = now + FED_POLL_MS;
 
@@ -907,7 +890,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       try{
         data = await r.json();
       }catch(parseErr){
-        throw new Error('เซิร์ฟเวอร์ตอบกลับมาไม่ใช่ JSON (HTTP ' + r.status + ') — หน้านี้ต้องรันบน Netlify จึงจะใช้ Functions ได้ (เปิด index.html ตรงๆ จากดิสก์จะดึงสดไม่ได้)');
+        throw new Error('เซิร์ฟเวอร์ตอบกลับมาไม่ใช่ JSON (HTTP ' + r.status + ')');
       }
       if(data && data.error && !hasAnyFedField(data)) throw new Error(data.error);
       if(!r.ok && !hasAnyFedField(data)) throw new Error('HTTP ' + r.status);
@@ -926,7 +909,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     }catch(e){
       fedNextFetchAt = now + FED_POLL_MS;
       const reason = (e && e.message) ? e.message : String(e);
-      // Prefer the last payload we actually saved over the hardcoded placeholders.
       if(cached && cached.data && applyFedData(cached.data) > 0){
         const mins = cached.savedAt ? Math.max(1, Math.round((Date.now() - cached.savedAt) / 60000)) : 0;
         if(statusEl) statusEl.textContent = '⚠️ ดึงสดไม่สำเร็จ (' + reason + ') — แสดงค่าล่าสุดที่เคยดึงได้'
@@ -940,39 +922,39 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   }
 
   refreshFedData();
-
-  // Keep the cards honest while the tab stays open, and re-check the moment the user comes back
-  // to a backgrounded tab — that's usually right after a release landed.
   setInterval(function(){ refreshFedData(); }, FED_POLL_MS);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) refreshFedData(); });
 
   const fedRefreshBtn = el('fedRefreshBtn');
-  if(fedRefreshBtn) fedRefreshBtn.addEventListener('click', function(){ refreshFedData({ force:true }); });
+  if(fedRefreshBtn) fedRefreshBtn.addEventListener('click', function(e){ e.stopPropagation(); refreshFedData({ force:true }); });
 
-  el('newsRefreshBtn').addEventListener('click', refreshNews);
+  const newsRefreshBtn = el('newsRefreshBtn');
+  if(newsRefreshBtn) newsRefreshBtn.addEventListener('click', refreshNews);
 
-  // ---------- Real live asset prices (not sentiment-derived) ----------
-  // Gold: no free/no-key/CORS-friendly spot gold API found, so we use PAXG (Pax Gold, a token
-  // backed 1:1 by a troy ounce of physical gold) traded on Binance as a live proxy — Binance's
-  // API is already confirmed CORS-friendly elsewhere in this app.
-  // USD/THB & JPY/THB: both from one frankfurter.app call (free ECB rates, no key), with one
-  // retry since a single transient failure shouldn't leave the numbers blank.
+  // ---------- Live Asset Prices ----------
   async function fetchLivePrices(){
+    // Gold: Try Binance PAXG first, fallback to CoinGecko PAXG
     try{
-      const r = await fetchWithTimeout('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT', 6000);
-      const j = await r.json();
-      const price = parseFloat(j.price);
-      el('lpGold').textContent = isNaN(price) ? 'ดึงไม่สำเร็จ' : '$' + price.toLocaleString(undefined,{maximumFractionDigits:2}) + ' / oz';
+      let price = null;
+      try{
+        const r = await fetchWithTimeout('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT', 5000);
+        const j = await r.json();
+        price = parseFloat(j.price);
+      }catch(e){
+        const r2 = await fetchWithTimeout('https://api.coingecko.com/api/v3/simple/price?ids=pax-gold&vs_currencies=usd', 5000);
+        const j2 = await r2.json();
+        price = j2 && j2['pax-gold'] && parseFloat(j2['pax-gold'].usd);
+      }
+      el('lpGold').textContent = (price && isFinite(price)) ? '$' + price.toLocaleString(undefined,{maximumFractionDigits:2}) + ' / oz' : 'ดึงไม่สำเร็จ';
     }catch(e){ el('lpGold').textContent = 'ดึงไม่สำเร็จ'; }
 
-    // frankfurter.app moved to frankfurter.dev as its official domain — the old .app host
-    // still resolves but seems to have gotten flaky. Try the new domain first, old one as
-    // fallback, and try both param styles (v1 "base/symbols" and legacy "from/to").
+    // USD/THB & JPY/THB & CNY/THB: Frankfurter dev -> app -> open.er-api.com
     async function getFxRates(){
       const urls = [
         'https://api.frankfurter.dev/v1/latest?base=USD&symbols=THB,JPY,CNY',
         'https://api.frankfurter.app/latest?from=USD&to=THB,JPY,CNY',
-        'https://api.frankfurter.app/latest?base=USD&symbols=THB,JPY,CNY'
+        'https://api.frankfurter.app/latest?base=USD&symbols=THB,JPY,CNY',
+        'https://open.er-api.com/v6/latest/USD'
       ];
       let lastErr = 'unknown error';
       for(const url of urls){
@@ -980,7 +962,8 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
           const r = await fetchWithTimeout(url, 6000);
           if(!r.ok){ lastErr = url + ': HTTP ' + r.status; continue; }
           const j = await r.json();
-          if(j.rates && j.rates.THB && j.rates.JPY && j.rates.CNY) return j.rates;
+          const rates = j.rates || {};
+          if(rates.THB && rates.JPY && rates.CNY) return rates;
           lastErr = url + ': response missing THB/JPY/CNY — ' + JSON.stringify(j).slice(0,150);
         }catch(e){ lastErr = url + ': ' + e.message; }
       }
@@ -998,31 +981,25 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       el('lpJpyThb').textContent = 'ดึงไม่สำเร็จ';
       el('lpCnyThb').textContent = 'ดึงไม่สำเร็จ';
       const noteEl = document.querySelector('#livePrices').nextElementSibling;
-      if(noteEl) noteEl.innerHTML += '<br><span style="color:#ff8b98;">Debug: ' + e.message + '</span>';
+      if(noteEl) noteEl.innerHTML += '<br><span style="color:#ff8b98;">Debug: ' + esc(e.message) + '</span>';
     }
   }
   fetchLivePrices();
 
-  // ---------- WTI Oil (Alpha Vantage, optional key — no free CORS-friendly oil source exists) ----------
-  // Alpha Vantage does not send CORS headers at all, so this always goes through a CORS proxy,
-  // same as the FRED and calendar fixes elsewhere in this app.
-  // Hyperliquid is a DEX that launched real WTI oil perpetual futures (via their HIP-3
-  // framework) — their public "info" API is designed for direct web/bot access and is
-  // CORS-friendly, so this needs no key at all. We scan the returned price list for any
-  // symbol that looks like an oil contract, since the exact ticker naming isn't fully
-  // documented. Falls back to Alpha Vantage (needs a free key) only if this doesn't find one.
-  // Multiple exchanges now list the same underlying WTI perpetual under different tickers
-  // (per market research: Binance/Bybit use CLUSDT, OKX uses CL-USDT-SWAP, Kraken uses
-  // PF_WTIOILUSD, Hyperliquid uses XYZ:CL-USD). Binance and OKX public market-data endpoints
-  // are already confirmed CORS-friendly elsewhere in this app, so try those first — no proxy
-  // needed at all if either works.
-  async function tryBinanceOil(){
-    const r = await fetchWithTimeout('https://api.binance.com/api/v3/ticker/price?symbol=CLUSDT', 6000);
-    if(!r.ok) throw new Error('Binance HTTP ' + r.status);
-    const j = await r.json();
-    const price = parseFloat(j.price);
-    if(isNaN(price)) throw new Error('Binance: no CLUSDT price in response');
-    return { price, source: 'Binance (CLUSDT)' };
+  // ---------- Oil Price ----------
+  async function tryFredOil(){
+    const r = await fetchWithTimeout('https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILWTICO', 6000);
+    if(!r.ok) throw new Error('FRED HTTP ' + r.status);
+    const text = await r.text();
+    const lines = text.trim().split(/\r?\n/);
+    for(let i = lines.length - 1; i >= 1; i--){
+      const parts = lines[i].split(',');
+      const raw = (parts[1] || '').trim().replace(/^"|"$/g, '').replace(/,/g, '');
+      if(!raw || raw === '.' || raw === '-') continue;
+      const v = parseFloat(raw);
+      if(isFinite(v) && v > 0 && v < 500) return { price: v, source: 'FRED (DCOILWTICO)' };
+    }
+    throw new Error('no valid price in FRED CSV');
   }
 
   async function tryOkxOil(){
@@ -1035,9 +1012,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   }
 
   async function tryHyperliquidOil(){
-    // The oil perp is a HIP-3 deployer-namespaced market (symbol "XYZ:CL-USD"), which only
-    // shows up in allMids when explicitly querying dex="xyz" — the default (empty) dex only
-    // returns Hyperliquid's own main perp market. We try both, main dex first.
     let lastErr = 'no oil symbol found';
     for(const dex of ['', 'xyz']){
       try{
@@ -1068,7 +1042,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       const raw = await storageGet('oil-price-cache');
       if(raw){
         const c = JSON.parse(raw);
-        if(c.date === today){
+        if(c.date === today && c.price){
           el('lpOil').textContent = '$' + c.price.toFixed(2) + ' / bbl';
           setOilStatus('ใช้ค่าที่ดึงไว้วันนี้แล้ว (แคช · ' + (c.source || 'unknown') + ')');
           return;
@@ -1077,46 +1051,52 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     }catch(e){}
 
     const trail = [];
+    setOilStatus('กำลังดึงราคา WTI สด…');
 
-    // Free, no-key attempts first — same underlying WTI contract, different exchanges.
+    // 1) Netlify function (FRED CSV / Alpha Vantage)
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/oil-price', 8000);
+      const j = await r.json();
+      if(j.price){
+        el('lpOil').textContent = '$' + j.price.toFixed(2) + ' / bbl';
+        const src = j.source || 'เซิร์ฟเวอร์';
+        setOilStatus('✅ ดึงสำเร็จ (' + src + ') · ' + new Date().toLocaleTimeString('th-TH'));
+        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, price: j.price, source: src })); }catch(e){}
+        return;
+      }
+      trail.push('server: ' + (j.error || 'unknown'));
+    }catch(e){ trail.push('server: ' + e.message); }
+
+    // 2) Direct FRED CSV fallback
+    try{
+      const res = await tryFredOil();
+      el('lpOil').textContent = '$' + res.price.toFixed(2) + ' / bbl';
+      setOilStatus('✅ ดึงสำเร็จจาก ' + res.source + ' · ' + new Date().toLocaleTimeString('th-TH'));
+      try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, price: res.price, source: res.source })); }catch(e){}
+      return;
+    }catch(e){ trail.push('FRED direct: ' + e.message); }
+
+    // 3) Free exchange sources
     const freeAttempts = [
-      ['Binance', tryBinanceOil],
       ['OKX', tryOkxOil],
       ['Hyperliquid', tryHyperliquidOil]
     ];
     for(const [name, fn] of freeAttempts){
-      setOilStatus('กำลังลองดึง WTI ฟรีจาก ' + name + '…');
       try{
         const res = await fn();
         el('lpOil').textContent = '$' + res.price.toFixed(2) + ' / bbl';
-        setOilStatus('✅ ดึงฟรีสำเร็จจาก ' + res.source + ' (ไม่ต้องใช้ key) · ' + new Date().toLocaleTimeString('th-TH'));
+        setOilStatus('✅ ดึงสำเร็จจาก ' + res.source + ' · ' + new Date().toLocaleTimeString('th-TH'));
         try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, price: res.price, source: res.source })); }catch(e){}
         return;
       }catch(e){ trail.push(name + ': ' + e.message); }
     }
 
-    // All free sources failed — fall back to our Netlify Function, which holds the Alpha
-    // Vantage key server-side (never visible to visitors).
-    setOilStatus('ลองฟรีหมดแล้ว กำลังดึง WTI ผ่านเซิร์ฟเวอร์…');
-    try{
-      const r = await fetchWithTimeout('/.netlify/functions/oil-price', 10000);
-      const j = await r.json();
-      if(j.price){
-        el('lpOil').textContent = '$' + j.price.toFixed(2) + ' / bbl';
-        setOilStatus('✅ ดึงสำเร็จผ่านเซิร์ฟเวอร์ (Alpha Vantage) · ' + new Date().toLocaleTimeString('th-TH'));
-        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, price: j.price, source: 'Alpha Vantage (server)' })); }catch(e){}
-        return;
-      }
-      trail.push('server function: ' + (j.error || 'unknown error'));
-    }catch(e){ trail.push('server function: ' + e.message); }
-
     el('lpOil').textContent = 'ดึงไม่สำเร็จ';
-    setOilStatus('❌ ลองทุกทางแล้ว (' + (freeAttempts.length + 1) + ' แหล่ง) ไม่สำเร็จเลย: ' + trail.join(' · '));
+    setOilStatus('❌ ดึงไม่สำเร็จ: ' + trail.join(' · '));
   }
 
   fetchOilPrice();
-
-  renderFomcCountdown(); // instant, pure date math, no network needed
+  renderFomcCountdown();
   loadCache().then(refreshNews);
 })();
 </script>
@@ -1159,7 +1139,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         <div style="margin-top:10px;">
           <div class="metric-top" style="margin-bottom:8px;">
             <div class="metric-name" style="font-size:12px; color:var(--sub);">BGeometrics API Token</div>
-            <a class="metric-link" target="_blank" href="https://portal.bgeometrics.com/login">สมัครฟรี ↗</a>
+            <a class="metric-link" target="_blank" rel="noopener" href="https://portal.bgeometrics.com/login">สมัครฟรี ↗</a>
           </div>
           <input type="text" id="bgToken" placeholder="ไม่ใส่ก็ได้ ระบบดึงอัตโนมัติให้อยู่แล้ว" style="width:100%; background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--text); font-family:var(--mono); font-size:12px; padding:8px 10px;">
           <div class="metric-zone" style="margin-top:6px;">ระบบดึงผ่าน CORS proxy (allorigins.win) ให้อัตโนมัติเพราะ BGeometrics ไม่เปิด CORS ตรงๆ · ใส่ token เฉพาะถ้าอยากได้โควตาที่เสถียรขึ้น (8 ครั้ง/ชม. ส่วนตัว แทนที่จะแชร์โควตากับคนอื่น) — ไม่ใส่แอปก็ทำงานปกติ · แคชค่าไว้ 8 ชม./ครั้ง ไม่ดึงถี่เกินจำเป็น</div>
@@ -1174,7 +1154,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       <div class="metric-card">
         <div class="metric-top">
           <div class="metric-name">NUPL <span class="auto-badge" id="nuplAuto">–</span></div>
-          <a class="metric-link" target="_blank" href="https://www.coinglass.com/pro/i/nupl">เปิด Coinglass ↗</a>
+          <a class="metric-link" target="_blank" rel="noopener" href="https://www.coinglass.com/pro/i/nupl">เปิด Coinglass ↗</a>
         </div>
         <div class="metric-display-row">
           <div class="metric-display-value" id="nuplDisplay">–</div>
@@ -1192,7 +1172,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       <div class="metric-card">
         <div class="metric-top">
           <div class="metric-name">MVRV Z-Score <span class="auto-badge" id="zAuto">–</span></div>
-          <a class="metric-link" target="_blank" href="https://www.coinglass.com/pro/i/bitcoin-mvrv-zscore">เปิด Coinglass ↗</a>
+          <a class="metric-link" target="_blank" rel="noopener" href="https://www.coinglass.com/pro/i/bitcoin-mvrv-zscore">เปิด Coinglass ↗</a>
         </div>
         <div class="metric-display-row">
           <div class="metric-display-value" id="zDisplay">–</div>
@@ -1210,7 +1190,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       <div class="metric-card">
         <div class="metric-top">
           <div class="metric-name">MVRV Ratio <span class="auto-badge" id="mAuto">–</span></div>
-          <a class="metric-link" target="_blank" href="https://www.coinglass.com/pro/i/mvrv-ratio">เปิด Coinglass ↗</a>
+          <a class="metric-link" target="_blank" rel="noopener" href="https://www.coinglass.com/pro/i/mvrv-ratio">เปิด Coinglass ↗</a>
         </div>
         <div class="metric-display-row">
           <div class="metric-display-value" id="mDisplay">–</div>
@@ -1277,14 +1257,14 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         <div class="sl-tile">
           <div class="sl-name">Open Interest</div>
           <div class="sl-num" id="oiNum">–</div>
-          <div class="sl-sub" id="oiLabel">Binance BTCUSDT futures</div>
+          <div class="sl-sub" id="oiLabel">กำลังโหลด…</div>
         </div>
       </div>
       <div style="font-size:11px; color:var(--sub); line-height:1.6; margin-top:14px;">
         อ่านค่า: Fear&Greed ต่ำมาก (&lt;20) หรือสูงมาก (&gt;80) มักเป็นจุดกลับตัว (contrarian) ·
         Funding Rate เป็นบวกสูงต่อเนื่อง = คนแห่ leverage long พร้อมโดน liquidate ยกแผงถ้าราคาหักหัว ·
         Open Interest พุ่งเร็วกว่าราคา = ตลาดใช้เลเวอเรจสูง เปราะบางต่อความผันผวน<br>
-        Fear &amp; Greed ดึงอัตโนมัติจาก <a href="https://coinmarketcap.com/charts/fear-and-greed-index/" target="_blank" class="metric-link" style="color:var(--amber);">CoinMarketCap</a> (public API, อัปเดตทุกวัน · แคช 6 ชม.) ถ้า CMC ไม่ตอบจะ fallback ไป alternative.me ชั่วคราว
+        Fear &amp; Greed ดึงอัตโนมัติจาก <a href="https://coinmarketcap.com/charts/fear-and-greed-index/" target="_blank" rel="noopener" class="metric-link" style="color:var(--amber);">CoinMarketCap</a> (public API, อัปเดตทุกวัน · แคช 6 ชม.) ถ้า CMC ไม่ตอบจะ fallback ไป alternative.me ชั่วคราว
       </div>
     </div>
 
@@ -1307,7 +1287,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   <footer>
     <div class="status" id="status">กำลังโหลด…</div>
     <div style="display:flex; gap:8px;">
-      <button id="refreshBtn">🔄 รีเฟรชทั้งหมด</button>
+      <button id="refreshBtn" type="button">🔄 รีเฟรชทั้งหมด</button>
     </div>
   </footer>
 
@@ -1317,8 +1297,8 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
 (function(){
 
   // ---------- interpolation helper ----------
-  // points: array of [value, score], sorted by value ascending. score 10 = most attractive to buy.
   function interpScore(value, points){
+    if(isNaN(value) || !isFinite(value)) return 5;
     if(value <= points[0][0]) return points[0][1];
     if(value >= points[points.length-1][0]) return points[points.length-1][1];
     for(let i=0;i<points.length-1;i++){
@@ -1337,6 +1317,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   const MVRV_POINTS  = [[0.8,10],[1,9],[1.5,7],[2,5.5],[2.5,4],[3.5,2],[4.5,1]];
 
   function nuplZoneLabel(v){
+    if(isNaN(v)) return '';
     if(v<0) return 'Capitulation — โซนตื่นตระหนก';
     if(v<0.25) return 'Hope / Fear — เริ่มมีความหวัง';
     if(v<0.5) return 'Optimism / Belief — เชื่อมั่น';
@@ -1344,6 +1325,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     return 'Euphoria / Greed — คลั่งไคล้ (เสี่ยง)';
   }
   function zZoneLabel(v){
+    if(isNaN(v)) return '';
     if(v<0) return 'Undervalued อย่างมาก';
     if(v<1) return 'โซนถูก';
     if(v<3) return 'มูลค่ากลาง (Fair)';
@@ -1352,6 +1334,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     return 'Extreme Euphoria (จุดสูงสุดในอดีต)';
   }
   function mZoneLabel(v){
+    if(isNaN(v)) return '';
     if(v<1) return 'ต่ำกว่าราคาต้นทุนเฉลี่ยของตลาด';
     if(v<1.5) return 'โซนถูก';
     if(v<2.5) return 'มูลค่ากลาง (Fair)';
@@ -1372,10 +1355,8 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     return 0;
   }
 
-  // ---------- elements ----------
   const el = id => document.getElementById(id);
 
-  // ---------- storage: window.storage (Claude artifact) with localStorage fallback ----------
   async function storageGet(key){
     try{
       if(window.storage){ const r = await window.storage.get(key); return r ? r.value : null; }
@@ -1389,7 +1370,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     try{ localStorage.setItem(key, value); }catch(e){}
   }
 
-  // Wrap fetch with a hard timeout so one slow/dead API never hangs the whole page.
   async function fetchWithTimeout(url, ms = 6000, opts = {}){
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), ms);
@@ -1407,12 +1387,12 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   const priceInput=el('priceInput'), athInput=el('athInput');
   const pxDisplay=el('pxDisplay'), athDisplay=el('athDisplay'), ddDisplay=el('ddDisplay');
   const ddBig=el('ddBig'), ddBar=el('ddBar');
-  const needle=null, scoreNumber=el('scoreNumber'), verdict=el('verdict'), breakdown=el('breakdown');
+  const scoreNumber=el('scoreNumber'), verdict=el('verdict'), breakdown=el('breakdown');
   const statusEl=el('status');
 
-  // ---------- manual fallback toggle (hidden unless auto-fetch fails, or user opts in) ----------
   function wireManualToggle(btnId, rowId){
     const btn = el(btnId), row = el(rowId);
+    if(!btn || !row) return;
     btn.addEventListener('click', () => {
       const showing = row.style.display !== 'none';
       row.style.display = showing ? 'none' : 'flex';
@@ -1424,14 +1404,15 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   wireManualToggle('mManualBtn', 'mManualRow');
 
   function syncPair(range, num){
+    if(!range || !num) return;
     range.addEventListener('input', ()=>{ num.value = range.value; recompute(); save(); });
     num.addEventListener('input', ()=>{ range.value = num.value; recompute(); save(); });
   }
   syncPair(nuplRange, nuplNum);
   syncPair(zRange, zNum);
   syncPair(mRange, mNum);
-  priceInput.addEventListener('input', ()=>{ recompute(); save(); });
-  athInput.addEventListener('input', ()=>{ recompute(); save(); });
+  if(priceInput) priceInput.addEventListener('input', ()=>{ recompute(); save(); });
+  if(athInput) athInput.addEventListener('input', ()=>{ recompute(); save(); });
 
   function fmtUSD(n){
     if(n==null || isNaN(n)) return '—';
@@ -1489,14 +1470,13 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     let final = avg + bonus;
     final = Math.min(10, Math.max(1, final));
 
-    // update price / dd UI
     pxDisplay.textContent = price ? fmtUSD(price) : '—';
     athDisplay.textContent = ath ? fmtUSD(ath) : '—';
-    ddDisplay.textContent = dd!=null ? '-' + dd.toFixed(1) + '%' : '—';
-    ddBig.textContent = dd!=null ? '-' + dd.toFixed(1) + '%' : '—';
+    const ddStr = dd!=null ? (dd > 0 ? '-' + dd.toFixed(1) + '%' : '0.0%') : '—';
+    ddDisplay.textContent = ddStr;
+    ddBig.textContent = ddStr;
     ddBar.style.width = dd!=null ? Math.min(100, dd) + '%' : '0%';
 
-    // gauge needle removed — just color the big number
     scoreNumber.textContent = final.toFixed(1);
     scoreNumber.style.color = scoreColor(final);
 
@@ -1520,7 +1500,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     `;
   }
 
-  // ---------- persistence ----------
   let saveTimer=null;
   function save(){
     clearTimeout(saveTimer);
@@ -1548,41 +1527,39 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     }catch(e){ /* no saved data yet */ }
     recompute();
   }
-  el('bgToken').addEventListener('change', save);
+  const bgTokenEl = el('bgToken');
+  if(bgTokenEl) bgTokenEl.addEventListener('change', save);
 
-  // ---------- fetch live price/ATH ----------
   async function fetchPrice(){
     try{
       const r = await fetchWithTimeout('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&community_data=false&developer_data=false', 6000);
       const data = await r.json();
-      const price = data.market_data.current_price.usd;
-      const ath = data.market_data.ath.usd;
-      priceInput.value = Math.round(price);
-      athInput.value = Math.round(ath);
-      return true;
-    }catch(e){
-      return false;
-    }
+      const price = data && data.market_data && data.market_data.current_price && data.market_data.current_price.usd;
+      const ath = data && data.market_data && data.market_data.ath && data.market_data.ath.usd;
+      if(price && isFinite(price)){
+        priceInput.value = Math.round(price);
+        if(ath && isFinite(ath)) athInput.value = Math.round(ath);
+        return true;
+      }
+    }catch(e){}
+
+    // Fallback: Binance Spot price
+    try{
+      const r2 = await fetchWithTimeout('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT', 5000);
+      const j2 = await r2.json();
+      const p = parseFloat(j2.price);
+      if(p && isFinite(p)){
+        priceInput.value = Math.round(p);
+        if(!athInput.value) athInput.value = 108000;
+        return true;
+      }
+    }catch(e){}
+    return false;
   }
 
-  // ---------- fetch on-chain metrics (NUPL / MVRV Z-Score / MVRV Ratio) ----------
-  // Primary source: BGeometrics / bitcoin-data.com Bitcoin Data API (api.bgeometrics.com).
-  // Works with or without a token, but a free token (portal.bgeometrics.com/login, no card
-  // needed) raises the limit from a very tight anonymous/IP quota to 8 req/hour · 15 req/day.
-  // A couple of candidate endpoint slugs are tried per metric since the exact slug isn't
-  // documented in one single place — first one that returns valid JSON wins.
-  // Fallback: if BGeometrics fails (no token + rate-limited, endpoint down, etc.) we silently
-  // fall back to deriving the same 3 metrics live from Coin Metrics' free Community API
-  // (raw Market Cap / Realized Cap → MVRV Ratio, NUPL, MVRV Z-Score), so the dashboard still
-  // works even without a BGeometrics token.
-
-  // Fallback: CoinMetrics Community API used to work here, but as of testing it now
-  // returns HTTP 400 even on textbook-exact requests — the free community tier appears
-  // to be discontinued/broken. Removed as a fallback (no point calling a dead endpoint).
-  // Instead: every attempt is logged so failures are diagnosable, not silent.
   let debugLog = [];
   function logAttempt(label, url, result){
-    debugLog.push({ label, url, result, ts: new Date().toLocaleTimeString() });
+    debugLog.push({ label, url, result, ts: new Date().toLocaleTimeString('th-TH') });
   }
   function renderDebugLog(){
     const box = el('debugLog');
@@ -1615,8 +1592,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
   async function tryBgSlugs(slugs){
     for(const slug of slugs){
       const url = bgUrl(slug);
-
-      // Attempt 1: direct call (works if BGeometrics ever enables CORS for this origin).
       try{
         const r = await fetchWithTimeout(url, 5000);
         if(r.ok){
@@ -1631,8 +1606,6 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         logAttempt(slug, url, 'CORS/network block (direct): ' + e.message);
       }
 
-      // Attempt 2: same request routed through a free CORS proxy (allorigins.win) —
-      // needed because api.bgeometrics.com doesn't send CORS headers for browser calls.
       const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
       try{
         const r2 = await fetchWithTimeout(proxyUrl, 6000);
@@ -1657,20 +1630,15 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     m: ['mvrv/last', 'mvrv']
   };
 
-  // ---------- per-metric 8-hour cache ----------
-  // These metrics only actually update ~once/day at the source, so refetching more often
-  // than every 8h just burns the free BGeometrics quota for nothing. Each metric caches
-  // independently, so one metric failing doesn't block the other two from using their cache.
   const CACHE_TTL_MS = 8 * 3600 * 1000;
-
-  const memoryCache = {}; // in-session safety net, in case window.storage read/write ever hiccups
+  const memoryCache = {};
 
   async function getCache(key){
     try{
       const raw = await storageGet('oc-cache-' + key);
       if(raw) return JSON.parse(raw);
     }catch(e){}
-    if(memoryCache[key]) return memoryCache[key]; // fall back to this session's own last-good value
+    if(memoryCache[key]) return memoryCache[key];
     return null;
   }
   async function setCache(key, value){
@@ -1695,15 +1663,14 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       setBadge(key + 'Auto', true, Date.now());
       return true;
     }
-    // fetch failed — fall back to stale cache if we have one, otherwise reveal manual entry
     const stale = await getCache(key);
     if(stale){
       applyFn(stale.value);
       setBadge(key + 'Auto', 'stale', stale.ts);
-      logAttempt(key, '(fallback)', 'ดึงใหม่ล้มเหลว ใช้ค่าเก่าจาก ' + new Date(stale.ts).toLocaleString());
+      logAttempt(key, '(fallback)', 'ดึงใหม่ล้มเหลว ใช้ค่าเก่าจาก ' + new Date(stale.ts).toLocaleString('th-TH'));
       return true;
     }
-    logAttempt(key, '(fallback)', 'ดึงใหม่ล้มเหลว และไม่มีค่าแคชเก่าเลย (ไม่เคยดึงสำเร็จมาก่อนสำหรับตัวนี้)');
+    logAttempt(key, '(fallback)', 'ดึงใหม่ล้มเหลว และไม่มีค่าแคชเก่าเลย');
     setBadge(key + 'Auto', false);
     return false;
   }
@@ -1724,6 +1691,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
 
   function setBadge(id, state, ts){
     const b = el(id);
+    if(!b) return;
     const metricKey = id.replace('Auto', '');
     const manualBtn = el(metricKey + 'ManualBtn');
     const manualRow = el(metricKey + 'ManualRow');
@@ -1743,18 +1711,29 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     }else{
       b.textContent = 'ดึงไม่สำเร็จ'; b.className = 'auto-badge fail';
       if(updatedEl) updatedEl.textContent = '';
-      // auto-reveal the manual fallback so there's still a usable number for the score
       if(manualRow) manualRow.style.display = 'flex';
       if(manualBtn) manualBtn.textContent = '✕ ซ่อนช่องกรอกเอง';
     }
   }
 
-  // ---------- Sentiment & Leverage (Fear&Greed + funding rate + open interest) ----------
-  // Fear & Greed: CoinMarketCap (keyless public API) เป็นแหล่งหลักตามคำขอผู้ใช้ อัปเดตอัตโนมัติ
-  // ลำดับ: Netlify Function (CMC keyless) → ตรง CMC public API → alternative.me fallback
-  // Funding Rate / Open Interest: Binance Futures public market-data endpoints, no key needed.
+  function findEntry(obj) {
+    if (!obj) return null;
+    if (Array.isArray(obj)) {
+      for (const it of obj) {
+        const res = findEntry(it);
+        if (res) return res;
+      }
+      return null;
+    }
+    if (typeof obj === 'object') {
+      if (obj.value !== undefined || obj.score !== undefined || obj.fear_and_greed !== undefined) return obj;
+      if (obj.data) return findEntry(obj.data);
+    }
+    return null;
+  }
+
   async function fetchSentimentLeverage(){
-    // ---- Fear & Greed from CoinMarketCap (อัตโนมัติ) ----
+    // 1) Fear & Greed Index
     let fngDone = false;
     const fngAttempts = [
       {
@@ -1771,10 +1750,10 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         url: 'https://pro-api.coinmarketcap.com/public-api/v3/fear-and-greed/latest',
         parse: async (r) => {
           const j = await r.json();
-          let entry = j.data;
-          if(Array.isArray(entry)) entry = entry[0];
-          const v = parseInt(entry && entry.value,10);
-          const cls = entry && (entry.value_classification || entry.classification || entry.valueClassification);
+          const entry = findEntry(j);
+          if(!entry) throw new Error('no entry');
+          const v = parseInt(entry.value ?? entry.score ?? entry.fear_and_greed ?? '', 10);
+          const cls = entry.value_classification || entry.classification || entry.valueClassification;
           if(!isFinite(v)) throw new Error('no value');
           return { v, cls, src: 'coinmarketcap' };
         }
@@ -1784,8 +1763,9 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         url: 'https://api.alternative.me/fng/?limit=1',
         parse: async (r) => {
           const j = await r.json();
-          const v = parseInt(j.data[0].value,10);
-          const cls = j.data[0].value_classification;
+          const entry = j && j.data && j.data[0];
+          const v = parseInt(entry && entry.value, 10);
+          const cls = entry && entry.value_classification;
           if(!isFinite(v)) throw new Error('no value');
           return { v, cls, src: 'alternative.me' };
         }
@@ -1807,6 +1787,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     }
     if(!fngDone) el('fngLabel').textContent = 'ดึงไม่สำเร็จ';
 
+    // 2) Funding Rate
     try{
       const r = await fetchWithTimeout('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT', 5000);
       const j = await r.json();
@@ -1816,43 +1797,50 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       el('fundingLabel').textContent = Math.abs(fr) > 0.03 ? 'สูงผิดปกติ — เลเวอเรจฝั่งเดียวหนาแน่น' : 'ปกติ';
     }catch(e){ el('fundingLabel').textContent = 'ดึงไม่สำเร็จ'; }
 
-    // Open Interest — aggregated across ALL exchanges (not just Binance), using CoinGecko's
-    // free public /derivatives endpoint (no key needed). It lists every BTC perpetual/futures
-    // contract on every tracked exchange with open_interest in USD; we sum them all up and
-    // convert to BTC using the live price we already fetched, plus show the top few exchanges
-    // by size for context.
+    // 3) Open Interest
+    let oiDone = false;
     try{
       const r = await fetchWithTimeout('https://api.coingecko.com/api/v3/derivatives', 8000);
       const list = await r.json();
-      const btcContracts = list.filter(t => t.index_id === 'BTC' && t.expired_at == null && t.open_interest);
+      const btcContracts = (Array.isArray(list) ? list : []).filter(t => t.index_id === 'BTC' && t.expired_at == null && t.open_interest);
 
-      const byExchange = {};
-      let totalUsd = 0;
-      btcContracts.forEach(t => {
-        const oi = parseFloat(t.open_interest) || 0;
-        totalUsd += oi;
-        byExchange[t.market] = (byExchange[t.market] || 0) + oi;
-      });
+      if(btcContracts.length > 0){
+        const byExchange = {};
+        let totalUsd = 0;
+        btcContracts.forEach(t => {
+          const oi = parseFloat(t.open_interest) || 0;
+          totalUsd += oi;
+          byExchange[t.market] = (byExchange[t.market] || 0) + oi;
+        });
 
-      const price = parseFloat(priceInput.value) || null;
-      const totalBtc = price ? totalUsd / price : null;
+        const price = parseFloat(priceInput.value) || null;
+        const totalBtc = price ? totalUsd / price : null;
 
-      el('oiNum').textContent = totalBtc
-        ? totalBtc.toLocaleString(undefined,{maximumFractionDigits:0}) + ' BTC'
-        : '$' + totalUsd.toLocaleString(undefined,{maximumFractionDigits:0});
+        el('oiNum').textContent = totalBtc
+          ? totalBtc.toLocaleString(undefined,{maximumFractionDigits:0}) + ' BTC'
+          : '$' + totalUsd.toLocaleString(undefined,{maximumFractionDigits:0});
 
-      const top3 = Object.entries(byExchange).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([name])=>name);
-      el('oiLabel').textContent = 'รวม ' + Object.keys(byExchange).length + ' ตลาด (' + top3.join(', ') + ' ...)';
-    }catch(e){ el('oiLabel').textContent = 'ดึงไม่สำเร็จ'; }
+        const top3 = Object.entries(byExchange).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([name])=>name);
+        el('oiLabel').textContent = 'รวม ' + Object.keys(byExchange).length + ' ตลาด (' + top3.join(', ') + ')';
+        oiDone = true;
+      }
+    }catch(e){}
+
+    if(!oiDone){
+      try{
+        const r = await fetchWithTimeout('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT', 5000);
+        const j = await r.json();
+        const oiBtc = parseFloat(j.openInterest);
+        if(oiBtc && isFinite(oiBtc)){
+          el('oiNum').textContent = oiBtc.toLocaleString(undefined,{maximumFractionDigits:0}) + ' BTC';
+          el('oiLabel').textContent = 'Binance BTCUSDT futures';
+          oiDone = true;
+        }
+      }catch(e){}
+    }
+    if(!oiDone) el('oiLabel').textContent = 'ดึงไม่สำเร็จ';
   }
 
-  // ---------- Bitcoin Halving Countdown ----------
-  // Primary: pure date arithmetic, no network call, cannot hang or fail — based on the
-  // widely-cited estimate (~Apr 17, 2028, block 1,050,000) that CoinGecko/mempool.space/
-  // major trackers currently agree on. Shows instantly on every page load.
-  // Optional refinement: try mempool.space once per calendar day (short 4s timeout, if it
-  // doesn't answer in time we just keep the date-math estimate) to recompute from the real
-  // current block height for a slightly tighter number. Cached so it only ever fires once/day.
   const HALVING_BLOCK = 1050000;
   const HALVING_ESTIMATED_DATE = new Date('2028-04-17T00:00:00Z');
 
@@ -1872,10 +1860,10 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         if(c.date === today){
           el('halvingDays').textContent = c.days.toLocaleString();
           el('halvingBlockInfo').textContent = 'Block ปัจจุบัน: ' + c.height.toLocaleString() + ' · เหลืออีก ' + c.blocksRemaining.toLocaleString() + ' บล็อก (แคชไว้วันนี้)';
-          return; // already refined today, no need to hit the network again
+          return;
         }
       }
-    }catch(e){ /* no cache yet, fall through to fetch */ }
+    }catch(e){ /* no cache yet */ }
 
     try{
       const r = await fetchWithTimeout('https://mempool.space/api/blocks/tip/height', 4000);
@@ -1887,24 +1875,22 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
       el('halvingDays').textContent = days.toLocaleString();
       el('halvingBlockInfo').textContent = 'Block ปัจจุบัน: ' + height.toLocaleString() + ' · เหลืออีก ' + blocksRemaining.toLocaleString() + ' บล็อก';
       await storageSet('halving-cache', JSON.stringify({ date: today, height, blocksRemaining, days }));
-    }catch(e){
-      // timeout or network error — silently keep the date-math estimate already shown, no error message needed
-    }
+    }catch(e){}
   }
 
   async function fetchHalvingCountdown(){
-    renderHalvingFromDate(); // instant, always works
-    await refineHalvingFromBlockHeight(); // best-effort refinement, capped at 4s, cached daily
+    renderHalvingFromDate();
+    await refineHalvingFromBlockHeight();
   }
 
   async function refreshAll(force){
     statusEl.textContent = 'กำลังดึงข้อมูลอัตโนมัติ…';
-    const priceOk = await fetchPrice(); // must resolve first: OI conversion below needs a live price
+    const priceOk = await fetchPrice();
     const [metricsOk] = await Promise.all([fetchOnChainMetrics(force), fetchSentimentLeverage(), fetchHalvingCountdown()]);
     recompute();
     save();
     if(priceOk && metricsOk){
-      statusEl.textContent = 'อัปเดตอัตโนมัติสำเร็จทั้งหมด · ' + new Date().toLocaleTimeString();
+      statusEl.textContent = 'อัปเดตอัตโนมัติสำเร็จทั้งหมด · ' + new Date().toLocaleTimeString('th-TH');
     }else if(priceOk){
       statusEl.textContent = 'อัปเดตราคาแล้ว แต่ตัวชี้วัด on-chain ดึงไม่สำเร็จตอนนี้ (กรอกเองได้ในช่องที่ขึ้น "กรอกเอง")';
     }else{
@@ -1912,24 +1898,19 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     }
   }
 
-  el('refreshBtn').addEventListener('click', () => refreshAll(true)); // manual click always bypasses the 8h cache
+  el('refreshBtn').addEventListener('click', () => refreshAll(true));
 
-  // Fear & Greed จาก CMC อัปเดตวันละครั้ง แต่ให้โพลอัตโนมัติทุก 60 นาที + เมื่อกลับมาเปิดแท็บ BTC
   setInterval(fetchSentimentLeverage, 60*60*1000);
   document.addEventListener('visibilitychange', () => {
     if(!document.hidden && document.body.classList.contains('theme-btc')) fetchSentimentLeverage();
   });
 
-
-  // ---------- TradingView candlestick chart ----------
-  // Free tv.js widget has no external API to read/write drawings from our own code.
-  // What IS free and does persist real user drawings/indicators across sessions:
-  // the widget's own built-in "Sign in" (top-right of the chart) — that's TradingView's
-  // own free account save, no Charting Library approval needed. We also preload a
-  // default EMA study every load so at least a baseline indicator never "disappears",
-  // even for someone not signed in.
+  let tvLoaded = false;
   function loadTradingViewChart(){
+    if(tvLoaded) return;
     const container = el('tv_chart_container');
+    if(!container) return;
+    tvLoaded = true;
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/tv.js';
     script.onload = () => {
@@ -1942,7 +1923,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
           interval: 'D',
           timezone: 'Etc/UTC',
           theme: 'dark',
-          style: '1', // candles
+          style: '1',
           locale: 'th',
           toolbar_bg: '#0f151b',
           enable_publishing: false,
@@ -1963,7 +1944,8 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     };
     document.body.appendChild(script);
   }
-  loadTradingViewChart();
+
+  window.loadTradingViewChart = loadTradingViewChart;
 
   load().then(()=>{
     refreshAll(false);
@@ -1976,22 +1958,21 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
 
 <script>
 (function(){
-  const buttons = document.querySelectorAll('.tabbtn');
+  const buttons = document.querySelectorAll('.tabbar .tabbtn');
   const pages = document.querySelectorAll('.tabpage');
   function activate(tabId){
+    if(!tabId) return;
     buttons.forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
     pages.forEach(p => p.classList.toggle('active', p.id === tabId));
     document.body.classList.toggle('theme-btc', tabId === 'btcTab');
+    if(tabId === 'btcTab' && typeof window.loadTradingViewChart === 'function'){
+      window.loadTradingViewChart();
+    }
+    window.dispatchEvent(new Event('resize'));
   }
   buttons.forEach(btn => btn.addEventListener('click', () => activate(btn.dataset.tab)));
   activate('newsTab');
 })();
-</script>
-
-<script>
-
-document.getElementById('today').textContent=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
-
 </script>
 
 <!-- ---------- Site-wide footer: disclaimer + share/social buttons ---------- -->
@@ -2037,18 +2018,29 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
 (function(){
   const btn = document.getElementById('shareLinkBtn');
   const label = document.getElementById('shareLinkLabel');
+  if(!btn || !label) return;
   btn.addEventListener('click', async () => {
     const url = window.location.href;
     if(navigator.share){
       try{ await navigator.share({ title: document.title, url }); return; }catch(e){ /* user cancelled or unsupported, fall through to copy */ }
     }
     try{
-      await navigator.clipboard.writeText(url);
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        await navigator.clipboard.writeText(url);
+      }else{
+        const input = document.createElement('input');
+        input.value = url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+      }
       const original = label.textContent;
       label.textContent = 'คัดลอกแล้ว!';
       setTimeout(() => { label.textContent = original; }, 1800);
     }catch(e){
-      label.textContent = url;
+      label.textContent = 'คัดลอกไม่สำเร็จ';
+      setTimeout(() => { label.textContent = 'แชร์ลิงก์'; }, 1800);
     }
   });
 })();
