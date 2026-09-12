@@ -319,7 +319,6 @@ body{margin:0}
 </div>
 <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
   <div id="fredFetchStatus" class="muted" style="font-size:11px;"></div>
-  <button id="fedRefreshBtn" type="button" class="tabbtn" style="padding:3px 10px; font-size:11px; border-radius:8px; line-height:1.5;">↻ ดึงค่าสดใหม่</button>
 </div>
 <div class="metrics" id="fedMetrics">
   <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">3.50–3.75%</div></div>
@@ -1688,9 +1687,6 @@ window.setHeaderStamp();
   // to a backgrounded tab — that's usually right after a release landed.
   setInterval(function(){ refreshFedData(); }, FED_POLL_MS);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) refreshFedData(); });
-
-  const fedRefreshBtn = el('fedRefreshBtn');
-  if(fedRefreshBtn) fedRefreshBtn.addEventListener('click', function(){ refreshFedData({ force:true }); });
 
   // ช่องแก้ค่า "ที่คาด" ในหน้าเว็บ (ปุ่ม ✏️) — พร้อมใช้ทันที ไม่ต้องรอข้อมูลจากเซิร์ฟเวอร์
   initConsensusEditor();

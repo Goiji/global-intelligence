@@ -112,7 +112,7 @@ Site configuration → Environment variables → Add a variable:
 - ฝั่งเซิร์ฟเวอร์: 15 นาทีในวันประกาศตัวเลข (CPI ช่วงวันที่ 10–16, jobs report ศุกร์แรก, วันแถลง FOMC)
   และ 3 ชั่วโมงในวันปกติ + ส่ง `Cache-Control` ให้ Netlify CDN แคชซ้อนอีกชั้น
 - ฝั่งเบราว์เซอร์: แคชตาม `refreshAfter` ที่เซิร์ฟเวอร์สั่ง (ไม่ใช่ "วันละครั้ง" แบบเดิม) · โพลซ้ำทุก
-  10 นาที · ดึงใหม่ทันทีเมื่อสลับกลับเข้ามาที่แท็บ (`visibilitychange`) · มีปุ่ม `↻ ดึงค่าสดใหม่`
+  10 นาที · ดึงใหม่ทันทีเมื่อสลับกลับเข้ามาที่แท็บ (`visibilitychange`)
 - ถ้าทุกแหล่งล่มพร้อมกัน จะคืนค่าล่าสุดที่เคยดึงได้พร้อม `stale:true` (HTTP 200) แทนการขึ้น error
 
 **เช็คว่าทำงานไหม:** เปิด `https://<your-site>.netlify.app/.netlify/functions/fred-data`
