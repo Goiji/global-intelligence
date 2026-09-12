@@ -339,8 +339,10 @@ body{margin:0}
     <span class="muted" style="font-size:10px;">สร้างอัตโนมัติจากตัวเลขสดด้านบน (ไม่ใช้ข้อความเขียนมือ)</span>
   </div>
   <div class="muted" style="font-size:11px; margin:-2px 0 12px; line-height:1.6;">
-    ตัวเลขในบทวิเคราะห์ด้านล่างดึงสดจาก FRED/BLS และคำนวณใหม่ทุกครั้งที่ค่าเปลี่ยน —
-    ส่วน "ที่คาด" คือ consensus ที่เก็บไว้ในตัวเว็บ (แก้ได้ที่ค่าคงที่ <code>CONSENSUS</code> ใน index.html เมื่อมีรอบประกาศใหม่)
+    ตัวเลขในบทวิเคราะห์ด้านล่างดึงสดจาก FRED/BLS และคำนวณใหม่เองทุกครั้งที่ค่าเปลี่ยน —
+    ส่วน "ที่คาด" (consensus) ดึงจาก <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="https://th.investing.com/economic-calendar/%E0%B8%94%E0%B8%B1%E0%B8%8A%E0%B8%99%E0%B8%B5%E0%B8%A3%E0%B8%B2%E0%B8%84%E0%B8%B2%E0%B8%9C%E0%B8%B9%E0%B9%89%E0%B8%9A%E0%B8%A3%E0%B8%B4%E0%B9%82%E0%B8%A0%E0%B8%84-(cpi)-733">Investing.com</a>
+    ให้อัตโนมัติ (แคช 3 ชม.) และมีค่าสำรองฝังไว้ในหน้าเว็บเพื่อกันกรณีดึงไม่ได้
+    — ท้ายการ์ดจะบอกเสมอว่ากำลังใช้ชุดไหน ณ วันที่เท่าไร พร้อมลิงก์ให้ตรวจเอง
   </div>
   <div id="fedAnalysis" style="display:flex; flex-direction:column; gap:12px;">
     <div class="muted" style="font-size:11.5px;">⏳ กำลังดึงตัวเลขจริงเพื่อวิเคราะห์…</div>
@@ -935,17 +937,29 @@ window.setHeaderStamp();
   // เดิมส่วนนี้เป็นข้อความที่เขียนมือค้างไว้รอบ ก.ค. 2026 (ตัวเลข 3.4% / −23,000 ฝังอยู่ในเนื้อความ)
   // พอตัวเลขรอบใหม่เข้ามา เนื้อหาก็ไม่ตรงกับการ์ดทันที ตอนนี้สร้างใหม่จากค่าจริงทุกครั้งที่ดึงข้อมูล
   //
-  // 🔸 CONSENSUS = "ตัวเลขที่ตลาดคาดไว้ก่อนประกาศ" ซึ่งดึงจาก API ฟรีไม่ได้ (ต้องมี analyst survey)
-  //    จึงเก็บเป็นค่าคงที่ไว้ที่เดียวนี้ — เวลามีรอบประกาศใหม่ (ดูปฏิทิน: CPI วันที่ 10–16,
-  //    jobs report ศุกร์แรก, FOMC) ให้แก้เลขชุดนี้ (และ FOMC_STATEMENT_DATES ถ้าเป็นปีใหม่)
-  //    ถ้าไม่แก้: ข้อความส่วน "เทียบกับที่คาด" จะยังเทียบกับ consensus รอบเดิม (ยังบอก "เทียบกับ
-  //    เดือนก่อน/ค่าเฉลี่ย 3 เดือน" ที่คำนวณสดได้ถูกต้องเสมอ)
+  // 🔸 CONSENSUS = "ตัวเลขที่ตลาดคาดไว้ก่อนประกาศ" (consensus / forecast)
+  //    ค่าด้านล่างคัดจาก Investing.com (economic calendar) เมื่อ 12 ก.ย. 2026 และเป็น "คาดการณ์ของ
+  //    รอบประกาศล่าสุด" ตรงกับตัวเลขที่การ์ดด้านบนแสดงอยู่:
+  //      CPI 3.4% (คาด 3.4%) · Core 2.4% (คาด 2.4%) · NFP 162K (คาด 55K) · ว่างงาน 4.1% (คาด 4.1%) · Fed 3.75%
+  //    - หน้าเว็บจะลองดึงค่าสดจาก /.netlify/functions/consensus ก่อน (อ่าน Investing.com เหมือนกัน
+  //      แคชไว้ 3 ชม.) ถ้าดึงไม่ได้ (เช่น Netlify โดน Cloudflare บล็อก) จึงใช้ค่าที่ฝังไว้ตรงนี้
+  //      — หมายเหตุท้ายการ์ดจะบอกเสมอว่ากำลังใช้ชุดไหน ณ วันที่เท่าไร
+  //    - อยากอัปเดตเอง: แก้ตัวเลข + asOf ในบล็อกนี้ (ไม่ต้องแตะโค้ดส่วนอื่นเลย)
   const CONSENSUS = {
-    fed: { lo: 3.50, hi: 3.75 },  // เป้าดอกเบี้ยที่ตลาดคาด
-    cpi: 3.3,                     // CPI YoY ที่คาด (%)
-    coreCpi: 2.5,                 // Core CPI YoY ที่คาด (%)
-    unrate: 4.2,                  // อัตราว่างงานที่คาด (%)
-    nfp: 90000                    // ตำแหน่งงานใหม่ที่คาด (ตำแหน่ง)
+    asOf: '2026-09-12',
+    source: 'Investing.com',
+    cpi: 3.4,        // CPI YoY ที่ตลาดคาด (%)
+    coreCpi: 2.4,    // Core CPI YoY ที่คาด (%)
+    unrate: 4.1,     // อัตราว่างงานที่คาด (%)
+    nfp: 55000,      // ตำแหน่งงานใหม่ที่คาด (ตำแหน่ง) — Investing.com รายงาน "55.00 พัน"
+    fed: { lo: 3.50, hi: 3.75 },  // กรอบดอกเบี้ยที่ตลาดคาด
+    links: {
+      cpi: 'https://th.investing.com/economic-calendar/%E0%B8%94%E0%B8%B1%E0%B8%8A%E0%B8%99%E0%B8%B5%E0%B8%A3%E0%B8%B2%E0%B8%84%E0%B8%B2%E0%B8%9C%E0%B8%B9%E0%B9%89%E0%B8%9A%E0%B8%A3%E0%B8%B4%E0%B9%82%E0%B8%A0%E0%B8%84-(cpi)-733',
+      coreCpi: 'https://www.investing.com/economic-calendar/united-states-core-consumer-price-index-(cpi)-yoy-736',
+      unrate: 'https://th.investing.com/economic-calendar/unemployment-rate-300',
+      nfp: 'https://th.investing.com/economic-calendar/nonfarm-payrolls-227',
+      fed: 'https://th.investing.com/economic-calendar/interest-rate-decision-168'
+    }
   };
 
   function signedPct(v, digits){
@@ -964,9 +978,67 @@ window.setHeaderStamp();
       + '</div>';
   }
 
+  // ── consensus สดจากเซิร์ฟเวอร์ (อ่าน Investing.com, แคช 3 ชม.) ─────────────────────────────
+  let LIVE_CONSENSUS = null;
+  let consensusFetchedAt = 0;
+  let lastFedPayload = null;
+  const CONSENSUS_TTL_MS = 3 * 60 * 60 * 1000;
+
+  // รวมค่าที่จะใช้จริง: ค่าสด (ถ้ามี) ทับค่าที่ฝังไว้ทีละฟิลด์
+  function activeConsensus(){
+    const live = LIVE_CONSENSUS || {};
+    const num = (v, fb) => (isValidNum(v) ? v : fb);
+    const liveFedHi = live.fed && isValidNum(live.fed.hi) ? live.fed.hi : null;
+    const liveFedLo = live.fed && isValidNum(live.fed.lo) ? live.fed.lo : null;
+    return {
+      live: !!LIVE_CONSENSUS,
+      source: live.source || CONSENSUS.source,
+      asOf: live.asOf || CONSENSUS.asOf,
+      cpi: num(live.cpi, CONSENSUS.cpi),
+      coreCpi: num(live.coreCpi, CONSENSUS.coreCpi),
+      unrate: num(live.unrate, CONSENSUS.unrate),
+      nfp: num(live.nfp, CONSENSUS.nfp),
+      fedHi: num(liveFedHi, CONSENSUS.fed.hi),
+      fedLo: num(liveFedLo, CONSENSUS.fed.lo),
+      // ค่า "ตามจริง" ของรอบล่าสุดจาก Investing.com — ใช้ตรวจว่า consensus ตรงรอบกับตัวเลขบนการ์ด
+      actuals: live.actuals || null
+    };
+  }
+
+  async function loadConsensus(){
+    if(LIVE_CONSENSUS && (Date.now() - consensusFetchedAt) < CONSENSUS_TTL_MS) return;
+    consensusFetchedAt = Date.now();
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/consensus', 10000);
+      const j = await r.json();
+      const ev = j && j.events;
+      if(!ev) return;
+      const numOf = (k, field) => (ev[k] && isValidNum(ev[k][field])) ? ev[k][field] : null;
+      const next = {
+        source: j.sourceLabel || 'Investing.com',
+        asOf: (ev.cpi && ev.cpi.releaseDate) || CONSENSUS.asOf,
+        cpi: numOf('cpi','forecast'),
+        coreCpi: numOf('coreCpi','forecast'),
+        unrate: numOf('unrate','forecast'),
+        nfp: numOf('nfp','forecast'),
+        fed: (ev.fed && isValidNum(ev.fed.actual)) ? { lo: null, hi: ev.fed.actual } : null,
+        actuals: {
+          cpi: numOf('cpi','actual'), coreCpi: numOf('coreCpi','actual'),
+          unrate: numOf('unrate','actual'), nfp: numOf('nfp','actual')
+        }
+      };
+      // ต้องได้อย่างน้อย 3 ตัวถึงจะใช้ (กันหน้าเว็บที่อ่านได้ครึ่งเดียวแล้วทำให้บทวิเคราะห์เพี้ยน)
+      const got = [next.cpi, next.coreCpi, next.unrate, next.nfp].filter(v => isValidNum(v)).length;
+      if(got < 3 || !next.fed) return;
+      LIVE_CONSENSUS = next;
+      if(lastFedPayload) renderFedAnalysis(lastFedPayload);   // สร้างบทวิเคราะห์ใหม่ทันที
+    }catch(e){ /* เงียบไว้ — ใช้ค่าที่ฝังใน CONSENSUS */ }
+  }
+
   function renderFedAnalysis(data, failReason){
     const box = el('fedAnalysis');
     if(!box) return;
+    if(data) lastFedPayload = data;
     const d = data || {};
     if(!hasAnyFedField(d)){
       box.innerHTML = failReason
@@ -975,13 +1047,16 @@ window.setHeaderStamp();
       return;
     }
 
+    const C = activeConsensus();
+    // Investing.com รายงาน "ระดับที่ตลาดคาด" (ขอบบนของกรอบเป้า) จึงเทียบกับขอบบนของกรอบจริง
+    const consFedText = isValidNum(C.fedLo) ? (C.fedLo.toFixed(2) + '–' + C.fedHi.toFixed(2) + '%') : (C.fedHi.toFixed(2) + '%');
     const cards = [];
     const GREEN = 'var(--good)', RED = 'var(--bad)', AMBER = 'var(--warn)';
 
     // ── 1) Fed Funds Rate ────────────────────────────────────────────────────────────────────
     if(d.upper && d.lower && isValidNum(d.upper.value) && isValidNum(d.lower.value)){
       const lo = d.lower.value, hi = d.upper.value, mid = (lo + hi) / 2;
-      const consMid = (CONSENSUS.fed.lo + CONSENSUS.fed.hi) / 2;
+      const consHi = C.fedHi;
       const since = d.upper.sinceDate || null;
       const age = since ? daysSince(since) : null;
       const fresh = age != null && age <= 45;      // ขึ้น/ลงครั้งล่าสุดภายใน FOMC รอบล่าสุด
@@ -999,9 +1074,9 @@ window.setHeaderStamp();
         if(meetings != null) body += ' (ผ่านการประชุม FOMC มาแล้ว ' + meetings + ' ครั้ง)';
         if(isValidNum(d.upper.prevValue)) body += ' · ก่อนหน้านั้น ' + d.upper.prevValue.toFixed(2) + '%';
       }
-      if(consMid < mid) body += ' · เข้มงวดกว่าที่ตลาดคาดไว้ (' + CONSENSUS.fed.lo.toFixed(2) + '–' + CONSENSUS.fed.hi.toFixed(2) + '%) → กดดันสินทรัพย์เสี่ยง';
-      else if(consMid > mid) body += ' · ผ่อนคลายกว่าที่ตลาดคาดไว้ (' + CONSENSUS.fed.lo.toFixed(2) + '–' + CONSENSUS.fed.hi.toFixed(2) + '%) → หนุนสินทรัพย์เสี่ยง';
-      else body += ' · ตรงกับที่ตลาดคาดไว้ (' + CONSENSUS.fed.lo.toFixed(2) + '–' + CONSENSUS.fed.hi.toFixed(2) + '%)';
+      if(consHi < hi - 0.001) body += ' · เข้มงวดกว่าที่ตลาดคาดไว้ (' + consFedText + ') → กดดันสินทรัพย์เสี่ยง';
+      else if(consHi > hi + 0.001) body += ' · ผ่อนคลายกว่าที่ตลาดคาดไว้ (' + consFedText + ') → หนุนสินทรัพย์เสี่ยง';
+      else body += ' · ตรงกับที่ตลาดคาดไว้ (' + consFedText + ')';
       const nextFomc = el('fomcDateLabel');
       if(nextFomc && nextFomc.textContent) body += ' · รอบถัดไป ' + esc(nextFomc.textContent);
       body += '<br><b>ผลต่อตลาด:</b> ' + (fresh ? (d.upper.changePp > 0 ? 'การขึ้นดอกเบี้ยกดดันหุ้น/คริปโตและหนุนดอลลาร์' : 'การลดดอกเบี้ยหนุนหุ้น/คริปโตและกดดันดอลลาร์') : 'การยืนดอกเบี้ยนิ่ง = เป็นกลาง ไม่มีเซอร์ไพรส์จากฝั่งนโยบาย');
@@ -1011,17 +1086,17 @@ window.setHeaderStamp();
     // ── 2) CPI (headline + core) ─────────────────────────────────────────────────────────────
     if(d.cpi && isValidNum(d.cpi.value)){
       const cpi = d.cpi.value;
-      const dev = cpi - CONSENSUS.cpi;
+      const dev = cpi - C.cpi;
       const chg = isValidNum(d.cpi.changePp) ? d.cpi.changePp : null;
       let accent = Math.abs(dev) <= 0.1 ? AMBER : (dev > 0 ? RED : GREEN);
       const verdict = Math.abs(dev) <= 0.1 ? '🟡 ใกล้เคียงที่คาด' : (dev > 0 ? '🔴 สูงกว่าที่คาด' : '🟢 ต่ำกว่าที่คาด');
 
       let body = 'CPI เดือน ' + esc(thMonth(d.cpi.date)) + ' อยู่ที่ <b>' + cpi.toFixed(1) + '% YoY</b>';
       if(d.coreCpi && isValidNum(d.coreCpi.value)) body += ' (Core ' + d.coreCpi.value.toFixed(1) + '%)';
-      body += ' · ตลาดคาด ' + CONSENSUS.cpi.toFixed(1) + '% → ' + verdict.replace(/^[^\s]+\s/, '');
+      body += ' · ตลาดคาด ' + C.cpi.toFixed(1) + '% → ' + verdict.replace(/^[^\s]+\s/, '');
       if(Math.abs(dev) > 0.05) body += ' ' + Math.abs(dev).toFixed(1) + 'pp';
       if(chg != null) body += '<br>เทียบเดือนก่อน (' + esc(thMonth(d.cpi.prev ? d.cpi.prev.date : '')) + ' ' + (d.cpi.prev ? d.cpi.prev.value.toFixed(1) : '–') + '%) = ' + (chg <= -0.05 ? 'ชะลอลง ' + Math.abs(chg).toFixed(1) + 'pp' : chg >= 0.05 ? 'เร่งขึ้น ' + chg.toFixed(1) + 'pp' : 'ทรงตัว');
-      if(d.coreCpi && isValidNum(d.coreCpi.value)) body += ' · Core ' + (d.coreCpi.value > CONSENSUS.coreCpi + 0.1 ? 'ยังสูงกว่าที่คาด (แรงกดดันเงินเฟ้อพื้นฐานยังไม่คลาย)' : d.coreCpi.value < CONSENSUS.coreCpi - 0.1 ? 'ต่ำกว่าที่คาด' : 'ตามคาด');
+      if(d.coreCpi && isValidNum(d.coreCpi.value)) body += ' · Core ' + (d.coreCpi.value > C.coreCpi + 0.1 ? 'ยังสูงกว่าที่คาด (แรงกดดันเงินเฟ้อพื้นฐานยังไม่คลาย)' : d.coreCpi.value < C.coreCpi - 0.1 ? 'ต่ำกว่าที่คาด' : 'ตามคาด');
       body += cpi > 2 ? '<br>ยัง<b>สูงกว่าเป้าหมาย 2% ของ Fed</b> → เป็นเหตุผลให้ Fed ยังไม่รีบลดดอกเบี้ย' : '<br>อยู่ในกรอบเป้าหมาย 2% ของ Fed แล้ว';
       body += '<br><b>ผลต่อตลาด:</b> ' + (dev > 0.1 ? 'เงินเฟ้อสูงกว่าคาด = กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)' : dev < -0.1 ? 'เงินเฟ้อต่ำกว่าคาด = หนุนหุ้น (Fed มีทางลดดอกเบี้ยเร็วขึ้น)' : 'ตรงคาด = ตลาดมักไม่ตอบสนองรุนแรงเพราะไม่มีเซอร์ไพรส์');
       cards.push(analysisCard(accent, 'CPI เงินเฟ้อ — ' + verdict, body));
@@ -1030,12 +1105,12 @@ window.setHeaderStamp();
     // ── 3) Unemployment ──────────────────────────────────────────────────────────────────────
     if(d.unrate && isValidNum(d.unrate.value)){
       const u = d.unrate.value;
-      const dev = u - CONSENSUS.unrate;                    // ต่ำกว่าคาด = ตลาดแรงงานแข็งแรง
+      const dev = u - C.unrate;                    // ต่ำกว่าคาด = ตลาดแรงงานแข็งแรง
       const mom = isValidNum(d.unrate.changeMoM) ? d.unrate.changeMoM : null;
       let accent = Math.abs(dev) <= 0.1 ? AMBER : (dev < 0 ? GREEN : RED);
       const verdict = Math.abs(dev) <= 0.1 ? '🟡 ใกล้เคียงที่คาด' : (dev < 0 ? '🟢 ดีกว่าที่คาด' : '🔴 แย่กว่าที่คาด');
 
-      let body = 'อัตราว่างงานเดือน ' + esc(thMonth(d.unrate.date)) + ' อยู่ที่ <b>' + u.toFixed(1) + '%</b> · ตลาดคาด ' + CONSENSUS.unrate.toFixed(1) + '% → ' + verdict.replace(/^[^\s]+\s/, '');
+      let body = 'อัตราว่างงานเดือน ' + esc(thMonth(d.unrate.date)) + ' อยู่ที่ <b>' + u.toFixed(1) + '%</b> · ตลาดคาด ' + C.unrate.toFixed(1) + '% → ' + verdict.replace(/^[^\s]+\s/, '');
       if(Math.abs(dev) > 0.05) body += ' ' + Math.abs(dev).toFixed(1) + 'pp';
       if(mom != null) body += '<br>เทียบเดือนก่อน = ' + (mom > 0 ? 'เพิ่มขึ้น ' + mom.toFixed(1) + 'pp (ตลาดแรงงานอ่อนลง)' : mom < 0 ? 'ลดลง ' + Math.abs(mom).toFixed(1) + 'pp' : 'ทรงตัว');
       if(isValidNum(d.unrate.change3m)) body += ' · เทียบ 3 เดือนก่อน = ' + ppDelta(d.unrate.change3m);
@@ -1047,11 +1122,11 @@ window.setHeaderStamp();
     // ── 4) Nonfarm Payrolls ──────────────────────────────────────────────────────────────────
     if(d.nfp && isValidNum(d.nfp.value)){
       const n = d.nfp.value;
-      const dev = n - CONSENSUS.nfp;
+      const dev = n - C.nfp;
       let accent = Math.abs(dev) < 30000 ? AMBER : (dev > 0 ? GREEN : RED);
       const verdict = Math.abs(dev) < 30000 ? '🟡 ใกล้เคียงที่คาด' : (dev > 0 ? '🟢 ดีกว่าที่คาด' : '🔴 แย่กว่าที่คาด');
 
-      let body = 'จ้างงานเดือน ' + esc(thMonth(d.nfp.date)) + ' = <b>' + esc(fmtJobs(n)) + ' ตำแหน่ง</b> · ตลาดคาด +' + CONSENSUS.nfp.toLocaleString('en-US') + ' → ' + verdict.replace(/^[^\s]+\s/, '');
+      let body = 'จ้างงานเดือน ' + esc(thMonth(d.nfp.date)) + ' = <b>' + esc(fmtJobs(n)) + ' ตำแหน่ง</b> · ตลาดคาด +' + C.nfp.toLocaleString('en-US') + ' → ' + verdict.replace(/^[^\s]+\s/, '');
       if(Math.abs(dev) >= 1000) body += ' ' + Math.abs(dev).toLocaleString('en-US') + ' ตำแหน่ง';
       if(isValidNum(d.nfp.avg3Change)) body += '<br>ค่าเฉลี่ย 3 เดือนล่าสุด = ' + esc(fmtJobs(d.nfp.avg3Change)) + ' ตำแหน่ง/เดือน' + (isValidNum(d.nfp.prevChange) ? ' · เดือนก่อนหน้า = ' + esc(fmtJobs(d.nfp.prevChange)) : '');
       if(isValidNum(d.nfp.avg3Change)){
@@ -1068,9 +1143,37 @@ window.setHeaderStamp();
     const when = new Date().toLocaleTimeString('th-TH');
     const src = esc(sourceLabel(d));
     const missing = d.errors ? Object.keys(d.errors) : [];
+
+    // ตรวจว่าค่า consensus ของ Investing.com เป็นของ "รอบเดียวกับตัวเลขบนการ์ด" หรือไม่
+    // (FRED อาจตามหลังอยู่หนึ่งรอบ — ถ้าเป็นอย่างนั้นต้องบอก ไม่ใช่เทียบข้ามรอบเงียบๆ)
+    let consensusNote = '';
+    if(C.actuals){
+      const pairs = [['CPI', d.cpi, C.actuals.cpi], ['Core CPI', d.coreCpi, C.actuals.coreCpi], ['ว่างงาน', d.unrate, C.actuals.unrate]];
+      const checked = pairs.filter(pr => pr[1] && isValidNum(pr[1].value) && isValidNum(pr[2]));
+      const mismatched = checked.filter(pr => Math.abs(pr[1].value - pr[2]) > 0.05);
+      if(checked.length && mismatched.length){
+        consensusNote = ' · ⚠️ ค่าจาก Investing.com เป็นของรอบที่ใหม่/เก่ากว่าตัวเลขบนการ์ด (' + mismatched.map(pr => pr[0]).join(', ') + ') — ใช้เทียบเป็นแนวทางเท่านั้น';
+      }else if(checked.length){
+        consensusNote = ' · ✅ ตรวจแล้วว่าค่าคาดตรงรอบเดียวกับตัวเลขบนการ์ด';
+      }
+    }
+
+    const link = (href, text) => '<a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="' + esc(href) + '">' + text + '</a>';
+    const srcLine = C.live
+      ? 'ที่คาด: ' + esc(C.source) + ' (ดึงสด · รอบล่าสุด ' + esc(C.asOf) + ')'
+      : 'ที่คาด: ' + esc(C.source) + ' (ค่าที่ฝังไว้ ณ ' + esc(C.asOf) + ' — รอบนี้ดึงสดไม่ได้ ระบบจะลองใหม่เอง)';
+    const linkLine = 'ตรวจ/อัปเดตได้ที่ ' + [
+      link(CONSENSUS.links.cpi, 'CPI'), link(CONSENSUS.links.coreCpi, 'Core CPI'),
+      link(CONSENSUS.links.nfp, 'การจ้างงาน'), link(CONSENSUS.links.unrate, 'ว่างงาน'),
+      link(CONSENSUS.links.fed, 'Fed')
+    ].join(' · ');
+
     let foot = '🤖 บทวิเคราะห์นี้สร้างอัตโนมัติจากตัวเลขสด (source: ' + src + ') ณ ' + esc(when)
-      + ' — เกณฑ์ "ดี/แย่กว่าคาด" ใช้ consensus ที่ประกาศไว้ในตัวเว็บ (Fed ' + CONSENSUS.fed.lo.toFixed(2) + '–' + CONSENSUS.fed.hi.toFixed(2) + '% · CPI ' + CONSENSUS.cpi.toFixed(1) + '% · Core ' + CONSENSUS.coreCpi.toFixed(1) + '% · ว่างงาน ' + CONSENSUS.unrate.toFixed(1) + '% · NFP +' + CONSENSUS.nfp.toLocaleString('en-US') + ') '
-      + 'ส่วน "เทียบเดือนก่อน / ค่าเฉลี่ย 3 เดือน" คำนวณสดจากข้อมูลจริงเสมอ · ยังไม่มีรอบประกาศใหม่ = ข้อความนี้อัปเดตเองทุกครั้งที่ตัวเลขเปลี่ยน';
+      + ' — เกณฑ์ "ดี/แย่กว่าคาด" ใช้ consensus: Fed ' + consFedText
+      + ' · CPI ' + C.cpi.toFixed(1) + '% · Core ' + C.coreCpi.toFixed(1) + '% · ว่างงาน ' + C.unrate.toFixed(1)
+      + '% · NFP +' + C.nfp.toLocaleString('en-US')
+      + '<br>' + srcLine + esc(consensusNote) + ' · ' + linkLine
+      + '<br>ส่วน "เทียบเดือนก่อน / ค่าเฉลี่ย 3 เดือน" คำนวณสดจากข้อมูลจริงเสมอ — ตัวเลขเปลี่ยนเมื่อไร บทวิเคราะห์นี้สร้างใหม่เองอัตโนมัติ';
     if(d.stale) foot += '<br>⚠️ แหล่งข้อมูลตอบช้า — ตัวเลขที่ใช้คือค่าล่าสุดที่เคยดึงได้';
     if(missing.length) foot += '<br>⚠️ วิเคราะห์จากช่องที่ดึงได้เท่านั้น (ที่ดึงไม่ได้: ' + esc(missing.join(', ')) + ')';
 
@@ -1116,6 +1219,7 @@ window.setHeaderStamp();
     fedNextFetchAt = now + FED_POLL_MS;
 
     if(statusEl) statusEl.textContent = '⏳ กำลังดึงข้อมูลสด (Fed / CPI / การจ้างงาน)…';
+    loadConsensus();   // ยิงขนานไปเลย ไม่ต้องรอกัน — ได้ค่าสดเมื่อไรบทวิเคราะห์จะถูกสร้างใหม่ทันที
     try{
       const r = await fetchWithTimeout('/.netlify/functions/fred-data', 15000);
       let data;

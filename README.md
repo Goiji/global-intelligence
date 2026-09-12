@@ -12,6 +12,7 @@
 ├── tools/dev-server.js                 ← เซิร์ฟเวอร์ทดสอบในเครื่อง (static + Functions จริง)
 └── netlify/functions/
     ├── fred-data.js                    ← Fed Rate / EFFR / CPI(+core) / Unemployment / Payrolls
+    ├── consensus.js                    ← ค่า "ที่คาด" (consensus) จาก Investing.com (แคช 3 ชม.)
     ├── cmc-fear-greed.js               ← Fear & Greed (CoinMarketCap keyless → alternative.me)
     ├── news-feed.js                    ← พาดหัวข่าว: อ่าน Google News RSS ฝั่งเซิร์ฟเวอร์เอง
     ├── onchain.js                      ← NUPL / MVRV Z-Score / MVRV Ratio (BGeometrics, แคช 8 ชม.)
@@ -122,7 +123,7 @@ Functions จะตอบ JSON แบบ graceful failure ซึ่งก็ค�
 ## รันเทสต์ในเครื่อง
 
 ```bash
-npm test        # = node --test "netlify/functions/*.test.js" "tests/*.test.js"   (38 เคส)
+npm test        # = node --test "netlify/functions/*.test.js" "tests/*.test.js"   (50 เคส)
 ```
 
 ชุดเทสต์เป็น `node:test` ล้วนๆ ไม่ต้องติดตั้งอะไรเพิ่ม (ไม่ต้องมี node_modules) และไม่มีการเรียก
@@ -132,12 +133,30 @@ npm test        # = node --test "netlify/functions/*.test.js" "tests/*.test.js" 
 (จับ typo / id ที่ไม่มีจริง / ลืม escape ข้อความจาก feed) และ `tests/fed-analysis.test.js`
 ที่ป้อนข้อมูลจำลองเข้าไปแล้วตรวจว่าบทวิเคราะห์เปลี่ยนตามตัวเลขจริง
 
+## ค่า consensus ("ที่คาด") มาจากไหน และอัปเดตยังไง
+
+| ระดับ | ที่มา | หมายเหตุ |
+|---|---|---|
+| 1 | `/.netlify/functions/consensus` | อ่าน Investing.com สดๆ ฝั่งเซิร์ฟเวอร์ (ไม่มี CORS) แคช 3 ชม. · ไม่ต้องใช้ key |
+| 2 | ค่าคงที่ `CONSENSUS` ใน `index.html` | ค่าที่คัดมาจาก Investing.com เมื่อ 12 ก.ย. 2026 ใช้เมื่อระดับ 1 ใช้ไม่ได้ |
+
+หน้าเว็บจะบอกท้ายการ์ดวิเคราะห์เสมอว่าใช้ระดับไหน และค่า "ตามจริง" ของ Investing.com ตรงกับตัวเลข
+บนการ์ดหรือไม่ (ถ้าไม่ตรง = FRED ตามหลังอยู่หนึ่งรอบ จะขึ้นคำเตือนไว้ ไม่เทียบข้ามรอบเงียบๆ)
+
+**ถ้าอยากแก้ค่า ที่คาด เอง** (เช่น Investing.com ยังไม่ลงตัวเลขคาดการณ์ของรอบถัดไป):
+แก้ตัวเลขในบล็อก `CONSENSUS` (`cpi`, `coreCpi`, `unrate`, `nfp`, `fed`, `asOf`) ใน `index.html`
+ที่เดียว — ไม่ต้องแตะโค้ดส่วนอื่น
+
 ## รอบแก้ไข ก.ย. 2026 (สรุปสั้น)
 
 - **บทวิเคราะห์ "ตัวเลขออกมาดี/แย่แค่ไหน เทียบกับที่คาด" สร้างอัตโนมัติแล้ว** — เดิมเป็นข้อความเขียนมือ
   ค้างไว้รอบ ก.ค. 2026 (ตัวเลขฝังในเนื้อความ) ตอนนี้สร้างจากตัวเลขสดทุกครั้งที่ค่าเปลี่ยน โดยเทียบกับ
-  consensus + เดือนก่อน + ค่าเฉลี่ย 3 เดือน · ตัวเลข consensus เก็บไว้ที่ค่าคงที่ `CONSENSUS` ใน `index.html`
-  ก้อนเดียว (ไม่แก้ก็ยังใช้ได้ — ส่วนที่เทียบเดือนก่อนคำนวณสดเสมอ)
+  consensus + เดือนก่อน + ค่าเฉลี่ย 3 เดือน
+- **ค่า "ที่คาด" มาจาก Investing.com** — `consensus.js` อ่านหน้า economic calendar ของ Investing.com
+  ฝั่งเซิร์ฟเวอร์ (CPI 733 · Core CPI 736 · NFP 227 · ว่างงาน 300 · Fed 168) แคช 3 ชม. ใช้ร่วมกันทุกคน
+  ถ้าดึงไม่ได้ (Cloudflare บล็อก/หน้าเว็บเปลี่ยน) หน้าเว็บจะถอยไปใช้ค่าสำรองที่ฝังไว้ และ **บอกผู้ใช้เสมอ**
+  ว่ากำลังใช้ชุดไหน ณ วันไหน พร้อมลิงก์ให้ตรวจเอง · ระบบยังเทียบค่า "ตามจริง" ของ Investing.com กับ
+  ตัวเลขบนการ์ดด้วย ถ้าไม่ตรงรอบกันจะขึ้นคำเตือน ไม่เทียบข้ามรอบเงียบๆ
 - แก้ **BLS series ของ payrolls ที่ผิด** (`CES0500000003` = รายได้เฉลี่ยต่อชั่วโมง ไม่ใช่จำนวนตำแหน่งงาน)
   → `CES0000000001` (Total Nonfarm) ทำให้ fallback ทำงานได้จริง
 - แก้ **ฟอนต์ของแท็บ BTC ไม่เคยโหลด**: `@import` ถูกวางผิดตำแหน่งใน `<style>` (CSS บังคับว่าต้องเป็น
