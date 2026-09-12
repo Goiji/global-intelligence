@@ -1,0 +1,4 @@
+# ไฟล์ที่เก็บค่ากลางตอนรัน dev-server ในเครื่อง (tools/dev-server.js) —
+# บน Netlify ค่ากลางถูก commit กลับเข้า repo เป็นไฟล์ data/consensus-override.json
+# (โดย function consensus-override ผ่าน GITHUB_TOKEN) ซึ่ง "ไม่" ได้-ignore ใน repo
+/data/
