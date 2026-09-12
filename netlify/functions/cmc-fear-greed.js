@@ -25,18 +25,26 @@ async function fetchJsonWithTimeout(url, ms = 5000) {
   }
 }
 
+function findEntry(obj) {
+  if (!obj) return null;
+  if (Array.isArray(obj)) {
+    for (const it of obj) {
+      const res = findEntry(it);
+      if (res) return res;
+    }
+    return null;
+  }
+  if (typeof obj === 'object') {
+    if (obj.value !== undefined || obj.score !== undefined || obj.fear_and_greed !== undefined) {
+      return obj;
+    }
+    if (obj.data) return findEntry(obj.data);
+  }
+  return null;
+}
+
 function normalizeCmcResponse(j) {
-  // รองรับทั้ง { data: { value, value_classification, timestamp } } และ { data: [ { value, ... } ] }
-  let entry = null;
-  if (j && j.data) {
-    if (Array.isArray(j.data)) entry = j.data[0];
-    else if (typeof j.data === 'object') entry = j.data;
-  }
-  // บาง response อาจห่อใน j.data.data (เผื่อ schema เปลี่ยน)
-  if (!entry && j && j.data && j.data.data) {
-    const d = j.data.data;
-    entry = Array.isArray(d) ? d[0] : d;
-  }
+  const entry = findEntry(j ? (j.data || j) : null);
   if (!entry) throw new Error('CMC: no data entry');
   const value = parseInt(entry.value ?? entry.score ?? entry.fear_and_greed ?? '', 10);
   const classification = entry.value_classification || entry.classification || entry.valueClassification || '';
