@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Static dashboard + Netlify Functions for world-risk / macro / BTC data. This package.json exists ONLY so `npm test` works locally — the site is a plain static deploy, there is no build step and no runtime dependency.",
   "scripts": {
-    "test": "node --test \"netlify/functions/*.test.js\" \"tests/*.test.js\"",
+    "test": "node --test \"tests/*.test.js\"",
     "dev": "node tools/dev-server.js",
     "start": "node tools/dev-server.js"
   },

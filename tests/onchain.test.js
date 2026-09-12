@@ -5,7 +5,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { __test } = require('./onchain.js');
+const { __test } = require('../netlify/functions/onchain.js');
 
 const { extractValue, METRICS } = __test;
 

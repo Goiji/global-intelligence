@@ -9,7 +9,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { __test } = require('./consensus.js');
+const { __test } = require('../netlify/functions/consensus.js');
 
 const { parseEventPage, parseNumber, parseDate, toText, EVENTS } = __test;
 

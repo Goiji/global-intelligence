@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const fn = require('./consensus-override.js');
+const fn = require('../netlify/functions/consensus-override.js');
 const { __test: T, handler } = fn;
 
 const SAVED_ENV = {

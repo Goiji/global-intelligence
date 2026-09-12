@@ -144,8 +144,12 @@ Functions จะตอบ JSON แบบ graceful failure ซึ่งก็ค�
 ## รันเทสต์ในเครื่อง
 
 ```bash
-npm test        # = node --test "netlify/functions/*.test.js" "tests/*.test.js"   (57 เคส)
+npm test        # = node --test "tests/*.test.js"
 ```
+
+> หมายเหตุ: เทสต์ของทุก function ถูกเก็บรวมใน `tests/` (ไม่ใช่ใน `netlify/functions/`)
+> เพราะ Netlify สแกนไฟล์ในโฟลเดอร์นั้นเป็น function — ไฟล์ชื่อ `x.test.js` มีจุดในชื่อ
+> ทำให้ deploy ล้มได้จึงต้องแยกออกไป
 
 ชุดเทสต์เป็น `node:test` ล้วนๆ ไม่ต้องติดตั้งอะไรเพิ่ม (ไม่ต้องมี node_modules) และไม่มีการเรียก
 เครือข่ายออกไปเลย — ครอบคลุมตัว parser ของ FRED/BLS/Google News RSS, การคำนวณ CPI YoY แบบ

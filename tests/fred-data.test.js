@@ -1,4 +1,4 @@
-// Unit tests for fred-data.js — run with:  npm test   (or: node --test netlify/functions/)
+// Unit tests for netlify/functions/fred-data.js — run with:  npm test
 //
 // The function deliberately exports its pure helpers via `module.exports.__test`, but until now
 // nothing in the repo actually used them, so every regression had to be caught in production.
@@ -10,7 +10,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { __test } = require('./fred-data.js');
+const { __test } = require('../netlify/functions/fred-data.js');
 
 const {
   parseFredCsv, parseFredApiJson, parseBlsJson, splitCsvLine,
