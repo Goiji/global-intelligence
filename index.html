@@ -304,7 +304,7 @@ body{margin:0}
 <div class="metrics" id="fedMetrics">
   <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">3.50–3.75%</div></div>
   <div class="metric"><div class="name">Effective Fed Funds Rate</div><div class="num" id="fedEffr">3.63%</div></div>
-  <div class="metric"><div class="name">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.4%</div></div>
+  <div class="metric"><div class="name">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.40%</div></div>
   <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">4.1%</div></div>
   <div class="metric"><div class="name">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num" id="nfp" style="color:#ff6577;">-23,000</div></div>
 </div>
@@ -770,7 +770,7 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
         applied++;
       }
       if(cpi && isValidNum(cpi.value)){
-        el('cpiYoy').textContent = cpi.value.toFixed(1) + '%';
+        el('cpiYoy').textContent = cpi.value.toFixed(2) + '%';
         applied++;
       }
       if(unrate && isValidNum(unrate.value)){
