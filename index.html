@@ -719,42 +719,74 @@ document.getElementById('today').textContent=new Date().toLocaleDateString('th-T
     const statusEl = el('fredFetchStatus');
 
     const today = new Date().toISOString().slice(0,10);
+    const CACHE_KEY = 'fed-data-cache-v2'; // v2: busts old cache that may hold null CPI values
     try{
-      const raw = await storageGet('fed-data-cache');
+      const raw = await storageGet(CACHE_KEY);
       if(raw){
         const c = JSON.parse(raw);
         if(c.date === today){
-          applyFedData(c.data);
-          if(statusEl) statusEl.textContent = 'ใช้ค่าที่ดึงไว้วันนี้แล้ว (แคช)';
-          return; // already fetched today, skip network
+          const n = applyFedData(c.data);
+          if(statusEl) statusEl.textContent = n > 0
+            ? 'ใช้ค่าที่ดึงไว้วันนี้แล้ว (แคช · อัปเดต ' + n + ' ช่อง)'
+            : 'แคชวันนี้ใช้ไม่ได้ กำลังดึงใหม่…';
+          if(n > 0) return; // already fetched today, skip network
         }
       }
     }catch(e){}
 
     if(statusEl) statusEl.textContent = 'กำลังดึงจากเซิร์ฟเวอร์…';
     try{
-      const r = await fetchWithTimeout('/.netlify/functions/fred-data', 10000);
+      const r = await fetchWithTimeout('/.netlify/functions/fred-data', 15000);
       const data = await r.json();
-      if(data.error) throw new Error(data.error);
-      applyFedData(data);
-      await storageSet('fed-data-cache', JSON.stringify({ date: today, data }));
-      if(statusEl) statusEl.textContent = (data.cached ? 'ใช้ค่าแคชฝั่งเซิร์ฟเวอร์ · ' : '✅ ดึงสดสำเร็จ · ') + new Date().toLocaleTimeString('th-TH');
+      if(data.error && !data.upper && !data.cpi && !data.unrate && !data.effr) throw new Error(data.error);
+      const n = applyFedData(data);
+      await storageSet(CACHE_KEY, JSON.stringify({ date: today, data }));
+      const errBits = data.errors ? Object.entries(data.errors).map(([k,msg]) => k + ': ' + msg) : [];
+      if(statusEl){
+        const prefix = data.cached ? 'ใช้ค่าแคชฝั่งเซิร์ฟเวอร์ · ' : '✅ ดึงสดสำเร็จ (' + n + ' ช่อง) · ';
+        statusEl.textContent = prefix + new Date().toLocaleTimeString('th-TH')
+          + (errBits.length ? ' · ⚠️ บางค่าดึงไม่สำเร็จ — ' + errBits.join(' | ') : '');
+      }
     }catch(e){
       // Show the REAL error instead of failing silently, so we can actually diagnose it.
       if(statusEl) statusEl.textContent = '❌ ดึงไม่สำเร็จ: ' + e.message + ' (ยังใช้ค่าสำรองด้านบนอยู่)';
     }
   }
 
+  function isValidNum(v){ return typeof v === 'number' && isFinite(v); }
+
   function applyFedData(data){
-    const { upper, lower, effr, cpi, unrate } = data;
-    if(upper && lower) el('fedRange').textContent = lower.value.toFixed(2) + '–' + upper.value.toFixed(2) + '%';
-    if(effr) el('fedEffr').textContent = effr.value.toFixed(2) + '%';
-    if(cpi) el('cpiYoy').textContent = cpi.value.toFixed(1) + '%';
-    if(unrate){
-      el('unrate').textContent = unrate.value.toFixed(1) + '%';
-      el('fedAsOf').innerHTML = 'ดึงสดจาก FRED ล่าสุด (Unemployment ณ ' + unrate.date + (cpi ? ', CPI ณ ' + cpi.date : '') + ') · เช็คอัตโนมัติวันละครั้ง · '
-        + '<a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" href="https://fred.stlouisfed.org/series/FEDFUNDS">FRED</a>';
-    }
+    // Each field applied independently with validation — one bad value (historically:
+    // CPI coming back as null/NaN from a "." observation) must never abort the rest.
+    let applied = 0;
+    try{
+      const { upper, lower, effr, cpi, unrate } = data || {};
+      if(upper && lower && isValidNum(upper.value) && isValidNum(lower.value)){
+        el('fedRange').textContent = lower.value.toFixed(2) + '–' + upper.value.toFixed(2) + '%';
+        applied++;
+      }
+      if(effr && isValidNum(effr.value)){
+        el('fedEffr').textContent = effr.value.toFixed(2) + '%';
+        applied++;
+      }
+      if(cpi && isValidNum(cpi.value)){
+        el('cpiYoy').textContent = cpi.value.toFixed(1) + '%';
+        applied++;
+      }
+      if(unrate && isValidNum(unrate.value)){
+        el('unrate').textContent = unrate.value.toFixed(1) + '%';
+        applied++;
+      }
+      const dateBits = [];
+      if(unrate && unrate.date) dateBits.push('Unemployment ณ ' + unrate.date);
+      if(cpi && cpi.date && isValidNum(cpi.value)) dateBits.push('CPI ณ ' + cpi.date);
+      if(effr && effr.date) dateBits.push('EFFR ณ ' + effr.date);
+      if(dateBits.length){
+        el('fedAsOf').innerHTML = 'ดึงสดจาก FRED ล่าสุด (' + dateBits.join(', ') + ') · เช็คอัตโนมัติวันละครั้ง · '
+          + '<a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" href="https://fred.stlouisfed.org/series/FEDFUNDS">FRED</a>';
+      }
+    }catch(e){ /* never let a render hiccup break the page */}
+    return applied;
   }
 
   refreshFedData();
