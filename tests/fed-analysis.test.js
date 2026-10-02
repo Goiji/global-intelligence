@@ -173,7 +173,7 @@ test('a stale/partial payload still produces an honest analysis', async () => {
   const partial = payload({ nfp: undefined, errors: { nfp: 'no usable PAYEMS level' }, stale: true, staleReason: 'all sources timed out' });
   const h = html(await runAllScripts(makeSandbox({ fetchImpl: fetchStub({ fred: partial }) })));
   assert.doesNotMatch(h, /Nonfarm Payrolls/, 'a missing metric must not be analysed from stale prose');
-  assert.match(h, /ที่ดึงไม่ได้: nfp/, 'the missing field should be disclosed');
+  assert.match(h, /ที่ดึงไม่ได้: NFP/, 'the missing field should be disclosed');
   assert.match(h, /ตอบช้า|ค่าล่าสุดที่เคยดึงได้/, 'the stale flag should be disclosed');
 });
 
