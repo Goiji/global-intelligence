@@ -26,7 +26,7 @@
      Space Grotesk / JetBrains Mono ไม่เคยถูกโหลดเลย ตัวเลขทุกตัวเลย fallback ไปใช้ฟอนต์ระบบ -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Noto+Serif+Thai:wght@500;600;700&family=Playfair+Display:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai+Looped:wght@300;400;500;600;700;800&display=swap">
 <style>
 
 #newsTab{--bg:#0b1020;--panel:#121a2d;--panel2:#0e1628;--text:#eef3ff;--muted:#8e9bb5;--line:#24304a;--good:#45d483;--warn:#ffca58;--bad:#ff6577;--accent:var(--accent)}
@@ -260,7 +260,7 @@ body{margin:0}
 
   /* =====================================================================================
      DESIGN LAYER — ธีมเดียวทั้งสองแท็บ: พื้นน้ำเงินเข้มเกือบดำ · ตัวอักษรสีงาช้าง · เส้นและไฮไลต์สีทองแชมเปญ
-     ฟอนต์: Playfair Display + Noto Serif Thai (หัวข้อ/ตัวเลขใหญ่) · IBM Plex Sans Thai (เนื้อหา/ตัวเลขข้อมูล)
+     ฟอนต์: Noto Sans Thai Looped ทั้งเว็บ (มีทั้งอักษรไทยและอังกฤษในตัว) — หัวข้อใช้น้ำหนัก 700–800
      ===================================================================================== */
   :root, #newsTab, #btcTab{
     --bg:#06080e; --panel:#0c1019; --panel2:#090d15; --panel-2:#090d15;
@@ -268,8 +268,8 @@ body{margin:0}
     --text:#ece6d8; --muted:#8d95a6; --sub:#8d95a6;
     --accent:#d4b26a; --accent-hi:#f0dba4; --amber:#d4b26a;
     --good:#5ac492; --green:#5ac492; --bad:#e46a72; --red:#e46a72; --warn:#e2b45a;
-    --serif:'Playfair Display','Noto Serif Thai',Georgia,serif;
-    --sans:'IBM Plex Sans Thai',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --sans:'Noto Sans Thai Looped',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --serif:var(--sans);   /* เดิมหัวข้อเป็นฟอนต์มีเชิง — ตอนนี้ใช้ฟอนต์เดียวกันทั้งหมด */
     --disp:var(--serif); --mono:var(--sans);
   }
   html{background:#06080e}
@@ -295,7 +295,7 @@ body{margin:0}
   /* ---------- page header ---------- */
   .wrap{padding-top:40px}
   .eyebrow,#btcTab .brand .eyebrow{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.32em;color:var(--accent);text-transform:uppercase}
-  .title,#btcTab .brand h1{font-family:var(--serif);font-weight:600;font-size:42px;letter-spacing:-.005em;line-height:1.1;margin:10px 0 8px;color:#f6f1e6}
+  .title,#btcTab .brand h1{font-family:var(--serif);font-weight:800;font-size:40px;letter-spacing:-.015em;line-height:1.1;margin:10px 0 8px;color:#f6f1e6}
   .sub{font-size:14px;color:var(--muted);font-weight:300;letter-spacing:.01em}
   .top{padding-bottom:26px;margin-bottom:28px;border-bottom:1px solid var(--line-soft);position:relative}
   .top::after,#btcTab header::after{content:"";position:absolute;left:0;bottom:-1px;width:120px;height:1px;background:linear-gradient(90deg,var(--accent),transparent)}
@@ -311,7 +311,7 @@ body{margin:0}
     box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 24px 60px -28px rgba(0,0,0,.85);
   }
   .card::before,#btcTab .panel::before{content:"";position:absolute;left:24px;right:24px;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-line),transparent);pointer-events:none}
-  h2,#btcTab .panel h2{font-family:var(--serif);font-weight:600;font-size:21px;letter-spacing:0;text-transform:none;color:#f3eee3;margin:0 0 18px}
+  h2,#btcTab .panel h2{font-family:var(--serif);font-weight:700;font-size:19px;letter-spacing:0;text-transform:none;color:#f3eee3;margin:0 0 18px}
   .h-en{font-family:var(--sans);font-size:10px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);opacity:.75;margin-left:10px;vertical-align:middle}
   .muted{color:var(--muted)}
 
@@ -327,7 +327,7 @@ body{margin:0}
   .watch b{font-weight:600;color:#f3eee3}
 
   /* hero numbers in serif */
-  .score{font-family:var(--serif);font-weight:600;font-size:76px;letter-spacing:-.02em;color:#f8f3e8}
+  .score{font-family:var(--serif);font-weight:700;font-size:72px;letter-spacing:-.03em;color:#f8f3e8}
   .score small{font-family:var(--sans);font-size:16px;font-weight:400;color:var(--muted);letter-spacing:.05em}
   .badge{background:rgba(212,178,106,.12);color:var(--accent-hi);border:1px solid var(--gold-line);font-weight:600;letter-spacing:.04em;padding:6px 12px}
   .risk-scale .bar{height:6px}
@@ -356,14 +356,14 @@ body{margin:0}
   #btcTab .wrap{max-width:1060px}
   #btcTab .panel h2 > span{font-family:var(--sans)!important;font-size:13px!important;font-weight:400!important;color:var(--muted)!important;letter-spacing:0!important}
   #btcTab .brand h1 .dot{background:var(--good);box-shadow:0 0 12px var(--good)}
-  #btcTab .price-block .px{font-family:var(--serif);font-weight:600;font-size:34px;color:#f8f3e8}
+  #btcTab .price-block .px{font-family:var(--serif);font-weight:700;font-size:32px;letter-spacing:-.01em;color:#f8f3e8}
   #btcTab .price-block .meta{font-family:var(--sans)}
-  #btcTab .score-number{font-family:var(--serif);font-weight:600;font-size:80px;letter-spacing:-.02em}
+  #btcTab .score-number{font-family:var(--serif);font-weight:700;font-size:76px;letter-spacing:-.03em}
   #btcTab .score-label,#btcTab .halving-label,#btcTab .ath-stat .lbl{font-family:var(--sans);letter-spacing:.18em;font-size:10px;color:var(--muted)}
   #btcTab .verdict{font-family:var(--sans);font-weight:600;border-radius:12px}
   #btcTab .metric-name{font-family:var(--sans);font-weight:600;font-size:15px;color:#f3eee3}
-  #btcTab .metric-display-value,#btcTab .sl-num,#btcTab .ath-stat .num{font-family:var(--serif);font-weight:600;color:#f6f1e6}
-  #btcTab .halving-days{font-family:var(--serif);font-weight:600;font-size:64px;color:var(--accent-hi)}
+  #btcTab .metric-display-value,#btcTab .sl-num,#btcTab .ath-stat .num{font-family:var(--serif);font-weight:700;color:#f6f1e6}
+  #btcTab .halving-days{font-family:var(--serif);font-weight:700;font-size:60px;letter-spacing:-.02em;color:var(--accent-hi)}
   #btcTab .metric-score-pill{font-family:var(--sans)}
   #btcTab .metric-row input[type=range]{accent-color:var(--accent)}
   #btcTab input[type=number],#btcTab .ath-inputs input{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:10px;font-family:var(--sans)}
