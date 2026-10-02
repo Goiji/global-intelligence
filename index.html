@@ -2456,6 +2456,7 @@ window.setHeaderStamp();
   // ---------- fetch live price/ATH ----------
   // ราคาสดล่าสุดที่ดึงได้ ใช้คำนวณ Open Interest (USD → BTC) เสมอ แม้ช่องกรอกจะถูกผู้ใช้แก้เองอยู่
   let lastLivePrice = null;
+  let lastLiveAt = 0;   // เวลาที่ได้ราคาจากสตรีมสดล่าสุด (ดูด้านล่าง "ราคา BTC แบบเรียลไทม์")
 
   async function fetchPrice(){
     try{
@@ -2464,9 +2465,11 @@ window.setHeaderStamp();
       const price = data.market_data.current_price.usd;
       const ath = data.market_data.ath.usd;
       if(!isFinite(price) || !isFinite(ath)) throw new Error('no price in CoinGecko response');
-      lastLivePrice = Math.round(price);
       // ไม่ทับค่าที่ผู้ใช้พิมพ์เอง (ถ้าอยากกลับไปใช้ค่าสด กดปุ่ม "↻ ใช้ราคาสด" ที่การ์ด ATH)
-      if(priceInput.dataset.manual !== '1') priceInput.value = Math.round(price);
+      // ถ้าสตรีมสดจาก Binance ทำงานอยู่ ไม่เอาราคา CoinGecko (ช้ากว่า 1–5 นาที) มาทับให้ตัวเลขกระโดดถอยหลัง
+      const streaming = Date.now() - lastLiveAt < 60000;
+      if(!streaming) lastLivePrice = Math.round(price);
+      if(priceInput.dataset.manual !== '1' && !streaming) priceInput.value = Math.round(price);
       if(athInput.dataset.manual !== '1') athInput.value = Math.round(ath);
       return true;
     }catch(e){
@@ -2872,6 +2875,70 @@ window.setHeaderStamp();
     }
   }
 
+  // ---------- ราคา BTC แบบเรียลไทม์ ----------
+  // เดิมราคาดึงจาก CoinGecko ครั้งเดียวตอนเปิดหน้า (และ CoinGecko เองช้ากว่าตลาด 1–5 นาที) จึงไม่ทันกราฟ
+  // ตอนนี้ฟังราคาจาก Binance BTCUSDT ผ่าน WebSocket (ชุดเดียวกับกราฟ BINANCE:BTCUSDT) อัปเดต ~ทุก 1 วิ
+  // ทำงานเฉพาะตอนเปิดแท็บ BTC อยู่และหน้าจอไม่ได้ถูกซ่อน · ถ้า WebSocket ใช้ไม่ได้ ถอยไปโพล REST ทุก 15 วิ
+  const LIVE_POLL_MS = 15000;
+  let liveWs = null, livePollTimer = null, liveRetry = 0, liveRetryTimer = null, liveRenderTimer = null, livePending = null;
+  function btcTabActive(){ return document.body.classList.contains('theme-btc') && !document.hidden; }
+  function applyLivePrice(p){
+    if(!isFinite(p) || p <= 0) return;
+    lastLivePrice = Math.round(p);
+    lastLiveAt = Date.now();
+    livePending = p;
+    if(liveRenderTimer) return;            // รวบอัปเดตเป็นอย่างมากวินาทีละครั้ง
+    liveRenderTimer = setTimeout(function(){
+      liveRenderTimer = null;
+      if(priceInput.dataset.manual === '1') return;   // ผู้ใช้กรอกราคาเอง — ไม่ทับ
+      const v = Math.round(livePending);
+      priceInput.value = v;
+      if(athInput.dataset.manual !== '1' && v > (parseFloat(athInput.value) || 0)) athInput.value = v;  // ทำ ATH ใหม่
+      recompute();
+    }, 1000);
+  }
+  function startLivePolling(){
+    if(livePollTimer) return;
+    const tick = async function(){
+      if(!btcTabActive()) return;
+      try{
+        const r = await fetchWithTimeout('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT', 5000);
+        const j = await r.json();
+        applyLivePrice(parseFloat(j.price));
+      }catch(e){ /* ครั้งหน้าลองใหม่ */ }
+    };
+    tick();
+    livePollTimer = setInterval(tick, LIVE_POLL_MS);
+  }
+  function startLive(){
+    if(!btcTabActive() || liveWs || livePollTimer) return;
+    if(typeof WebSocket !== 'function' || liveRetry > 3){ startLivePolling(); return; }
+    try{
+      const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@miniTicker');
+      liveWs = ws;
+      ws.onmessage = function(ev){
+        try{ applyLivePrice(parseFloat(JSON.parse(ev.data).c)); liveRetry = 0; }catch(e){}
+      };
+      ws.onerror = function(){ try{ ws.close(); }catch(e){} };
+      ws.onclose = function(){
+        if(liveWs !== ws) return;
+        liveWs = null;
+        if(!btcTabActive()) return;
+        liveRetry++;
+        clearTimeout(liveRetryTimer);
+        liveRetryTimer = setTimeout(startLive, Math.min(30000, 1000 * Math.pow(2, liveRetry)));
+      };
+    }catch(e){ liveWs = null; startLivePolling(); }
+  }
+  function stopLive(){
+    clearTimeout(liveRetryTimer);
+    if(liveWs){ const ws = liveWs; liveWs = null; try{ ws.close(); }catch(e){} }
+    if(livePollTimer){ clearInterval(livePollTimer); livePollTimer = null; }
+  }
+  function syncLivePrice(){ if(btcTabActive()) startLive(); else stopLive(); }
+  window.btcLiveSync = syncLivePrice;   // เรียกจากตัวสลับแท็บ
+  document.addEventListener('visibilitychange', syncLivePrice);
+
   el('refreshBtn').addEventListener('click', () => refreshAll(true)); // manual click always bypasses the 8h cache
 
   // Fear & Greed จาก CMC อัปเดตวันละครั้ง แต่ให้โพลอัตโนมัติทุก 60 นาที + เมื่อกลับมาเปิดแท็บ BTC
@@ -2951,6 +3018,7 @@ window.setHeaderStamp();
     // The TradingView widget is ~1 MB of third-party script; it used to be fetched on every page
     // load even for visitors who never open the BTC tab. Now it loads on first open instead.
     if(tabId === 'btcTab' && typeof window.loadTvChart === 'function') window.loadTvChart();
+    if(typeof window.btcLiveSync === 'function') window.btcLiveSync();   // เปิด/ปิดสตรีมราคา BTC ตามแท็บ
   }
 
   function tabFromHash(){
