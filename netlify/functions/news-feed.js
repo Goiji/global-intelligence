@@ -108,8 +108,11 @@ async function fetchWithTimeout(url, ms, headers) {
   }
 }
 
-async function fromGoogleNews(q) {
-  const url = `${GNEWS}?q=${encodeURIComponent(q)}&hl=en-US&gl=US&ceid=US:en`;
+// ?lang=th asks Google News for the Thai edition (Thai-language headlines); default is US English.
+const LOCALES = { en: 'hl=en-US&gl=US&ceid=US:en', th: 'hl=th&gl=TH&ceid=TH:th' };
+
+async function fromGoogleNews(q, lang = 'en') {
+  const url = `${GNEWS}?q=${encodeURIComponent(q)}&${LOCALES[lang] || LOCALES.en}`;
   const r = await fetchWithTimeout(url, TIMEOUT_MS);
   if (!r.ok) throw new Error(`Google News HTTP ${r.status}`);
   const items = parseRssItems(await r.text()).slice(0, MAX_ITEMS);
@@ -119,8 +122,8 @@ async function fromGoogleNews(q) {
 
 // Last-resort fallback. Kept because it already proved it can work when Google answers a given
 // datacenter with an interstitial page; it needs no key either, a key only raises the quota.
-async function fromRss2Json(q) {
-  const gnews = `${GNEWS}?q=${encodeURIComponent(q)}&hl=en-US&gl=US&ceid=US:en`;
+async function fromRss2Json(q, lang = 'en') {
+  const gnews = `${GNEWS}?q=${encodeURIComponent(q)}&${LOCALES[lang] || LOCALES.en}`;
   const key = (process.env.RSS2JSON_API_KEY || '').trim();
   const url = `${RSS2JSON}?rss_url=${encodeURIComponent(gnews)}` + (key ? `&api_key=${encodeURIComponent(key)}` : '');
   const r = await fetchWithTimeout(url, TIMEOUT_MS, { Accept: 'application/json' });
@@ -142,12 +145,13 @@ exports.handler = async function (event) {
   const rawQ = (event && event.queryStringParameters && event.queryStringParameters.q) || '';
   const q = String(rawQ).replace(/[\r\n\t]+/g, ' ').trim().slice(0, MAX_Q);
   if (!q) return json(400, { status: 'error', error: 'missing q parameter' });
+  const lang = (event && event.queryStringParameters && event.queryStringParameters.lang) === 'th' ? 'th' : 'en';
 
   const errors = [];
   for (const [name, fn] of [['google-news', fromGoogleNews], ['rss2json', fromRss2Json]]) {
     try {
-      const items = await fn(q);
-      return json(200, { status: 'ok', source: name, query: q, count: items.length, items });
+      const items = await fn(q, lang);
+      return json(200, { status: 'ok', source: name, query: q, lang, count: items.length, items });
     } catch (e) {
       errors.push(`${name}: ${e.message}`);
     }

@@ -118,6 +118,21 @@ Site configuration → Environment variables → Add a variable:
 **เช็คว่าทำงานไหม:** เปิด `https://<your-site>.netlify.app/.netlify/functions/fred-data`
 ควรได้ JSON ที่มีตัวเลขจริง + ฟิลด์ `source` บอกว่ามาจาก `fred-api` / `fred-csv` / `bls`
 
+## ตลาดสหรัฐฯ · ปฏิทินเศรษฐกิจ · ทองไทย (เพิ่ม ต.ค. 2026)
+
+| Function | ทำอะไร | แหล่งข้อมูล | ต้องตั้งค่าไหม |
+|---|---|---|---|
+| `markets` | บอนด์ 10 ปี / 2 ปี, ส่วนต่าง 10Y−2Y, VIX, ดัชนีดอลลาร์ (Broad) + ประวัติ 12 เดือนสำหรับกราฟเล็ก (รวม CPI / ว่างงาน / ดอกเบี้ย Fed) | FRED (ราคาปิด ช้ากว่าตลาด ~1 วัน) | ไม่ต้อง (มี `FRED_API_KEY` จะใช้ API ทางการก่อน) |
+| `calendar` | วันประกาศ CPI, จ้างงาน, PPI, JOLTS, FOMC (+ GDP, PCE) เป็นเวลาไทย | ปฏิทิน iCal ของ BLS + รายการ FOMC · GDP/PCE มาจาก FRED release dates | GDP/PCE จะขึ้นเฉพาะเมื่อตั้ง `FRED_API_KEY` |
+| `gold-th` | ทองแท่ง/รูปพรรณ 96.5% บาทละ (รับซื้อ/ขายออก) | สมาคมค้าทองคำ (goldtraders.or.th) → สำรอง api.chnwt.dev | ไม่ต้อง · ถ้าดึงไม่ได้ หน้าเว็บจะโชว์ "≈ ประมาณการ" จากราคาโลก × ค่าเงินบาท |
+
+**เช็คว่าทำงานไหม:** เปิด `/.netlify/functions/markets`, `/.netlify/functions/calendar`, `/.netlify/functions/gold-th` บนเว็บจริง
+— `calendar` ควรมี `"sources":["fomc","bls",...]` (ถ้ามีแค่ `fomc` แปลว่าดึงปฏิทิน BLS ไม่ได้ หน้าเว็บจะโชว์แค่ FOMC)
+
+**ข่าวไทย:** หมวด "ข่าวไทย" ในการ์ดข่าวล่าสุดดึงจาก Google News ฉบับภาษาไทย (`news-feed?lang=th`) — แสดงอย่างเดียว ไม่นำไปคิดคะแนนความเสี่ยง และไม่ต้องแปล
+
+**คะแนนความเสี่ยง (ปรับ ต.ค. 2026):** จับคำแบบ "ทั้งคำ" แล้ว (เดิม `war` ไปโดน warn/award/software, `ease` ไปโดน increase/release) และคิดจากค่าเฉลี่ยต่อพาดหัว ทำให้แต่ละหมวดต่างกันชัดขึ้น · กด "ℹ️ คะแนนมาจากข่าวไหน" ใต้การ์ดเพื่อดูพาดหัวและคำที่ทำให้คะแนนขึ้น/ลง
+
 ## หมายเหตุ
 - ค่า Fed Rate / CPI / Unemployment / Payrolls ถูกแคช 15 นาที–3 ชั่วโมงตามรอบประกาศตัวเลข
   (memory ของ Function + CDN + localStorage ฝั่งผู้ใช้) — ต่อให้มีคนเข้าพร้อมกันเยอะ ก็ยิง upstream

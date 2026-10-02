@@ -374,6 +374,43 @@ body{margin:0}
   #tv_chart_container{border-color:var(--line-soft);border-radius:12px}
   #btcTab .manual-toggle-btn{border-style:solid!important;font-size:11px!important}
 
+  /* risk "why" panel */
+  .why{margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px}
+  .why summary{cursor:pointer;color:var(--accent);font-size:12px;font-weight:500;list-style:none}
+  .why summary::-webkit-details-marker{display:none}
+  #riskWhy{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:12px}
+  .why-cat{border:1px solid var(--line-soft);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.015)}
+  .why-head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+  .why-head span{color:var(--accent-hi);font-weight:600}
+  .why-row{font-size:12.5px;line-height:1.5;padding:7px 0;border-top:1px solid var(--line-soft);color:#d8d2c4}
+  .why-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+  .chip{font-size:10.5px;padding:1px 8px;border-radius:999px;border:1px solid}
+  .chip.risk{color:#f0a0a6;border-color:rgba(228,106,114,.45);background:rgba(228,106,114,.08)}
+  .chip.calm{color:#8fdcb7;border-color:rgba(90,196,146,.45);background:rgba(90,196,146,.08)}
+  /* sparklines */
+  .spark{margin-top:6px}
+  .spark:empty{display:none}
+  .spark svg{display:block;width:100%;height:30px;overflow:visible}
+  .spark-cap{font-size:10px;color:var(--muted);margin-top:2px;display:flex;justify-content:space-between}
+  /* US markets */
+  .mkt-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .mkt .num{font-size:24px}
+  .mkt .delta{font-size:11px;font-weight:600;margin-left:6px}
+  .mkt .zone{font-size:11px;color:var(--muted);margin-top:2px}
+  /* economic calendar */
+  .cal-list{display:flex;flex-direction:column}
+  .cal-item{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:12px 2px;border-bottom:1px solid var(--line-soft)}
+  .cal-item:last-child{border-bottom:0}
+  .cal-date{text-align:center;border:1px solid var(--line);border-radius:12px;padding:6px 0;line-height:1.15}
+  .cal-date b{display:block;font-size:20px;color:#f6f1e6}
+  .cal-date span{font-size:10px;color:var(--muted);letter-spacing:.08em}
+  .cal-item.hi .cal-date{border-color:var(--gold-line);background:rgba(212,178,106,.06)}
+  .cal-name{font-size:14.5px;font-weight:600;color:#efe9dc}
+  .cal-name small{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
+  .cal-when{font-size:12px;color:var(--accent-hi);text-align:right;white-space:nowrap}
+  .cal-when.soon{color:#fff;background:rgba(212,178,106,.18);border:1px solid var(--gold-line);border-radius:999px;padding:3px 10px}
+  @media(max-width:800px){ .mkt-grid{grid-template-columns:repeat(2,1fr)} .cal-item{grid-template-columns:56px 1fr} .cal-when{grid-column:2;text-align:left} }
+
   @media(max-width:800px){
     .title,#btcTab .brand h1{font-size:32px}
     .score{font-size:64px}
@@ -413,6 +450,7 @@ body{margin:0}
 <div class="metric"><div class="name">การเงิน</div><div class="num">–</div></div>
 <div class="metric"><div class="name">เทคโนโลยี / AI</div><div class="num">–</div></div>
 </div>
+<details class="why" id="riskWhyBox" style="display:none;"><summary>ℹ️ คะแนนมาจากข่าวไหน</summary><div id="riskWhy"></div></details>
 </section>
 
 <section class="card">
@@ -436,6 +474,12 @@ body{margin:0}
   </div>
   <div style="padding:10px 0; border-bottom:1px dashed var(--line);">
     <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span>🇹🇭 ทองไทย 96.5% <span class="muted" style="font-size:10px;">(บาทละ · ขายออก)</span></span><b id="lpGoldTh" style="font-size:16px;">กำลังโหลด…</b>
+    </div>
+    <div id="lpGoldThSub" class="muted" style="font-size:10px; margin-top:4px; text-align:right;"></div>
+  </div>
+  <div style="padding:10px 0; border-bottom:1px dashed var(--line);">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
       <span>🛢 น้ำมัน WTI <span class="muted" style="font-size:10px;">(ต่อบาร์เรล)</span></span><b id="lpOil" style="font-size:16px;">กำลังโหลด…</b>
     </div>
     <div id="avFetchStatusVisible" class="muted" style="font-size:10px; margin-top:4px; text-align:right;"></div>
@@ -451,6 +495,18 @@ body{margin:0}
   </div>
 </div>
 <div id="livePricesNote" class="muted" style="font-size:10px; margin-top:10px;">ราคาทองอ้างอิง PAXG (โทเคนที่หนุนด้วยทองคำจริง)</div>
+</section>
+
+<section class="card full">
+<h2>📈 ตลาดสหรัฐฯ <span class="h-en">US Markets · ราคาปิดล่าสุด</span></h2>
+<div class="mkt-grid" id="mktGrid">
+  <div class="metric mkt"><div class="name">บอนด์สหรัฐ 10 ปี</div><div class="num" id="mkUs10y">–</div><div class="spark" id="spUs10y"></div></div>
+  <div class="metric mkt"><div class="name">บอนด์สหรัฐ 2 ปี</div><div class="num" id="mkUs2y">–</div><div class="spark" id="spUs2y"></div></div>
+  <div class="metric mkt"><div class="name">ส่วนต่าง 10 ปี − 2 ปี</div><div class="num" id="mkSpread">–</div><div class="zone" id="mkSpreadZone"></div></div>
+  <div class="metric mkt"><div class="name">VIX ดัชนีความกลัว</div><div class="num" id="mkVix">–</div><div class="spark" id="spVix"></div><div class="zone" id="mkVixZone"></div></div>
+  <div class="metric mkt"><div class="name">ดัชนีดอลลาร์ (Broad)</div><div class="num" id="mkDollar">–</div><div class="spark" id="spDollar"></div></div>
+</div>
+<div class="muted" id="mktNote" style="font-size:11px; margin-top:10px;">กราฟเล็ก = ย้อนหลัง 12 เดือน</div>
 </section>
 
 <section class="card full">
@@ -481,10 +537,10 @@ body{margin:0}
   <div id="fredFetchStatus" class="muted" style="font-size:11px;"></div>
 </div>
 <div class="metrics" id="fedMetrics">
-  <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">3.50–3.75%</div></div>
+  <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">3.50–3.75%</div><div class="spark" id="spFed"></div></div>
   <div class="metric"><div class="name">Effective Fed Funds Rate</div><div class="num" id="fedEffr">3.63%</div></div>
-  <div class="metric"><div class="name">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.4%</div></div>
-  <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">4.1%</div></div>
+  <div class="metric"><div class="name">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.4%</div><div class="spark" id="spCpi"></div></div>
+  <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">4.1%</div><div class="spark" id="spUnrate"></div></div>
   <div class="metric"><div class="name">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num up" id="nfp">+162,000</div></div>
 </div>
 <div class="muted" style="margin-top:12px; font-size:11px; line-height:1.6;" id="fedAsOf"></div>
@@ -501,6 +557,11 @@ body{margin:0}
     <div class="muted" style="font-size:11.5px;">⏳ กำลังดึงตัวเลขจริงเพื่อวิเคราะห์…</div>
   </div>
 </div>
+</section>
+
+<section class="card full">
+<h2>🗓️ ปฏิทินเศรษฐกิจ <span class="h-en">Economic Calendar · เวลาไทย</span></h2>
+<div class="cal-list" id="calList"><div class="muted" style="font-size:12px;">กำลังโหลด…</div></div>
 </section>
 
 <section class="card full">
@@ -568,14 +629,16 @@ window.setHeaderStamp();
     { key:'economic',     label:'เศรษฐกิจ',     q:'federal reserve OR inflation OR interest rates' },
     { key:'energy',       label:'พลังงาน',       q:'oil price OR energy crisis OR OPEC' },
     { key:'financial',    label:'การเงิน',    q:'stock market OR wall street OR bonds' },
-    { key:'techAi',       label:'เทคโนโลยี / AI',    q:'artificial intelligence OR tech industry' }
+    { key:'techAi',       label:'เทคโนโลยี / AI',    q:'artificial intelligence OR tech industry' },
+    // ข่าวภาษาไทย — แสดงในรายการข่าวล่าสุดเท่านั้น ไม่นำไปคิดคะแนนความเสี่ยง (คำสำคัญเป็นภาษาอังกฤษ) และไม่ต้องแปล
+    { key:'thai',         label:'ข่าวไทย',         q:'เศรษฐกิจไทย OR ค่าเงินบาท OR ตลาดหุ้นไทย OR ราคาทอง OR แบงก์ชาติ', lang:'th', listOnly:true }
   ];
 
   async function fetchFeed(feed){
     // Goes through our own Netlify Function, which now reads Google News RSS server-side and
     // parses it there. rss2json is only a fallback inside that function, so there is no key to
     // configure here any more and no anonymous quota to run into.
-    const url = '/.netlify/functions/news-feed?q=' + encodeURIComponent(feed.q);
+    const url = '/.netlify/functions/news-feed?q=' + encodeURIComponent(feed.q) + (feed.lang ? '&lang=' + feed.lang : '');
     try{
       const r = await fetchWithTimeout(url, 10000);
       const j = await r.json();
@@ -690,25 +753,44 @@ window.setHeaderStamp();
   // Simple keyword-weighted heuristic run entirely in the browser on the RSS
   // headlines already fetched. Not as nuanced as an LLM read, but costs nothing
   // and needs no key/quota beyond the free RSS feed itself.
-  const HIGH_RISK_WORDS = ['war','conflict','crisis','attack','strike','sanction','invasion','tension',
-    'crash','recession','default','shutdown','emergency','collapse','threat','missile','nuclear',
-    'bankruptcy','layoff','selloff','sell-off','plunge','surge in inflation','rate hike','hike rates',
-    'escalat','unrest','protest','coup'];
-  const LOW_RISK_WORDS = ['ceasefire','cease-fire','agreement','deal reached','growth','rally','recovery',
-    'stability','stabiliz','ease','cut rates','rate cut','peace','truce','surplus','stimulus',
-    'breakthrough','cooperation','record high','optimis'];
-
-  function scoreCategory(titles){
-    let score = 50;
-    const text = titles.join(' ').toLowerCase();
-    HIGH_RISK_WORDS.forEach(w => { if(text.includes(w)) score += 7; });
-    LOW_RISK_WORDS.forEach(w => { if(text.includes(w)) score -= 7; });
-    return Math.max(0, Math.min(100, Math.round(score)));
+  // คำที่บ่งบอกความเสี่ยงสูง / ต่ำ — จับเป็น "ทั้งคำ" (เดิมจับแบบมีคำนี้อยู่ตรงไหนก็ได้ ทำให้ war ไปโดน
+  // warn/award/software และ ease ไปโดน increase/release คะแนนเลยเพี้ยน) · น้ำหนัก 2 = คำที่รุนแรงมาก
+  // ลงท้ายด้วย * = จับเป็นรากคำ (escalat* → escalate/escalation/escalating)
+  const HIGH_RISK_TERMS = { war:2, invasion:2, missile:2, nuclear:2, coup:2, crash:2, collapse:2, default:1.5,
+    recession:1.5, conflict:1, crisis:1, attack:1, strike:1, sanction:1, tension:1, shutdown:1, emergency:1,
+    threat:1, bankruptcy:1, layoff:1, selloff:1, 'sell-off':1, plunge:1, tumble:1, slump:1, 'rate hike':1,
+    'hike rates':1, 'escalat*':1, unrest:1, protest:1, 'tariff':1, 'downgrade':1, 'inflation surge':1 };
+  const LOW_RISK_TERMS = { ceasefire:1.5, 'cease-fire':1.5, truce:1.5, peace:1, agreement:1, 'deal reached':1,
+    growth:1, rally:1, recovery:1, rebound:1, stability:1, 'stabiliz*':1, ease:1, easing:1, 'rate cut':1,
+    'cut rates':1, surplus:1, stimulus:1, breakthrough:1, cooperation:1, 'record high':1, 'optimis*':1, upgrade:1 };
+  function termRegex(term){
+    const stem = term.endsWith('*');
+    const body = (stem ? term.slice(0, -1) : term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('\\b' + body + (stem ? '' : '(?:s|es|ed|d|ing)?\\b'), 'i');
   }
+  const RISK_RULES = []
+    .concat(Object.entries(HIGH_RISK_TERMS).map(([t, w]) => ({ term: t.replace('*', ''), re: termRegex(t), w })))
+    .concat(Object.entries(LOW_RISK_TERMS).map(([t, w]) => ({ term: t.replace('*', ''), re: termRegex(t), w: -w })));
+  function scoreHeadline(title){
+    const hits = RISK_RULES.filter(r => r.re.test(title || '')).map(r => ({ term: r.term, w: r.w }));
+    const net = Math.max(-3, Math.min(3, hits.reduce((a, h) => a + h.w, 0)));
+    return { net, hits };
+  }
+  // คะแนนหมวด = 50 ± ตามค่าเฉลี่ยความเสี่ยงต่อพาดหัว (ใช้ tanh ให้กระจายตัวแต่ไม่ชน 0/100 ง่าย)
+  function scoreCategoryDetail(titles){
+    const rows = (titles || []).map(t => ({ title: t, ...scoreHeadline(t) }));
+    const mean = rows.length ? rows.reduce((a, r) => a + r.net, 0) / rows.length : 0;
+    const score = Math.max(0, Math.min(100, Math.round(50 + 50 * Math.tanh(mean * 0.8))));
+    const drivers = rows.filter(r => r.hits.length).sort((a, b) => Math.abs(b.net) - Math.abs(a.net)).slice(0, 3);
+    return { score, drivers };
+  }
+  function scoreCategory(titles){ return scoreCategoryDetail(titles).score; }
 
-  function computeAnalysis(feedResults){
-    const categories = {};
-    feedResults.forEach(f => { categories[f.key] = scoreCategory(f.titles); });
+  function computeAnalysis(allFeeds){
+    // หมวดที่ listOnly (ข่าวไทย) ไม่นับคะแนน — เอาไว้แสดงในรายการข่าวอย่างเดียว
+    const feedResults = allFeeds.filter(f => !f.listOnly);
+    const categories = {}, drivers = {};
+    feedResults.forEach(f => { const r = scoreCategoryDetail(f.titles); categories[f.key] = r.score; drivers[f.key] = r.drivers; });
 
     const vals = Object.values(categories);
     const worldRiskScore = Math.round(vals.reduce((a,b)=>a+b,0) / vals.length);
@@ -764,7 +846,7 @@ window.setHeaderStamp();
 
     const watch = sorted.slice(0,4).map(f => ({ title: f.label, subtitle: categories[f.key]+'/100' }));
 
-    return { worldRiskScore, badge, confidence, categories, assets, topEvents, aiBrief: brief, watch, news: buildNewsList(feedResults) };
+    return { worldRiskScore, badge, confidence, categories, drivers, assets, topEvents, aiBrief: brief, watch, news: buildNewsList(allFeeds) };
   }
 
   // ---------- รายการ "ข่าวล่าสุด" ----------
@@ -804,6 +886,26 @@ window.setHeaderStamp();
     if(mins < 60) return mins <= 1 ? 'เมื่อสักครู่' : mins + ' นาทีที่แล้ว';
     const hrs = Math.round(mins / 60);
     return hrs < 24 ? hrs + ' ชม. ที่แล้ว' : Math.round(hrs / 24) + ' วันที่แล้ว';
+  }
+
+  // "คะแนนมาจากข่าวไหน" — พาดหัวที่ดันคะแนนแต่ละหมวด พร้อมคำที่ระบบจับได้ (แดง = เพิ่มความเสี่ยง, เขียว = ลด)
+  function renderRiskWhy(d, labels){
+    const box = el('riskWhy'), wrap = el('riskWhyBox');
+    if(!box || !wrap) return;
+    if(!d.drivers){ wrap.style.display = 'none'; return; }
+    wrap.style.display = '';
+    box.innerHTML = labels.map(([k, l]) => {
+      const rows = d.drivers[k] || [];
+      const list = rows.length ? rows.map(r => {
+        const th = _translationCache.get(r.title);
+        const shown = (th && th !== r.title && !/MYMEMORY/i.test(th)) ? th : cleanHeadline(r.title);
+        return '<div class="why-row"><div>' + esc(shown) + '</div><div class="why-chips">'
+          + r.hits.map(h => '<span class="chip ' + (h.w > 0 ? 'risk' : 'calm') + '">' + esc(h.term) + (h.w > 0 ? ' +' : ' −') + Math.abs(h.w) + '</span>').join('')
+          + '</div></div>';
+      }).join('') : '<div class="muted" style="font-size:12px;">ไม่มีคำบ่งชี้ความเสี่ยงในพาดหัวรอบนี้ (คะแนนกลาง ๆ)</div>';
+      return '<div class="why-cat"><div class="why-head"><b>' + esc(l) + '</b><span>' + esc((d.categories || {})[k] ?? '–') + '/100</span></div>' + list + '</div>';
+    }).join('')
+      + '<div class="muted" style="font-size:11px; margin-top:8px;">คะแนนคิดจาก 5 พาดหัวล่าสุดของแต่ละหมวด: คำบ่งชี้ความเสี่ยงยิ่งมาก คะแนนยิ่งสูง · 50 = กลาง ๆ</div>';
   }
 
   const NEWS_PAGE = 8;
@@ -849,7 +951,7 @@ window.setHeaderStamp();
   }
   // แปลเฉพาะพาดหัวที่อยู่บนจอ (ประหยัดโควต้าแปลฟรี) — คำแปลถูกแคชไว้ จึงแปลซ้ำแค่ข่าวใหม่
   async function translateVisibleNews(visible){
-    const todo = visible.filter(n => !_translationCache.has(n.title));
+    const todo = visible.filter(n => !/[\u0E00-\u0E7F]/.test(n.title) && !_translationCache.has(n.title));
     if(!todo.length) return;
     const token = ++newsView.token;
     for(const n of todo){
@@ -897,6 +999,7 @@ window.setHeaderStamp();
     const catBox = el('categoryMetrics');
     const labels = [['geopolitical','ภูมิรัฐศาสตร์'],['economic','เศรษฐกิจ'],['energy','พลังงาน'],['financial','การเงิน'],['techAi','เทคโนโลยี / AI']];
     catBox.innerHTML = labels.map(([k,l]) => `<div class="metric"><div class="name">${l}</div><div class="num">${cats[k] ?? '–'}</div></div>`).join('');
+    renderRiskWhy(d, labels);
 
     const assets = d.assets;
     const assetDefs = [['gold','🥇 ทองคำ'],['oil','🛢 น้ำมัน'],['usd','💵 ดอลลาร์'],['bitcoin','₿ Bitcoin'],['stocks','📈 หุ้น']];
@@ -1949,6 +2052,7 @@ window.setHeaderStamp();
   }
   const pctChange = (now, ref) => (isFinite(now) && isFinite(ref) && ref) ? (now - ref) / ref * 100 : null;
 
+  const livePx = { gold: null, usdThb: null };
   async function fetchLivePrices(){
     try{
       const r = await fetchWithTimeout('https://api.binance.com/api/v3/ticker/24hr?symbol=PAXGUSDT', 6000);
@@ -1956,6 +2060,7 @@ window.setHeaderStamp();
       const price = parseFloat(j.lastPrice);
       if(isNaN(price)) throw new Error('no PAXG price');
       setPrice('lpGold', '$' + price.toLocaleString('en-US',{maximumFractionDigits:2}), parseFloat(j.priceChangePercent));
+      livePx.gold = price;
     }catch(e){ el('lpGold').textContent = 'ดึงไม่สำเร็จ'; console.warn('[gold]', e); }
 
     // frankfurter.app moved to frankfurter.dev as its official domain — the old .app host
@@ -1995,6 +2100,7 @@ window.setHeaderStamp();
       const [rates, prev] = await Promise.all([getFxRates(), getPrevFxRates()]);
       const fx = (x) => ({ usd: x.THB, jpy: (x.THB / x.JPY) * 100, cny: x.THB / x.CNY });
       const now = fx(rates);
+      livePx.usdThb = rates.THB;
       const ref = (prev && prev.THB && prev.JPY && prev.CNY) ? fx(prev) : {};
       setPrice('lpUsdThb', now.usd.toFixed(2) + ' บาท', pctChange(now.usd, ref.usd));
       setPrice('lpJpyThb', now.jpy.toFixed(3) + ' บาท', pctChange(now.jpy, ref.jpy));
@@ -2006,7 +2112,146 @@ window.setHeaderStamp();
       console.warn('[fx]', e);
     }
   }
-  fetchLivePrices();
+  const livePricesReady = fetchLivePrices();
+
+  // ---------- ทองไทย (สมาคมค้าทองคำ) — ถ้าดึงไม่ได้ ประมาณจากราคาโลก × ค่าเงินบาท ----------
+  const fmtBaht = (v) => Math.round(v).toLocaleString('en-US');
+  async function fetchThaiGold(){
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/gold-th', 9000);
+      const j = await r.json();
+      if(!r.ok || !j.barSell) throw new Error(j.error || 'HTTP ' + r.status);
+      el('lpGoldTh').textContent = fmtBaht(j.barSell) + ' บาท';
+      el('lpGoldThSub').textContent = 'ทองแท่งรับซื้อ ' + fmtBaht(j.barBuy)
+        + (j.ornamentSell ? ' · รูปพรรณขายออก ' + fmtBaht(j.ornamentSell) : '')
+        + ' · สมาคมค้าทองคำ' + (j.updated ? ' ' + j.updated : '');
+      return;
+    }catch(e){ console.warn('[gold-th]', e); }
+    // ประมาณการ: ทอง 96.5% น้ำหนัก 1 บาท = 15.244 กรัม (1 ทรอยออนซ์ = 31.1035 กรัม)
+    await livePricesReady;
+    if(livePx.gold && livePx.usdThb){
+      const est = livePx.gold * livePx.usdThb * (15.244 / 31.1035) * 0.965;
+      el('lpGoldTh').textContent = '≈ ' + fmtBaht(Math.round(est / 50) * 50) + ' บาท';
+      el('lpGoldThSub').textContent = 'ประมาณจากราคาโลก × ค่าเงินบาท (ยังไม่รวมค่าพรีเมียมในประเทศ)';
+    }else{
+      el('lpGoldTh').textContent = 'ดึงไม่สำเร็จ';
+    }
+  }
+  fetchThaiGold();
+
+  // ---------- sparkline (ย้อนหลัง 12 เดือน) ----------
+  function sparkSvg(hist, opts){
+    const pts = (hist || []).filter(p => isFinite(p[1]));
+    if(pts.length < 2) return '';
+    const W = 120, H = 30, P = 2;
+    const vals = pts.map(p => p[1]);
+    const min = Math.min.apply(null, vals), max = Math.max.apply(null, vals), range = (max - min) || 1;
+    const xy = pts.map((p, i) => [P + i / (pts.length - 1) * (W - 2 * P), H - P - (p[1] - min) / range * (H - 2 * P)]);
+    const up = vals[vals.length - 1] >= vals[0];
+    const color = (opts && opts.color) || (((opts && opts.upIsBad) ? !up : up) ? 'var(--good)' : 'var(--bad)');
+    const line = xy.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ');
+    const last = xy[xy.length - 1];
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true">'
+      + '<polyline fill="none" stroke="' + color + '" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" points="' + line + '"/>'
+      + '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="2.2" fill="' + color + '"/></svg>';
+  }
+  function setSpark(id, series, opts){
+    const box = el(id);
+    if(!box || !series || !series.hist) return;
+    const svg = sparkSvg(series.hist, opts);
+    if(!svg){ box.innerHTML = ''; return; }
+    const first = series.hist[0][1], last = series.hist[series.hist.length - 1][1];
+    const dec = (opts && opts.dec != null) ? opts.dec : 2;
+    box.innerHTML = svg + '<div class="spark-cap"><span>12 เดือน</span><span>' + first.toFixed(dec) + ' → ' + last.toFixed(dec) + '</span></div>';
+  }
+
+  // ---------- ตลาดสหรัฐฯ + กราฟย้อนหลังในการ์ด Fed ----------
+  async function fetchMarkets(){
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/markets', 12000);
+      const j = await r.json();
+      if(!j || !j.series) throw new Error(j && j.error || 'HTTP ' + r.status);
+      const S = j.series;
+      const bp = (c) => (c == null ? '' : '<span class="delta ' + (c > 0 ? 'up' : c < 0 ? 'down' : 'flat') + '">' + (c > 0 ? '+' : '') + Math.round(c * 100) + ' bp</span>');
+      if(S.us10y){ el('mkUs10y').innerHTML = esc(S.us10y.latest.toFixed(2)) + '%' + bp(S.us10y.change); setSpark('spUs10y', S.us10y, { color:'var(--accent)' }); }
+      if(S.us2y){ el('mkUs2y').innerHTML = esc(S.us2y.latest.toFixed(2)) + '%' + bp(S.us2y.change); setSpark('spUs2y', S.us2y, { color:'var(--accent)' }); }
+      if(isFinite(j.spread2s10s)){
+        el('mkSpread').innerHTML = (j.spread2s10s > 0 ? '+' : '') + esc(Math.round(j.spread2s10s * 100)) + ' bp';
+        el('mkSpreadZone').textContent = j.spread2s10s < 0 ? '⚠️ กลับหัว (inverted) — สัญญาณเตือนเศรษฐกิจชะลอ' : 'ปกติ (ระยะยาว > ระยะสั้น)';
+      }
+      if(S.vix){
+        const v = S.vix.latest;
+        el('mkVix').textContent = v.toFixed(2);
+        el('mkVixZone').textContent = v >= 30 ? '🔴 ตลาดตื่นตระหนก' : v >= 20 ? '🟠 กังวล' : v >= 15 ? '🟡 ปกติ' : '🟢 สงบ';
+        setSpark('spVix', S.vix, { upIsBad:true });
+      }
+      if(S.dollar){ el('mkDollar').innerHTML = esc(S.dollar.latest.toFixed(2)) + (S.dollar.change != null ? '<span class="delta ' + (S.dollar.change >= 0 ? 'up' : 'down') + '">' + (S.dollar.change >= 0 ? '+' : '') + S.dollar.change.toFixed(2) + '</span>' : ''); setSpark('spDollar', S.dollar, { color:'var(--accent)' }); }
+      if(S.fedUpper) setSpark('spFed', S.fedUpper, { color:'var(--accent)', dec:2 });
+      if(S.cpi) setSpark('spCpi', S.cpi, { upIsBad:true, dec:1 });
+      if(S.unrate) setSpark('spUnrate', S.unrate, { upIsBad:true, dec:1 });
+      const d = S.us10y && S.us10y.date;
+      el('mktNote').textContent = 'ราคาปิด ณ ' + (d ? thDay(d) : '–') + ' (ช้ากว่าตลาดประมาณ 1 วันทำการ) · กราฟเล็ก = ย้อนหลัง 12 เดือน';
+    }catch(e){
+      console.warn('[markets]', e);
+      el('mktNote').textContent = 'ดึงข้อมูลตลาดไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ';
+    }
+  }
+  fetchMarkets();
+  setInterval(fetchMarkets, 3 * 60 * 60 * 1000);
+
+  // ---------- ปฏิทินเศรษฐกิจ ----------
+  const CAL_LABELS = {
+    cpi:   ['CPI เงินเฟ้อสหรัฐฯ', 'Consumer Price Index'],
+    jobs:  ['ตัวเลขจ้างงาน (Non-farm Payrolls)', 'Employment Situation · อัตราว่างงาน'],
+    ppi:   ['PPI ราคาผู้ผลิต', 'Producer Price Index'],
+    jolts: ['ตำแหน่งงานว่าง (JOLTS)', 'Job Openings & Labor Turnover'],
+    gdp:   ['GDP สหรัฐฯ', 'Gross Domestic Product'],
+    pce:   ['PCE เงินเฟ้อที่ Fed ใช้', 'Personal Income & Outlays'],
+    fomc:  ['ประชุม FOMC — ประกาศดอกเบี้ย', 'Fed statement + แถลงข่าว']
+  };
+  const CAL_HIGH = { cpi:1, jobs:1, fomc:1, pce:1 };
+  const TH_DOW = ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+  function bkk(iso){
+    const d = new Date(iso);
+    const parts = {};
+    new Intl.DateTimeFormat('en-GB', { timeZone:'Asia/Bangkok', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23', weekday:'short' })
+      .formatToParts(d).forEach(p => { parts[p.type] = p.value; });
+    return parts;
+  }
+  function renderCalendar(events){
+    const box = el('calList');
+    if(!box) return;
+    const now = Date.now();
+    const today = bkk(new Date(now).toISOString());
+    const items = (events || []).filter(e => Date.parse(e.at || e.date) > now - 2 * 3600e3).slice(0, 7);
+    if(!items.length){ box.innerHTML = '<div class="muted" style="font-size:12px;">ยังไม่มีกำหนดการในช่วงนี้</div>'; return; }
+    box.innerHTML = items.map(e => {
+      const L = CAL_LABELS[e.key] || [e.title || e.key, ''];
+      const at = e.at || (e.date + 'T12:00:00Z');
+      const p = bkk(at);
+      const dayTh = new Date(Date.UTC(+p.year, +p.month - 1, +p.day)).getUTCDay();
+      const diffDays = Math.round((Date.UTC(+p.year, +p.month - 1, +p.day) - Date.UTC(+today.year, +today.month - 1, +today.day)) / 86400000);
+      const when = diffDays <= 0 ? 'วันนี้' : diffDays === 1 ? 'พรุ่งนี้' : 'อีก ' + diffDays + ' วัน';
+      return '<div class="cal-item' + (CAL_HIGH[e.key] ? ' hi' : '') + '">'
+        + '<div class="cal-date"><b>' + esc(+p.day) + '</b><span>' + esc(TH_MONTHS[+p.month - 1]) + '</span></div>'
+        + '<div class="cal-name">' + esc(L[0]) + '<small>' + esc(TH_DOW[dayTh] + ' ' + (e.at ? p.hour + ':' + p.minute + ' น.' : '') + (L[1] ? ' · ' + L[1] : '')) + '</small></div>'
+        + '<div class="cal-when' + (diffDays <= 1 ? ' soon' : '') + '">' + esc(when) + '</div>'
+        + '</div>';
+    }).join('');
+  }
+  async function fetchCalendar(){
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/calendar', 12000);
+      const j = await r.json();
+      if(!j || !Array.isArray(j.events)) throw new Error('bad calendar payload');
+      renderCalendar(j.events);
+    }catch(e){
+      console.warn('[calendar]', e);
+      // ดึงไม่ได้ — อย่างน้อยโชว์ FOMC จากรายการที่หน้าเว็บมีอยู่แล้ว (14:00 น. เวลานิวยอร์ก ≈ 01:00–02:00 น. ไทย)
+      renderCalendar(FOMC_STATEMENT_DATES.map(d => ({ key:'fomc', date:d, at:null })).filter(e => e.date >= new Date().toISOString().slice(0, 10)));
+    }
+  }
+  fetchCalendar();
 
   // ---------- WTI Oil (Alpha Vantage, optional key — no free CORS-friendly oil source exists) ----------
   // Alpha Vantage does not send CORS headers at all, so this always goes through a CORS proxy,
