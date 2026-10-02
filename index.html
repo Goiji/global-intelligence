@@ -229,9 +229,14 @@ body{margin:0}
   #btcTab button:hover{border-color:var(--amber); color:var(--amber);}
   #btcTab .status{font-size:11px; color:var(--sub);}
 
+  /* ข้อมูลเชิงเทคนิค (debug log / token) — ซ่อนจากผู้ใช้ทั่วไป เปิดดูได้ด้วย ?debug ต่อท้าย URL */
+  .dev-only{display:none !important;}
+  body.debug .dev-only{display:block !important;}
+
 </style>
 </head>
 <body>
+<script>try{ if(/[?&]debug\b/.test(location.search)) document.body.classList.add('debug'); }catch(e){}</script>
 <nav class="tabbar">
   <button class="tabbtn active" data-tab="newsTab">🌍 ข่าวโลก & AI</button>
   <button class="tabbtn" data-tab="btcTab">₿ BTC Buy Score</button>
@@ -241,7 +246,7 @@ body{margin:0}
 
 <div class="wrap">
 <header class="top">
-<div><div class="eyebrow">GLOBAL INTELLIGENCE</div><div class="title">Daily World Dashboard</div><div class="sub" id="newsSub">ข่าว + ตัวเลขเศรษฐกิจอัปเดตอัตโนมัติ (ข่าวแคช 30 นาที · เศรษฐกิจ 10 นาที–3 ชม. ตามรอบประกาศ)</div></div>
+<div><div class="eyebrow">GLOBAL INTELLIGENCE</div><div class="title">Daily World Dashboard</div><div class="sub" id="newsSub">สรุปความเสี่ยงโลก ตลาด และเศรษฐกิจสหรัฐฯ ประจำวัน</div></div>
 <div class="date">อัปเดตล่าสุด<br><b id="today"></b></div>
 </header>
 
@@ -268,7 +273,7 @@ body{margin:0}
 <div class="barrow"><span>₿ Bitcoin</span><div class="track"><div class="fill blue" style="width:0%"></div></div><b>–</b></div>
 <div class="barrow"><span>📈 Stocks</span><div class="track"><div class="fill yellow" style="width:0%"></div></div><b>–</b></div>
 </div>
-<div class="muted" style="font-size:10px; margin-top:10px;">คะแนนนี้มาจากสูตรประมาณตามข่าว ไม่ใช่ราคาจริง — ดูราคาจริงสดๆ ที่การ์ด "ราคาสินทรัพย์จริง" ด้านล่าง</div>
+<div class="muted" style="font-size:10px; margin-top:10px;">ประเมินจากทิศทางข่าว ไม่ใช่ราคาจริง</div>
 </section>
 
 <section class="card">
@@ -276,7 +281,7 @@ body{margin:0}
 
 <div id="livePrices" style="display:flex; flex-direction:column; gap:12px;">
   <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed var(--line);">
-    <span>🥇 Gold (PAXG proxy)</span><b id="lpGold" style="font-size:16px;">กำลังโหลด…</b>
+    <span>🥇 Gold <span class="muted" style="font-size:10px;">(ต่อออนซ์)</span></span><b id="lpGold" style="font-size:16px;">กำลังโหลด…</b>
   </div>
   <div style="padding:10px 0; border-bottom:1px dashed var(--line);">
     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -294,10 +299,7 @@ body{margin:0}
     <span>🇨🇳 CNY/THB <span class="muted" style="font-size:10px;">(ต่อ 1 หยวน)</span></span><b id="lpCnyThb" style="font-size:16px;">กำลังโหลด…</b>
   </div>
 </div>
-<div class="muted" style="font-size:10px; margin-top:10px; line-height:1.6;">
-  Gold ใช้ราคา <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" href="https://www.binance.com/en/trade/PAXG_USDT">PAXG</a> (โทเคนหนุนหลังด้วยทองคำจริง 1 ทรอยออนซ์/เหรียญ) จาก Binance เป็นตัวแทนราคาทองสด · USD/THB, JPY/THB และ CNY/THB จาก frankfurter.dev (อัตราแลกเปลี่ยนสด ฟรี) ·
-  Oil WTI (perpetual อ้างราคา CME WTI) ไล่ลำดับจากแหล่งฟรีไม่ต้องใช้ key ก่อน: Binance <code>CLUSDT</code> → OKX <code>CL-USDT-SWAP</code> → Hyperliquid <code>XYZ:CL-USD</code> ถ้าล้มทั้งหมดจึงค่อยเรียกผ่านเซิร์ฟเวอร์ไปที่ Alpha Vantage (ต้องมี free key — ไม่มีก็ไม่เป็นไร แค่ไม่มีตัวสำรองชั้นสุดท้าย)
-</div>
+<div id="livePricesNote" class="muted" style="font-size:10px; margin-top:10px;">ราคาทองอ้างอิง PAXG (โทเคนที่หนุนด้วยทองคำจริง)</div>
 </section>
 
 <section class="card full">
@@ -327,25 +329,14 @@ body{margin:0}
   <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">4.1%</div></div>
   <div class="metric"><div class="name">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num up" id="nfp">+162,000</div></div>
 </div>
-<div class="muted" style="margin-top:12px; font-size:11px; line-height:1.6;" id="fedAsOf">
-  การ์ดด้านบนดึงค่าสดอัตโนมัติจาก FRED / BLS (ไม่ต้องใช้ API key แล้ว) และโพลซ้ำเองทุก 10 นาที — วันประกาศตัวเลข (CPI / jobs report / FOMC) จะถี่ขึ้นเป็นทุก 15 นาที ·
-  เช็คค่าสดด้วยตัวเองได้จาก <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="https://fred.stlouisfed.org/series/CPIAUCSL">FRED</a> หรือ <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="https://www.bls.gov/news.release/empsit.nr0.htm">BLS</a>
-</div>
+<div class="muted" style="margin-top:12px; font-size:11px; line-height:1.6;" id="fedAsOf"></div>
 
 <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line);">
   <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
-    <h3 style="font-size:14px; margin-bottom:0;">🔍 วิเคราะห์: ตัวเลขออกมาดี/แย่แค่ไหน เทียบกับที่คาด</h3>
+    <h3 style="font-size:14px; margin-bottom:6px;">🔍 วิเคราะห์: ตัวเลขออกมาดี/แย่แค่ไหน เทียบกับที่คาด</h3>
     <span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-      <span class="muted" style="font-size:10px;">สร้างอัตโนมัติจากตัวเลขสดด้านบน (ไม่ใช้ข้อความเขียนมือ)</span>
       <button id="consensusEditBtn" type="button" class="tabbtn" style="padding:3px 10px; font-size:11px; border-radius:8px; line-height:1.5;">✏️ แก้ค่า "ที่คาด" เอง</button>
     </span>
-  </div>
-  <div class="muted" style="font-size:11px; margin:-2px 0 12px; line-height:1.6;">
-    ตัวเลขในบทวิเคราะห์ด้านล่างดึงสดจาก FRED/BLS และคำนวณใหม่เองทุกครั้งที่ค่าเปลี่ยน —
-    ส่วน "ที่คาด" (consensus) ดึงจาก <a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="https://th.investing.com/economic-calendar/%E0%B8%94%E0%B8%B1%E0%B8%8A%E0%B8%99%E0%B8%B5%E0%B8%A3%E0%B8%B2%E0%B8%84%E0%B8%B2%E0%B8%9C%E0%B8%B9%E0%B9%89%E0%B8%9A%E0%B8%A3%E0%B8%B4%E0%B9%82%E0%B8%A0%E0%B8%84-(cpi)-733">Investing.com</a>
-    ให้อัตโนมัติ (แคช 3 ชม.) และมีค่าสำรองฝังไว้ในหน้าเว็บเพื่อกันกรณีดึงไม่ได้
-    — ท้ายการ์ดจะบอกเสมอว่ากำลังใช้ชุดไหน ณ วันที่เท่าไร พร้อมลิงก์ให้ตรวจเอง ·
-    อยากแก้ตัวเลข "ที่คาด" เอง กดปุ่ม ✏️ ด้านบนได้เลย ไม่ต้องแก้โค้ดหรือเปิด GitHub
   </div>
   <div id="consensusEditPanel" style="display:none; margin:0 0 12px; padding:12px; background:var(--panel2); border:1px solid var(--line); border-radius:10px;"></div>
   <div id="fedAnalysis" style="display:flex; flex-direction:column; gap:12px;">
@@ -355,7 +346,7 @@ body{margin:0}
 </section>
 
 <section class="card full">
-<h2>📋 Morning Brief (สรุปอัตโนมัติ ฟรี)</h2>
+<h2>📋 Morning Brief</h2>
 <div class="brief" id="aiBrief">กำลังวิเคราะห์ข่าวล่าสุด…</div>
 </section>
 
@@ -366,9 +357,8 @@ body{margin:0}
 </main>
 <div class="footer">
   <span id="newsStatus">กำลังโหลดข่าว…</span> ·
-  วิเคราะห์อัตโนมัติจากพาดหัวข่าวสด (Google News RSS) ด้วยระบบให้คะแนนคำสำคัญ — ฟรี 100% ไม่มีค่าใช้จ่ายแอบแฝง ไม่ใช่คำแนะนำการลงทุน ·
+  ไม่ใช่คำแนะนำการลงทุน ·
   <button id="newsRefreshBtn" style="padding:4px 10px; font-size:11px;">🔄 รีเฟรชข่าว</button>
-  <div style="margin-top:6px; font-size:10px; opacity:0.7;">ℹ️ ใช้แค่ RSS feed ฟรี + คำนวณคะแนนในเบราว์เซอร์ด้วย keyword-matching ไม่มีการเรียก AI/LLM แบบเสียเงินเลย — เอาไฟล์นี้ไป host เองที่ไหนก็ทำงานได้ปกติ ไม่ต้องพึ่ง Claude artifact</div>
 </div>
 </div>
 <script>
@@ -765,10 +755,11 @@ window.setHeaderStamp();
       const feedResults = await Promise.all(RSS_FEEDS.map(fetchFeed));
       const gotAny = feedResults.some(f => f.titles.length > 0);
       if(!gotAny){
-        el('newsStatus').textContent = 'ดึงข่าวไม่สำเร็จ (เซิร์ฟเวอร์ /.netlify/functions/news-feed ตอบไม่ได้ — เปิดหน้านี้ผ่าน Netlify เท่านั้น) — แสดงข้อมูลล่าสุดที่เคยดึงได้แทน';
+        console.warn('[news] every feed came back empty (news-feed function unreachable?)');
+        el('newsStatus').textContent = 'โหลดข่าวใหม่ไม่ได้ในขณะนี้ — แสดงข่าวล่าสุดที่มี';
         return;
       }
-      el('newsStatus').textContent = 'กำลังคำนวณคะแนน (ฟรี ไม่มีค่าใช้จ่าย)…';
+      el('newsStatus').textContent = 'กำลังวิเคราะห์ข่าว…';
       const d = computeAnalysis(feedResults);
 
       const diff = await computeChangeLabel(d.worldRiskScore);
@@ -785,10 +776,11 @@ window.setHeaderStamp();
 
       await recordScoreHistory(d.worldRiskScore);
       await storageSet('news-dashboard-cache', JSON.stringify({ data: d, ts: Date.now() }));
-      el('newsStatus').textContent = 'อัปเดตล่าสุด · ' + new Date().toLocaleTimeString();
+      el('newsStatus').textContent = 'อัปเดตข่าว ' + new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
       if(window.setHeaderStamp) window.setHeaderStamp();
     }catch(e){
-      el('newsStatus').textContent = 'เกิดข้อผิดพลาด: ' + e.message + ' — ลองกดรีเฟรชอีกครั้ง';
+      console.warn('[news]', e);
+      el('newsStatus').textContent = 'โหลดข่าวไม่สำเร็จ — ลองกดรีเฟรชอีกครั้ง';
     }
   }
 
@@ -803,8 +795,7 @@ window.setHeaderStamp();
         renderData(c.data);
         ageMs = Date.now() - c.ts;
         const mins = Math.round(ageMs / 60000);
-        el('newsStatus').textContent = 'ข้อมูลจากแคช (' + new Date(c.ts).toLocaleTimeString()
-          + (mins > 0 ? ' · ' + mins + ' นาทีที่แล้ว' : '') + ')';
+        el('newsStatus').textContent = 'อัปเดตข่าว ' + new Date(c.ts).toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
       }
     }catch(e){ /* no cache yet */ }
     try{
@@ -846,15 +837,6 @@ window.setHeaderStamp();
     return m ? parseInt(m[3], 10) + ' ' + TH_MONTHS[parseInt(m[2], 10) - 1] + ' ' + m[1] : String(dateStr || '');
   }
 
-  const SOURCE_LABEL = { 'fred-api':'FRED API', 'fred-csv':'FRED (สาธารณะ)', 'bls':'BLS' };
-  function sourceLabel(data){
-    const seen = [];
-    ['cpi','coreCpi','unrate','nfp','effr','upper'].forEach(k => {
-      const s = data && data[k] && data[k].source;
-      if(s && seen.indexOf(s) === -1) seen.push(s);
-    });
-    return seen.length ? seen.map(s => SOURCE_LABEL[s] || s).join(' + ') : 'FRED/BLS';
-  }
 
   // Payrolls are a signed change in jobs — keep the sign and the thousands separators.
   function fmtJobs(v){
@@ -862,15 +844,8 @@ window.setHeaderStamp();
     return (n >= 0 ? '+' : '−') + Math.abs(n).toLocaleString('en-US');
   }
 
-  function fedStatusText(data, n, kind){
-    const when = new Date().toLocaleTimeString('th-TH');
-    const src = sourceLabel(data);
-    if(data && data.stale){
-      return '⚠️ แหล่งข้อมูลตอบช้า — แสดงค่าล่าสุดที่เคยดึงได้ (' + n + ' การ์ด จาก ' + src + ') · ' + when;
-    }
-    if(kind === 'cache') return '💾 ใช้ค่าที่แคชไว้ (' + n + ' การ์ด · ' + src + ') — จะดึงใหม่อัตโนมัติเมื่อถึงรอบ';
-    if(kind === 'server-cache') return '✅ ใช้ค่าแคชฝั่งเซิร์ฟเวอร์ (' + n + ' การ์ด · ' + src + ') · ' + when;
-    return '✅ ดึงสดสำเร็จ (' + n + ' การ์ด จาก ' + src + ') · ' + when;
+  function fedStatusText(data){
+    return (data && data.stale) ? '⚠️ แสดงตัวเลขล่าสุดที่มี — ระบบจะอัปเดตให้อัตโนมัติ' : '';
   }
 
   function applyFedData(data){
@@ -921,14 +896,9 @@ window.setHeaderStamp();
       if(bits.length){
         const warnBits = [];
         if(cpi && cpi.warning) warnBits.push('CPI: ' + cpi.warning);
-        if(data.stale) warnBits.push('แหล่งข้อมูลตอบช้า (' + (data.staleReason || 'ไม่ทราบสาเหตุ') + ')');
-        el('fedAsOf').innerHTML = '🔄 อัปเดตอัตโนมัติจาก ' + esc(sourceLabel(data)) + ' — ' + esc(bits.join(' · '))
-          + ' · โพลทุก ' + Math.round(FED_POLL_MS / 60000) + ' นาที (วันประกาศตัวเลข เซิร์ฟเวอร์จะแคชสั้นลงเหลือ 15 นาที) · '
-          + '<a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="https://fred.stlouisfed.org/series/CPIAUCSL">FRED</a>'
-          + (warnBits.length ? '<br><span style="color:var(--warn);">⚠️ ' + esc(warnBits.join(' · ')) + '</span>' : '')
-          // หมายเหตุเรื่องนิยาม: ตัวเลขนี้ไม่ใช่ "พาดหัวข่าว" เป๊ะๆ เพราะคำนวณจากส่วนต่างของระดับ
-          // PAYEMS ที่ปรับฤดูกาลแล้ว (ซึ่งรวมการปรับปรุงย้อนหลังของเดือนก่อนๆ เข้าไปแล้ว)
-          + (nfp && isValidNum(nfp.value) ? '<br><span style="opacity:.75;">ℹ️ ตัวเลขจ้างงาน = ส่วนต่างเดือนต่อเดือนของระดับ PAYEMS (ปรับฤดูกาลแล้ว) จึงเป็นการเปลี่ยนแปลงสุทธิหลังปรับปรุงย้อนหลัง อาจต่างจากพาดหัวข่าวที่รายงานครั้งแรกได้เล็กน้อย</span>' : '');
+        if(data.stale) warnBits.push('อาจยังไม่ใช่ตัวเลขล่าสุด');
+        el('fedAsOf').innerHTML = 'ข้อมูลล่าสุด: ' + esc(bits.join(' · '))
+          + (warnBits.length ? '<br><span style="color:var(--warn);">⚠️ ' + esc(warnBits.join(' · ')) + '</span>' : '');
       }
     }catch(e){ /* never let a render hiccup break the page */ }
 
@@ -1447,8 +1417,8 @@ window.setHeaderStamp();
     const d = data || {};
     if(!hasAnyFedField(d)){
       box.innerHTML = failReason
-        ? '<div class="muted" style="font-size:11.5px;">⚠️ วิเคราะห์อัตโนมัติยังทำไม่ได้ เพราะดึงตัวเลขไม่สำเร็จ (' + esc(failReason) + ') — จะลองใหม่ให้อัตโนมัติทุก ' + Math.round(FED_POLL_MS / 60000) + ' นาที และจะสร้างบทวิเคราะห์ทันทีที่ดึงได้</div>'
-        : '<div class="muted" style="font-size:11.5px;">⏳ กำลังรอตัวเลขจริงจาก FRED/BLS เพื่อวิเคราะห์อัตโนมัติ (ยังไม่ใช้ข้อความเขียนมือใดๆ)</div>';
+        ? '<div class="muted" style="font-size:11.5px;">⚠️ วิเคราะห์อัตโนมัติยังทำไม่ได้ในขณะนี้ — จะแสดงทันทีที่ได้ตัวเลข</div>'
+        : '<div class="muted" style="font-size:11.5px;">⏳ กำลังรอตัวเลขจริงเพื่อวิเคราะห์…</div>';
       return;
     }
 
@@ -1540,13 +1510,12 @@ window.setHeaderStamp();
           : ' → รอบนี้แข็งกว่าค่าเฉลี่ยล่าสุด';
       }
       body += '<br><b>ผลต่อตลาด:</b> ' + (n < 0 ? 'ตัวเลขติดลบ = ข่าวร้ายของเศรษฐกิจ แต่ระยะสั้นตลาดอาจตีความว่า Fed จะรีบลดดอกเบี้ย (bad news is good news) — ถ้าติดลบต่อเนื่องหลายเดือนจะกลายเป็นสัญญาณถดถอยจริงจัง' : dev < -30000 ? 'อ่อนกว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย แต่กดดันความเชื่อมั่นเศรษฐกิจ' : dev > 30000 ? 'แข็งกว่าคาด = เศรษฐกิจยังดี แต่ลดโอกาส Fed ลดดอกเบี้ยเร็ว ๆ นี้' : 'ใกล้เคียงคาด = เป็นกลาง');
-      body += '<br><span style="opacity:.75;">ℹ️ ตัวเลขนี้เป็นส่วนต่างของระดับ PAYEMS ที่ปรับฤดูกาลแล้ว จึงเป็นการเปลี่ยนแปลงสุทธิหลังปรับปรุงย้อนหลัง อาจต่างจากพาดหัวข่าวที่รายงานครั้งแรก</span>';
+      body += '<br><span style="opacity:.75;">ℹ️ รวมการปรับปรุงตัวเลขย้อนหลังแล้ว จึงอาจต่างจากที่ข่าวรายงานครั้งแรกเล็กน้อย</span>';
       cards.push(analysisCard(accent, 'Nonfarm Payrolls — ' + verdict, body));
     }
 
     // ── footnote + สถานะ ────────────────────────────────────────────────────────────────────
-    const when = new Date().toLocaleTimeString('th-TH');
-    const src = esc(sourceLabel(d));
+    const when = new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
     const missing = d.errors ? Object.keys(d.errors) : [];
 
     // ตรวจว่าค่า consensus ของ Investing.com เป็นของ "รอบเดียวกับตัวเลขบนการ์ด" หรือไม่
@@ -1565,8 +1534,8 @@ window.setHeaderStamp();
 
     const link = (href, text) => '<a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="' + esc(href) + '">' + text + '</a>';
     const autoLine = C.live
-      ? esc(C.source) + ' (ดึงสด · รอบล่าสุด ' + esc(C.asOf) + ')'
-      : esc(C.source) + ' (ค่าที่ฝังไว้ ณ ' + esc(C.asOf) + ' — รอบนี้ดึงสดไม่ได้ ระบบจะลองใหม่เอง)';
+      ? esc(C.source) + ' (ดึงสด · ' + esc(thDay(C.asOf)) + ')'
+      : esc(C.source) + ' (ค่าที่ฝังไว้ ณ ' + esc(thDay(C.asOf)) + ')';
     // แสดงที่มาของค่าที่คาดต่อช่อง: ☁️ = ที่แชร์จากเซิร์ฟเวอร์ (ทุกคนเห็น) · ✏️ = ที่ตั้งเองในเครื่อง
     const ovParts = [];
     if(C.shared) ovParts.push('☁️ ที่แชร์จากเซิร์ฟเวอร์ (' + C.sharedOverridden.map(k => OVERRIDE_LABELS[k] || k).join(', ') + ')'
@@ -1578,20 +1547,23 @@ window.setHeaderStamp();
         + ' — อัตโนมัติ: ' + autoLine
         + ' · <a href="#" id="consensusResetInline" style="color:#7c9cff; border-bottom:1px dotted #7c9cff; text-decoration:none;">↺ คืนค่าเริ่มต้น</a>'
       : 'ที่คาด: ' + autoLine;
-    const linkLine = 'ตรวจ/อัปเดตได้ที่ ' + [
+    const linkLine = 'ดูต้นทาง: ' + [
       link(CONSENSUS.links.cpi, 'CPI'), link(CONSENSUS.links.coreCpi, 'Core CPI'),
       link(CONSENSUS.links.nfp, 'การจ้างงาน'), link(CONSENSUS.links.unrate, 'ว่างงาน'),
       link(CONSENSUS.links.fed, 'Fed')
     ].join(' · ');
 
-    let foot = '🤖 บทวิเคราะห์นี้สร้างอัตโนมัติจากตัวเลขสด (source: ' + src + ') ณ ' + esc(when)
-      + ' — เกณฑ์ "ดี/แย่กว่าคาด" ใช้ consensus: Fed ' + consFedText
+    const notes = [];
+    if(d.stale) notes.push('⚠️ ตัวเลขที่ใช้คือค่าล่าสุดที่เคยดึงได้');
+    if(missing.length) notes.push('⚠️ วิเคราะห์จากตัวเลขที่มีเท่านั้น (ที่ดึงไม่ได้: ' + esc(missing.map(k => OVERRIDE_LABELS[k] || k).join(', ')) + ')');
+    const details = 'ค่าที่ตลาดคาด: Fed ' + consFedText
       + ' · CPI ' + C.cpi.toFixed(1) + '% · Core ' + C.coreCpi.toFixed(1) + '% · ว่างงาน ' + C.unrate.toFixed(1)
       + '% · NFP +' + C.nfp.toLocaleString('en-US')
-      + '<br>' + srcLine + esc(consensusNote) + ' · ' + linkLine
-      + '<br>ส่วน "เทียบเดือนก่อน / ค่าเฉลี่ย 3 เดือน" คำนวณสดจากข้อมูลจริงเสมอ — ตัวเลขเปลี่ยนเมื่อไร บทวิเคราะห์นี้สร้างใหม่เองอัตโนมัติ';
-    if(d.stale) foot += '<br>⚠️ แหล่งข้อมูลตอบช้า — ตัวเลขที่ใช้คือค่าล่าสุดที่เคยดึงได้';
-    if(missing.length) foot += '<br>⚠️ วิเคราะห์จากช่องที่ดึงได้เท่านั้น (ที่ดึงไม่ได้: ' + esc(missing.join(', ')) + ')';
+      + '<br>' + srcLine + esc(consensusNote)
+      + '<br>' + linkLine;
+    const foot = (notes.length ? notes.join('<br>') + '<br>' : '')
+      + '<details><summary style="cursor:pointer; list-style:none;">ℹ️ ที่มาของค่าที่คาด · อัปเดต ' + esc(when) + '</summary>'
+      + '<div style="margin-top:6px;">' + details + '</div></details>';
 
     box.innerHTML = cards.join('') + '<div class="muted" style="font-size:10px; line-height:1.6; opacity:.8;">' + foot + '</div>';
 
@@ -1602,7 +1574,7 @@ window.setHeaderStamp();
     // แจ้งเตือนในหน้าเฉพาะเมื่อตัวเลขขยับจากการ์ดครั้งก่อน (ผู้ใช้ที่เปิดหน้านานๆ จะรู้ว่าเลขใหม่มา)
     if(lastFedSignature && lastFedSignature !== fedSignature(d)){
       const statusEl2 = el('fredFetchStatus');
-      if(statusEl2) statusEl2.textContent += ' · 🔔 ตัวเลขมีการอัปเดตใหม่ (บทวิเคราะห์ถูกสร้างใหม่แล้ว)';
+      if(statusEl2) statusEl2.textContent = '🔔 มีตัวเลขใหม่ — อัปเดตบทวิเคราะห์แล้ว';
     }
     lastFedSignature = fedSignature(d);
   }
@@ -1630,7 +1602,7 @@ window.setHeaderStamp();
       const n = applyFedData(cached.data);
       if(n > 0 && cached.refreshAfter > now){
         fedNextFetchAt = cached.refreshAfter;
-        if(statusEl) statusEl.textContent = fedStatusText(cached.data, n, 'cache');
+        if(statusEl) statusEl.textContent = fedStatusText(cached.data);
         return;
       }
     }
@@ -1639,8 +1611,7 @@ window.setHeaderStamp();
     if(!force && now < fedNextFetchAt) return;
     fedNextFetchAt = now + FED_POLL_MS;
 
-    if(statusEl) statusEl.textContent = '⏳ กำลังดึงข้อมูลสด (Fed / CPI / การจ้างงาน)…';
-    loadConsensus();   // ยิงขนานไปเลย ไม่ต้องรอกัน — ได้ค่าสดเมื่อไรบทวิเคราะห์จะถูกสร้างใหม่ทันที
+        loadConsensus();   // ยิงขนานไปเลย ไม่ต้องรอกัน — ได้ค่าสดเมื่อไรบทวิเคราะห์จะถูกสร้างใหม่ทันที
     try{
       const r = await fetchWithTimeout('/.netlify/functions/fred-data', 15000);
       let data;
@@ -1656,26 +1627,15 @@ window.setHeaderStamp();
       fedNextFetchAt = (isValidNum(data.refreshAfter) && data.refreshAfter > now) ? data.refreshAfter : now + FED_POLL_MS;
       try{ await storageSet(FED_CACHE_KEY, JSON.stringify({ data: data, refreshAfter: fedNextFetchAt, savedAt: now })); }catch(e){}
 
-      if(statusEl){
-        statusEl.textContent = fedStatusText(data, n, (data.cached && !data.stale) ? 'server-cache' : 'live');
-        if(data.errors){
-          const failed = Object.keys(data.errors);
-          if(failed.length) statusEl.textContent += ' · ⚠️ ดึงไม่ได้บางช่อง: ' + failed.join(', ');
-        }
-      }
+      if(statusEl) statusEl.textContent = fedStatusText(data);
+      if(data.errors && Object.keys(data.errors).length) console.warn('[fred-data] some fields failed', data.errors);
     }catch(e){
       fedNextFetchAt = now + FED_POLL_MS;
       const reason = (e && e.message) ? e.message : String(e);
+      console.warn('[fred-data]', reason);
+      if(statusEl) statusEl.textContent = '⚠️ อัปเดตตัวเลขล่าสุดไม่ได้ในขณะนี้ — ระบบจะลองใหม่อัตโนมัติ';
       // Prefer the last payload we actually saved over the hardcoded placeholders.
-      if(cached && cached.data && applyFedData(cached.data) > 0){
-        const mins = cached.savedAt ? Math.max(1, Math.round((Date.now() - cached.savedAt) / 60000)) : 0;
-        if(statusEl) statusEl.textContent = '⚠️ ดึงสดไม่สำเร็จ (' + reason + ') — แสดงค่าล่าสุดที่เคยดึงได้'
-          + (mins ? ' (เมื่อ ' + mins + ' นาทีที่แล้ว)' : '')
-          + ' · จะลองใหม่อัตโนมัติทุก ' + Math.round(FED_POLL_MS / 60000) + ' นาที';
-      }else if(statusEl){
-        statusEl.textContent = '❌ ดึงไม่สำเร็จ: ' + reason
-          + ' — ยังแสดงค่าสำรองด้านบน และจะลองใหม่อัตโนมัติทุก ' + Math.round(FED_POLL_MS / 60000) + ' นาที';
-      }
+      if(cached && cached.data) applyFedData(cached.data);
       // ให้บทวิเคราะห์บอกด้วยว่ายังสร้างไม่ได้ เพราะอะไร (ไม่ปล่อยให้ค้างข้อความ "กำลังรอ" เงียบๆ)
       try{ renderFedAnalysis(null, reason); }catch(e){ /* best-effort */ }
     }
@@ -1740,10 +1700,7 @@ window.setHeaderStamp();
       el('lpUsdThb').textContent = 'ดึงไม่สำเร็จ';
       el('lpJpyThb').textContent = 'ดึงไม่สำเร็จ';
       el('lpCnyThb').textContent = 'ดึงไม่สำเร็จ';
-      // ระวัง null: ถ้า markup เปลี่ยนแล้ว selector ไม่เจอ ของเดิมจะ throw ทับ error จริงที่กำลังจะรายงาน
-      const priceBox = document.querySelector('#livePrices');
-      const noteEl = priceBox && priceBox.nextElementSibling;
-      if(noteEl) noteEl.innerHTML += '<br><span style="color:#ff8b98;">Debug: ' + esc(e.message) + '</span>';
+      console.warn('[fx]', e);
     }
   }
   fetchLivePrices();
@@ -1815,7 +1772,7 @@ window.setHeaderStamp();
         const c = JSON.parse(raw);
         if(c.date === today){
           el('lpOil').textContent = '$' + c.price.toFixed(2) + ' / bbl';
-          setOilStatus('ใช้ค่าที่ดึงไว้วันนี้แล้ว (แคช · ' + (c.source || 'unknown') + ')');
+          setOilStatus('');
           return;
         }
       }
@@ -1830,11 +1787,10 @@ window.setHeaderStamp();
       ['Hyperliquid', tryHyperliquidOil]
     ];
     for(const [name, fn] of freeAttempts){
-      setOilStatus('กำลังลองดึง WTI ฟรีจาก ' + name + '…');
-      try{
+            try{
         const res = await fn();
         el('lpOil').textContent = '$' + res.price.toFixed(2) + ' / bbl';
-        setOilStatus('✅ ดึงฟรีสำเร็จจาก ' + res.source + ' (ไม่ต้องใช้ key) · ' + new Date().toLocaleTimeString('th-TH'));
+        setOilStatus('');
         try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, price: res.price, source: res.source })); }catch(e){}
         return;
       }catch(e){ trail.push(name + ': ' + e.message); }
@@ -1842,13 +1798,12 @@ window.setHeaderStamp();
 
     // All free sources failed — fall back to our Netlify Function, which holds the Alpha
     // Vantage key server-side (never visible to visitors).
-    setOilStatus('ลองฟรีหมดแล้ว กำลังดึง WTI ผ่านเซิร์ฟเวอร์…');
     try{
       const r = await fetchWithTimeout('/.netlify/functions/oil-price', 10000);
       const j = await r.json();
       if(j.price){
         el('lpOil').textContent = '$' + j.price.toFixed(2) + ' / bbl';
-        setOilStatus('✅ ดึงสำเร็จผ่านเซิร์ฟเวอร์ (Alpha Vantage) · ' + new Date().toLocaleTimeString('th-TH'));
+        setOilStatus('');
         try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, price: j.price, source: 'Alpha Vantage (server)' })); }catch(e){}
         return;
       }
@@ -1856,7 +1811,8 @@ window.setHeaderStamp();
     }catch(e){ trail.push('server function: ' + e.message); }
 
     el('lpOil').textContent = 'ดึงไม่สำเร็จ';
-    setOilStatus('❌ ลองทุกทางแล้ว (' + (freeAttempts.length + 1) + ' แหล่ง) ไม่สำเร็จเลย: ' + trail.join(' · '));
+    setOilStatus('');
+    console.warn('[oil] every source failed:', trail.join(' · '));
   }
 
   fetchOilPrice();
@@ -1868,7 +1824,6 @@ window.setHeaderStamp();
   const NEWS_CACHE_TTL_MS = 30 * 60 * 1000;
   loadCache().then(function(ageMs){
     if(ageMs != null && ageMs < NEWS_CACHE_TTL_MS){
-      el('newsStatus').textContent += ' — ยังไม่ถึงรอบดึงใหม่ (แคช 30 นาที) กด "🔄 รีเฟรชข่าว" เพื่อดึงสด';
       return;
     }
     return refreshNews();
@@ -1907,9 +1862,9 @@ window.setHeaderStamp();
 
     <!-- METRICS -->
     <div class="metrics">
-      <h2 style="padding-left:2px;">ตัวชี้วัด (ดึงอัตโนมัติ · แก้เองได้เสมอ)</h2>
+      <h2 style="padding-left:2px;">ตัวชี้วัด On-chain</h2>
 
-      <details class="token-collapse">
+      <details class="token-collapse dev-only">
         <summary>ตั้งค่าเพิ่มเติม (ไม่จำเป็นต้องกดอะไรตรงนี้)</summary>
         <div style="margin-top:10px;">
           <div class="metric-top" style="margin-bottom:8px;">
@@ -1927,7 +1882,7 @@ window.setHeaderStamp();
         </div>
       </details>
 
-      <details class="token-collapse">
+      <details class="token-collapse dev-only">
         <summary>🔍 Debug log (ดูว่าดึงข้อมูลสำเร็จ/พลาดเพราะอะไร)</summary>
         <div id="debugLog" style="margin-top:10px; font-size:10px; line-height:1.6; max-height:200px; overflow-y:auto;">ยังไม่มีข้อมูล — กด "รีเฟรชทั้งหมด" ด้านล่างก่อน</div>
       </details>
@@ -2017,11 +1972,9 @@ window.setHeaderStamp();
     <!-- CHART -->
     <div class="panel chart-panel">
       <h2>กราฟ BTC/USD (แท่งเทียน)</h2>
-      <div id="tv_chart_container"><div class="chart-loading">กำลังโหลดกราฟ TradingView…</div></div>
+      <div id="tv_chart_container"><div class="chart-loading">กำลังโหลดกราฟ…</div></div>
       <div style="font-size:11px; color:var(--sub); line-height:1.6; margin-top:10px;">
-        มี EMA ขึ้นให้เป็นค่าเริ่มต้นทุกครั้งที่เปิดหน้า (ไม่หายแน่นอน) —
-        ถ้าอยากให้เส้นที่วาดเองหรืออินดิเคเตอร์ที่เพิ่มเองไม่หายเวลาปิดเปิดใหม่ ให้กด <b>Sign in</b> มุมขวาบนของกราฟด้วยบัญชี TradingView ฟรีของคุณ
-        (ฟรี ไม่ต้องขอสิทธิ์อะไรเพิ่ม เป็นระบบเซฟของ TradingView เองที่ผูกกับบัญชี ไม่ใช่ของเว็บนี้)
+        💡 กด <b>Sign in</b> มุมขวาบนของกราฟด้วยบัญชี TradingView เพื่อเก็บเส้นและอินดิเคเตอร์ที่เพิ่มเองไว้
       </div>
     </div>
 
@@ -2030,7 +1983,7 @@ window.setHeaderStamp();
       <h2>Sentiment & Leverage <span style="color:var(--sub); font-weight:400; text-transform:none; letter-spacing:0;">— มุมมองสไตล์ Michael Burry: valuation ถูกอย่างเดียวไม่พอ ต้องดูด้วยว่าตลาด "เก็ง" หนักแค่ไหน</span></h2>
       <div class="sl-grid">
         <div class="sl-tile">
-          <div class="sl-name">Fear & Greed Index <span style="font-size:9px; text-transform:none; letter-spacing:0; opacity:0.7;">· CoinMarketCap · อัตโนมัติ</span></div>
+          <div class="sl-name">Fear & Greed Index</div>
           <div class="sl-num" id="fngNum">–</div>
           <div class="sl-sub" id="fngLabel">กำลังโหลด…</div>
         </div>
@@ -2048,8 +2001,7 @@ window.setHeaderStamp();
       <div style="font-size:11px; color:var(--sub); line-height:1.6; margin-top:14px;">
         อ่านค่า: Fear&Greed ต่ำมาก (&lt;20) หรือสูงมาก (&gt;80) มักเป็นจุดกลับตัว (contrarian) ·
         Funding Rate เป็นบวกสูงต่อเนื่อง = คนแห่ leverage long พร้อมโดน liquidate ยกแผงถ้าราคาหักหัว ·
-        Open Interest พุ่งเร็วกว่าราคา = ตลาดใช้เลเวอเรจสูง เปราะบางต่อความผันผวน<br>
-        Fear &amp; Greed ดึงอัตโนมัติจาก <a href="https://coinmarketcap.com/charts/fear-and-greed-index/" target="_blank" class="metric-link" style="color:var(--amber);">CoinMarketCap</a> (public API, อัปเดตทุกวัน · แคช 6 ชม.) ถ้า CMC ไม่ตอบจะ fallback ไป alternative.me ชั่วคราว
+        Open Interest พุ่งเร็วกว่าราคา = ตลาดใช้เลเวอเรจสูง เปราะบางต่อความผันผวน
       </div>
     </div>
 
@@ -2063,7 +2015,7 @@ window.setHeaderStamp();
       <div class="halving-meta">
         <div>Target block: <b style="color:var(--text);">1,050,000</b></div>
         <div id="halvingBlockInfo">กำลังดึง block height ปัจจุบัน…</div>
-        <div style="margin-top:4px; opacity:0.7;">ประมาณจาก block time เฉลี่ย ~10 นาที (mempool.space) ไม่ใช่วันที่ตายตัว</div>
+        <div style="margin-top:4px; opacity:0.7;">วันที่เป็นค่าประมาณ</div>
       </div>
     </div>
 
@@ -2557,7 +2509,7 @@ window.setHeaderStamp();
     const updatedEl = el(metricKey + 'Updated');
 
     if(state === true){
-      b.textContent = 'BGeometrics ✓'; b.className = 'auto-badge ok';
+      b.textContent = 'อัตโนมัติ ✓'; b.className = 'auto-badge ok';
       if(updatedEl) updatedEl.textContent = 'อัปเดต ' + timeAgo(ts);
       if(manualRow) manualRow.style.display = 'none';
       if(manualBtn) manualBtn.textContent = '✏️ กรอกเองชั่วคราว';
@@ -2625,8 +2577,7 @@ window.setHeaderStamp();
         const { v, cls, src } = await attempt.parse(r);
         el('fngNum').textContent = v;
         el('fngNum').style.color = v>=75 ? 'var(--red)' : v<=25 ? 'var(--green)' : 'var(--amber)';
-        const isCMC = /coinmarketcap/i.test(src);
-        el('fngLabel').textContent = (cls || '') + (isCMC ? ' · CoinMarketCap' : ' · ' + src);
+        el('fngLabel').textContent = cls || '';
         el('fngLabel').title = 'อัปเดตอัตโนมัติจาก ' + src + ' · ' + new Date().toLocaleTimeString('th-TH');
         fngDone = true;
         break;
@@ -2699,7 +2650,7 @@ window.setHeaderStamp();
         const c = JSON.parse(raw);
         if(c.date === today){
           el('halvingDays').textContent = c.days.toLocaleString();
-          el('halvingBlockInfo').textContent = 'Block ปัจจุบัน: ' + c.height.toLocaleString() + ' · เหลืออีก ' + c.blocksRemaining.toLocaleString() + ' บล็อก (แคชไว้วันนี้)';
+          el('halvingBlockInfo').textContent = 'Block ปัจจุบัน: ' + c.height.toLocaleString() + ' · เหลืออีก ' + c.blocksRemaining.toLocaleString() + ' บล็อก';
           return; // already refined today, no need to hit the network again
         }
       }
@@ -2726,20 +2677,20 @@ window.setHeaderStamp();
   }
 
   async function refreshAll(force){
-    statusEl.textContent = 'กำลังดึงข้อมูลอัตโนมัติ…';
+    statusEl.textContent = 'กำลังอัปเดต…';
     const priceOk = await fetchPrice(); // must resolve first: OI conversion below needs a live price
     const [metricsOk] = await Promise.all([fetchOnChainMetrics(force), fetchSentimentLeverage(), fetchHalvingCountdown()]);
     recompute();
     save();
     // บอกให้ชัดเมื่อค่าที่ใช้คำนวณไม่ใช่ราคาสด (ผู้ใช้พิมพ์เอง) — ไม่งั้นจะเข้าใจผิดว่าคะแนนมาจากราคาตลาด
     const manualNote = (priceInput.dataset.manual === '1' || athInput.dataset.manual === '1')
-      ? ' · ℹ️ ใช้ราคา/ATH ที่คุณกรอกเอง (กด "↻ ใช้ราคาสด" เพื่อกลับไปใช้ค่าตลาด)' : '';
+      ? ' · ใช้ราคา/ATH ที่คุณกรอกเอง' : '';
     if(priceOk && metricsOk){
-      statusEl.textContent = 'อัปเดตอัตโนมัติสำเร็จทั้งหมด · ' + new Date().toLocaleTimeString() + manualNote;
+      statusEl.textContent = 'อัปเดต ' + new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' }) + manualNote;
     }else if(priceOk){
-      statusEl.textContent = 'อัปเดตราคาแล้ว แต่ตัวชี้วัด on-chain ดึงไม่สำเร็จตอนนี้ (กรอกเองได้ในช่องที่ขึ้น "กรอกเอง")' + manualNote;
+      statusEl.textContent = 'ตัวชี้วัด on-chain ยังอัปเดตไม่ได้ — กรอกเองได้ด้านบน' + manualNote;
     }else{
-      statusEl.textContent = 'ดึงอัตโนมัติไม่สำเร็จ — กรอกค่าต่าง ๆ ได้เองด้านล่าง' + manualNote;
+      statusEl.textContent = 'อัปเดตข้อมูลไม่ได้ในขณะนี้ — กรอกค่าเองได้ด้านบน' + manualNote;
     }
   }
 
@@ -2789,11 +2740,11 @@ window.setHeaderStamp();
           container_id: 'tv_chart_container'
         });
       }catch(e){
-        container.innerHTML = '<div class="chart-loading">โหลดกราฟไม่สำเร็จ — เปิดไฟล์นี้จากเบราว์เซอร์จริง (ไม่ใช่ preview ในแชท) เพื่อให้กราฟแสดงผล</div>';
+        container.innerHTML = '<div class="chart-loading">โหลดกราฟไม่สำเร็จ — ลองรีเฟรชหน้าอีกครั้ง</div>';
       }
     };
     script.onerror = () => {
-      container.innerHTML = '<div class="chart-loading">โหลดกราฟไม่สำเร็จ — เปิดไฟล์นี้จากเบราว์เซอร์จริง (ไม่ใช่ preview ในแชท) เพื่อให้กราฟแสดงผล</div>';
+      container.innerHTML = '<div class="chart-loading">โหลดกราฟไม่สำเร็จ — ลองรีเฟรชหน้าอีกครั้ง</div>';
     };
     document.body.appendChild(script);
   }
