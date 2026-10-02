@@ -97,6 +97,9 @@ test('regressions that were fixed once must not come back', () => {
   // 5) Untrusted feed text must be escaped before it reaches innerHTML.
   assert.match(HTML, /esc\(safeTitleTh\)/, 'Top Events titles are no longer escaped');
   assert.match(HTML, /esc\(safeDescTh\)/, 'Top Events descriptions are no longer escaped');
+  // Latest-news list: titles escaped, and only http(s) links become clickable (no javascript: URLs).
+  assert.match(HTML, /esc\(hasTh \? th : n\.title\)/, 'Latest-news titles are no longer escaped');
+  assert.match(HTML, /\/\^https\?:\\\/\\\/\/i\.test\(it\.link/, 'Latest-news links are no longer restricted to http(s)');
 
   // 6) The TradingView bundle must not be fetched on page load any more.
   assert.doesNotMatch(HTML, /\n\s*loadTradingViewChart\(\);/, 'TradingView is being loaded eagerly again');

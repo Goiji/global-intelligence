@@ -41,6 +41,19 @@
 .risk-scale .ticks{position:relative;height:14px;font-size:10px;color:var(--muted);margin-top:6px}.risk-scale .ticks span{position:absolute;transform:translateX(-50%)}.risk-scale .ticks span:first-child{transform:none}.risk-scale .ticks span:last-child{transform:translateX(-100%)}
 .chg{display:inline-block;font-size:11px;font-weight:700;margin-left:8px;min-width:58px;text-align:right}
 .full{grid-column:1/-1}.events{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.event{border:1px solid var(--line);background:var(--panel2);border-radius:14px;padding:15px}.event .rank{font-size:11px;color:var(--accent);font-weight:800}.event h3{font-size:15px;margin:7px 0}.event p{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 10px}.impact{font-size:12px;font-weight:800}.brief{font-size:15px;line-height:1.75;color:#d9e0ef}.watch{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.watch div{padding:14px;background:var(--panel2);border:1px solid var(--line);border-radius:13px}.watch b{display:block;font-size:14px;margin-bottom:4px}.footer{margin-top:18px;color:#68758e;font-size:12px;line-height:1.6}
+.news-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.news-filters button{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:12px;cursor:pointer}
+.news-filters button.on{border-color:var(--accent);color:var(--text);background:#7c9cff1f}
+.news-filters button span{opacity:.6;margin-left:4px}
+.news-list{display:flex;flex-direction:column}
+.news-item{display:block;padding:11px 2px;border-bottom:1px dashed var(--line);color:inherit;text-decoration:none}
+.news-item:last-child{border-bottom:0}
+.news-item:hover .nt{color:var(--accent)}
+.news-item .nt{font-size:14px;font-weight:650;line-height:1.45}
+.news-item .ne{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4}
+.news-item .nm{font-size:11px;color:var(--muted);margin-top:5px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.news-item .tag{color:var(--accent);font-weight:700}
+.news-more{margin-top:10px;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:8px 14px;font-size:12px;cursor:pointer;width:100%}
 @media(max-width:800px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.events,.watch{grid-template-columns:1fr}.top{flex-direction:column}.date{text-align:left}.barrow{grid-template-columns:100px 1fr 36px}.full{grid-column:auto}}
 
 
@@ -323,6 +336,13 @@ body{margin:0}
 </section>
 
 <section class="card full">
+<h2>🗞️ ข่าวล่าสุด <span class="h-en">Latest News · 48 ชม.</span></h2>
+<div class="news-filters" id="newsFilters"></div>
+<div class="news-list" id="newsList"><div class="muted" style="font-size:12px;">กำลังโหลดข่าว…</div></div>
+<button type="button" class="news-more" id="newsMoreBtn" style="display:none;">ดูข่าวเพิ่ม</button>
+</section>
+
+<section class="card full">
 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
   <h2 style="margin-bottom:0;">🏦 ดอกเบี้ย Fed & เศรษฐกิจสหรัฐฯ <span class="h-en">US Macro</span></h2>
   <div style="display:flex; align-items:center; gap:10px; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:8px 14px;">
@@ -435,11 +455,16 @@ window.setHeaderStamp();
       const r = await fetchWithTimeout(url, 10000);
       const j = await r.json();
       if(j.status !== 'ok') return { ...feed, titles: [], items: [] };
-      const items = (j.items || []).slice(0, 5).map(it => ({
+      // เก็บไว้ 10 ข่าวต่อหมวดสำหรับรายการ "ข่าวล่าสุด" — แต่คะแนนความเสี่ยงยังคิดจาก 5 ข่าวแรก
+      // เหมือนเดิม (ไม่ให้คะแนนเปลี่ยนพฤติกรรมเพราะจำนวนข่าวที่โชว์)
+      const items = (j.items || []).slice(0, 10).map(it => ({
         title: it.title,
-        description: (it.description || '').replace(/<[^>]+>/g, '').trim().slice(0, 220)
+        description: (it.description || '').replace(/<[^>]+>/g, '').trim().slice(0, 220),
+        link: it.link || '',
+        source: it.source || '',
+        pubDate: it.pubDate || ''
       }));
-      const titles = items.map(it => it.title);
+      const titles = items.slice(0, 5).map(it => it.title);
       return { ...feed, titles, items };
     }catch(e){
       return { ...feed, titles: [], items: [] };
@@ -584,9 +609,14 @@ window.setHeaderStamp();
 
     // Top events: highest-scoring categories' first real headline (deterministic, no AI paraphrase).
     const sorted = [...feedResults].sort((a,b)=>categories[b.key]-categories[a.key]);
-    const topEvents = sorted.filter(f=>f.titles.length>0).slice(0,3).map((f,i)=>({
-      rank: i+1, category: f.label.toUpperCase(), title: f.titles[0],
-      rawDescription: (f.items && f.items[0] && f.items[0].description) || '',
+    const usedStories = new Set();
+    const topEvents = sorted.filter(f=>f.titles.length>0).map(f => {
+      const pick = (f.items || []).find(it => !usedStories.has(storyKey(it.title))) || null;
+      if(pick) usedStories.add(storyKey(pick.title));
+      return pick ? { f, pick } : null;
+    }).filter(Boolean).slice(0,3).map(({ f, pick }, i)=>({
+      rank: i+1, category: f.label.toUpperCase(), title: cleanHeadline(pick.title, pick.source),
+      rawDescription: pick.description || '',
       description: 'พาดหัวข่าวล่าสุดจากหมวด ' + f.label + ' (คะแนนความเสี่ยงหมวดนี้ ' + categories[f.key] + '/100)',
       marketImpact: categories[f.key]
     }));
@@ -609,8 +639,110 @@ window.setHeaderStamp();
 
     const watch = sorted.slice(0,4).map(f => ({ title: f.label, subtitle: categories[f.key]+'/100' }));
 
-    return { worldRiskScore, badge, confidence, categories, assets, topEvents, aiBrief: brief, watch };
+    return { worldRiskScore, badge, confidence, categories, assets, topEvents, aiBrief: brief, watch, news: buildNewsList(feedResults) };
   }
+
+  // ---------- รายการ "ข่าวล่าสุด" ----------
+  // Google News ใส่ " - ชื่อสำนักข่าว" ต่อท้ายพาดหัว — ตัดออกเพราะโชว์ชื่อสำนักข่าวแยกอยู่แล้ว
+  function cleanHeadline(title, source){
+    const t = String(title || '').trim();
+    if(source && t.endsWith(' - ' + source)) return t.slice(0, -(source.length + 3)).trim();
+    return t.replace(/\s+-\s+[^-]{2,60}$/, '').trim() || t;
+  }
+  // คีย์สำหรับตัดข่าวซ้ำ (ข่าวเดียวกันมักโผล่หลายหมวด)
+  function storyKey(title){
+    return cleanHeadline(title).toLowerCase().replace(/[^a-z0-9ก-๙]+/g, ' ').trim().slice(0, 80);
+  }
+  const NEWS_MAX_AGE_MS = 48 * 60 * 60 * 1000;
+  function buildNewsList(feedResults){
+    const seen = new Set(), out = [];
+    const now = Date.now();
+    feedResults.forEach(f => (f.items || []).forEach(it => {
+      const key = storyKey(it.title);
+      if(!key || seen.has(key)) return;
+      const ts = Date.parse(it.pubDate);
+      if(isFinite(ts) && now - ts > NEWS_MAX_AGE_MS) return;   // ข่าวเก่าเกิน 48 ชม. ไม่เอา
+      seen.add(key);
+      out.push({
+        cat: f.key, catLabel: f.label,
+        title: cleanHeadline(it.title, it.source),
+        source: it.source || '',
+        link: /^https?:\/\//i.test(it.link || '') ? it.link : '',
+        ts: isFinite(ts) ? ts : 0
+      });
+    }));
+    return out.sort((a, b) => b.ts - a.ts).slice(0, 60);
+  }
+  function newsAgo(ts){
+    if(!ts) return '';
+    const mins = Math.max(0, Math.round((Date.now() - ts) / 60000));
+    if(mins < 60) return mins <= 1 ? 'เมื่อสักครู่' : mins + ' นาทีที่แล้ว';
+    const hrs = Math.round(mins / 60);
+    return hrs < 24 ? hrs + ' ชม. ที่แล้ว' : Math.round(hrs / 24) + ' วันที่แล้ว';
+  }
+
+  const NEWS_PAGE = 8;
+  const newsView = { items: [], filter: 'all', shown: NEWS_PAGE, token: 0 };
+  function renderNewsList(items){
+    if(Array.isArray(items) && items !== newsView.items){ newsView.items = items; newsView.shown = NEWS_PAGE; }
+    const list = el('newsList'), filters = el('newsFilters'), more = el('newsMoreBtn');
+    if(!list) return;
+    const all = newsView.items;
+    if(filters){
+      const counts = {};
+      all.forEach(n => { counts[n.cat] = (counts[n.cat] || 0) + 1; });
+      const chips = [['all', 'ทั้งหมด', all.length]].concat(RSS_FEEDS.filter(f => counts[f.key]).map(f => [f.key, f.label, counts[f.key]]));
+      filters.innerHTML = chips.map(([k, l, c]) =>
+        '<button type="button" data-cat="' + esc(k) + '" class="' + (newsView.filter === k ? 'on' : '') + '">' + esc(l) + '<span>' + c + '</span></button>'
+      ).join('');
+    }
+    const pool = newsView.filter === 'all' ? all : all.filter(n => n.cat === newsView.filter);
+    const visible = pool.slice(0, newsView.shown);
+    if(!visible.length){
+      list.innerHTML = '<div class="muted" style="font-size:12px;">ยังไม่มีข่าวในช่วง 48 ชม. ที่ผ่านมา</div>';
+    }else{
+      list.innerHTML = visible.map(n => {
+        const th = _translationCache.get(n.title);
+        const hasTh = th && th !== n.title && !/MYMEMORY/i.test(th);
+        const tag = n.link ? 'a' : 'div';
+        const attrs = n.link ? ' href="' + esc(n.link) + '" target="_blank" rel="noopener noreferrer"' : '';
+        return '<' + tag + ' class="news-item"' + attrs + '>'
+          + '<div class="nt">' + esc(hasTh ? th : n.title) + '</div>'
+          + (hasTh ? '<div class="ne">' + esc(n.title) + '</div>' : '')
+          + '<div class="nm">' + (newsView.filter === 'all' ? '<span class="tag">' + esc(n.catLabel) + '</span>' : '')
+          + (n.source ? '<span>' + esc(n.source) + '</span>' : '')
+          + (n.ts ? '<span>' + esc(newsAgo(n.ts)) + '</span>' : '') + '</div>'
+          + '</' + tag + '>';
+      }).join('');
+    }
+    if(more){
+      const left = pool.length - visible.length;
+      more.style.display = left > 0 ? '' : 'none';
+      more.textContent = 'ดูข่าวเพิ่ม (' + left + ')';
+    }
+    translateVisibleNews(visible);
+  }
+  // แปลเฉพาะพาดหัวที่อยู่บนจอ (ประหยัดโควต้าแปลฟรี) — คำแปลถูกแคชไว้ จึงแปลซ้ำแค่ข่าวใหม่
+  async function translateVisibleNews(visible){
+    const todo = visible.filter(n => !_translationCache.has(n.title));
+    if(!todo.length) return;
+    const token = ++newsView.token;
+    for(const n of todo){
+      await translateToThai(n.title);
+      if(token !== newsView.token) return;   // ผู้ใช้เปลี่ยนหมวด/รายการใหม่มาแล้ว — หยุดรอบเก่า
+    }
+    renderNewsList();
+  }
+  (function initNewsControls(){
+    const filters = el('newsFilters'), more = el('newsMoreBtn');
+    if(filters) filters.addEventListener('click', function(ev){
+      const b = ev.target && ev.target.closest ? ev.target.closest('button[data-cat]') : null;
+      if(!b) return;
+      newsView.filter = b.getAttribute('data-cat'); newsView.shown = NEWS_PAGE;
+      renderNewsList();
+    });
+    if(more) more.addEventListener('click', function(){ newsView.shown += NEWS_PAGE; renderNewsList(); });
+  })();
 
   const BADGE_TH = { 'CRISIS':'วิกฤต · Crisis', 'DEFENSIVE':'ระวัง · Defensive', 'NEUTRAL':'ปานกลาง · Neutral', 'RISK-ON':'ความเสี่ยงต่ำ · Risk-on' };
   function badgeColor(badge){
@@ -667,6 +799,8 @@ window.setHeaderStamp();
 
     el('aiBrief').innerHTML = d.aiBrief.split('\n\n').map(p => `<p style="margin-bottom:10px;">${p}</p>`).join('')
       + '<span class="muted">— สรุปอัตโนมัติจากพาดหัวข่าว ไม่ใช่คำแนะนำการลงทุน</span>';
+
+    if(Array.isArray(d.news)) renderNewsList(d.news);
 
     el('watchList').innerHTML = (d.watch || []).map(w =>
       `<div><b>${w.title}</b><span class="muted">${w.subtitle}</span></div>`
@@ -809,7 +943,8 @@ window.setHeaderStamp();
       if(raw){
         const c = JSON.parse(raw);
         renderData(c.data);
-        ageMs = Date.now() - c.ts;
+        // แคชรุ่นก่อนยังไม่มีรายการข่าวล่าสุด — ถือว่าหมดอายุ ให้ดึงใหม่ทันที
+        ageMs = Array.isArray(c.data && c.data.news) ? Date.now() - c.ts : Infinity;
         const mins = Math.round(ageMs / 60000);
         el('newsStatus').textContent = 'อัปเดตข่าว ' + new Date(c.ts).toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
       }
