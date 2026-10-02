@@ -26,10 +26,10 @@
      Space Grotesk / JetBrains Mono ไม่เคยถูกโหลดเลย ตัวเลขทุกตัวเลย fallback ไปใช้ฟอนต์ระบบ -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Noto+Serif+Thai:wght@500;600;700&family=Playfair+Display:wght@500;600;700&display=swap">
 <style>
 
-#newsTab{--bg:#0b1020;--panel:#121a2d;--panel2:#0e1628;--text:#eef3ff;--muted:#8e9bb5;--line:#24304a;--good:#45d483;--warn:#ffca58;--bad:#ff6577;--accent:#7c9cff}
+#newsTab{--bg:#0b1020;--panel:#121a2d;--panel2:#0e1628;--text:#eef3ff;--muted:#8e9bb5;--line:#24304a;--good:#45d483;--warn:#ffca58;--bad:#ff6577;--accent:var(--accent)}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#0a0f1d,#0d1425);color:#eef3ff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .wrap{max-width:1180px;margin:auto;padding:28px 18px 50px}.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:24px}.eyebrow{font-size:12px;letter-spacing:.14em;color:var(--accent);font-weight:800}.title{font-size:32px;font-weight:850;margin:5px 0}.sub{color:var(--muted);font-size:14px}.date{background:var(--panel);border:1px solid var(--line);padding:12px 15px;border-radius:14px;text-align:right;color:var(--muted);font-size:12px}
 .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:16px}.card{background:rgba(18,26,45,.94);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 14px 40px #0004}.hero{display:flex;align-items:center;gap:24px}.score{font-size:68px;font-weight:900;line-height:1}.badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#ff657722;color:#ff8b98;font-size:12px;font-weight:800}.change{color:var(--bad);font-weight:750;margin-top:8px}.muted{color:var(--muted)}h2{font-size:17px;margin:0 0 15px}.bars{display:grid;gap:13px}.barrow{display:grid;grid-template-columns:125px 1fr 42px;gap:10px;align-items:center;font-size:13px}.track{height:9px;background:#202b42;border-radius:99px;overflow:hidden}.fill{height:100%;border-radius:99px}.green{background:var(--good)}.yellow{background:var(--warn)}.red{background:var(--bad)}.blue{background:var(--accent)}
@@ -43,7 +43,7 @@
 .full{grid-column:1/-1}.events{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.event{border:1px solid var(--line);background:var(--panel2);border-radius:14px;padding:15px}.event .rank{font-size:11px;color:var(--accent);font-weight:800}.event h3{font-size:15px;margin:7px 0}.event p{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 10px}.impact{font-size:12px;font-weight:800}.brief{font-size:15px;line-height:1.75;color:#d9e0ef}.watch{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.watch div{padding:14px;background:var(--panel2);border:1px solid var(--line);border-radius:13px}.watch b{display:block;font-size:14px;margin-bottom:4px}.footer{margin-top:18px;color:#68758e;font-size:12px;line-height:1.6}
 .news-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .news-filters button{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:12px;cursor:pointer}
-.news-filters button.on{border-color:var(--accent);color:var(--text);background:#7c9cff1f}
+.news-filters button.on{border-color:var(--accent);color:var(--text);background:rgba(212,178,106,.12)}
 .news-filters button span{opacity:.6;margin-left:4px}
 .news-list{display:flex;flex-direction:column}
 .news-item{display:block;padding:11px 2px;border-bottom:1px dashed var(--line);color:inherit;text-decoration:none}
@@ -61,7 +61,7 @@
 body{margin:0}
 .tabbar{position:sticky;top:0;z-index:1000;display:flex;gap:8px;padding:12px 18px;background:#090e18;border-bottom:1px solid #24304a}
 .tabbtn{border:1px solid #24304a;background:#121a2d;color:#9aa8bf;padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:750}
-.tabbtn.active{background:#243451;color:#fff;border-color:#7c9cff}
+.tabbtn.active{background:#243451;color:#fff;border-color:var(--accent)}
 .tabpage{display:none}.tabpage.active{display:block}
 
   /* ฟอนต์ (Space Grotesk / JetBrains Mono) ย้ายไป <link> ใน <head> แล้ว —
@@ -257,6 +257,131 @@ body{margin:0}
   /* ข้อมูลเชิงเทคนิค (debug log / token) — ซ่อนจากผู้ใช้ทั่วไป เปิดดูได้ด้วย ?debug ต่อท้าย URL */
   .dev-only{display:none !important;}
   body.debug .dev-only{display:block !important;}
+
+  /* =====================================================================================
+     DESIGN LAYER — ธีมเดียวทั้งสองแท็บ: พื้นน้ำเงินเข้มเกือบดำ · ตัวอักษรสีงาช้าง · เส้นและไฮไลต์สีทองแชมเปญ
+     ฟอนต์: Playfair Display + Noto Serif Thai (หัวข้อ/ตัวเลขใหญ่) · IBM Plex Sans Thai (เนื้อหา/ตัวเลขข้อมูล)
+     ===================================================================================== */
+  :root, #newsTab, #btcTab{
+    --bg:#06080e; --panel:#0c1019; --panel2:#090d15; --panel-2:#090d15;
+    --line:#1c2331; --line-soft:#151b27; --gold-line:rgba(212,178,106,.30);
+    --text:#ece6d8; --muted:#8d95a6; --sub:#8d95a6;
+    --accent:#d4b26a; --accent-hi:#f0dba4; --amber:#d4b26a;
+    --good:#5ac492; --green:#5ac492; --bad:#e46a72; --red:#e46a72; --warn:#e2b45a;
+    --serif:'Playfair Display','Noto Serif Thai',Georgia,serif;
+    --sans:'IBM Plex Sans Thai',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --disp:var(--serif); --mono:var(--sans);
+  }
+  html{background:#06080e}
+  body, body.theme-btc{
+    font-family:var(--sans); color:var(--text); -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(1100px 520px at 85% -10%, rgba(212,178,106,.10), transparent 60%),
+      radial-gradient(900px 600px at -10% 10%, rgba(64,92,160,.14), transparent 60%),
+      linear-gradient(180deg,#06080e 0%,#080b13 100%);
+    background-repeat:no-repeat;background-color:#06080e;min-height:100vh;
+    font-variant-numeric:lining-nums;
+  }
+  ::selection{background:rgba(212,178,106,.35);color:#fff}
+  .score,#btcTab .score-number,#btcTab .metric-display-value,#btcTab .sl-num,#btcTab .halving-days,#btcTab .ath-stat .num,#btcTab .price-block .px{font-feature-settings:'lnum' 1,'tnum' 1}
+  .num,.score,.metric .num,#btcTab .price-block .px,#btcTab input,.news-item .nm,.chg{font-variant-numeric:tabular-nums lining-nums}
+
+  /* ---------- tab bar ---------- */
+  .tabbar{background:rgba(6,8,14,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft);padding:12px 22px;gap:4px}
+  .tabbtn{background:transparent;border:1px solid transparent;color:var(--muted);font-family:var(--sans);font-weight:500;font-size:14px;letter-spacing:.01em;padding:9px 16px;border-radius:999px;transition:color .2s,border-color .2s,background .2s}
+  .tabbtn:hover{color:var(--text)}
+  .tabbtn.active{background:rgba(212,178,106,.10);border-color:var(--gold-line);color:var(--accent-hi)}
+
+  /* ---------- page header ---------- */
+  .wrap{padding-top:40px}
+  .eyebrow,#btcTab .brand .eyebrow{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.32em;color:var(--accent);text-transform:uppercase}
+  .title,#btcTab .brand h1{font-family:var(--serif);font-weight:600;font-size:42px;letter-spacing:-.005em;line-height:1.1;margin:10px 0 8px;color:#f6f1e6}
+  .sub{font-size:14px;color:var(--muted);font-weight:300;letter-spacing:.01em}
+  .top{padding-bottom:26px;margin-bottom:28px;border-bottom:1px solid var(--line-soft);position:relative}
+  .top::after,#btcTab header::after{content:"";position:absolute;left:0;bottom:-1px;width:120px;height:1px;background:linear-gradient(90deg,var(--accent),transparent)}
+  #btcTab header{position:relative;border-bottom:1px solid var(--line-soft);padding-bottom:26px;margin-bottom:28px}
+  .date{background:transparent;border:1px solid var(--line);border-radius:14px;color:var(--muted);font-size:12px}
+  .date b{color:var(--text);font-weight:500}
+
+  /* ---------- cards ---------- */
+  .grid{gap:18px}
+  .card,#btcTab .panel{
+    position:relative;border-radius:18px;padding:24px 26px;border:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(255,255,255,.028),rgba(255,255,255,.008) 40%,rgba(255,255,255,0)),var(--panel);
+    box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 24px 60px -28px rgba(0,0,0,.85);
+  }
+  .card::before,#btcTab .panel::before{content:"";position:absolute;left:24px;right:24px;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-line),transparent);pointer-events:none}
+  h2,#btcTab .panel h2{font-family:var(--serif);font-weight:600;font-size:21px;letter-spacing:0;text-transform:none;color:#f3eee3;margin:0 0 18px}
+  .h-en{font-family:var(--sans);font-size:10px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);opacity:.75;margin-left:10px;vertical-align:middle}
+  .muted{color:var(--muted)}
+
+  /* inner tiles */
+  .metric,.event,.watch div,#btcTab .metric-card,#btcTab .sl-tile{background:rgba(255,255,255,.018);border:1px solid var(--line-soft);border-radius:14px;transition:border-color .25s,background .25s}
+  .metric:hover,.event:hover,.watch div:hover,#btcTab .metric-card:hover,#btcTab .sl-tile:hover{border-color:var(--gold-line);background:rgba(212,178,106,.035)}
+  .metric .name,#btcTab .sl-name{font-size:11px;font-weight:500;letter-spacing:.06em;color:var(--muted);text-transform:none}
+  .metric .num{font-family:var(--sans);font-weight:600;font-size:26px;color:#f6f1e6}
+  .event .rank{color:var(--accent);font-weight:600;letter-spacing:.14em;font-size:10px;text-transform:uppercase}
+  .event h3{font-family:var(--sans);font-weight:600;font-size:15px;line-height:1.5;color:#f3eee3}
+  .impact{color:var(--accent-hi);font-weight:500;font-size:12px}
+  .brief{font-size:15px;line-height:1.9;color:#d8d2c4;font-weight:300}
+  .watch b{font-weight:600;color:#f3eee3}
+
+  /* hero numbers in serif */
+  .score{font-family:var(--serif);font-weight:600;font-size:76px;letter-spacing:-.02em;color:#f8f3e8}
+  .score small{font-family:var(--sans);font-size:16px;font-weight:400;color:var(--muted);letter-spacing:.05em}
+  .badge{background:rgba(212,178,106,.12);color:var(--accent-hi);border:1px solid var(--gold-line);font-weight:600;letter-spacing:.04em;padding:6px 12px}
+  .risk-scale .bar{height:6px}
+  .risk-scale .pin{width:14px;height:14px;background:var(--accent-hi);border:3px solid var(--bg);box-shadow:0 0 0 1px var(--accent),0 0 14px rgba(212,178,106,.6)}
+  .track{background:rgba(255,255,255,.06);height:7px}
+  .fill.blue{background:linear-gradient(90deg,#9a7d43,var(--accent))}
+  .fill.green{background:linear-gradient(90deg,#2f8a62,var(--good))}
+  .fill.yellow{background:linear-gradient(90deg,#9b7a35,var(--warn))}
+  .barrow{font-size:13px;color:#d8d2c4}
+  .barrow b{font-weight:600;color:#f3eee3}
+
+  /* links & controls */
+  a.metric-link,.metric-link{color:var(--accent)!important;border-bottom-color:var(--gold-line)!important;text-decoration:none}
+  .news-filters button{background:transparent;border-color:var(--line);font-family:var(--sans);font-weight:500;padding:6px 14px;transition:all .2s}
+  .news-filters button:hover{color:var(--text);border-color:var(--gold-line)}
+  .news-filters button.on{background:rgba(212,178,106,.12);border-color:var(--gold-line);color:var(--accent-hi)}
+  .news-item{padding:14px 2px;border-bottom:1px solid var(--line-soft)}
+  .news-item .nt{font-weight:500;font-size:15px;color:#efe9dc;transition:color .2s}
+  .news-item:hover .nt{color:var(--accent-hi)}
+  .news-item .tag{color:var(--accent);font-weight:600;letter-spacing:.04em}
+  .news-more,#newsRefreshBtn,.footer button,#btcTab button,#consensusEditBtn{background:transparent!important;border:1px solid var(--gold-line)!important;color:var(--accent-hi)!important;font-family:var(--sans)!important;font-weight:500;border-radius:999px!important;transition:background .2s}
+  .news-more:hover,#newsRefreshBtn:hover,#btcTab button:hover,#consensusEditBtn:hover{background:rgba(212,178,106,.10)!important}
+  .footer{color:var(--muted)}
+
+  /* ---------- BTC tab: same system ---------- */
+  #btcTab .wrap{max-width:1060px}
+  #btcTab .panel h2 > span{font-family:var(--sans)!important;font-size:13px!important;font-weight:400!important;color:var(--muted)!important;letter-spacing:0!important}
+  #btcTab .brand h1 .dot{background:var(--good);box-shadow:0 0 12px var(--good)}
+  #btcTab .price-block .px{font-family:var(--serif);font-weight:600;font-size:34px;color:#f8f3e8}
+  #btcTab .price-block .meta{font-family:var(--sans)}
+  #btcTab .score-number{font-family:var(--serif);font-weight:600;font-size:80px;letter-spacing:-.02em}
+  #btcTab .score-label,#btcTab .halving-label,#btcTab .ath-stat .lbl{font-family:var(--sans);letter-spacing:.18em;font-size:10px;color:var(--muted)}
+  #btcTab .verdict{font-family:var(--sans);font-weight:600;border-radius:12px}
+  #btcTab .metric-name{font-family:var(--sans);font-weight:600;font-size:15px;color:#f3eee3}
+  #btcTab .metric-display-value,#btcTab .sl-num,#btcTab .ath-stat .num{font-family:var(--serif);font-weight:600;color:#f6f1e6}
+  #btcTab .halving-days{font-family:var(--serif);font-weight:600;font-size:64px;color:var(--accent-hi)}
+  #btcTab .metric-score-pill{font-family:var(--sans)}
+  #btcTab .metric-row input[type=range]{accent-color:var(--accent)}
+  #btcTab input[type=number],#btcTab .ath-inputs input{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:10px;font-family:var(--sans)}
+  #btcTab input:focus{outline:none;border-color:var(--gold-line);box-shadow:0 0 0 3px rgba(212,178,106,.12)}
+  #btcTab .ath-bar{background:rgba(255,255,255,.05);border:0;height:6px}
+  #btcTab .ath-bar-fill{background:linear-gradient(90deg,#9a7d43,var(--accent-hi))}
+  #btcTab .breakdown div{border-bottom:1px solid var(--line-soft)}
+  #tv_chart_container{border-color:var(--line-soft);border-radius:12px}
+  #btcTab .manual-toggle-btn{border-style:solid!important;font-size:11px!important}
+
+  @media(max-width:800px){
+    .title,#btcTab .brand h1{font-size:32px}
+    .score{font-size:64px}
+    .card,#btcTab .panel{padding:20px}
+    .card::before,#btcTab .panel::before{left:16px;right:16px}
+    .h-en{display:block;margin:6px 0 0;font-size:9px}
+    #btcTab .price-block{text-align:left;width:100%}
+  }
 
 </style>
 </head>
@@ -1683,7 +1808,7 @@ window.setHeaderStamp();
       }
     }
 
-    const link = (href, text) => '<a class="metric-link" style="color:#7c9cff; border-bottom:1px dotted #7c9cff;" target="_blank" rel="noopener" href="' + esc(href) + '">' + text + '</a>';
+    const link = (href, text) => '<a class="metric-link" style="color:var(--accent); border-bottom:1px dotted var(--accent);" target="_blank" rel="noopener" href="' + esc(href) + '">' + text + '</a>';
     const autoLine = C.live
       ? esc(C.source) + ' (ดึงสด · ' + esc(thDay(C.asOf)) + ')'
       : esc(C.source) + ' (ค่าที่ฝังไว้ ณ ' + esc(thDay(C.asOf)) + ')';
@@ -1696,7 +1821,7 @@ window.setHeaderStamp();
     const srcLine = ovParts.length
       ? 'ที่คาด: ' + ovParts.join(' · ')
         + ' — อัตโนมัติ: ' + autoLine
-        + ' · <a href="#" id="consensusResetInline" style="color:#7c9cff; border-bottom:1px dotted #7c9cff; text-decoration:none;">↺ คืนค่าเริ่มต้น</a>'
+        + ' · <a href="#" id="consensusResetInline" style="color:var(--accent); border-bottom:1px dotted var(--accent); text-decoration:none;">↺ คืนค่าเริ่มต้น</a>'
       : 'ที่คาด: ' + autoLine;
     const linkLine = 'ดูต้นทาง: ' + [
       link(CONSENSUS.links.cpi, 'CPI'), link(CONSENSUS.links.coreCpi, 'Core CPI'),
@@ -2974,7 +3099,9 @@ window.setHeaderStamp();
           theme: 'dark',
           style: '1', // candles
           locale: 'th',
-          toolbar_bg: '#0f151b',
+          toolbar_bg: '#0c1019',
+          backgroundColor: '#0a0d15',   // ให้กลืนกับธีมการ์ด
+          gridColor: 'rgba(255,255,255,0.04)',
           enable_publishing: false,
           hide_top_toolbar: false,
           hide_side_toolbar: false,
@@ -3050,19 +3177,19 @@ window.setHeaderStamp();
     text-align: center;
   }
   .site-footer .disclaimer{
-    color: #7c8b98; font-size: 12px; line-height: 1.6; margin-bottom: 18px;
+    color: var(--muted); font-size: 12px; line-height: 1.6; margin-bottom: 18px; letter-spacing:.02em;
   }
   .site-footer .footer-buttons{
     display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
   }
   .footer-btn{
     display: inline-flex; align-items: center; gap: 8px;
-    background: #121a2d; border: 1px solid #24304a; color: #eef3ff;
-    padding: 10px 20px; border-radius: 999px; font-size: 14px; font-weight: 600;
+    background: transparent; border: 1px solid var(--gold-line); color: var(--accent-hi);
+    padding: 10px 22px; border-radius: 999px; font-size: 14px; font-weight: 500;
     text-decoration: none; cursor: pointer; font-family: inherit;
     transition: border-color 0.15s, background 0.15s;
   }
-  .footer-btn:hover{ border-color: #7c9cff; background: #16203a; }
+  .footer-btn:hover{ border-color: var(--accent); background: rgba(212,178,106,.10); }
   .footer-btn svg{ width: 16px; height: 16px; flex-shrink: 0; }
 </style>
 <div class="site-footer">
