@@ -11,7 +11,13 @@
 <meta property="og:title" content="Global Intelligence — World Risk, Macro &amp; BTC Dashboard">
 <meta property="og:description" content="ความเสี่ยงโลกจากข่าวสด · Fed / CPI / การจ้างงานสหรัฐฯ · ราคาทอง–น้ำมัน–ค่าเงิน · BTC Buy Score">
 <meta property="og:locale" content="th_TH">
+<meta property="og:url" content="https://global-intelligence-dashboard.netlify.app/">
+<meta property="og:image" content="https://global-intelligence-dashboard.netlify.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Daily World Dashboard — สรุปความเสี่ยงโลก ตลาด และเศรษฐกิจสหรัฐฯ ประจำวัน">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://global-intelligence-dashboard.netlify.app/og-image.png">
 <meta name="twitter:title" content="Global Intelligence — World Risk, Macro &amp; BTC Dashboard">
 <meta name="twitter:description" content="ความเสี่ยงโลกจากข่าวสด · Fed / CPI / การจ้างงานสหรัฐฯ · ราคาทอง–น้ำมัน–ค่าเงิน · BTC Buy Score">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23F7931A'/%3E%3Ctext x='50' y='69' font-size='58' font-family='Arial, sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3E%E2%82%BF%3C/text%3E%3C/svg%3E">
@@ -28,6 +34,12 @@
 .wrap{max-width:1180px;margin:auto;padding:28px 18px 50px}.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:24px}.eyebrow{font-size:12px;letter-spacing:.14em;color:var(--accent);font-weight:800}.title{font-size:32px;font-weight:850;margin:5px 0}.sub{color:var(--muted);font-size:14px}.date{background:var(--panel);border:1px solid var(--line);padding:12px 15px;border-radius:14px;text-align:right;color:var(--muted);font-size:12px}
 .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:16px}.card{background:rgba(18,26,45,.94);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 14px 40px #0004}.hero{display:flex;align-items:center;gap:24px}.score{font-size:68px;font-weight:900;line-height:1}.badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#ff657722;color:#ff8b98;font-size:12px;font-weight:800}.change{color:var(--bad);font-weight:750;margin-top:8px}.muted{color:var(--muted)}h2{font-size:17px;margin:0 0 15px}.bars{display:grid;gap:13px}.barrow{display:grid;grid-template-columns:125px 1fr 42px;gap:10px;align-items:center;font-size:13px}.track{height:9px;background:#202b42;border-radius:99px;overflow:hidden}.fill{height:100%;border-radius:99px}.green{background:var(--good)}.yellow{background:var(--warn)}.red{background:var(--bad)}.blue{background:var(--accent)}
 .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:16px}.metric{background:var(--panel2);border:1px solid var(--line);padding:14px;border-radius:14px}.metric .name{font-size:12px;color:var(--muted)}.metric .num{font-size:25px;font-weight:850;margin:4px 0}.up{color:var(--good)}.down{color:var(--bad)}.flat{color:var(--warn)}
+.h-en{font-size:11px;font-weight:500;color:var(--muted);margin-left:6px;letter-spacing:.02em}
+.score small{font-size:20px;font-weight:700;color:var(--muted);margin-left:2px}
+.risk-scale{margin-top:14px}.risk-scale .bar{position:relative;height:8px;border-radius:99px;background:linear-gradient(90deg,var(--good) 0 40%,var(--warn) 40% 60%,#ff9b5c 60% 75%,var(--bad) 75% 100%)}
+.risk-scale .pin{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #0b1020;transform:translate(-50%,-50%);box-shadow:0 0 0 1px #fff6;transition:left .4s}
+.risk-scale .ticks{position:relative;height:14px;font-size:10px;color:var(--muted);margin-top:6px}.risk-scale .ticks span{position:absolute;transform:translateX(-50%)}.risk-scale .ticks span:first-child{transform:none}.risk-scale .ticks span:last-child{transform:translateX(-100%)}
+.chg{display:inline-block;font-size:11px;font-weight:700;margin-left:8px;min-width:58px;text-align:right}
 .full{grid-column:1/-1}.events{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.event{border:1px solid var(--line);background:var(--panel2);border-radius:14px;padding:15px}.event .rank{font-size:11px;color:var(--accent);font-weight:800}.event h3{font-size:15px;margin:7px 0}.event p{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 10px}.impact{font-size:12px;font-weight:800}.brief{font-size:15px;line-height:1.75;color:#d9e0ef}.watch{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.watch div{padding:14px;background:var(--panel2);border:1px solid var(--line);border-radius:13px}.watch b{display:block;font-size:14px;margin-bottom:4px}.footer{margin-top:18px;color:#68758e;font-size:12px;line-height:1.6}
 @media(max-width:800px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.events,.watch{grid-template-columns:1fr}.top{flex-direction:column}.date{text-align:left}.barrow{grid-template-columns:100px 1fr 36px}.full{grid-column:auto}}
 
@@ -252,40 +264,41 @@ body{margin:0}
 
 <main class="grid">
 <section class="card full">
-<h2>🌍 World Risk Score</h2>
+<h2>🌍 ดัชนีความเสี่ยงโลก <span class="h-en">World Risk Score</span></h2>
 <div class="hero"><div class="score" id="riskScore">–</div><div><span class="badge" id="riskBadge">–</span><div class="change" id="riskChange"></div><div class="muted" id="riskConfidence"></div></div></div>
+<div class="risk-scale" aria-hidden="true"><div class="bar"><div class="pin" id="riskPin" style="left:0%; display:none;"></div></div><div class="ticks"><span style="left:0">0</span><span style="left:40%">40</span><span style="left:60%">60</span><span style="left:75%">75</span><span style="left:100%">100</span></div></div>
 <div id="riskTrend" style="margin-top:10px;"></div>
 <div class="metrics" id="categoryMetrics">
-<div class="metric"><div class="name">Geopolitical</div><div class="num">–</div></div>
-<div class="metric"><div class="name">Economic</div><div class="num">–</div></div>
-<div class="metric"><div class="name">Energy</div><div class="num">–</div></div>
-<div class="metric"><div class="name">Financial</div><div class="num">–</div></div>
-<div class="metric"><div class="name">Tech / AI</div><div class="num">–</div></div>
+<div class="metric"><div class="name">ภูมิรัฐศาสตร์</div><div class="num">–</div></div>
+<div class="metric"><div class="name">เศรษฐกิจ</div><div class="num">–</div></div>
+<div class="metric"><div class="name">พลังงาน</div><div class="num">–</div></div>
+<div class="metric"><div class="name">การเงิน</div><div class="num">–</div></div>
+<div class="metric"><div class="name">เทคโนโลยี / AI</div><div class="num">–</div></div>
 </div>
 </section>
 
 <section class="card">
-<h2>💰 Asset Outlook <span class="muted" style="font-weight:400; font-size:11px;">(แบบจำลองจากข่าว)</span></h2>
+<h2>📰 ทิศทางสินทรัพย์จากข่าว <span class="h-en">News Outlook</span></h2>
 <div class="bars" id="assetBars">
-<div class="barrow"><span>🥇 Gold</span><div class="track"><div class="fill green" style="width:0%"></div></div><b>–</b></div>
-<div class="barrow"><span>🛢 Oil</span><div class="track"><div class="fill green" style="width:0%"></div></div><b>–</b></div>
-<div class="barrow"><span>💵 USD</span><div class="track"><div class="fill blue" style="width:0%"></div></div><b>–</b></div>
+<div class="barrow"><span>🥇 ทองคำ</span><div class="track"><div class="fill green" style="width:0%"></div></div><b>–</b></div>
+<div class="barrow"><span>🛢 น้ำมัน</span><div class="track"><div class="fill green" style="width:0%"></div></div><b>–</b></div>
+<div class="barrow"><span>💵 ดอลลาร์</span><div class="track"><div class="fill blue" style="width:0%"></div></div><b>–</b></div>
 <div class="barrow"><span>₿ Bitcoin</span><div class="track"><div class="fill blue" style="width:0%"></div></div><b>–</b></div>
-<div class="barrow"><span>📈 Stocks</span><div class="track"><div class="fill yellow" style="width:0%"></div></div><b>–</b></div>
+<div class="barrow"><span>📈 หุ้น</span><div class="track"><div class="fill yellow" style="width:0%"></div></div><b>–</b></div>
 </div>
-<div class="muted" style="font-size:10px; margin-top:10px;">ประเมินจากทิศทางข่าว ไม่ใช่ราคาจริง</div>
+<div class="muted" style="font-size:10px; margin-top:10px;">คะแนน 0–100 ประเมินจากโทนข่าว (สูง = ข่าวหนุนให้ราคาขึ้น) ไม่ใช่ราคาจริง</div>
 </section>
 
 <section class="card">
-<h2>📡 ราคาสินทรัพย์จริง <span class="muted" style="font-weight:400; font-size:11px;">(Live)</span></h2>
+<h2>📡 ราคาตลาด <span class="h-en">Live · เทียบ 24 ชม.</span></h2>
 
 <div id="livePrices" style="display:flex; flex-direction:column; gap:12px;">
   <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed var(--line);">
-    <span>🥇 Gold <span class="muted" style="font-size:10px;">(ต่อออนซ์)</span></span><b id="lpGold" style="font-size:16px;">กำลังโหลด…</b>
+    <span>🥇 ทองคำ <span class="muted" style="font-size:10px;">(ต่อออนซ์)</span></span><b id="lpGold" style="font-size:16px;">กำลังโหลด…</b>
   </div>
   <div style="padding:10px 0; border-bottom:1px dashed var(--line);">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <span>🛢 Oil WTI <span class="muted" style="font-size:10px;">(ต่อบาร์เรล)</span></span><b id="lpOil" style="font-size:16px;">กำลังโหลด…</b>
+      <span>🛢 น้ำมัน WTI <span class="muted" style="font-size:10px;">(ต่อบาร์เรล)</span></span><b id="lpOil" style="font-size:16px;">กำลังโหลด…</b>
     </div>
     <div id="avFetchStatusVisible" class="muted" style="font-size:10px; margin-top:4px; text-align:right;"></div>
   </div>
@@ -303,7 +316,7 @@ body{margin:0}
 </section>
 
 <section class="card full">
-<h2>🔥 Top Events</h2>
+<h2>🔥 ข่าวสำคัญ <span class="h-en">Top Events</span></h2>
 <div class="events" id="topEvents">
 <div class="event"><div class="rank">กำลังโหลด…</div></div>
 </div>
@@ -311,7 +324,7 @@ body{margin:0}
 
 <section class="card full">
 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
-  <h2 style="margin-bottom:0;">🏦 Fed Funds Rate & การจ้างงานสหรัฐฯ</h2>
+  <h2 style="margin-bottom:0;">🏦 ดอกเบี้ย Fed & เศรษฐกิจสหรัฐฯ <span class="h-en">US Macro</span></h2>
   <div style="display:flex; align-items:center; gap:10px; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:8px 14px;">
     <span style="font-size:11px; color:var(--muted);">📅 FOMC ครั้งถัดไปอีก</span>
     <b id="fomcDays" style="font-size:20px; color:var(--accent);">–</b>
@@ -346,12 +359,12 @@ body{margin:0}
 </section>
 
 <section class="card full">
-<h2>📋 Morning Brief</h2>
+<h2>📋 สรุปเช้านี้ <span class="h-en">Morning Brief</span></h2>
 <div class="brief" id="aiBrief">กำลังวิเคราะห์ข่าวล่าสุด…</div>
 </section>
 
 <section class="card full">
-<h2>👀 What to Watch Today</h2>
+<h2>👀 สิ่งที่ต้องจับตาวันนี้ <span class="h-en">Watch List</span></h2>
 <div class="watch" id="watchList"></div>
 </section>
 </main>
@@ -406,11 +419,11 @@ window.setHeaderStamp();
   }
 
   const RSS_FEEDS = [
-    { key:'geopolitical', label:'Geopolitical', q:'geopolitics OR conflict OR war' },
-    { key:'economic',     label:'Economic',     q:'federal reserve OR inflation OR interest rates' },
-    { key:'energy',       label:'Energy',       q:'oil price OR energy crisis OR OPEC' },
-    { key:'financial',    label:'Financial',    q:'stock market OR wall street OR bonds' },
-    { key:'techAi',       label:'Tech / AI',    q:'artificial intelligence OR tech industry' }
+    { key:'geopolitical', label:'ภูมิรัฐศาสตร์', q:'geopolitics OR conflict OR war' },
+    { key:'economic',     label:'เศรษฐกิจ',     q:'federal reserve OR inflation OR interest rates' },
+    { key:'energy',       label:'พลังงาน',       q:'oil price OR energy crisis OR OPEC' },
+    { key:'financial',    label:'การเงิน',    q:'stock market OR wall street OR bonds' },
+    { key:'techAi',       label:'เทคโนโลยี / AI',    q:'artificial intelligence OR tech industry' }
   ];
 
   async function fetchFeed(feed){
@@ -586,20 +599,20 @@ window.setHeaderStamp();
     const rankedAssets = Object.entries(assets).sort((a,b)=>b[1]-a[1]);
     const topAsset = rankedAssets[0], bottomAsset = rankedAssets[rankedAssets.length-1];
 
-    const brief = `วันนี้คะแนนความเสี่ยงโลกโดยรวมอยู่ที่ ${worldRiskScore}/100 (โซน ${badge}) `
-      + `ความมั่นใจในการประเมิน ${confidence}% (อิงจากปริมาณพาดหัวข่าวที่ดึงมาได้ ${totalHeadlines} ชิ้น — ยิ่งมีข่าวเยอะยิ่งมั่นใจสูง)\n\n`
+    const brief = `วันนี้คะแนนความเสี่ยงโลกโดยรวมอยู่ที่ ${worldRiskScore}/100 (${BADGE_TH[badge] || badge}) `
+      + `ประเมินจากข่าวล่าสุด ${totalHeadlines} ข่าว\n\n`
       + `คะแนนแยกตามหมวด เรียงจากเสี่ยงมากไปน้อย: ${catLines}\n\n`
       + `หมวดที่มีคะแนนความเสี่ยงสูงสุดคือ${labelMap[rankedCats[0][0]]||rankedCats[0][0]} (${rankedCats[0][1]}/100) ควรจับตาเป็นพิเศษ `
       + `ขณะที่หมวด${labelMap[rankedCats[rankedCats.length-1][0]]||rankedCats[rankedCats.length-1][0]} (${rankedCats[rankedCats.length-1][1]}/100) ค่อนข้างสงบกว่าหมวดอื่นในตอนนี้\n\n`
-      + `มุมมอง Asset Outlook (เป็นแบบจำลองความสัมพันธ์กับความเสี่ยงข่าว ไม่ใช่ราคาตลาดจริง): สินทรัพย์ที่แบบจำลองมองว่าได้ประโยชน์สุดคือ${assetLabelMap[topAsset[0]]} (${topAsset[1]}/100) `
-      + `ส่วน${assetLabelMap[bottomAsset[0]]} (${bottomAsset[1]}/100) มีแนวโน้มถูกกดดันมากสุดตามแบบจำลองนี้\n\n`
-      + `คำนวณทั้งหมดจากพาดหัวข่าวสดด้วยระบบให้คะแนนคำสำคัญอัตโนมัติในเบราว์เซอร์ล้วนๆ (ไม่ใช่ AI วิเคราะห์เชิงลึก และไม่ใช่คำแนะนำการลงทุน)`;
+      + `ทิศทางจากข่าว: สินทรัพย์ที่ได้แรงหนุนมากที่สุดคือ${assetLabelMap[topAsset[0]]} (${topAsset[1]}/100) `
+      + `ส่วน${assetLabelMap[bottomAsset[0]]} (${bottomAsset[1]}/100) ถูกกดดันมากที่สุด`;
 
     const watch = sorted.slice(0,4).map(f => ({ title: f.label, subtitle: categories[f.key]+'/100' }));
 
     return { worldRiskScore, badge, confidence, categories, assets, topEvents, aiBrief: brief, watch };
   }
 
+  const BADGE_TH = { 'CRISIS':'วิกฤต · Crisis', 'DEFENSIVE':'ระวัง · Defensive', 'NEUTRAL':'ปานกลาง · Neutral', 'RISK-ON':'ความเสี่ยงต่ำ · Risk-on' };
   function badgeColor(badge){
     if(badge === 'CRISIS') return { bg:'#ff657722', fg:'#ff8b98' };
     if(badge === 'DEFENSIVE') return { bg:'#ff657722', fg:'#ff8b98' };
@@ -614,20 +627,22 @@ window.setHeaderStamp();
   }
 
   function renderData(d){
-    el('riskScore').textContent = d.worldRiskScore;
-    el('riskBadge').textContent = d.badge;
+    el('riskScore').innerHTML = esc(d.worldRiskScore) + '<small>/100</small>';
+    const pin = el('riskPin');
+    if(pin && isFinite(d.worldRiskScore)){ pin.style.left = Math.max(0, Math.min(100, d.worldRiskScore)) + '%'; pin.style.display = 'block'; }
+    el('riskBadge').textContent = (BADGE_TH[d.badge] || d.badge);
     const bc = badgeColor(d.badge);
     el('riskBadge').style.background = bc.bg;
     el('riskBadge').style.color = bc.fg;
-    el('riskConfidence').textContent = 'Confidence ' + d.confidence + '%';
+    el('riskConfidence').textContent = 'ความครอบคลุมของข่าว ' + d.confidence + '%';
 
     const cats = d.categories;
     const catBox = el('categoryMetrics');
-    const labels = [['geopolitical','Geopolitical'],['economic','Economic'],['energy','Energy'],['financial','Financial'],['techAi','Tech / AI']];
+    const labels = [['geopolitical','ภูมิรัฐศาสตร์'],['economic','เศรษฐกิจ'],['energy','พลังงาน'],['financial','การเงิน'],['techAi','เทคโนโลยี / AI']];
     catBox.innerHTML = labels.map(([k,l]) => `<div class="metric"><div class="name">${l}</div><div class="num">${cats[k] ?? '–'}</div></div>`).join('');
 
     const assets = d.assets;
-    const assetDefs = [['gold','🥇 Gold'],['oil','🛢 Oil'],['usd','💵 USD'],['bitcoin','₿ Bitcoin'],['stocks','📈 Stocks']];
+    const assetDefs = [['gold','🥇 ทองคำ'],['oil','🛢 น้ำมัน'],['usd','💵 ดอลลาร์'],['bitcoin','₿ Bitcoin'],['stocks','📈 หุ้น']];
     el('assetBars').innerHTML = assetDefs.map(([k,l]) => {
       const v = assets[k] ?? 0;
       return `<div class="barrow"><span>${l}</span><div class="track"><div class="fill ${assetBarClass(v)}" style="width:${v}%"></div></div><b>${v}</b></div>`;
@@ -646,12 +661,12 @@ window.setHeaderStamp();
         <h3>${esc(safeTitleTh)}</h3>
         <div class="muted" style="font-size:11px; margin-top:-6px; margin-bottom:8px;">${esc(ev.title)}</div>
         <p>${esc(safeDescTh)}</p>
-        <div class="impact">Market impact · ${esc(ev.marketImpact)}/100</div>
+        <div class="impact">ผลกระทบต่อตลาด · ${esc(ev.marketImpact)}/100</div>
       </div>`;
     }).join('');
 
     el('aiBrief').innerHTML = d.aiBrief.split('\n\n').map(p => `<p style="margin-bottom:10px;">${p}</p>`).join('')
-      + '<span class="muted">— คำนวณอัตโนมัติ ฟรี 100% ไม่ใช่คำแนะนำการลงทุน</span>';
+      + '<span class="muted">— สรุปอัตโนมัติจากพาดหัวข่าว ไม่ใช่คำแนะนำการลงทุน</span>';
 
     el('watchList').innerHTML = (d.watch || []).map(w =>
       `<div><b>${w.title}</b><span class="muted">${w.subtitle}</span></div>`
@@ -763,7 +778,8 @@ window.setHeaderStamp();
       const d = computeAnalysis(feedResults);
 
       const diff = await computeChangeLabel(d.worldRiskScore);
-      el('riskChange').textContent = (diff >= 0 ? '▲ +' : '▼ ') + diff + ' จากฐานวันนี้';
+      el('riskChange').textContent = diff > 0 ? '▲ +' + diff + ' จากเมื่อวาน' : diff < 0 ? '▼ ' + diff + ' จากเมื่อวาน' : 'เท่ากับเมื่อวาน';
+      el('riskChange').style.color = diff > 0 ? 'var(--bad)' : diff < 0 ? 'var(--good)' : 'var(--muted)';
 
       renderData(d); // render English-first immediately so the page isn't blank while translating
 
@@ -1660,13 +1676,27 @@ window.setHeaderStamp();
   // API is already confirmed CORS-friendly elsewhere in this app.
   // USD/THB & JPY/THB: both from one frankfurter.app call (free ECB rates, no key), with one
   // retry since a single transient failure shouldn't leave the numbers blank.
+  // ราคา + % เปลี่ยนแปลง (▲ เขียว / ▼ แดง) — pct เป็น null ได้ถ้าแหล่งนั้นไม่มีค่าอ้างอิงเทียบ
+  function chgHtml(pct){
+    if(pct == null || !isFinite(pct)) return '';
+    const cls = pct > 0.005 ? 'up' : pct < -0.005 ? 'down' : 'flat';
+    const arrow = cls === 'up' ? '▲' : cls === 'down' ? '▼' : '•';
+    return '<span class="chg ' + cls + '">' + arrow + ' ' + Math.abs(pct).toFixed(2) + '%</span>';
+  }
+  function setPrice(id, text, pct){
+    const node = el(id); if(!node) return;
+    node.innerHTML = esc(text) + chgHtml(pct);
+  }
+  const pctChange = (now, ref) => (isFinite(now) && isFinite(ref) && ref) ? (now - ref) / ref * 100 : null;
+
   async function fetchLivePrices(){
     try{
-      const r = await fetchWithTimeout('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT', 6000);
+      const r = await fetchWithTimeout('https://api.binance.com/api/v3/ticker/24hr?symbol=PAXGUSDT', 6000);
       const j = await r.json();
-      const price = parseFloat(j.price);
-      el('lpGold').textContent = isNaN(price) ? 'ดึงไม่สำเร็จ' : '$' + price.toLocaleString(undefined,{maximumFractionDigits:2}) + ' / oz';
-    }catch(e){ el('lpGold').textContent = 'ดึงไม่สำเร็จ'; }
+      const price = parseFloat(j.lastPrice);
+      if(isNaN(price)) throw new Error('no PAXG price');
+      setPrice('lpGold', '$' + price.toLocaleString('en-US',{maximumFractionDigits:2}), parseFloat(j.priceChangePercent));
+    }catch(e){ el('lpGold').textContent = 'ดึงไม่สำเร็จ'; console.warn('[gold]', e); }
 
     // frankfurter.app moved to frankfurter.dev as its official domain — the old .app host
     // still resolves but seems to have gotten flaky. Try the new domain first, old one as
@@ -1689,13 +1719,26 @@ window.setHeaderStamp();
       }
       throw new Error(lastErr);
     }
+    // อัตราของวันทำการก่อนหน้า (ไว้คิด % เปลี่ยนแปลง) — ดึงช่วง 10 วันล่าสุดแล้วเอาวันรองสุดท้าย
+    // ไม่สำเร็จก็ไม่เป็นไร แค่ไม่โชว์ % (ราคายังขึ้นตามปกติ)
+    async function getPrevFxRates(){
+      try{
+        const start = new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10);
+        const r = await fetchWithTimeout('https://api.frankfurter.dev/v1/' + start + '..?base=USD&symbols=THB,JPY,CNY', 6000);
+        if(!r.ok) return null;
+        const j = await r.json();
+        const days = Object.keys((j && j.rates) || {}).sort();
+        return days.length >= 2 ? j.rates[days[days.length - 2]] : null;
+      }catch(e){ return null; }
+    }
     try{
-      const rates = await getFxRates();
-      el('lpUsdThb').textContent = rates.THB.toFixed(2) + ' บาท';
-      const thbPer100Jpy = (rates.THB / rates.JPY) * 100;
-      el('lpJpyThb').textContent = thbPer100Jpy.toFixed(3) + ' บาท';
-      const thbPerCny = rates.THB / rates.CNY;
-      el('lpCnyThb').textContent = thbPerCny.toFixed(3) + ' บาท';
+      const [rates, prev] = await Promise.all([getFxRates(), getPrevFxRates()]);
+      const fx = (x) => ({ usd: x.THB, jpy: (x.THB / x.JPY) * 100, cny: x.THB / x.CNY });
+      const now = fx(rates);
+      const ref = (prev && prev.THB && prev.JPY && prev.CNY) ? fx(prev) : {};
+      setPrice('lpUsdThb', now.usd.toFixed(2) + ' บาท', pctChange(now.usd, ref.usd));
+      setPrice('lpJpyThb', now.jpy.toFixed(3) + ' บาท', pctChange(now.jpy, ref.jpy));
+      setPrice('lpCnyThb', now.cny.toFixed(3) + ' บาท', pctChange(now.cny, ref.cny));
     }catch(e){
       el('lpUsdThb').textContent = 'ดึงไม่สำเร็จ';
       el('lpJpyThb').textContent = 'ดึงไม่สำเร็จ';
@@ -1719,12 +1762,12 @@ window.setHeaderStamp();
   // are already confirmed CORS-friendly elsewhere in this app, so try those first — no proxy
   // needed at all if either works.
   async function tryBinanceOil(){
-    const r = await fetchWithTimeout('https://api.binance.com/api/v3/ticker/price?symbol=CLUSDT', 6000);
+    const r = await fetchWithTimeout('https://api.binance.com/api/v3/ticker/24hr?symbol=CLUSDT', 6000);
     if(!r.ok) throw new Error('Binance HTTP ' + r.status);
     const j = await r.json();
-    const price = parseFloat(j.price);
+    const price = parseFloat(j.lastPrice);
     if(isNaN(price)) throw new Error('Binance: no CLUSDT price in response');
-    return { price, source: 'Binance (CLUSDT)' };
+    return { price, pct: parseFloat(j.priceChangePercent), source: 'Binance (CLUSDT)' };
   }
 
   async function tryOkxOil(){
@@ -1733,7 +1776,7 @@ window.setHeaderStamp();
     const j = await r.json();
     const last = j.data && j.data[0] && parseFloat(j.data[0].last);
     if(!last || isNaN(last)) throw new Error('OKX: no CL-USDT-SWAP price in response');
-    return { price: last, source: 'OKX (CL-USDT-SWAP)' };
+    return { price: last, pct: pctChange(last, parseFloat(j.data[0].open24h)), source: 'OKX (CL-USDT-SWAP)' };
   }
 
   async function tryHyperliquidOil(){
@@ -1771,7 +1814,7 @@ window.setHeaderStamp();
       if(raw){
         const c = JSON.parse(raw);
         if(c.date === today){
-          el('lpOil').textContent = '$' + c.price.toFixed(2) + ' / bbl';
+          setPrice('lpOil', '$' + c.price.toFixed(2), c.pct);
           setOilStatus('');
           return;
         }
@@ -1789,9 +1832,9 @@ window.setHeaderStamp();
     for(const [name, fn] of freeAttempts){
             try{
         const res = await fn();
-        el('lpOil').textContent = '$' + res.price.toFixed(2) + ' / bbl';
+        setPrice('lpOil', '$' + res.price.toFixed(2), res.pct);
         setOilStatus('');
-        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, price: res.price, source: res.source })); }catch(e){}
+        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, price: res.price, pct: res.pct, source: res.source })); }catch(e){}
         return;
       }catch(e){ trail.push(name + ': ' + e.message); }
     }
@@ -1802,7 +1845,7 @@ window.setHeaderStamp();
       const r = await fetchWithTimeout('/.netlify/functions/oil-price', 10000);
       const j = await r.json();
       if(j.price){
-        el('lpOil').textContent = '$' + j.price.toFixed(2) + ' / bbl';
+        setPrice('lpOil', '$' + j.price.toFixed(2), null);
         setOilStatus('');
         try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, price: j.price, source: 'Alpha Vantage (server)' })); }catch(e){}
         return;
@@ -2834,7 +2877,7 @@ window.setHeaderStamp();
       <span>ลิงก์ทั้งหมด</span>
     </a>
   </div>
-  <div class="disclaimer" style="margin-top:18px;">Viewer discretion is advised. This is not financial advice.</div>
+  <div class="disclaimer" style="margin-top:18px;">ข้อมูลเพื่อประกอบการตัดสินใจเท่านั้น ไม่ใช่คำแนะนำการลงทุน</div>
 </div>
 <script>
 (function(){
