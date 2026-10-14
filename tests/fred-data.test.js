@@ -10,13 +10,13 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { __test } = require('../netlify/functions/fred-data.js');
+const { __test, handler } = require('../netlify/functions/fred-data.js');
 
 const {
   parseFredCsv, parseFredApiJson, parseBlsJson, splitCsvLine,
-  yearAgoIso, monthBeforeIso, isReleaseDay, inRange,
+  yearAgoIso, monthBeforeIso, isReleaseDay, inRange, awaitingFields, cacheControl,
   yoyFromLevels, payrollsFromLevels,
-  TARGETS, FOMC_STATEMENT_DATES
+  TARGETS, FOMC_STATEMENT_DATES, _expireCache
 } = __test;
 
 // ── CSV / JSON parsing ────────────────────────────────────────────────────────────────────────
@@ -147,8 +147,8 @@ test('the BLS fallback series ids are the ones that actually exist upstream', ()
   assert.equal(TARGETS.payrolls.bls, 'CES0000000001');
   assert.equal(TARGETS.payrolls.fred, 'PAYEMS');
   assert.equal(TARGETS.unrate.bls, 'LNS14000000');
-  assert.equal(TARGETS.cpi.bls, 'CUUR0000SA0');
-  assert.equal(TARGETS.coreCpi.bls, 'CUUR0000SA0L1E');
+  assert.equal(TARGETS.cpi.bls, 'CUSR0000SA0');       // seasonally adjusted = FRED CPIAUCSL
+  assert.equal(TARGETS.coreCpi.bls, 'CUSR0000SA0L1E'); // seasonally adjusted = FRED CPILFESL
   // Daily series have no BLS equivalent — asking BLS for them would just waste the 25/day quota.
   assert.equal(TARGETS.effr.bls, undefined);
 });
@@ -178,4 +178,59 @@ test('inRange is inclusive and rejects non-numbers', () => {
   assert.equal(inRange(4.5, [3, 4]), false);
   assert.equal(inRange(NaN, [3, 4]), false);
   assert.equal(inRange('3.5', [3, 4]), false);
+});
+
+// ── release morning: fields still on last month's print ───────────────────────────────────────
+test('awaitingFields flags CPI still on the old month after 8:30 ET on a CPI-window day', () => {
+  const data = { cpi: { date: '2026-08-01' }, coreCpi: { date: '2026-09-01' }, nfp: { date: '2026-08-01' } };
+  // 14 Oct 2026, 13:00 UTC: September CPI is due — cpi still says August, coreCpi already updated
+  assert.deepEqual(awaitingFields(data, new Date('2026-10-14T13:00:00Z')), ['cpi']);
+  // before the release time, and after the window closes, nothing is pending
+  assert.deepEqual(awaitingFields(data, new Date('2026-10-14T11:00:00Z')), []);
+  assert.deepEqual(awaitingFields(data, new Date('2026-10-14T17:00:00Z')), []);
+  // quiet day outside the CPI window
+  assert.deepEqual(awaitingFields(data, new Date('2026-10-21T13:00:00Z')), []);
+  // jobs Friday (2 Oct 2026): nfp on August is pending, CPI isn't checked
+  assert.deepEqual(awaitingFields(data, new Date('2026-10-02T13:00:00Z')), ['nfp']);
+});
+
+test('cacheControl never stacks a long stale window on release days', () => {
+  assert.equal(cacheControl(600, true), 'public, max-age=600, s-maxage=600, stale-while-revalidate=60');
+  assert.match(cacheControl(10800, false), /stale-while-revalidate=21600$/);
+  assert.match(cacheControl(3, true), /max-age=30,/); // floor so the CDN still absorbs bursts
+});
+
+test('release morning: FRED still on August, BLS already has September → page gets September', async (t) => {
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-10-14T12:45:00Z') });
+  const months = [];
+  for (let d = new Date(Date.UTC(2024, 6, 1)); d <= new Date(Date.UTC(2026, 8, 1)); d.setUTCMonth(d.getUTCMonth() + 1)) {
+    months.push(d.toISOString().slice(0, 10));
+  }
+  const level = (i) => 315 + i * 0.8; // ~3% a year
+  const fredMonths = months.slice(0, -1); // FRED hasn't posted 2026-09 yet
+  const realFetch = global.fetch;
+  const calls = [];
+  global.fetch = async (url) => {
+    calls.push(url);
+    const ok = (text) => ({ ok: true, status: 200, text: async () => text });
+    if (url.includes('fredgraph.csv?id=CPIAUCSL')) {
+      const pc1 = url.includes('transformation=pc1');
+      return ok('observation_date,CPIAUCSL\n' + fredMonths.map((m, i) => `${m},${pc1 ? '3.0' : level(i)}`).join('\n'));
+    }
+    if (url.includes('CUSR0000SA0') && !url.includes('L1E')) {
+      const data = months.map((m, i) => ({ year: m.slice(0, 4), period: 'M' + m.slice(5, 7), value: String(level(i)) }));
+      return ok(JSON.stringify({ status: 'REQUEST_SUCCEEDED', Results: { series: [{ seriesID: 'CUSR0000SA0', data }] } }));
+    }
+    return { ok: false, status: 503, text: async () => '' };
+  };
+  t.after(() => { global.fetch = realFetch; });
+
+  _expireCache();
+  const res = await handler();
+  const body = JSON.parse(res.body);
+  assert.equal(body.cpi.date, '2026-09-01');
+  assert.equal(body.cpi.source, 'bls');
+  assert.deepEqual(body.updatedFromBls, ['cpi']);
+  assert.equal(body.awaiting, undefined);
+  assert.ok(calls.some((u) => u.includes('CUSR0000SA0')));
 });
