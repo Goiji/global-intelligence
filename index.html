@@ -1108,22 +1108,18 @@ window.setHeaderStamp();
     el('fomcDateLabel').textContent = next.toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
   }
 
+  // "จากเมื่อวาน" = เทียบกับคะแนน *สุดท้าย* ของวันก่อนหน้าใน news-score-history (บันทึกวันละ 1 จุด
+  // โดย recordScoreHistory) — เดิมเทียบกับคะแนนแรกของวันก่อน (และวันแรกที่ไม่มีข้อมูลเลยก็ขึ้นว่า
+  // "เท่ากับเมื่อวาน") จึงบอกการเปลี่ยนแปลงผิด · คืน null ถ้ายังไม่มีข้อมูลของวันก่อน
   async function computeChangeLabel(newScore){
-    let baseline = null;
+    let hist = [];
     try{
-      const raw = await storageGet('news-yesterday-score');
-      if(raw) baseline = JSON.parse(raw);
-    }catch(e){ /* none yet */ }
-
-    const today = new Date().toISOString().slice(0,10);
-    if(!baseline || baseline.date !== today){
-      // roll baseline forward once per day
-      const prevScore = baseline ? baseline.score : newScore;
-      await storageSet('news-yesterday-score', JSON.stringify({ date: today, score: prevScore }));
-      const diff = newScore - prevScore;
-      return diff;
-    }
-    return newScore - baseline.score;
+      const raw = await storageGet('news-score-history');
+      if(raw) hist = JSON.parse(raw);
+    }catch(e){ hist = []; }
+    const today = new Date().toISOString().slice(0,10);   // same day key as recordScoreHistory
+    const prev = (Array.isArray(hist) ? hist : []).filter(h => h && h.date < today && isFinite(h.score)).pop();
+    return prev ? newScore - prev.score : null;
   }
 
   async function refreshNews(){
@@ -1140,8 +1136,9 @@ window.setHeaderStamp();
       const d = computeAnalysis(feedResults);
 
       const diff = await computeChangeLabel(d.worldRiskScore);
-      el('riskChange').textContent = diff > 0 ? '▲ +' + diff + ' จากเมื่อวาน' : diff < 0 ? '▼ ' + diff + ' จากเมื่อวาน' : 'เท่ากับเมื่อวาน';
-      el('riskChange').style.color = diff > 0 ? 'var(--bad)' : diff < 0 ? 'var(--good)' : 'var(--muted)';
+      el('riskChange').textContent = diff == null ? 'ยังไม่มีคะแนนของเมื่อวานให้เทียบ'
+        : diff > 0 ? '▲ +' + diff + ' จากเมื่อวาน' : diff < 0 ? '▼ ' + diff + ' จากเมื่อวาน' : 'เท่ากับเมื่อวาน';
+      el('riskChange').style.color = diff == null ? 'var(--muted)' : diff > 0 ? 'var(--bad)' : diff < 0 ? 'var(--good)' : 'var(--muted)';
 
       renderData(d); // render English-first immediately so the page isn't blank while translating
 
