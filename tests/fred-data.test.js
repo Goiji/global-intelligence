@@ -240,3 +240,17 @@ test('secondsUntilWatch stops a pre-release cache from outliving 12:25 UTC', () 
   assert.equal(secondsUntilWatch(new Date('2026-10-14T12:30:00Z')), null); // already watching
   assert.equal(secondsUntilWatch(new Date('2026-10-21T12:20:00Z')), null); // quiet day
 });
+
+test('jobs day covers the reports BLS moves off the first Friday', () => {
+  assert.equal(isReleaseDay(new Date('2026-01-09T13:00:00Z')).jobsDay, true);  // 2nd Friday (Jan 9, 2026)
+  assert.equal(isReleaseDay(new Date('2026-05-08T13:00:00Z')).jobsDay, true);  // 2nd Friday (May 8, 2026)
+  assert.equal(isReleaseDay(new Date('2026-07-02T13:00:00Z')).jobsDay, true);  // Thursday before Jul 3 holiday
+  assert.equal(isReleaseDay(new Date('2026-10-23T13:00:00Z')).jobsDay, false); // late-month Friday
+  assert.deepEqual(awaitingFields({ nfp: { date: '2026-03-01' }, unrate: { date: '2026-04-01' } },
+    new Date('2026-05-08T13:00:00Z')), ['nfp']);
+});
+
+test('the day after an FOMC statement still counts as a release day', () => {
+  assert.equal(isReleaseDay(new Date('2026-10-29T12:00:00Z')).fomc, true);  // statement Oct 28
+  assert.equal(isReleaseDay(new Date('2026-10-30T12:00:00Z')).fomc, false);
+});

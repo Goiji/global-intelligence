@@ -112,3 +112,12 @@ test('the event table points at the five pages the dashboard needs', () => {
   assert.equal(EVENTS.coreCpi.slug.endsWith('-736'), true);
   assert.equal(EVENTS.nfp.slug, 'nonfarm-payrolls-227');
 });
+
+test('consensus cache is short around a release and never outlives the 12:25 UTC window', () => {
+  const { consensusTtlMs } = __test;
+  const H = 60 * 60 * 1000;
+  assert.equal(consensusTtlMs(new Date('2026-10-21T13:00:00Z')), 3 * H);         // quiet day
+  assert.equal(consensusTtlMs(new Date('2026-10-14T13:00:00Z')), 10 * 60 * 1000); // CPI day, after release
+  assert.equal(consensusTtlMs(new Date('2026-10-14T12:00:00Z')), 25 * 60 * 1000); // CPI day, until 12:25
+  assert.equal(consensusTtlMs(new Date('2026-10-14T21:00:00Z')), 3 * H);         // evening
+});

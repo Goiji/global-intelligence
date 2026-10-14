@@ -131,23 +131,30 @@ function previousObservation(obs, date) {
 
 // ── caching policy ────────────────────────────────────────────────────────────────────────────
 // US macro releases cluster on predictable days: CPI between the 10th and 16th, the jobs report
-// on the first Friday, FOMC statements on the dates above (all ~8:30am / 2:00pm ET, i.e. UTC-4/-5).
-// On those days we shrink the TTL so a freshly published number reaches the page within minutes;
-// otherwise 3 hours is plenty for monthly/daily series. Heuristic on the UTC date, documented as
-// such — being off by a day at a month boundary only costs one extra fetch.
+// usually on the first Friday, FOMC statements on the dates above (all ~8:30am / 2:00pm ET, i.e.
+// UTC-4/-5). On those days we shrink the TTL so a freshly published number reaches the page within
+// minutes; otherwise 3 hours is plenty for monthly/daily series. Heuristic on the UTC date,
+// documented as such — being off by a day at a month boundary only costs one extra fetch.
+//
+// The jobs report is NOT always on the first Friday: BLS moves it to the second Friday when the
+// first one is too early in the month (2026: Jan 9, May 8) and to Thursday when Friday is a holiday
+// (2026: Thu Jul 2). So any Friday up to the 10th, or a Thursday up to the 7th, counts. The FRED
+// fed-funds target series can be posted the day after a statement, so that day counts too.
 function isReleaseDay(now = new Date()) {
   const day = now.getUTCDate();
   const dow = now.getUTCDay();
   const cpiWindow = day >= 10 && day <= 16;
-  const firstFriday = dow === 5 && day <= 7;
-  const fomc = FOMC_STATEMENT_DATES.includes(isoDay(now));
-  return { release: cpiWindow || firstFriday || fomc, cpiWindow, firstFriday, fomc };
+  const jobsDay = (dow === 5 && day <= 10) || (dow === 4 && day <= 7);
+  const today = isoDay(now);
+  const fomc = FOMC_STATEMENT_DATES.includes(today) || FOMC_STATEMENT_DATES.includes(daysAgoIso(1, now));
+  // `firstFriday` kept as an alias of jobsDay for older callers.
+  return { release: cpiWindow || jobsDay || fomc, cpiWindow, jobsDay, firstFriday: jobsDay, fomc };
 }
 
 // Monthly fields that should already show last month's print but don't yet.
 // BLS publishes at 8:30 ET (12:30 UTC in summer, 13:30 in winter) and FRED mirrors it anywhere from
-// minutes to a couple of hours later. Between 12:25 and 16:00 UTC on a CPI-window day (or the first
-// Friday for jobs) a field whose latest month is older than last month is "awaiting" its new print:
+// minutes to a couple of hours later. Between 12:25 and 16:00 UTC on a CPI-window day (or a jobs
+// day) a field whose latest month is older than last month is "awaiting" its new print:
 // the handler then re-checks every few minutes and asks BLS directly instead of sitting on the old
 // number for the normal 15-minute TTL. On window days before the actual release this just means a
 // few extra cheap fetches during those hours.
@@ -155,8 +162,8 @@ const PENDING_TTL_S = 3 * 60;
 function awaitingFields(data, now = new Date()) {
   const mins = now.getUTCHours() * 60 + now.getUTCMinutes();
   if (mins < 12 * 60 + 25 || mins >= 16 * 60) return [];
-  const { cpiWindow, firstFriday } = isReleaseDay(now);
-  const keys = [...(cpiWindow ? ['cpi', 'coreCpi'] : []), ...(firstFriday ? ['unrate', 'nfp'] : [])];
+  const { cpiWindow, jobsDay } = isReleaseDay(now);
+  const keys = [...(cpiWindow ? ['cpi', 'coreCpi'] : []), ...(jobsDay ? ['unrate', 'nfp'] : [])];
   const expected = monthsAgoIso(1, now);
   return keys.filter((k) => data && data[k] && data[k].date && data[k].date < expected);
 }
@@ -164,8 +171,8 @@ function awaitingFields(data, now = new Date()) {
 // Seconds until the 12:25 UTC watch window opens on a CPI / jobs day (null if not applicable), so
 // a payload built just before the release can't be cached past the moment the new print lands.
 function secondsUntilWatch(now = new Date()) {
-  const { cpiWindow, firstFriday } = isReleaseDay(now);
-  if (!cpiWindow && !firstFriday) return null;
+  const { cpiWindow, jobsDay } = isReleaseDay(now);
+  if (!cpiWindow && !jobsDay) return null;
   const open = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12, 25);
   return now.getTime() < open ? Math.ceil((open - now.getTime()) / 1000) : null;
 }

@@ -107,3 +107,18 @@ test('risk scoring matches whole words only and separates calm from tense news',
   const calm = api.scoreCategoryDetail(['Stocks hit record high', 'Peace deal reached', 'Economy shows recovery']).score;
   assert.ok(tense >= 75 && calm <= 25, `expected a clear spread, got tense=${tense} calm=${calm}`);
 });
+
+test('markets: cache is 15 min on release days and only the remaining time is advertised', async (t) => {
+  const { handler } = require('../netlify/functions/markets.js');
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-10-14T13:00:00Z') });
+  const realFetch = global.fetch;
+  global.fetch = async () => ({ ok: true, status: 200, text: async () => 'observation_date,X\n2026-09-01,3.0\n2026-10-01,3.1\n' });
+  t.after(() => { global.fetch = realFetch; });
+  const first = await handler();
+  assert.equal(JSON.parse(first.body).ttl, 15 * 60);
+  assert.match(first.headers['Cache-Control'], /max-age=900,/);
+  t.mock.timers.tick(10 * 60 * 1000);
+  const second = await handler();
+  assert.equal(JSON.parse(second.body).ttl, 5 * 60);
+  assert.match(second.headers['Cache-Control'], /max-age=300,/);
+});
