@@ -1224,7 +1224,10 @@ window.setHeaderStamp();
   }
 
   function fedStatusText(data){
-    return (data && data.stale) ? '⚠️ แสดงตัวเลขล่าสุดที่มี — ระบบจะอัปเดตให้อัตโนมัติ' : '';
+    if(data && data.stale) return '⚠️ แสดงตัวเลขล่าสุดที่มี — ระบบจะอัปเดตให้อัตโนมัติ';
+    // วันประกาศตัวเลข: BLS ออกแล้วแต่แหล่งข้อมูลยังไม่อัปเดต — เซิร์ฟเวอร์จะเช็กใหม่ทุกไม่กี่นาที
+    if(data && Array.isArray(data.awaiting) && data.awaiting.length) return '⏳ รอตัวเลขใหม่ที่เพิ่งประกาศ — ระบบเช็กซ้ำทุก ~3 นาที';
+    return '';
   }
 
   function applyFedData(data){
@@ -1992,7 +1995,9 @@ window.setHeaderStamp();
 
         loadConsensus();   // ยิงขนานไปเลย ไม่ต้องรอกัน — ได้ค่าสดเมื่อไรบทวิเคราะห์จะถูกสร้างใหม่ทันที
     try{
-      const r = await fetchWithTimeout('/.netlify/functions/fred-data', 15000);
+      // no-cache: our own localStorage cache + `refreshAfter` already throttle this call, so the
+      // browser's HTTP cache would only add a second, longer delay on top after a release.
+      const r = await fetchWithTimeout('/.netlify/functions/fred-data', 15000, { cache: 'no-cache' });
       let data;
       try{
         data = await r.json();

@@ -61,8 +61,10 @@ const TARGETS = {
   lower: { fred: 'DFEDTARL', cadence: 'daily' },
   effr: { fred: 'EFFR', cadence: 'daily' },
   unrate: { fred: 'UNRATE', bls: 'LNS14000000', cadence: 'monthly' },
-  cpi: { fred: 'CPIAUCSL', bls: 'CUUR0000SA0', cadence: 'monthly' },
-  coreCpi: { fred: 'CPILFESL', bls: 'CUUR0000SA0L1E', cadence: 'monthly' },
+  // Seasonally adjusted (CUSR…), the exact BLS series FRED mirrors as CPIAUCSL / CPILFESL. The
+  // old ids were the NOT-adjusted CUUR… series, so a BLS-sourced YoY could differ from the FRED one.
+  cpi: { fred: 'CPIAUCSL', bls: 'CUSR0000SA0', cadence: 'monthly' },
+  coreCpi: { fred: 'CPILFESL', bls: 'CUSR0000SA0L1E', cadence: 'monthly' },
   // FIX (verified Sep 2026): this used to be CES0500000003, which is "Average HOURLY EARNINGS of
   // All Employees, Total Private" (~$37/hour) — not employment at all. payrollsMetric() filters
   // levels to 50,000–500,000 (thousands of jobs), so that series was always thrown away and the
@@ -83,6 +85,11 @@ const SANITY = {
 // caches below do the heavy lifting). `lastGood` survives TTL expiry so we can serve stale
 // rather than failing outright.
 let memCache = { expiresAt: 0, data: null, lastGood: null, lastGoodAt: 0 };
+
+// BLS v1 allows only 25 queries/day/IP, so the "is BLS already ahead of FRED?" check that runs
+// while a release is pending is throttled per instance.
+const BLS_RECHECK_MS = 10 * 60 * 1000;
+let lastBlsRecheckAt = 0;
 
 // ── small date helpers ────────────────────────────────────────────────────────────────────────
 function isoDay(d) {
@@ -135,6 +142,30 @@ function isReleaseDay(now = new Date()) {
   const firstFriday = dow === 5 && day <= 7;
   const fomc = FOMC_STATEMENT_DATES.includes(isoDay(now));
   return { release: cpiWindow || firstFriday || fomc, cpiWindow, firstFriday, fomc };
+}
+
+// Monthly fields that should already show last month's print but don't yet.
+// BLS publishes at 8:30 ET (12:30 UTC in summer, 13:30 in winter) and FRED mirrors it anywhere from
+// minutes to a couple of hours later. Between 12:25 and 16:00 UTC on a CPI-window day (or the first
+// Friday for jobs) a field whose latest month is older than last month is "awaiting" its new print:
+// the handler then re-checks every few minutes and asks BLS directly instead of sitting on the old
+// number for the normal 15-minute TTL. On window days before the actual release this just means a
+// few extra cheap fetches during those hours.
+const PENDING_TTL_S = 3 * 60;
+function awaitingFields(data, now = new Date()) {
+  const mins = now.getUTCHours() * 60 + now.getUTCMinutes();
+  if (mins < 12 * 60 + 25 || mins >= 16 * 60) return [];
+  const { cpiWindow, firstFriday } = isReleaseDay(now);
+  const keys = [...(cpiWindow ? ['cpi', 'coreCpi'] : []), ...(firstFriday ? ['unrate', 'nfp'] : [])];
+  const expected = monthsAgoIso(1, now);
+  return keys.filter((k) => data && data[k] && data[k].date && data[k].date < expected);
+}
+
+function cacheControl(seconds, release) {
+  const s = Math.max(30, Math.round(seconds));
+  // On release days a long stale-while-revalidate window would let the CDN keep handing out the
+  // pre-release number after the TTL ran out, so keep it to a minute there.
+  return `public, max-age=${s}, s-maxage=${s}, stale-while-revalidate=${release ? 60 : 6 * 60 * 60}`;
 }
 
 // ── fetching ──────────────────────────────────────────────────────────────────────────────────
@@ -229,9 +260,18 @@ function parseBlsJson(text, seriesId) {
 
 // Try every source for one series, first success wins. Never throws for a missing API key —
 // the keyless sources cover it.
-async function getObservations(key, { apiKey, deadline, transformation = null, limit = 400 } = {}) {
+async function getObservations(key, { apiKey, deadline, transformation = null, limit = 400, preferBls = false } = {}) {
   const spec = TARGETS[key];
   const trail = [];
+
+  // While a release is pending, BLS (the origin) is asked first: FRED can lag it by a while.
+  if (preferBls && spec.bls && !transformation && Date.now() < deadline) {
+    try {
+      return { obs: parseBlsJson(await fetchText(`${BLS_API}${spec.bls}`, deadline), spec.bls), source: 'bls' };
+    } catch (e) {
+      trail.push(`bls: ${e.message}`);
+    }
+  }
 
   if (apiKey && Date.now() < deadline) {
     try {
@@ -287,8 +327,8 @@ function latestOf(obs, range) {
 // Besides the latest value we attach the context the page needs for its automatic
 // "ดี/แย่แค่ไหน" analysis: when the rate last moved (and how many meetings it has been unchanged),
 // or how unemployment moved versus the previous month and three months ago.
-async function levelMetric(key, apiKey, deadline) {
-  const { obs, source } = await getObservations(key, { apiKey, deadline });
+async function levelMetric(key, apiKey, deadline, opts = {}) {
+  const { obs, source } = await getObservations(key, { apiKey, deadline, ...opts });
   const hit = latestOf(obs, SANITY.pctLevel);
   const out = { value: hit.value, date: hit.date, source };
 
@@ -356,10 +396,10 @@ function yoyFromLevels(obs, source) {
 
 // Inflation YoY: prefer the official pc1 transform, then verify it against a by-date computation
 // from raw levels. If the two disagree materially we trust the by-date math and flag it.
-async function yoyMetric(key, apiKey, deadline) {
+async function yoyMetric(key, apiKey, deadline, opts = {}) {
   const attempts = await Promise.allSettled([
     getObservations(key, { apiKey, deadline, transformation: 'pc1' }),
-    getObservations(key, { apiKey, deadline })
+    getObservations(key, { apiKey, deadline, ...opts })
   ]);
 
   const pc1 = attempts[0].status === 'fulfilled' ? attempts[0].value : null;
@@ -390,7 +430,11 @@ async function yoyMetric(key, apiKey, deadline) {
   }
 
   let final = null;
-  if (official && computed) {
+  if (official && computed && computed.date > official.date) {
+    // The levels already carry a newer month than the pc1 series (e.g. BLS has the fresh print and
+    // FRED doesn't yet) — the newer month wins; comparing two different months would be meaningless.
+    final = computed;
+  } else if (official && computed) {
     const drift = Math.abs(official.value - computed.value);
     const base = { ...official, level: computed.level, yearAgoDate: computed.yearAgoDate, yearAgoLevel: computed.yearAgoLevel };
     if (drift > 0.15) {
@@ -471,9 +515,34 @@ function payrollsFromLevels(obs, source) {
   };
 }
 
-async function payrollsMetric(apiKey, deadline) {
-  const { obs, source } = await getObservations('payrolls', { apiKey, deadline });
+async function payrollsMetric(apiKey, deadline, opts = {}) {
+  const { obs, source } = await getObservations('payrolls', { apiKey, deadline, ...opts });
   return payrollsFromLevels(obs, source);
+}
+
+const METRICS = {
+  upper: (apiKey, deadline) => levelMetric('upper', apiKey, deadline),
+  lower: (apiKey, deadline) => levelMetric('lower', apiKey, deadline),
+  effr: (apiKey, deadline) => levelMetric('effr', apiKey, deadline),
+  unrate: (apiKey, deadline, opts) => levelMetric('unrate', apiKey, deadline, opts),
+  cpi: (apiKey, deadline, opts) => yoyMetric('cpi', apiKey, deadline, opts),
+  coreCpi: (apiKey, deadline, opts) => yoyMetric('coreCpi', apiKey, deadline, opts),
+  nfp: (apiKey, deadline, opts) => payrollsMetric(apiKey, deadline, opts)
+};
+
+// For fields still showing the previous month on a release morning, ask BLS directly and take its
+// number when it is for a newer month. Best-effort: any failure keeps the FRED value.
+async function refreshFromBls(data, keys, apiKey, deadline) {
+  const results = await Promise.allSettled(keys.map((k) => METRICS[k](apiKey, deadline, { preferBls: true })));
+  const updated = [];
+  results.forEach((res, i) => {
+    const k = keys[i];
+    if (res.status === 'fulfilled' && res.value && res.value.date > data[k].date) {
+      data[k] = res.value;
+      updated.push(k);
+    }
+  });
+  return updated;
 }
 
 async function buildPayload(apiKey) {
@@ -481,15 +550,7 @@ async function buildPayload(apiKey) {
   const errors = {};
   const data = { fetchedAt: new Date().toISOString(), keyConfigured: !!apiKey };
 
-  const jobs = [
-    ['upper', () => levelMetric('upper', apiKey, deadline)],
-    ['lower', () => levelMetric('lower', apiKey, deadline)],
-    ['effr', () => levelMetric('effr', apiKey, deadline)],
-    ['unrate', () => levelMetric('unrate', apiKey, deadline)],
-    ['cpi', () => yoyMetric('cpi', apiKey, deadline)],
-    ['coreCpi', () => yoyMetric('coreCpi', apiKey, deadline)],
-    ['nfp', () => payrollsMetric(apiKey, deadline)]
-  ];
+  const jobs = Object.keys(METRICS).map((k) => [k, () => METRICS[k](apiKey, deadline)]);
 
   const results = await Promise.allSettled(jobs.map(([, fn]) => fn()));
   results.forEach((res, i) => {
@@ -508,20 +569,23 @@ async function buildPayload(apiKey) {
 exports.handler = async function () {
   const now = new Date();
   const { release } = isReleaseDay(now);
-  const ttl = release ? 15 * 60 : 3 * 60 * 60; // seconds
+  let ttl = release ? 15 * 60 : 3 * 60 * 60; // seconds
 
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     // Lets Netlify's CDN cache the response, so a burst of visitors costs ~1 upstream fetch.
-    'Cache-Control': `public, max-age=${ttl}, s-maxage=${ttl}, stale-while-revalidate=${6 * 60 * 60}`
+    'Cache-Control': cacheControl(ttl, release)
   };
 
   if (memCache.data && now.getTime() < memCache.expiresAt) {
+    // Only the time this copy has LEFT — re-sending the full TTL let the CDN and the browser each
+    // stack another full TTL on top of this one, so a fresh print could take 2-3x the TTL to show.
+    const remaining = (memCache.expiresAt - now.getTime()) / 1000;
     return {
       statusCode: 200,
-      headers,
-      body: JSON.stringify({ ...memCache.data, cached: true, refreshAfter: memCache.expiresAt, ttl })
+      headers: { ...headers, 'Cache-Control': cacheControl(remaining, release) },
+      body: JSON.stringify({ ...memCache.data, cached: true, refreshAfter: memCache.expiresAt, ttl: Math.round(remaining) })
     };
   }
 
@@ -531,6 +595,23 @@ exports.handler = async function () {
     const { data, okCount } = await buildPayload(apiKey);
 
     if (okCount === 0) throw new Error(`every source failed for all ${data.fieldsTotal} fields: ${JSON.stringify(data.errors || {})}`);
+
+    let pending = awaitingFields(data, now);
+    // Stay inside Netlify's 10s function limit: only re-check BLS if there is time left.
+    const blsDeadline = Math.min(Date.now() + 4000, now.getTime() + 9500);
+    if (pending.length && blsDeadline - Date.now() > 1500 && Date.now() - lastBlsRecheckAt > BLS_RECHECK_MS) {
+      lastBlsRecheckAt = Date.now();
+      try {
+        const updated = await refreshFromBls(data, pending, apiKey, blsDeadline);
+        if (updated.length) data.updatedFromBls = updated;
+      } catch (e) { /* best-effort */ }
+      pending = awaitingFields(data, now);
+    }
+    if (pending.length) {
+      data.awaiting = pending;
+      ttl = PENDING_TTL_S;
+      headers['Cache-Control'] = cacheControl(ttl, release);
+    }
 
     data.ttl = ttl;
     data.releaseDay = release;
@@ -579,6 +660,8 @@ module.exports.__test = {
   monthsBeforeIso,
   previousObservation,
   isReleaseDay,
+  awaitingFields,
+  cacheControl,
   inRange,
   yoyFromLevels,
   payrollsFromLevels,
