@@ -14,7 +14,7 @@ const { __test, handler } = require('../netlify/functions/fred-data.js');
 
 const {
   parseFredCsv, parseFredApiJson, parseBlsJson, splitCsvLine,
-  yearAgoIso, monthBeforeIso, isReleaseDay, inRange, awaitingFields, cacheControl,
+  yearAgoIso, monthBeforeIso, isReleaseDay, inRange, awaitingFields, cacheControl, secondsUntilWatch,
   yoyFromLevels, payrollsFromLevels,
   TARGETS, FOMC_STATEMENT_DATES, _expireCache
 } = __test;
@@ -233,4 +233,10 @@ test('release morning: FRED still on August, BLS already has September → page 
   assert.deepEqual(body.updatedFromBls, ['cpi']);
   assert.equal(body.awaiting, undefined);
   assert.ok(calls.some((u) => u.includes('CUSR0000SA0')));
+});
+
+test('secondsUntilWatch stops a pre-release cache from outliving 12:25 UTC', () => {
+  assert.equal(secondsUntilWatch(new Date('2026-10-14T12:20:00Z')), 300);  // CPI day, 5 min before
+  assert.equal(secondsUntilWatch(new Date('2026-10-14T12:30:00Z')), null); // already watching
+  assert.equal(secondsUntilWatch(new Date('2026-10-21T12:20:00Z')), null); // quiet day
 });

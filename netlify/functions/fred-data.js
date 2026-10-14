@@ -161,6 +161,15 @@ function awaitingFields(data, now = new Date()) {
   return keys.filter((k) => data && data[k] && data[k].date && data[k].date < expected);
 }
 
+// Seconds until the 12:25 UTC watch window opens on a CPI / jobs day (null if not applicable), so
+// a payload built just before the release can't be cached past the moment the new print lands.
+function secondsUntilWatch(now = new Date()) {
+  const { cpiWindow, firstFriday } = isReleaseDay(now);
+  if (!cpiWindow && !firstFriday) return null;
+  const open = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12, 25);
+  return now.getTime() < open ? Math.ceil((open - now.getTime()) / 1000) : null;
+}
+
 function cacheControl(seconds, release) {
   const s = Math.max(30, Math.round(seconds));
   // On release days a long stale-while-revalidate window would let the CDN keep handing out the
@@ -570,6 +579,8 @@ exports.handler = async function () {
   const now = new Date();
   const { release } = isReleaseDay(now);
   let ttl = release ? 15 * 60 : 3 * 60 * 60; // seconds
+  const untilWatch = secondsUntilWatch(now);
+  if (untilWatch !== null) ttl = Math.max(30, Math.min(ttl, untilWatch));
 
   const headers = {
     'Content-Type': 'application/json',
@@ -661,6 +672,7 @@ module.exports.__test = {
   previousObservation,
   isReleaseDay,
   awaitingFields,
+  secondsUntilWatch,
   cacheControl,
   inRange,
   yoyFromLevels,
