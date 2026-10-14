@@ -9,13 +9,16 @@
 // per week so a year of history stays ~52 points. Market series (10y/2y/VIX/dollar) are daily
 // closes, so they lag the live market by about a day — the page labels them that way.
 //
-// Caching: memory + CDN for 3 h. If every source fails we serve the last good payload marked
-// stale instead of an error, same as fred-data.js.
+// Caching: memory + CDN for 3 h, but only 15 min on CPI / jobs / FOMC days (same calendar as
+// fred-data.js) so the CPI / unemployment / Fed sparklines don't trail the cards for hours after a
+// release. If every source fails we serve the last good payload marked stale instead of an error.
 
 const FRED_API = 'https://api.stlouisfed.org/fred/series/observations';
 const FRED_CSV = 'https://fred.stlouisfed.org/graph/fredgraph.csv';
 const ATTEMPT_TIMEOUT_MS = 5000;
 const TTL_S = 3 * 60 * 60;
+const RELEASE_TTL_S = 15 * 60;
+const { isReleaseDay, cacheControl } = require('./fred-data.js').__test;
 
 const SERIES = {
   us10y:    { id: 'DGS10',    label: 'US 10Y', unit: '%', cadence: 'daily' },
@@ -135,20 +138,28 @@ async function buildPayload(apiKey) {
 }
 
 exports.handler = async function () {
+  const now = Date.now();
+  const { release } = isReleaseDay(new Date(now));
+  const ttl = release ? RELEASE_TTL_S : TTL_S;
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Cache-Control': `public, max-age=${TTL_S}, s-maxage=${TTL_S}, stale-while-revalidate=${12 * 60 * 60}`
+    'Cache-Control': cacheControl(ttl, release)
   };
-  const now = Date.now();
   if (memCache.data && now < memCache.expiresAt) {
-    return { statusCode: 200, headers, body: JSON.stringify({ ...memCache.data, cached: true, ttl: TTL_S }) };
+    // advertise only the time this copy has left, so the CDN/browser don't stack another full TTL
+    const remaining = Math.round((memCache.expiresAt - now) / 1000);
+    return {
+      statusCode: 200,
+      headers: { ...headers, 'Cache-Control': cacheControl(remaining, release) },
+      body: JSON.stringify({ ...memCache.data, cached: true, ttl: remaining })
+    };
   }
   try {
     const { data, okCount } = await buildPayload((process.env.FRED_API_KEY || '').trim());
     if (!okCount) throw new Error('every series failed: ' + JSON.stringify(data.errors || {}));
-    data.ttl = TTL_S;
-    memCache = { data, expiresAt: now + TTL_S * 1000, lastGood: data };
+    data.ttl = ttl;
+    memCache = { data, expiresAt: now + ttl * 1000, lastGood: data };
     return { statusCode: 200, headers, body: JSON.stringify(data) };
   } catch (e) {
     if (memCache.lastGood) {

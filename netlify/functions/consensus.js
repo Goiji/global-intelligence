@@ -22,6 +22,7 @@
 
 const TIMEOUT_MS = 8000;
 const TTL_MS = 3 * 60 * 60 * 1000;
+const { isReleaseDay } = require('./fred-data.js').__test;
 
 const BASE = 'https://www.investing.com/economic-calendar/';
 const EVENTS = {
@@ -132,17 +133,52 @@ async function fetchWithTimeout(url, ms) {
   }
 }
 
-let memCache = { at: 0, payload: null };
+let memCache = { at: 0, payload: null, ttlMs: TTL_MS };
+
+// Right after a CPI / jobs / FOMC release Investing.com's "latest release" block switches to the new
+// print. With a flat 3 h cache the page kept comparing the NEW number against the PREVIOUS print's
+// forecast for hours (and flagged a round mismatch), exactly when the comparison matters most. So on
+// release days the cache is 10 min between 12:25 and 20:00 UTC, and before 12:25 it never outlives
+// 12:25. Same calendar heuristic as fred-data.js.
+const RELEASE_TTL_MS = 10 * 60 * 1000;
+function consensusTtlMs(now = new Date()) {
+  const { release } = isReleaseDay(now);
+  if (!release) return TTL_MS;
+  const mins = now.getUTCHours() * 60 + now.getUTCMinutes();
+  if (mins >= 12 * 60 + 25 && mins < 20 * 60) return RELEASE_TTL_MS;
+  if (mins < 12 * 60 + 25) {
+    const open = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12, 25);
+    return Math.max(60 * 1000, Math.min(TTL_MS, open - now.getTime()));
+  }
+  return TTL_MS;
+}
+
+function cacheHeader(ttlS, release) {
+  const s = Math.max(30, Math.round(ttlS));
+  return release
+    ? `public, max-age=${s}, s-maxage=${s}, stale-while-revalidate=60`
+    : `public, max-age=${Math.min(s, 1800)}, s-maxage=${s}, stale-while-revalidate=86400`;
+}
 
 exports.handler = async function () {
+  const now = new Date();
+  const { release } = isReleaseDay(now);
+  const ttlMs = consensusTtlMs(now);
   const headers = {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
-    'Cache-Control': 'public, max-age=1800, s-maxage=10800, stale-while-revalidate=86400'
+    'Cache-Control': cacheHeader(ttlMs / 1000, release)
   };
 
-  if (memCache.payload && (Date.now() - memCache.at) < TTL_MS) {
-    return { statusCode: 200, headers, body: JSON.stringify({ ...memCache.payload, cached: true }) };
+  // A copy cached on a quiet day (3 h) must not run past a release window that has since opened.
+  const age = now.getTime() - memCache.at;
+  if (memCache.payload && age < Math.min(memCache.ttlMs, ttlMs)) {
+    const remainingS = (Math.min(memCache.ttlMs, ttlMs) - age) / 1000;
+    return {
+      statusCode: 200,
+      headers: { ...headers, 'Cache-Control': cacheHeader(remainingS, release) },
+      body: JSON.stringify({ ...memCache.payload, cached: true, ttl: Math.round(remainingS) })
+    };
   }
 
   const entries = Object.entries(EVENTS);
@@ -183,13 +219,13 @@ exports.handler = async function () {
     sourceLabel: 'Investing.com',
     fetchedAt: new Date().toISOString(),
     events,
-    ttl: TTL_MS / 1000
+    ttl: Math.round(ttlMs / 1000)
   };
   if (Object.keys(errors).length) payload.errors = errors;
 
-  memCache = { at: Date.now(), payload };
+  memCache = { at: Date.now(), payload, ttlMs };
   return { statusCode: 200, headers, body: JSON.stringify(payload) };
 };
 
 // Exported for local unit testing (node --test / plain require). Netlify ignores extra exports.
-module.exports.__test = { parseEventPage, parseNumber, parseDate, toText, EVENTS, _clearCache: () => { memCache = { at: 0, payload: null }; } };
+module.exports.__test = { parseEventPage, parseNumber, parseDate, toText, EVENTS, consensusTtlMs, _clearCache: () => { memCache = { at: 0, payload: null, ttlMs: TTL_MS }; } };

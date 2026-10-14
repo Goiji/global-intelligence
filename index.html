@@ -1286,6 +1286,7 @@ window.setHeaderStamp();
 
     // สร้างบทวิเคราะห์ "ดี/แย่แค่ไหน" ใหม่จากค่าที่เพิ่งได้ (แยก try/catch ไม่ให้พังการ์ดหลัก)
     try{ renderFedAnalysis(data); }catch(e){ /* analysis is best-effort */ }
+    try{ lastLiveFed = data; patchSparksFromLive(); }catch(e){ /* sparklines are best-effort */ }
     return applied;
   }
 
@@ -1340,6 +1341,7 @@ window.setHeaderStamp();
   // ── consensus สดจากเซิร์ฟเวอร์ (อ่าน Investing.com, แคช 3 ชม.) ─────────────────────────────
   let LIVE_CONSENSUS = null;
   let consensusFetchedAt = 0;
+  let consensusTtlMs = 0;   // ตามที่เซิร์ฟเวอร์บอก (สั้นลงในวันประกาศ) — 0 = ใช้ CONSENSUS_TTL_MS
   let lastFedPayload = null;
   const CONSENSUS_TTL_MS = 3 * 60 * 60 * 1000;
 
@@ -1763,11 +1765,12 @@ window.setHeaderStamp();
   };
 
   async function loadConsensus(){
-    if(LIVE_CONSENSUS && (Date.now() - consensusFetchedAt) < CONSENSUS_TTL_MS) return;
+    if(LIVE_CONSENSUS && (Date.now() - consensusFetchedAt) < (consensusTtlMs || CONSENSUS_TTL_MS)) return;
     consensusFetchedAt = Date.now();
     try{
-      const r = await fetchWithTimeout('/.netlify/functions/consensus', 10000);
+      const r = await fetchWithTimeout('/.netlify/functions/consensus', 10000, { cache: 'no-cache' });
       const j = await r.json();
+      consensusTtlMs = (j && isValidNum(j.ttl) && j.ttl > 0) ? Math.min(j.ttl * 1000, CONSENSUS_TTL_MS) : 0;
       const ev = j && j.events;
       if(!ev) return;
       const numOf = (k, field) => (ev[k] && isValidNum(ev[k][field])) ? ev[k][field] : null;
@@ -2171,12 +2174,32 @@ window.setHeaderStamp();
   }
 
   // ---------- ตลาดสหรัฐฯ + กราฟย้อนหลังในการ์ด Fed ----------
+  // var (not let): applyFedData() runs before this point in the script and touches both.
+  var lastMarketSeries, lastLiveFed;
+
+  // หลังวันประกาศ ตัวเลขบนการ์ด (fred-data) อาจมาก่อนกราฟเล็ก (markets) — ต่อจุดล่าสุดให้กราฟเอง
+  // เพื่อไม่ให้กราฟกับการ์ดบอกคนละเดือน จนกว่า markets จะรีเฟรชรอบถัดไป
+  function patchSparksFromLive(){
+    const S = lastMarketSeries, d = lastLiveFed;
+    if(!S || !d) return;
+    [['cpi', d.cpi, 'spCpi', { upIsBad:true, dec:1 }], ['unrate', d.unrate, 'spUnrate', { upIsBad:true, dec:1 }],
+     ['fedUpper', d.upper, 'spFed', { color:'var(--accent)', dec:2 }]].forEach(function(row){
+      const s = S[row[0]], live = row[1];
+      if(!s || !s.hist || !live || !isValidNum(live.value) || !live.date || !(live.date > s.date)) return;
+      s.hist = s.hist.concat([[live.date, live.value]]);
+      s.latest = live.value; s.date = live.date;
+      setSpark(row[2], s, row[3]);
+    });
+  }
+
   async function fetchMarkets(){
     try{
-      const r = await fetchWithTimeout('/.netlify/functions/markets', 12000);
+      const r = await fetchWithTimeout('/.netlify/functions/markets', 12000, { cache: 'no-cache' });
       const j = await r.json();
       if(!j || !j.series) throw new Error(j && j.error || 'HTTP ' + r.status);
       const S = j.series;
+      lastMarketSeries = S;
+      const nextIn = (isValidNum(j.ttl) && j.ttl > 0) ? Math.min(j.ttl * 1000, MARKETS_POLL_MS) : MARKETS_POLL_MS;
       const bp = (c) => (c == null ? '' : '<span class="delta ' + (c > 0 ? 'up' : c < 0 ? 'down' : 'flat') + '">' + (c > 0 ? '+' : '') + Math.round(c * 100) + ' bp</span>');
       if(S.us10y){ el('mkUs10y').innerHTML = esc(S.us10y.latest.toFixed(2)) + '%' + bp(S.us10y.change); setSpark('spUs10y', S.us10y, { color:'var(--accent)' }); }
       if(S.us2y){ el('mkUs2y').innerHTML = esc(S.us2y.latest.toFixed(2)) + '%' + bp(S.us2y.change); setSpark('spUs2y', S.us2y, { color:'var(--accent)' }); }
@@ -2194,15 +2217,22 @@ window.setHeaderStamp();
       if(S.fedUpper) setSpark('spFed', S.fedUpper, { color:'var(--accent)', dec:2 });
       if(S.cpi) setSpark('spCpi', S.cpi, { upIsBad:true, dec:1 });
       if(S.unrate) setSpark('spUnrate', S.unrate, { upIsBad:true, dec:1 });
+      patchSparksFromLive();
+      marketsNextAt = Date.now() + Math.max(nextIn, 60 * 1000);
       const d = S.us10y && S.us10y.date;
       el('mktNote').textContent = 'ราคาปิด ณ ' + (d ? thDay(d) : '–') + ' (ช้ากว่าตลาดประมาณ 1 วันทำการ) · กราฟเล็ก = ย้อนหลัง 12 เดือน';
     }catch(e){
       console.warn('[markets]', e);
       el('mktNote').textContent = 'ดึงข้อมูลตลาดไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ';
+      marketsNextAt = Date.now() + 10 * 60 * 1000;
     }
   }
+  // Re-poll when the server says this copy expires (15 min on release days, 3 h otherwise):
+  // a cheap once-a-minute check instead of a fixed 3 h interval.
+  const MARKETS_POLL_MS = 3 * 60 * 60 * 1000;
+  var marketsNextAt = 0;
   fetchMarkets();
-  setInterval(fetchMarkets, 3 * 60 * 60 * 1000);
+  setInterval(function(){ if(Date.now() >= marketsNextAt) fetchMarkets(); }, 60 * 1000);
 
   // ---------- ปฏิทินเศรษฐกิจ ----------
   const CAL_LABELS = {
