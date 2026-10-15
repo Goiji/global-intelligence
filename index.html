@@ -383,6 +383,7 @@ body{margin:0}
   .why-head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
   .why-head span{color:var(--accent-hi);font-weight:600}
   .why-row{font-size:12.5px;line-height:1.5;padding:7px 0;border-top:1px solid var(--line-soft);color:#d8d2c4}
+  .why-en{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4}
   .why-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
   .chip{font-size:10.5px;padding:1px 8px;border-radius:999px;border:1px solid}
   .chip.risk{color:#f0a0a6;border-color:rgba(228,106,114,.45);background:rgba(228,106,114,.08)}
@@ -763,6 +764,18 @@ window.setHeaderStamp();
   const LOW_RISK_TERMS = { ceasefire:1.5, 'cease-fire':1.5, truce:1.5, peace:1, agreement:1, 'deal reached':1,
     growth:1, rally:1, recovery:1, rebound:1, stability:1, 'stabiliz*':1, ease:1, easing:1, 'rate cut':1,
     'cut rates':1, surplus:1, stimulus:1, breakthrough:1, cooperation:1, 'record high':1, 'optimis*':1, upgrade:1 };
+  // คำแปลไทยของคำบ่งชี้ — ใช้แสดงผลอย่างเดียว (ระบบยังจับคำจากพาดหัวภาษาอังกฤษตามเดิม)
+  const RISK_TERM_TH = { war:'สงคราม', invasion:'การรุกราน', missile:'ขีปนาวุธ', nuclear:'นิวเคลียร์', coup:'รัฐประหาร',
+    crash:'ร่วงหนัก', collapse:'ล่มสลาย', default:'ผิดนัดชำระหนี้', recession:'เศรษฐกิจถดถอย', conflict:'ความขัดแย้ง',
+    crisis:'วิกฤต', attack:'การโจมตี', strike:'โจมตี/นัดหยุดงาน', sanction:'คว่ำบาตร', tension:'ความตึงเครียด',
+    shutdown:'ปิดทำการ', emergency:'ภาวะฉุกเฉิน', threat:'ภัยคุกคาม', bankruptcy:'ล้มละลาย', layoff:'ปลดพนักงาน',
+    selloff:'เทขาย', 'sell-off':'เทขาย', plunge:'ดิ่งลง', tumble:'ร่วงลง', slump:'ทรุดตัว', 'rate hike':'ขึ้นดอกเบี้ย',
+    'hike rates':'ขึ้นดอกเบี้ย', escalat:'ยกระดับความรุนแรง', unrest:'ความไม่สงบ', protest:'การประท้วง', tariff:'ภาษีนำเข้า',
+    downgrade:'ลดอันดับ', 'inflation surge':'เงินเฟ้อพุ่ง', ceasefire:'หยุดยิง', 'cease-fire':'หยุดยิง', truce:'สงบศึก',
+    peace:'สันติภาพ', agreement:'ข้อตกลง', 'deal reached':'บรรลุข้อตกลง', growth:'การเติบโต', rally:'ปรับขึ้นแรง',
+    recovery:'ฟื้นตัว', rebound:'ดีดกลับ', stability:'เสถียรภาพ', stabiliz:'มีเสถียรภาพ', ease:'ผ่อนคลาย', easing:'ผ่อนคลาย',
+    'rate cut':'ลดดอกเบี้ย', 'cut rates':'ลดดอกเบี้ย', surplus:'เกินดุล', stimulus:'มาตรการกระตุ้น', breakthrough:'ความคืบหน้าสำคัญ',
+    cooperation:'ความร่วมมือ', 'record high':'สูงสุดเป็นประวัติการณ์', optimis:'มองบวก', upgrade:'เพิ่มอันดับ' };
   function termRegex(term){
     const stem = term.endsWith('*');
     const body = (stem ? term.slice(0, -1) : term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -897,15 +910,35 @@ window.setHeaderStamp();
     box.innerHTML = labels.map(([k, l]) => {
       const rows = d.drivers[k] || [];
       const list = rows.length ? rows.map(r => {
+        const en = cleanHeadline(r.title);
         const th = _translationCache.get(r.title);
-        const shown = (th && th !== r.title && !/MYMEMORY/i.test(th)) ? th : cleanHeadline(r.title);
-        return '<div class="why-row"><div>' + esc(shown) + '</div><div class="why-chips">'
-          + r.hits.map(h => '<span class="chip ' + (h.w > 0 ? 'risk' : 'calm') + '">' + esc(h.term) + (h.w > 0 ? ' +' : ' −') + Math.abs(h.w) + '</span>').join('')
+        const hasTh = th && th !== r.title && !/MYMEMORY/i.test(th);
+        return '<div class="why-row"><div>' + esc(hasTh ? th : en) + '</div>'
+          + (hasTh ? '<div class="why-en">' + esc(en) + '</div>' : '')
+          + '<div class="why-chips">'
+          + r.hits.map(h => '<span class="chip ' + (h.w > 0 ? 'risk' : 'calm') + '" title="' + esc(h.term) + '">'
+            + esc(RISK_TERM_TH[h.term] || h.term) + (h.w > 0 ? ' +' : ' −') + Math.abs(h.w) + '</span>').join('')
           + '</div></div>';
       }).join('') : '<div class="muted" style="font-size:12px;">ไม่มีคำบ่งชี้ความเสี่ยงในพาดหัวรอบนี้ (คะแนนกลาง ๆ)</div>';
       return '<div class="why-cat"><div class="why-head"><b>' + esc(l) + '</b><span>' + esc((d.categories || {})[k] ?? '–') + '/100</span></div>' + list + '</div>';
     }).join('')
       + '<div class="muted" style="font-size:11px; margin-top:8px;">คะแนนคิดจาก 5 พาดหัวล่าสุดของแต่ละหมวด: คำบ่งชี้ความเสี่ยงยิ่งมาก คะแนนยิ่งสูง · 50 = กลาง ๆ</div>';
+    translateRiskWhy(d, labels);
+  }
+  // แปลพาดหัวในกล่อง "คะแนนมาจากข่าวไหน" (ไม่เกิน 15 ข่าว) — ใช้แคชคำแปลเดียวกับรายการข่าว จึงแปลซ้ำแค่พาดหัวใหม่
+  let _riskWhyToken = 0;
+  async function translateRiskWhy(d, labels){
+    const titles = [];
+    labels.forEach(([k]) => (d.drivers[k] || []).forEach(r => {
+      if(!/[\u0E00-\u0E7F]/.test(r.title) && !_translationCache.has(r.title) && !titles.includes(r.title)) titles.push(r.title);
+    }));
+    if(!titles.length) return;
+    const token = ++_riskWhyToken;
+    for(const t of titles){
+      await translateToThai(t);
+      if(token !== _riskWhyToken) return;   // มีข้อมูลรอบใหม่มาแล้ว — ปล่อยให้รอบใหม่แปลต่อ
+    }
+    renderRiskWhy(d, labels);
   }
 
   const NEWS_PAGE = 8;
