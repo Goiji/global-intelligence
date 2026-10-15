@@ -155,3 +155,23 @@ test('markets: normal days cache for 1 h and a Cboe outage keeps the FRED VIX', 
   assert.equal(body.series.vix.latest, 15.5);
   assert.match(body.errors.vixLive, /503/);
 });
+
+test('markets: dollar is DXY from ECB rates, FRED broad index only as fallback', async (t) => {
+  const rates = { CAD: 1.4219, CHF: 0.83341, EUR: 0.89326, GBP: 0.75377, JPY: 158.45, SEK: 9.9669 };
+  assert.ok(Math.abs(markets.dxyFromRates(rates) - 102.22) < 0.01);
+  assert.ok(Number.isNaN(markets.dxyFromRates({ ...rates, SEK: undefined })));
+  const obs = markets.parseDxySeries(JSON.stringify({ rates: { '2026-10-14': rates, '2026-10-13': { ...rates, EUR: 0.9 } } }));
+  assert.deepEqual(obs.map((o) => o.date), ['2026-10-13', '2026-10-14']);
+
+  const { handler } = require('../netlify/functions/markets.js');
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-10-21T13:00:00Z') });
+  const realFetch = global.fetch;
+  global.fetch = async (url) => String(url).includes('frankfurter')
+    ? ({ ok: true, status: 200, text: async () => JSON.stringify({ rates: { '2026-10-20': rates } }) })
+    : ({ ok: true, status: 200, text: async () => 'observation_date,X\n2026-10-15,15.0\n2026-10-16,15.5\n' });
+  t.after(() => { global.fetch = realFetch; });
+  const body = JSON.parse((await handler()).body);
+  assert.equal(body.series.dollar.source, 'ecb-dxy');
+  assert.equal(body.series.dollar.date, '2026-10-20');
+  assert.equal(body.series.dollar.latest, 102.225);
+});

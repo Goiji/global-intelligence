@@ -10,6 +10,9 @@
 // closes, so they lag the live market by about a day — the page labels them that way. VIX is the
 // exception: Cboe's own delayed quote (~15 min behind) is laid over the FRED close, so the card shows
 // today's level while the market is open and yesterday's close by the next morning in Asia.
+// The dollar is the ICE DXY formula applied to the ECB's daily reference rates (via Frankfurter,
+// out the same afternoon in Europe) — FRED's broad index (DTWEXBGS) is published once a week and
+// ran up to a week behind. FRED's broad index is the fallback if Frankfurter fails.
 //
 // Caching: memory + CDN for 1 h, but only 15 min on CPI / jobs / FOMC days (same calendar as
 // fred-data.js) so the CPI / unemployment / Fed sparklines don't trail the cards for hours after a
@@ -18,6 +21,10 @@
 const FRED_API = 'https://api.stlouisfed.org/fred/series/observations';
 const FRED_CSV = 'https://fred.stlouisfed.org/graph/fredgraph.csv';
 const ATTEMPT_TIMEOUT_MS = 5000;
+const FRANKFURTER = 'https://api.frankfurter.dev/v1/';
+// ICE US Dollar Index: 50.14348112 × EURUSD^-0.576 × USDJPY^0.136 × GBPUSD^-0.119 × USDCAD^0.091
+// × USDSEK^0.042 × USDCHF^0.036. With USD-based rates (units per dollar) every exponent is positive.
+const DXY_WEIGHTS = { EUR: 0.576, JPY: 0.136, GBP: 0.119, CAD: 0.091, SEK: 0.042, CHF: 0.036 };
 const CBOE_VIX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json';
 const TTL_S = 60 * 60;
 const RELEASE_TTL_S = 15 * 60;
@@ -157,6 +164,29 @@ function mergeLive(series, live) {
   };
 }
 
+function dxyFromRates(r) {
+  let v = 50.14348112;
+  for (const [ccy, w] of Object.entries(DXY_WEIGHTS)) {
+    const x = parseFloat(r && r[ccy]);
+    if (!isFinite(x) || x <= 0) return NaN;
+    v *= Math.pow(x, w);
+  }
+  return v;
+}
+
+// Frankfurter time series ({ rates: { date: { EUR, JPY, ... } } }) → [{date, value}] of DXY.
+function parseDxySeries(text) {
+  const rates = (JSON.parse(text) || {}).rates || {};
+  return Object.keys(rates).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort()
+    .map((date) => ({ date, value: dxyFromRates(rates[date]) }))
+    .filter((o) => isFinite(o.value));
+}
+
+async function loadDxy() {
+  const url = `${FRANKFURTER}${daysAgoIso(420)}..?base=USD&symbols=${Object.keys(DXY_WEIGHTS).join(',')}`;
+  return { ...summarize('dollar', parseDxySeries(await fetchText(url))), label: 'DXY', source: 'ecb-dxy' };
+}
+
 async function loadVixLive() {
   return parseCboeQuote(await fetchText(CBOE_VIX));
 }
@@ -164,7 +194,9 @@ async function loadVixLive() {
 async function buildPayload(apiKey) {
   const keys = Object.keys(SERIES);
   const [results, vixLive] = await Promise.all([
-    Promise.allSettled(keys.map((k) => loadSeries(k, apiKey))),
+    Promise.allSettled(keys.map((k) => (k === 'dollar'
+      ? loadDxy().catch((e) => loadSeries(k, apiKey).then((s) => ({ ...s, dxyError: e.message })))
+      : loadSeries(k, apiKey)))),
     loadVixLive().catch((e) => ({ error: e.message }))
   ]);
   const series = {}, errors = {};
@@ -213,4 +245,4 @@ exports.handler = async function () {
   }
 };
 
-module.exports.__test = { parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, mergeLive, SERIES };
+module.exports.__test = { parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, mergeLive, dxyFromRates, parseDxySeries, SERIES };
