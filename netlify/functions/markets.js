@@ -7,16 +7,19 @@
 // Every series comes from FRED. The public graph CSV needs no key; FRED_API_KEY (optional, the
 // same one fred-data.js uses) is tried first when it's set. Daily series are thinned to one point
 // per week so a year of history stays ~52 points. Market series (10y/2y/VIX/dollar) are daily
-// closes, so they lag the live market by about a day — the page labels them that way.
+// closes, so they lag the live market by about a day — the page labels them that way. VIX is the
+// exception: Cboe's own delayed quote (~15 min behind) is laid over the FRED close, so the card shows
+// today's level while the market is open and yesterday's close by the next morning in Asia.
 //
-// Caching: memory + CDN for 3 h, but only 15 min on CPI / jobs / FOMC days (same calendar as
+// Caching: memory + CDN for 1 h, but only 15 min on CPI / jobs / FOMC days (same calendar as
 // fred-data.js) so the CPI / unemployment / Fed sparklines don't trail the cards for hours after a
 // release. If every source fails we serve the last good payload marked stale instead of an error.
 
 const FRED_API = 'https://api.stlouisfed.org/fred/series/observations';
 const FRED_CSV = 'https://fred.stlouisfed.org/graph/fredgraph.csv';
 const ATTEMPT_TIMEOUT_MS = 5000;
-const TTL_S = 3 * 60 * 60;
+const CBOE_VIX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json';
+const TTL_S = 60 * 60;
 const RELEASE_TTL_S = 15 * 60;
 const { isReleaseDay, cacheControl } = require('./fred-data.js').__test;
 
@@ -123,14 +126,55 @@ async function loadSeries(key, apiKey) {
   throw new Error(errors.join(' | '));
 }
 
+// Cboe delayed quote → { value, change, date, time }. last_trade_time is US Eastern wall-clock time,
+// so its date part is the US trading day the price belongs to (what FRED would file it under).
+function parseCboeQuote(text) {
+  const d = (JSON.parse(text) || {}).data || {};
+  const value = parseFloat(d.current_price);
+  const change = parseFloat(d.price_change);
+  const time = String(d.last_trade_time || '');
+  const date = time.slice(0, 10);
+  if (!isFinite(value) || value <= 0 || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('bad cboe quote');
+  return { value, change: isFinite(change) ? change : null, date, time };
+}
+
+// Lay a newer live quote over the FRED series: replace the point for the same day or append a new one.
+function mergeLive(series, live) {
+  if (!series || !live || live.date < series.date) return series;
+  const round = (v) => Math.round(v * 1000) / 1000;
+  const hist = series.hist.filter((p) => p[0] < live.date).concat([[live.date, round(live.value)]]);
+  let prev = live.change != null ? round(live.value - live.change)
+    : live.date === series.date ? series.prev : series.latest;
+  return {
+    ...series,
+    latest: round(live.value),
+    date: live.date,
+    time: live.time,
+    prev,
+    change: prev != null ? round(live.value - prev) : null,
+    hist,
+    source: 'cboe'
+  };
+}
+
+async function loadVixLive() {
+  return parseCboeQuote(await fetchText(CBOE_VIX));
+}
+
 async function buildPayload(apiKey) {
   const keys = Object.keys(SERIES);
-  const results = await Promise.allSettled(keys.map((k) => loadSeries(k, apiKey)));
+  const [results, vixLive] = await Promise.all([
+    Promise.allSettled(keys.map((k) => loadSeries(k, apiKey))),
+    loadVixLive().catch((e) => ({ error: e.message }))
+  ]);
   const series = {}, errors = {};
   results.forEach((r, i) => {
     if (r.status === 'fulfilled') series[keys[i]] = r.value;
     else errors[keys[i]] = r.reason && r.reason.message;
   });
+  // FRED stays the backbone (history); a failed Cboe call just leaves the FRED close in place.
+  if (vixLive.error) errors.vixLive = vixLive.error;
+  else if (series.vix) series.vix = mergeLive(series.vix, vixLive);
   const out = { series, asOf: new Date().toISOString() };
   if (series.us10y && series.us2y) out.spread2s10s = Math.round((series.us10y.latest - series.us2y.latest) * 100) / 100;
   if (Object.keys(errors).length) out.errors = errors;
@@ -169,4 +213,4 @@ exports.handler = async function () {
   }
 };
 
-module.exports.__test = { parseCsv, parseApiJson, weekly, summarize, SERIES };
+module.exports.__test = { parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, mergeLive, SERIES };

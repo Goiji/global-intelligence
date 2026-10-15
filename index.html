@@ -2208,6 +2208,7 @@ window.setHeaderStamp();
         const v = S.vix.latest;
         el('mkVix').textContent = v.toFixed(2);
         el('mkVixZone').textContent = v >= 30 ? '🔴 ตลาดตื่นตระหนก' : v >= 20 ? '🟠 กังวล' : v >= 15 ? '🟡 ปกติ' : '🟢 สงบ';
+        if(S.vix.source === 'cboe' && S.vix.time) el('mkVixZone').textContent += ' · ' + thDay(S.vix.date).replace(/ \d{4}$/, '') + ' ' + S.vix.time.slice(11, 16) + ' NY';
         setSpark('spVix', S.vix, { upIsBad:true });
       }
       if(S.dollar){ el('mkDollar').innerHTML = esc(S.dollar.latest.toFixed(2)) + (S.dollar.change != null ? '<span class="delta ' + (S.dollar.change >= 0 ? 'up' : 'down') + '">' + (S.dollar.change >= 0 ? '+' : '') + S.dollar.change.toFixed(2) + '</span>' : ''); setSpark('spDollar', S.dollar, { color:'var(--accent)' }); }
@@ -2217,16 +2218,16 @@ window.setHeaderStamp();
       patchSparksFromLive();
       marketsNextAt = Date.now() + Math.max(nextIn, 60 * 1000);
       const d = S.us10y && S.us10y.date;
-      el('mktNote').textContent = 'ราคาปิด ณ ' + (d ? thDay(d) : '–') + ' (ช้ากว่าตลาดประมาณ 1 วันทำการ) · กราฟเล็ก = ย้อนหลัง 12 เดือน';
+      el('mktNote').textContent = 'ราคาปิด ณ ' + (d ? thDay(d) : '–') + ' (ช้ากว่าตลาดประมาณ 1 วันทำการ) · VIX ราคาจาก Cboe ช้า ~15 นาที อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน';
     }catch(e){
       console.warn('[markets]', e);
       el('mktNote').textContent = 'ดึงข้อมูลตลาดไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ';
       marketsNextAt = Date.now() + 10 * 60 * 1000;
     }
   }
-  // Re-poll when the server says this copy expires (15 min on release days, 3 h otherwise):
-  // a cheap once-a-minute check instead of a fixed 3 h interval.
-  const MARKETS_POLL_MS = 3 * 60 * 60 * 1000;
+  // Re-poll when the server says this copy expires (15 min on release days, 1 h otherwise):
+  // a cheap once-a-minute check instead of a fixed 1 h interval.
+  const MARKETS_POLL_MS = 60 * 60 * 1000;
   var marketsNextAt = 0;
   fetchMarkets();
   setInterval(function(){ if(Date.now() >= marketsNextAt) fetchMarkets(); }, 60 * 1000);

@@ -122,3 +122,36 @@ test('markets: cache is 15 min on release days and only the remaining time is ad
   assert.equal(JSON.parse(second.body).ttl, 5 * 60);
   assert.match(second.headers['Cache-Control'], /max-age=300,/);
 });
+
+test('markets: Cboe VIX quote is laid over the FRED close', () => {
+  const quote = markets.parseCboeQuote(JSON.stringify({ data: { current_price: 16.87, price_change: 1.6, last_trade_time: '2026-10-14T16:15:01' } }));
+  assert.deepEqual(quote, { value: 16.87, change: 1.6, date: '2026-10-14', time: '2026-10-14T16:15:01' });
+  const fred = { label: 'VIX', unit: '', latest: 15.27, date: '2026-10-13', prev: 15.21, change: 0.06,
+    hist: [['2026-10-09', 14.84], ['2026-10-13', 15.27]] };
+  const merged = markets.mergeLive(fred, quote);
+  assert.equal(merged.latest, 16.87);
+  assert.equal(merged.date, '2026-10-14');
+  assert.equal(merged.prev, 15.27);
+  assert.equal(merged.change, 1.6);
+  assert.deepEqual(merged.hist.slice(-2), [['2026-10-13', 15.27], ['2026-10-14', 16.87]]);
+  // same day as FRED → replace that point, not add a second one
+  const sameDay = markets.mergeLive({ ...fred, date: '2026-10-14', hist: [['2026-10-14', 16.85]] }, quote);
+  assert.deepEqual(sameDay.hist, [['2026-10-14', 16.87]]);
+  // an older quote never overrides a newer FRED close
+  assert.equal(markets.mergeLive(fred, { ...quote, date: '2026-10-12' }), fred);
+  assert.throws(() => markets.parseCboeQuote('{"data":{}}'));
+});
+
+test('markets: normal days cache for 1 h and a Cboe outage keeps the FRED VIX', async (t) => {
+  const { handler } = require('../netlify/functions/markets.js');
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-10-20T13:00:00Z') });
+  const realFetch = global.fetch;
+  global.fetch = async (url) => String(url).includes('cboe')
+    ? ({ ok: false, status: 503, text: async () => '' })
+    : ({ ok: true, status: 200, text: async () => 'observation_date,X\n2026-10-15,15.0\n2026-10-16,15.5\n' });
+  t.after(() => { global.fetch = realFetch; });
+  const body = JSON.parse((await handler()).body);
+  assert.equal(body.ttl, 60 * 60);
+  assert.equal(body.series.vix.latest, 15.5);
+  assert.match(body.errors.vixLive, /503/);
+});
