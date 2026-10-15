@@ -504,7 +504,7 @@ body{margin:0}
   <div class="metric mkt"><div class="name">บอนด์สหรัฐ 2 ปี</div><div class="num" id="mkUs2y">–</div><div class="spark" id="spUs2y"></div></div>
   <div class="metric mkt"><div class="name">ส่วนต่าง 10 ปี − 2 ปี</div><div class="num" id="mkSpread">–</div><div class="zone" id="mkSpreadZone"></div></div>
   <div class="metric mkt"><div class="name">VIX ดัชนีความกลัว</div><div class="num" id="mkVix">–</div><div class="spark" id="spVix"></div><div class="zone" id="mkVixZone"></div></div>
-  <div class="metric mkt"><div class="name">ดัชนีดอลลาร์ (Broad)</div><div class="num" id="mkDollar">–</div><div class="spark" id="spDollar"></div></div>
+  <div class="metric mkt"><div class="name" id="mkDollarName">ดัชนีดอลลาร์ (DXY)</div><div class="num" id="mkDollar">–</div><div class="spark" id="spDollar"></div></div>
 </div>
 <div class="muted" id="mktNote" style="font-size:11px; margin-top:10px;">กราฟเล็ก = ย้อนหลัง 12 เดือน</div>
 </section>
@@ -2211,6 +2211,7 @@ window.setHeaderStamp();
         if(S.vix.source === 'cboe' && S.vix.time) el('mkVixZone').textContent += ' · ' + thDay(S.vix.date).replace(/ \d{4}$/, '') + ' ' + S.vix.time.slice(11, 16) + ' NY';
         setSpark('spVix', S.vix, { upIsBad:true });
       }
+      if(S.dollar) el('mkDollarName').textContent = S.dollar.source === 'ecb-dxy' ? 'ดัชนีดอลลาร์ (DXY)' : 'ดัชนีดอลลาร์ (Broad)';
       if(S.dollar){ el('mkDollar').innerHTML = esc(S.dollar.latest.toFixed(2)) + (S.dollar.change != null ? '<span class="delta ' + (S.dollar.change >= 0 ? 'up' : 'down') + '">' + (S.dollar.change >= 0 ? '+' : '') + S.dollar.change.toFixed(2) + '</span>' : ''); setSpark('spDollar', S.dollar, { color:'var(--accent)' }); }
       if(S.fedUpper) setSpark('spFed', S.fedUpper, { color:'var(--accent)', dec:2 });
       if(S.cpi) setSpark('spCpi', S.cpi, { upIsBad:true, dec:1 });
@@ -2218,7 +2219,7 @@ window.setHeaderStamp();
       patchSparksFromLive();
       marketsNextAt = Date.now() + Math.max(nextIn, 60 * 1000);
       const d = S.us10y && S.us10y.date;
-      el('mktNote').textContent = 'ราคาปิด ณ ' + (d ? thDay(d) : '–') + ' (ช้ากว่าตลาดประมาณ 1 วันทำการ) · VIX ราคาจาก Cboe ช้า ~15 นาที อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน';
+      el('mktNote').textContent = 'ราคาปิด ณ ' + (d ? thDay(d) : '–') + ' (ช้ากว่าตลาดประมาณ 1 วันทำการ) · DXY จากอัตรา ECB ' + (S.dollar && S.dollar.date ? thDay(S.dollar.date) : '–') + ' · VIX ราคาจาก Cboe ช้า ~15 นาที อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน';
     }catch(e){
       console.warn('[markets]', e);
       el('mktNote').textContent = 'ดึงข้อมูลตลาดไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ';
@@ -2345,13 +2346,15 @@ window.setHeaderStamp();
     const b = el('avFetchStatusVisible'); if(b) b.textContent = msg;
   }
 
+  // เดิมแคชราคาน้ำมันไว้ทั้งวัน (ราคาแรกของวันค้างจนเที่ยงคืน UTC) — ตอนนี้แคชแค่ 5 นาที
+  const OIL_CACHE_MS = 5 * 60 * 1000;
   async function fetchOilPrice(){
     const today = new Date().toISOString().slice(0,10);
     try{
       const raw = await storageGet('oil-price-cache');
       if(raw){
         const c = JSON.parse(raw);
-        if(c.date === today){
+        if(isValidNum(c.at) && Date.now() - c.at < OIL_CACHE_MS && isValidNum(c.price)){
           setPrice('lpOil', '$' + c.price.toFixed(2), c.pct);
           setOilStatus('');
           return;
@@ -2372,7 +2375,7 @@ window.setHeaderStamp();
         const res = await fn();
         setPrice('lpOil', '$' + res.price.toFixed(2), res.pct);
         setOilStatus('');
-        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, price: res.price, pct: res.pct, source: res.source })); }catch(e){}
+        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, at: Date.now(), price: res.price, pct: res.pct, source: res.source })); }catch(e){}
         return;
       }catch(e){ trail.push(name + ': ' + e.message); }
     }
@@ -2385,7 +2388,7 @@ window.setHeaderStamp();
       if(j.price){
         setPrice('lpOil', '$' + j.price.toFixed(2), null);
         setOilStatus('');
-        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, price: j.price, source: 'Alpha Vantage (server)' })); }catch(e){}
+        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, at: Date.now(), price: j.price, source: 'Alpha Vantage (server)' })); }catch(e){}
         return;
       }
       trail.push('server function: ' + (j.error || 'unknown error'));
@@ -2397,6 +2400,19 @@ window.setHeaderStamp();
   }
 
   fetchOilPrice();
+
+  // ราคาสด (ทองโลก ค่าเงิน น้ำมัน ทองไทย) เดิมดึงครั้งเดียวตอนเปิดหน้า เปิดค้างไว้ตัวเลขก็ไม่ขยับ
+  // ตอนนี้รีเฟรชทุก 5 นาทีขณะเปิดดูอยู่ และทันทีที่กลับมาเปิดแท็บ (ถ้าห่างเกิน 1 นาที)
+  const PRICES_POLL_MS = 5 * 60 * 1000;
+  let pricesAt = Date.now();
+  function refreshPrices(){
+    if(document.hidden) return;
+    pricesAt = Date.now();
+    fetchLivePrices().then(fetchThaiGold);
+    fetchOilPrice();
+  }
+  setInterval(function(){ if(Date.now() - pricesAt >= PRICES_POLL_MS) refreshPrices(); }, 60 * 1000);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden && Date.now() - pricesAt >= 60 * 1000) refreshPrices(); });
 
   renderFomcCountdown(); // instant, pure date math, no network needed
   // Cache-first: the news cache is good for 30 minutes, and the 🇹🇭 button / the "รีเฟรชข่าว"
