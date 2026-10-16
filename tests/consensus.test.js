@@ -77,6 +77,7 @@ test('parseEventPage reads the Thai CPI page', () => {
     previous: 3.4,
     unit: '%',
     releaseDate: '2026-09-11',
+    upcoming: null, // every row in the table already has an Actual
     hasAnyValue: true
   });
 });
@@ -102,8 +103,8 @@ test('parseEventPage is honest about pages it cannot read', () => {
   assert.equal(p.forecast, null);
 });
 
-test('the event table points at the five pages the dashboard needs', () => {
-  assert.deepEqual(Object.keys(EVENTS).sort(), ['coreCpi', 'cpi', 'fed', 'nfp', 'unrate']);
+test('the event table points at the six pages the dashboard needs', () => {
+  assert.deepEqual(Object.keys(EVENTS).sort(), ['coreCpi', 'cpi', 'fed', 'nfp', 'ppi', 'unrate']);
   for (const [key, spec] of Object.entries(EVENTS)) {
     assert.match(spec.slug, /-\d+$/, `${key} must end with the Investing.com event id`);
     assert.ok(Array.isArray(spec.range) && spec.range.length === 2, `${key} needs a sanity range`);
@@ -111,6 +112,47 @@ test('the event table points at the five pages the dashboard needs', () => {
   assert.equal(EVENTS.cpi.slug, 'cpi-733');            // the page the user linked
   assert.equal(EVENTS.coreCpi.slug.endsWith('-736'), true);
   assert.equal(EVENTS.nfp.slug, 'nonfarm-payrolls-227');
+  assert.equal(EVENTS.ppi.slug, 'ppi-238');            // U.S. PPI MoM
+});
+
+// The PPI MoM page as it looked before the 10 Sep 2026 release: the summary block still describes the
+// August print, and the history table already lists the next release with a Forecast but no Actual.
+const EN_PPI_BEFORE_RELEASE = `
+<div class="summary">
+  <h1>United States Producer Price Index (PPI) MoM</h1>
+  <dl>
+    <dt>Latest Release</dt><dd>Aug 13, 2026</dd>
+    <dt>Actual</dt><dd>0.0%</dd>
+    <dt>Forecast</dt><dd>0.2%</dd>
+    <dt>Previous</dt><dd>-0.1%</dd>
+  </dl>
+</div>
+<table class="genTbl">
+  <thead><tr><th>Release Date</th><th>Time</th><th>Actual</th><th>Forecast</th><th>Previous</th></tr></thead>
+  <tbody>
+    <tr><td class="left">Oct 15, 2026 (Sep)</td><td>12:30</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+    <tr><td class="left">Sep 10, 2026 (Aug)</td><td>12:30</td><td class="noWrap"><span></span>&nbsp;</td><td class="noWrap">0.4%</td><td class="noWrap">0.0%</td></tr>
+    <tr><td class="left">Aug 13, 2026 (Jul)</td><td>12:30</td><td class="noWrap">0.0%</td><td class="noWrap">0.2%</td><td class="noWrap">-0.1%</td></tr>
+    <tr><td class="left">Jul 15, 2026 (Jun)</td><td>12:30</td><td class="noWrap">-0.3%</td><td class="noWrap">0.0%</td><td class="noWrap">0.6%</td></tr>
+  </tbody>
+</table>`;
+
+test('parseEventPage reads the next release forecast before the number is out', () => {
+  const p = parseEventPage(EN_PPI_BEFORE_RELEASE);
+  assert.deepEqual([p.actual, p.forecast, p.previous], [0, 0.2, -0.1]);
+  // the row without a forecast yet (Oct) is skipped; the Sep 10 row is the next release
+  assert.deepEqual(p.upcoming, { releaseDate: '2026-09-10', forecast: 0.4, previous: 0 });
+});
+
+test('parseUpcoming handles the Thai page and payrolls in thousands', () => {
+  const { parseUpcoming } = __test;
+  const thaiNfp = `<table>
+    <tr><td>06 พ.ย. 2026 ( ต.ค.)</td><td>19:30</td><td>&nbsp;</td><td>70.00 พัน</td><td>90.00 พัน</td></tr>
+    <tr><td>02 ต.ค. 2026 ( ก.ย.)</td><td>19:30</td><td>90.00 พัน</td><td>60.00 พัน</td><td>162.00 พัน</td></tr>
+  </table>`;
+  assert.deepEqual(parseUpcoming(thaiNfp), { releaseDate: '2026-11-06', forecast: 70000, previous: 90000 });
+  assert.equal(parseUpcoming(THAI_CPI), null, 'released rows are never "upcoming"');
+  assert.equal(parseUpcoming('<p>Just a moment…</p>'), null);
 });
 
 test('consensus cache is short around a release and never outlives the 12:25 UTC window', () => {

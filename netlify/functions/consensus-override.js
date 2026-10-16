@@ -6,7 +6,7 @@
 //     → 200 { enabled: false, hint }              when this deployment has no shared store
 //
 //   POST /.netlify/functions/consensus-override   (password-protected)
-//     body { password, action: 'set', clearFirst?: bool, patch: {cpi, coreCpi, unrate, nfp, fedLo, fedHi, asOf, savedAt} }
+//     body { password, action: 'set', clearFirst?: bool, patch: {cpi, coreCpi, ppi, unrate, nfp, fedLo, fedHi, asOf, savedAt} }
 //          { password, action: 'clear' }
 //     → 200 { ok: true, backend, value, updatedAt }
 //     → 400 { error: 'invalid-...' }  ·  401 { error: 'password-required'|'bad-password' }
@@ -50,6 +50,7 @@ const BAD_WINDOW_MS = 15 * 60 * 1000; // rate-limit window for failed passwords
 const FIELDS = {
   cpi: { min: 0, max: 30 },
   coreCpi: { min: 0, max: 30 },
+  ppi: { min: -5, max: 5 },
   unrate: { min: 0, max: 30 },
   nfp: { min: -2000000, max: 2000000 },
   fedLo: { min: 0, max: 25 },

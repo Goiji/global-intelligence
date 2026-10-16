@@ -6,8 +6,11 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // The automatic "ดี/แย่แค่ไหน เทียบกับที่คาด" analysis needs a consensus number, and no free API
 // publishes one (they all come from analyst surveys behind paid terminals). Investing.com shows
-// them publicly per event, so this function reads the five event pages we care about and returns
+// them publicly per event, so this function reads the six event pages we care about and returns
 // the latest release's Actual / Forecast / Previous, server-side (no CORS, one shared cache).
+// It also returns `upcoming`: the next scheduled release's date and Forecast, read from the history
+// table at the bottom of the event page (that row has an empty Actual until the number is out), so
+// the page can show "ตลาดคาด …" BEFORE the release instead of only after it.
 //
 // IMPORTANT — this is a best-effort convenience layer, never the source of truth:
 //   • The page always keeps a baked-in CONSENSUS (with a date and the same links) and falls back
@@ -15,7 +18,7 @@
 //     the markup can change, so a failure here is expected sometimes and must stay harmless.
 //   • The frontend compares `events[key].actual` with the number on the card: if they disagree,
 //     the consensus belongs to a different print and the page says so instead of pretending.
-//   • robots.txt does not disallow /economic-calendar, and we make 5 requests per 3 hours per
+//   • robots.txt does not disallow /economic-calendar, and we make 6 requests per 3 hours per
 //     instance, cached in front of the CDN, so the load on the upstream is negligible.
 //
 // Usage: /.netlify/functions/consensus
@@ -30,7 +33,8 @@ const EVENTS = {
   coreCpi: { slug: 'united-states-core-consumer-price-index-(cpi)-yoy-736', label: 'Core CPI YoY', kind: 'pct', range: [-5, 30] },
   unrate: { slug: 'unemployment-rate-300', label: 'Unemployment Rate', kind: 'pct', range: [-5, 30] },
   nfp: { slug: 'nonfarm-payrolls-227', label: 'Nonfarm Payrolls', kind: 'jobs', range: [-4e6, 4e6] },
-  fed: { slug: 'interest-rate-decision-168', label: 'Fed Interest Rate Decision', kind: 'pct', range: [0, 25] }
+  fed: { slug: 'interest-rate-decision-168', label: 'Fed Interest Rate Decision', kind: 'pct', range: [0, 25] },
+  ppi: { slug: 'ppi-238', label: 'PPI MoM', kind: 'pct', range: [-5, 5] }
 };
 
 const THAI_MONTHS = {
@@ -97,6 +101,29 @@ function parseDate(raw) {
   return null;
 }
 
+// The next scheduled release from the event's history table. Rows read
+//   Release date (period) | Time | Actual | Forecast | Previous
+// newest first; a row whose Actual is still empty but has a Forecast is a release that hasn't happened
+// yet. If there are several, the earliest one is "next". null when the table isn't there.
+function parseUpcoming(html) {
+  const rows = String(html || '').match(/<tr[\s\S]*?<\/tr>/gi) || [];
+  let best = null;
+  for (const row of rows) {
+    const cells = (row.match(/<td[\s\S]*?<\/td>/gi) || []).map(toText);
+    if (cells.length < 5) continue;
+    const releaseDate = parseDate(cells[0]);
+    if (!releaseDate) continue;
+    if (parseNumber(cells[2])) continue; // already released
+    const forecast = parseNumber(cells[3]);
+    if (!forecast) continue;
+    const previous = parseNumber(cells[4]);
+    if (!best || releaseDate < best.releaseDate) {
+      best = { releaseDate, forecast: forecast.value, previous: previous ? previous.value : null };
+    }
+  }
+  return best;
+}
+
 // Pure parser — exported for tests. Returns nulls for anything it cannot read.
 function parseEventPage(html) {
   const text = toText(html);
@@ -110,6 +137,7 @@ function parseEventPage(html) {
     previous: previous ? previous.value : null,
     unit: (actual && actual.unit) || (forecast && forecast.unit) || '',
     releaseDate,
+    upcoming: parseUpcoming(html),
     hasAnyValue: !!(actual || forecast)
   };
 }
@@ -190,6 +218,8 @@ exports.handler = async function () {
     if (!inRange(parsed.actual) || !inRange(parsed.forecast) || !inRange(parsed.previous)) {
       throw new Error(`implausible values: actual=${parsed.actual} forecast=${parsed.forecast}`);
     }
+    // an implausible upcoming row only drops the pre-release forecast, not the whole event
+    if (parsed.upcoming && !inRange(parsed.upcoming.forecast)) parsed.upcoming = null;
     return [key, { ...parsed, label: spec.label, kind: spec.kind, url }];
   }));
 
@@ -228,4 +258,4 @@ exports.handler = async function () {
 };
 
 // Exported for local unit testing (node --test / plain require). Netlify ignores extra exports.
-module.exports.__test = { parseEventPage, parseNumber, parseDate, toText, EVENTS, consensusTtlMs, _clearCache: () => { memCache = { at: 0, payload: null, ttlMs: TTL_MS }; } };
+module.exports.__test = { parseEventPage, parseUpcoming, parseNumber, parseDate, toText, EVENTS, consensusTtlMs, _clearCache: () => { memCache = { at: 0, payload: null, ttlMs: TTL_MS }; } };

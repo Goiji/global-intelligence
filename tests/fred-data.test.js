@@ -194,6 +194,33 @@ test('awaitingFields flags CPI still on the old month after 8:30 ET on a CPI-win
   assert.deepEqual(awaitingFields(data, new Date('2026-10-02T13:00:00Z')), ['nfp']);
 });
 
+test('awaitingFields also watches PPI in the mid-month inflation window', () => {
+  const data = { cpi: { date: '2026-09-01' }, coreCpi: { date: '2026-09-01' }, ppi: { date: '2026-08-01' } };
+  assert.deepEqual(awaitingFields(data, new Date('2026-10-15T13:00:00Z')), ['ppi']);
+  assert.deepEqual(awaitingFields(data, new Date('2026-10-21T13:00:00Z')), []);
+});
+
+test('ppiFromLevels: headline MoM from the SA index, matched by date', () => {
+  const { ppiFromLevels, TARGETS } = __test;
+  assert.equal(TARGETS.ppi.fred, 'PPIFIS');
+  assert.equal(TARGETS.ppi.bls, 'WPSFD4');   // final demand, seasonally adjusted
+  assert.equal(TARGETS.ppiNsa.bls, 'WPUFD4'); // not adjusted — what BLS quotes for 12-month change
+  const obs = [
+    { date: '2026-09-01', value: 150.6 },
+    { date: '2026-08-01', value: 150.15 },
+    { date: '2026-07-01', value: 150.15 }
+  ];
+  const r = ppiFromLevels(obs, 'fred-csv');
+  assert.equal(r.date, '2026-09-01');
+  assert.equal(r.value, 0.3);                  // (150.6 / 150.15 − 1) × 100 = 0.2997
+  assert.deepEqual(r.prev, { value: 0, date: '2026-08-01' });
+  assert.equal(r.changePp, 0.3);
+  // a missing month must not be diffed against the month before it
+  assert.throws(() => ppiFromLevels([{ date: '2026-09-01', value: 150.6 }, { date: '2026-07-01', value: 150.0 }], 'x'), /no previous month/);
+  // a series that is plainly not a PPI index is rejected
+  assert.throws(() => ppiFromLevels([{ date: '2026-09-01', value: 3.1 }], 'x'), /no usable PPI level/);
+});
+
 test('cacheControl never stacks a long stale window on release days', () => {
   assert.equal(cacheControl(600, true), 'public, max-age=600, s-maxage=600, stale-while-revalidate=60');
   assert.match(cacheControl(10800, false), /stale-while-revalidate=21600$/);
