@@ -144,6 +144,23 @@ test('parseEventPage reads the next release forecast before the number is out', 
   assert.deepEqual(p.upcoming, { releaseDate: '2026-09-10', forecast: 0.4, previous: 0 });
 });
 
+test('a "forecasts" mention above the summary block does not hide the forecast (Oct 2026 regression)', () => {
+  const page = `<div class="cta">Trade based on real-time economic data and forecasts.</div>
+    <div>Latest Release</div><div>Oct 14, 2026</div>
+    <div>Actual</div><div>3.7%</div><div>Forecast</div><div>3.6%</div><div>Previous</div><div>3.4%</div>`;
+  const p = parseEventPage(page);
+  assert.deepEqual([p.actual, p.forecast, p.previous, p.releaseDate], [3.7, 3.6, 3.4, '2026-10-14']);
+});
+
+test('the forecast falls back to the history row of the same release', () => {
+  const page = `<div>Latest Release</div><div>Oct 15, 2026</div><div>Actual</div><div>1.3%</div>
+    <div>Forecast</div><div>&nbsp;</div><div>Previous</div><div>0.5%</div>
+    <table><tr><td>Oct 15, 2026 (Sep)</td><td>12:30</td><td>1.3%</td><td>0.6%</td><td>0.5%</td></tr></table>`;
+  const p = parseEventPage(page);
+  assert.equal(p.forecast, 0.6);
+  assert.equal(p.upcoming, null);
+});
+
 test('parseUpcoming handles the Thai page and payrolls in thousands', () => {
   const { parseUpcoming } = __test;
   const thaiNfp = `<table>
