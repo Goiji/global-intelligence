@@ -1,5 +1,6 @@
 // Netlify Function: live US macro data for the dashboard —
-// Fed funds target range, effective fed funds rate, CPI (headline + core), unemployment, nonfarm payrolls.
+// Fed funds target range, effective fed funds rate, CPI (headline + core), PPI (final demand),
+// unemployment, nonfarm payrolls.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // WHY THIS WAS REWRITTEN (Sep 2026)
@@ -70,7 +71,12 @@ const TARGETS = {
   // levels to 50,000–500,000 (thousands of jobs), so that series was always thrown away and the
   // BLS fallback could only ever fail with "no usable PAYEMS level". The correct BLS id for the
   // headline payroll number (FRED: PAYEMS) is CES0000000001 — "All Employees, Total Nonfarm".
-  payrolls: { fred: 'PAYEMS', bls: 'CES0000000001', cadence: 'monthly' }
+  payrolls: { fred: 'PAYEMS', bls: 'CES0000000001', cadence: 'monthly' },
+  // PPI final demand. The headline BLS (and Investing.com's "PPI MoM") number is the month-over-month
+  // change of the seasonally adjusted index (FRED PPIFIS = BLS WPSFD4); the 12-month change BLS quotes
+  // is from the NOT-adjusted index (FRED PPIFID = BLS WPUFD4).
+  ppi: { fred: 'PPIFIS', bls: 'WPSFD4', cadence: 'monthly' },
+  ppiNsa: { fred: 'PPIFID', bls: 'WPUFD4', cadence: 'monthly' }
 };
 
 // Cheap sanity ranges: if a "value" falls outside these we treat the fetch as failed instead of
@@ -78,6 +84,7 @@ const TARGETS = {
 const SANITY = {
   pctLevel: [-5, 30], // fed funds / unemployment, in %
   pctYoy: [-20, 30], // inflation YoY, in %
+  pctMom: [-5, 5], // inflation MoM, in %
   jobsChange: [-4e6, 4e6] // monthly payroll change, in jobs
 };
 
@@ -163,7 +170,8 @@ function awaitingFields(data, now = new Date()) {
   const mins = now.getUTCHours() * 60 + now.getUTCMinutes();
   if (mins < 12 * 60 + 25 || mins >= 16 * 60) return [];
   const { cpiWindow, jobsDay } = isReleaseDay(now);
-  const keys = [...(cpiWindow ? ['cpi', 'coreCpi'] : []), ...(jobsDay ? ['unrate', 'nfp'] : [])];
+  // PPI lands in the same mid-month window as CPI (usually the day before or after it).
+  const keys = [...(cpiWindow ? ['cpi', 'coreCpi', 'ppi'] : []), ...(jobsDay ? ['unrate', 'nfp'] : [])];
   const expected = monthsAgoIso(1, now);
   return keys.filter((k) => data && data[k] && data[k].date && data[k].date < expected);
 }
@@ -276,7 +284,7 @@ function parseBlsJson(text, seriesId) {
 
 // Try every source for one series, first success wins. Never throws for a missing API key —
 // the keyless sources cover it.
-async function getObservations(key, { apiKey, deadline, transformation = null, limit = 400, preferBls = false } = {}) {
+async function getObservations(key, { apiKey, deadline, transformation = null, limit = 400, preferBls = false, noBls = false } = {}) {
   const spec = TARGETS[key];
   const trail = [];
 
@@ -317,7 +325,7 @@ async function getObservations(key, { apiKey, deadline, transformation = null, l
     }
   }
 
-  if (spec.bls && !transformation && Date.now() < deadline) {
+  if (spec.bls && !transformation && !noBls && Date.now() < deadline) {
     try {
       return { obs: parseBlsJson(await fetchText(`${BLS_API}${spec.bls}`, deadline), spec.bls), source: 'bls' };
     } catch (e) {
@@ -531,6 +539,45 @@ function payrollsFromLevels(obs, source) {
   };
 }
 
+// PPI final demand: MoM % of the seasonally adjusted index (the headline print), matched by date
+// like everything else here, plus the previous month's MoM so the page can say เร่ง/ชะลอ.
+// Pure so the tests can pin it down.
+function ppiFromLevels(obs, source) {
+  const levels = obs.filter((o) => o.value > 50 && o.value < 1000); // index, Nov 2009 = 100
+  const latest = levels[0];
+  if (!latest) throw new Error('no usable PPI level');
+  const prev = atDate(levels, monthBeforeIso(latest.date));
+  if (!prev) throw new Error(`no previous month (${monthBeforeIso(latest.date)}) to compare with`);
+  const mom = ((latest.value - prev.value) / prev.value) * 100;
+  if (!inRange(mom, SANITY.pctMom)) throw new Error(`implausible PPI MoM ${mom}`);
+  const out = { value: +mom.toFixed(2), date: latest.date, level: latest.value, prevLevel: prev.value, unit: '% MoM', source, method: 'PPIFIS month-over-month (SA)' };
+  const prev2 = atDate(levels, monthBeforeIso(prev.date));
+  if (prev2) {
+    const prevMom = ((prev.value - prev2.value) / prev2.value) * 100;
+    out.prev = { value: +prevMom.toFixed(2), date: prev.date };
+    out.changePp = +(out.value - out.prev.value).toFixed(2);
+  }
+  return out;
+}
+
+async function ppiMetric(apiKey, deadline, opts = {}) {
+  const [sa, nsa] = await Promise.allSettled([
+    getObservations('ppi', { apiKey, deadline, ...opts }),
+    // YoY context only — never worth a BLS query on its own (25/day/IP), so FRED sources only.
+    getObservations('ppiNsa', { apiKey, deadline, noBls: true })
+  ]);
+  if (sa.status === 'rejected') throw sa.reason;
+  const out = ppiFromLevels(sa.value.obs, sa.value.source);
+  if (nsa.status === 'fulfilled') {
+    try {
+      const r = yoyFromLevels(nsa.value.obs, nsa.value.source);
+      // only when it is the same month as the headline (FRED's NSA copy can lag a release by hours)
+      if (r.result && r.result.date === out.date && inRange(r.result.value, SANITY.pctYoy)) out.yoy = +r.result.value.toFixed(2);
+    } catch (e) { /* YoY is optional context */ }
+  }
+  return out;
+}
+
 async function payrollsMetric(apiKey, deadline, opts = {}) {
   const { obs, source } = await getObservations('payrolls', { apiKey, deadline, ...opts });
   return payrollsFromLevels(obs, source);
@@ -543,7 +590,8 @@ const METRICS = {
   unrate: (apiKey, deadline, opts) => levelMetric('unrate', apiKey, deadline, opts),
   cpi: (apiKey, deadline, opts) => yoyMetric('cpi', apiKey, deadline, opts),
   coreCpi: (apiKey, deadline, opts) => yoyMetric('coreCpi', apiKey, deadline, opts),
-  nfp: (apiKey, deadline, opts) => payrollsMetric(apiKey, deadline, opts)
+  nfp: (apiKey, deadline, opts) => payrollsMetric(apiKey, deadline, opts),
+  ppi: (apiKey, deadline, opts) => ppiMetric(apiKey, deadline, opts)
 };
 
 // For fields still showing the previous month on a release morning, ask BLS directly and take its
@@ -684,6 +732,7 @@ module.exports.__test = {
   inRange,
   yoyFromLevels,
   payrollsFromLevels,
+  ppiFromLevels,
   rateChangeInfo,
   TARGETS,
   SANITY,

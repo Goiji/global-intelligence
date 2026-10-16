@@ -410,6 +410,13 @@ body{margin:0}
   .cal-name small{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
   .cal-when{font-size:12px;color:var(--accent-hi);text-align:right;white-space:nowrap}
   .cal-when.soon{color:#fff;background:rgba(212,178,106,.18);border:1px solid var(--gold-line);border-radius:999px;padding:3px 10px}
+  /* US macro tiles: 6 tiles → 3 per row; "ประกาศครั้งถัดไป · ตลาดคาด" line under each number */
+  #fedMetrics{grid-template-columns:repeat(3,1fr)}
+  .metric .next{font-size:11px;color:var(--muted);line-height:1.5;margin-top:6px}
+  .metric .next b{color:var(--text);font-weight:600}
+  .metric .next.today{color:var(--warn)}
+  .cal-fc{color:var(--accent-hi)}
+  @media(max-width:800px){ #fedMetrics{grid-template-columns:repeat(2,1fr)} }
   @media(max-width:800px){ .mkt-grid{grid-template-columns:repeat(2,1fr)} .cal-item{grid-template-columns:56px 1fr} .cal-when{grid-column:2;text-align:left} }
 
   @media(max-width:800px){
@@ -538,11 +545,12 @@ body{margin:0}
   <div id="fredFetchStatus" class="muted" style="font-size:11px;"></div>
 </div>
 <div class="metrics" id="fedMetrics">
-  <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">3.50–3.75%</div><div class="spark" id="spFed"></div></div>
+  <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">3.50–3.75%</div><div class="spark" id="spFed"></div><div class="next" id="nextFed"></div></div>
   <div class="metric"><div class="name">Effective Fed Funds Rate</div><div class="num" id="fedEffr">3.63%</div></div>
-  <div class="metric"><div class="name">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.4%</div><div class="spark" id="spCpi"></div></div>
-  <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">4.1%</div><div class="spark" id="spUnrate"></div></div>
-  <div class="metric"><div class="name">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num up" id="nfp">+162,000</div></div>
+  <div class="metric"><div class="name">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.4%</div><div class="spark" id="spCpi"></div><div class="next" id="nextCpi"></div></div>
+  <div class="metric"><div class="name">PPI ราคาผู้ผลิต (MoM)</div><div class="num" id="ppiMom">–</div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div></div>
+  <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">4.1%</div><div class="spark" id="spUnrate"></div><div class="next" id="nextUnrate"></div></div>
+  <div class="metric"><div class="name">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num up" id="nfp">+162,000</div><div class="next" id="nextNfp"></div></div>
 </div>
 <div class="muted" style="margin-top:12px; font-size:11px; line-height:1.6;" id="fedAsOf"></div>
 
@@ -1233,7 +1241,7 @@ window.setHeaderStamp();
 
   function hasAnyFedField(d){
     // coreCpi ต้องนับด้วย ไม่งั้น response ที่ได้แต่ core CPI จะถูกมองว่า "ไม่มีข้อมูลเลย" แล้วตกไป error
-    return !!(d && (d.upper || d.lower || d.effr || d.cpi || d.coreCpi || d.unrate || d.nfp));
+    return !!(d && (d.upper || d.lower || d.effr || d.cpi || d.coreCpi || d.ppi || d.unrate || d.nfp));
   }
 
   const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -1265,7 +1273,7 @@ window.setHeaderStamp();
     // rest (that was the original CPI "." bug: one null took down every card after it).
     let applied = 0;
     try{
-      const { upper, lower, effr, cpi, coreCpi, unrate, nfp } = data || {};
+      const { upper, lower, effr, cpi, coreCpi, ppi, unrate, nfp } = data || {};
 
       if(upper && lower && isValidNum(upper.value) && isValidNum(lower.value)){
         el('fedRange').textContent = lower.value.toFixed(2) + '–' + upper.value.toFixed(2) + '%';
@@ -1277,6 +1285,12 @@ window.setHeaderStamp();
       }
       if(cpi && isValidNum(cpi.value)){
         el('cpiYoy').textContent = cpi.value.toFixed(1) + '%';
+        applied++;
+      }
+      if(ppi && isValidNum(ppi.value)){
+        el('ppiMom').textContent = signedPct(ppi.value, 1) + '%';
+        const yoyEl = el('ppiYoy');
+        if(yoyEl) yoyEl.textContent = 'เดือน ' + thMonth(ppi.date) + (isValidNum(ppi.yoy) ? ' · YoY ' + ppi.yoy.toFixed(1) + '%' : '');
         applied++;
       }
       if(unrate && isValidNum(unrate.value)){
@@ -1297,6 +1311,10 @@ window.setHeaderStamp();
         bits.push('CPI ' + thMonth(cpi.date) + ' ' + cpi.value.toFixed(1) + '%'
           + (coreCpi && isValidNum(coreCpi.value) ? ' (core ' + coreCpi.value.toFixed(1) + '%)' : ''));
       }
+      if(ppi && ppi.date && isValidNum(ppi.value)){
+        bits.push('PPI ' + thMonth(ppi.date) + ' ' + signedPct(ppi.value, 1) + '% MoM'
+          + (isValidNum(ppi.yoy) ? ' (YoY ' + ppi.yoy.toFixed(1) + '%)' : ''));
+      }
       if(unrate && unrate.date){
         bits.push('ว่างงาน ' + thMonth(unrate.date) + (isValidNum(unrate.value) ? ' ' + unrate.value.toFixed(1) + '%' : ''));
       }
@@ -1316,6 +1334,7 @@ window.setHeaderStamp();
 
     // สร้างบทวิเคราะห์ "ดี/แย่แค่ไหน" ใหม่จากค่าที่เพิ่งได้ (แยก try/catch ไม่ให้พังการ์ดหลัก)
     try{ renderFedAnalysis(data); }catch(e){ /* analysis is best-effort */ }
+    try{ renderNextReleases(); }catch(e){ /* best-effort */ }
     try{ lastLiveFed = data; patchSparksFromLive(); }catch(e){ /* sparklines are best-effort */ }
     return applied;
   }
@@ -1342,13 +1361,15 @@ window.setHeaderStamp();
     coreCpi: 2.4,    // Core CPI YoY ที่คาด (%)
     unrate: 4.1,     // อัตราว่างงานที่คาด (%)
     nfp: 55000,      // ตำแหน่งงานใหม่ที่คาด (ตำแหน่ง) — Investing.com รายงาน "55.00 พัน"
+    ppi: 0.4,        // PPI MoM ที่คาด (%) — รอบประกาศ 10 ก.ย. 2026 (ตัวเลข ส.ค.)
     fed: { lo: 3.50, hi: 3.75 },  // กรอบดอกเบี้ยที่ตลาดคาด
     links: {
       cpi: 'https://th.investing.com/economic-calendar/%E0%B8%94%E0%B8%B1%E0%B8%8A%E0%B8%99%E0%B8%B5%E0%B8%A3%E0%B8%B2%E0%B8%84%E0%B8%B2%E0%B8%9C%E0%B8%B9%E0%B9%89%E0%B8%9A%E0%B8%A3%E0%B8%B4%E0%B9%82%E0%B8%A0%E0%B8%84-(cpi)-733',
       coreCpi: 'https://www.investing.com/economic-calendar/united-states-core-consumer-price-index-(cpi)-yoy-736',
       unrate: 'https://th.investing.com/economic-calendar/unemployment-rate-300',
       nfp: 'https://th.investing.com/economic-calendar/nonfarm-payrolls-227',
-      fed: 'https://th.investing.com/economic-calendar/interest-rate-decision-168'
+      fed: 'https://th.investing.com/economic-calendar/interest-rate-decision-168',
+      ppi: 'https://th.investing.com/economic-calendar/ppi-238'
     }
   };
 
@@ -1373,6 +1394,7 @@ window.setHeaderStamp();
   let consensusFetchedAt = 0;
   let consensusTtlMs = 0;   // ตามที่เซิร์ฟเวอร์บอก (สั้นลงในวันประกาศ) — 0 = ใช้ CONSENSUS_TTL_MS
   let lastFedPayload = null;
+  let LIVE_UPCOMING = {};   // ค่าคาดของรอบที่ยังไม่ประกาศ จาก /consensus → { cpi: { releaseDate, forecast, previous }, ... }
   const CONSENSUS_TTL_MS = 3 * 60 * 60 * 1000;
 
   // ── ค่ากลางฝั่งเซิร์ฟเวอร์ (ทุกคนที่เปิดเว็บเห็นค่าชุดเดียวกัน) ─────────────────────────────
@@ -1402,6 +1424,7 @@ window.setHeaderStamp();
       asOf: ov.asOf || sh.asOf || live.asOf || CONSENSUS.asOf,
       cpi: num(ov.cpi, num(sh.cpi, num(live.cpi, CONSENSUS.cpi))),
       coreCpi: num(ov.coreCpi, num(sh.coreCpi, num(live.coreCpi, CONSENSUS.coreCpi))),
+      ppi: num(ov.ppi, num(sh.ppi, num(live.ppi, CONSENSUS.ppi))),
       unrate: num(ov.unrate, num(sh.unrate, num(live.unrate, CONSENSUS.unrate))),
       nfp: num(ov.nfp, num(sh.nfp, num(live.nfp, CONSENSUS.nfp))),
       fedHi: num(ov.fedHi, num(sh.fedHi, num(liveFedHi, CONSENSUS.fed.hi))),
@@ -1423,12 +1446,13 @@ window.setHeaderStamp();
     // min/max คือหน่วยที่ *พิมพ์* (ไม่ใช่หน่วยที่เก็บ) — nfp พิมพ์เป็น "พันตำแหน่ง" แล้วคูณ scale ตอนเก็บ
     { key:'cpi',     label:'CPI YoY',                unit:'%',  step:0.1,  min:0,     max:30,    scale:1 },
     { key:'coreCpi', label:'Core CPI YoY',           unit:'%',  step:0.1,  min:0,     max:30,    scale:1 },
+    { key:'ppi',     label:'PPI MoM',                unit:'%',  step:0.1,  min:-5,    max:5,     scale:1 },
     { key:'unrate',  label:'ว่างงาน',                 unit:'%',  step:0.1,  min:0,     max:30,    scale:1 },
     { key:'nfp',     label:'จ้างงานใหม่',             unit:'พัน', step:1,    min:-2000, max:2000,  scale:1000 },
     { key:'fedLo',   label:'Fed ขอบล่าง',            unit:'%',  step:0.25, min:0,     max:25,    scale:1 },
     { key:'fedHi',   label:'Fed ขอบบน',              unit:'%',  step:0.25, min:0,     max:25,    scale:1 }
   ];
-  const OVERRIDE_LABELS = { cpi:'CPI', coreCpi:'Core CPI', unrate:'ว่างงาน', nfp:'NFP', fedLo:'Fed ขอบล่าง', fedHi:'Fed ขอบบน' };
+  const OVERRIDE_LABELS = { cpi:'CPI', coreCpi:'Core CPI', ppi:'PPI', unrate:'ว่างงาน', nfp:'NFP', fedLo:'Fed ขอบล่าง', fedHi:'Fed ขอบบน' };
   function consensusField(key){ return CONSENSUS_FIELDS.filter(f => f.key === key)[0] || null; }
 
   function readConsensusOverride(){
@@ -1666,6 +1690,7 @@ window.setHeaderStamp();
   function fmtConsensusNum(key, v){
     if(!isValidNum(v)) return '—';
     if(key === 'nfp') return fmtJobs(v) + ' ตำแหน่ง';
+    if(key === 'ppi') return signedPct(v, 1) + '%';   // MoM ติดลบได้ — ใส่เครื่องหมายเสมอ
     // ทศนิยม 1 ตำแหน่งตามที่ Investing.com รายงาน (3.75 = กรอบ Fed ให้แสดง 2 ตำแหน่ง)
     const r = Number(v.toFixed(2));
     return r.toFixed(Math.round(r * 10) / 10 === r ? 1 : 2) + '%';
@@ -1675,6 +1700,7 @@ window.setHeaderStamp();
     const mark = k => (C.overridden.indexOf(k) >= 0 ? '✏️ ' : (C.sharedOverridden.indexOf(k) >= 0 ? '☁️ ' : ''));
     return 'ตอนนี้ใช้: ' + mark('cpi') + 'CPI ' + fmtConsensusNum('cpi', C.cpi)
       + ' · ' + mark('coreCpi') + 'Core ' + fmtConsensusNum('coreCpi', C.coreCpi)
+      + ' · ' + mark('ppi') + 'PPI ' + fmtConsensusNum('ppi', C.ppi)
       + ' · ' + mark('unrate') + 'ว่างงาน ' + fmtConsensusNum('unrate', C.unrate)
       + ' · ' + mark('nfp') + 'NFP ' + fmtConsensusNum('nfp', C.nfp)
       + ' · ' + mark('fedLo') + mark('fedHi') + 'Fed ' + fmtConsensusNum('fedLo', C.fedLo) + '–' + fmtConsensusNum('fedHi', C.fedHi);
@@ -1804,6 +1830,18 @@ window.setHeaderStamp();
       const ev = j && j.events;
       if(!ev) return;
       const numOf = (k, field) => (ev[k] && isValidNum(ev[k][field])) ? ev[k][field] : null;
+      // ค่าคาดของ "รอบถัดไป" (ยังไม่ประกาศ) — ใช้แสดงก่อนตัวเลขจริงออก ไม่ขึ้นกับเงื่อนไข 3 ตัวด้านล่าง
+      const upcoming = {};
+      Object.keys(ev).forEach(k => {
+        const u = ev[k] && ev[k].upcoming;
+        if(u && /^\d{4}-\d{2}-\d{2}$/.test(String(u.releaseDate || '')) && isValidNum(u.forecast)) upcoming[k] = { releaseDate: u.releaseDate, forecast: u.forecast, previous: isValidNum(u.previous) ? u.previous : null };
+      });
+      LIVE_UPCOMING = upcoming;
+      try{
+        renderNextReleases();
+        if(CAL_EVENTS && CAL_EVENTS.length) renderCalendar(CAL_EVENTS);
+        if(lastFedPayload) renderFedAnalysis(lastFedPayload);
+      }catch(e){ /* best-effort */ }
       const next = {
         source: j.sourceLabel || 'Investing.com',
         asOf: (ev.cpi && ev.cpi.releaseDate) || CONSENSUS.asOf,
@@ -1811,10 +1849,12 @@ window.setHeaderStamp();
         coreCpi: numOf('coreCpi','forecast'),
         unrate: numOf('unrate','forecast'),
         nfp: numOf('nfp','forecast'),
+        ppi: numOf('ppi','forecast'),
         fed: (ev.fed && isValidNum(ev.fed.actual)) ? { lo: null, hi: ev.fed.actual } : null,
         actuals: {
           cpi: numOf('cpi','actual'), coreCpi: numOf('coreCpi','actual'),
-          unrate: numOf('unrate','actual'), nfp: numOf('nfp','actual')
+          unrate: numOf('unrate','actual'), nfp: numOf('nfp','actual'),
+          ppi: numOf('ppi','actual')
         }
       };
       // ต้องได้อย่างน้อย 3 ตัวถึงจะใช้ (กันหน้าเว็บที่อ่านได้ครึ่งเดียวแล้วทำให้บทวิเคราะห์เพี้ยน)
@@ -1869,6 +1909,7 @@ window.setHeaderStamp();
       else body += ' · ตรงกับที่ตลาดคาดไว้ (' + consFedText + ')';
       const nextFomc = el('fomcDateLabel');
       if(nextFomc && nextFomc.textContent) body += ' · รอบถัดไป ' + esc(nextFomc.textContent);
+      body += nextReleaseLine('fed');
       body += '<br><b>ผลต่อตลาด:</b> ' + (fresh ? (d.upper.changePp > 0 ? 'การขึ้นดอกเบี้ยกดดันหุ้น/คริปโตและหนุนดอลลาร์' : 'การลดดอกเบี้ยหนุนหุ้น/คริปโตและกดดันดอลลาร์') : 'การยืนดอกเบี้ยนิ่ง = เป็นกลาง ไม่มีเซอร์ไพรส์จากฝั่งนโยบาย');
       cards.push(analysisCard(accent, 'Fed Funds Rate — ' + verdict, body));
     }
@@ -1888,8 +1929,31 @@ window.setHeaderStamp();
       if(chg != null) body += '<br>เทียบเดือนก่อน (' + esc(thMonth(d.cpi.prev ? d.cpi.prev.date : '')) + ' ' + (d.cpi.prev ? d.cpi.prev.value.toFixed(1) : '–') + '%) = ' + (chg <= -0.05 ? 'ชะลอลง ' + Math.abs(chg).toFixed(1) + 'pp' : chg >= 0.05 ? 'เร่งขึ้น ' + chg.toFixed(1) + 'pp' : 'ทรงตัว');
       if(d.coreCpi && isValidNum(d.coreCpi.value)) body += ' · Core ' + (d.coreCpi.value > C.coreCpi + 0.1 ? 'ยังสูงกว่าที่คาด (แรงกดดันเงินเฟ้อพื้นฐานยังไม่คลาย)' : d.coreCpi.value < C.coreCpi - 0.1 ? 'ต่ำกว่าที่คาด' : 'ตามคาด');
       body += cpi > 2 ? '<br>ยัง<b>สูงกว่าเป้าหมาย 2% ของ Fed</b> → เป็นเหตุผลให้ Fed ยังไม่รีบลดดอกเบี้ย' : '<br>อยู่ในกรอบเป้าหมาย 2% ของ Fed แล้ว';
+      body += nextReleaseLine('cpi');
       body += '<br><b>ผลต่อตลาด:</b> ' + (dev > 0.1 ? 'เงินเฟ้อสูงกว่าคาด = กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)' : dev < -0.1 ? 'เงินเฟ้อต่ำกว่าคาด = หนุนหุ้น (Fed มีทางลดดอกเบี้ยเร็วขึ้น)' : 'ตรงคาด = ตลาดมักไม่ตอบสนองรุนแรงเพราะไม่มีเซอร์ไพรส์');
       cards.push(analysisCard(accent, 'CPI เงินเฟ้อ — ' + verdict, body));
+    }
+
+    // ── 2b) PPI ราคาผู้ผลิต (final demand, MoM) ─────────────────────────────────────────────
+    // ตัวเลขหลักที่ตลาดดูคือ % เปลี่ยนจากเดือนก่อน (ปรับฤดูกาล) — ค่าคาดของ Investing.com ก็เป็น MoM
+    if(d.ppi && isValidNum(d.ppi.value)){
+      const p = Math.round(d.ppi.value * 10) / 10;   // เทียบที่ความละเอียดเดียวกับที่ประกาศ/ที่คาด
+      const dev = p - C.ppi;
+      const near = Math.abs(dev) < 0.05;   // MoM รายงานทศนิยม 1 ตำแหน่ง: ต่าง 0.1 = พลาดคาดแล้ว
+      const accent = near ? AMBER : (dev > 0 ? RED : GREEN);
+      const verdict = near ? '🟡 ตรงตามคาด' : (dev > 0 ? '🔴 สูงกว่าที่คาด' : '🟢 ต่ำกว่าที่คาด');
+
+      let body = 'PPI เดือน ' + esc(thMonth(d.ppi.date)) + ' <b>' + signedPct(p, 1) + '% MoM</b>';
+      if(isValidNum(d.ppi.yoy)) body += ' (YoY ' + d.ppi.yoy.toFixed(1) + '%)';
+      body += ' · ตลาดคาด ' + signedPct(C.ppi, 1) + '% → ' + verdict.replace(/^[^\s]+\s/, '');
+      if(!near) body += ' ' + Math.abs(dev).toFixed(1) + 'pp';
+      if(d.ppi.prev && isValidNum(d.ppi.prev.value)){
+        const chg = p - d.ppi.prev.value;
+        body += '<br>เทียบเดือนก่อน (' + esc(thMonth(d.ppi.prev.date)) + ' ' + signedPct(d.ppi.prev.value, 1) + '%) = ' + (chg <= -0.05 ? 'ชะลอลง' : chg >= 0.05 ? 'เร่งขึ้น' : 'ทรงตัว');
+      }
+      body += nextReleaseLine('ppi');
+      body += '<br><b>ผลต่อตลาด:</b> ' + (dev >= 0.05 ? 'ต้นทุนผู้ผลิตสูงกว่าคาด = มักส่งต่อไปที่ CPI ในเดือนถัด ๆ ไป → กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)' : dev <= -0.05 ? 'ต้นทุนผู้ผลิตต่ำกว่าคาด = แรงกดดันเงินเฟ้อข้างหน้าเบาลง → หนุนหุ้น' : 'ตรงคาด = ตลาดมักไม่ตอบสนองแรง');
+      cards.push(analysisCard(accent, 'PPI ราคาผู้ผลิต — ' + verdict, body));
     }
 
     // ── 3) Unemployment ──────────────────────────────────────────────────────────────────────
@@ -1904,6 +1968,7 @@ window.setHeaderStamp();
       if(Math.abs(dev) > 0.05) body += ' ' + Math.abs(dev).toFixed(1) + 'pp';
       if(mom != null) body += '<br>เทียบเดือนก่อน = ' + (mom > 0 ? 'เพิ่มขึ้น ' + mom.toFixed(1) + 'pp (ตลาดแรงงานอ่อนลง)' : mom < 0 ? 'ลดลง ' + Math.abs(mom).toFixed(1) + 'pp' : 'ทรงตัว');
       if(isValidNum(d.unrate.change3m)) body += ' · เทียบ 3 เดือนก่อน = ' + ppDelta(d.unrate.change3m);
+      body += nextReleaseLine('unrate');
       body += '<br><b>ข้อควรระวัง:</b> ตัวเลขว่างงานต่ำลงอาจมาจาก "คนออกจากตลาดแรงงาน" ไม่ใช่มีคนได้งานเพิ่ม (ดู participation rate ประกอบ) และตัวเลขนี้เป็นรายเดือน อาจถูก revise ได้';
       body += '<br><b>ผลต่อตลาด:</b> ' + (dev < -0.1 ? 'ดีกว่าคาด = หนุนความเชื่อมั่น แต่ลดโอกาสที่ Fed จะรีบลดดอกเบี้ย' : dev > 0.1 ? 'แย่กว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย (bad news is good news ระยะสั้น) แต่น่ากังวลเรื่องเศรษฐกิจถดถอย' : 'ตรงคาด = เป็นกลาง');
       cards.push(analysisCard(accent, 'Unemployment Rate — ' + verdict, body));
@@ -1924,6 +1989,7 @@ window.setHeaderStamp();
           ? ' → รอบนี้อ่อนกว่าค่าเฉลี่ยล่าสุด (ตลาดแรงงานชะลอ)'
           : ' → รอบนี้แข็งกว่าค่าเฉลี่ยล่าสุด';
       }
+      body += nextReleaseLine('nfp');
       body += '<br><b>ผลต่อตลาด:</b> ' + (n < 0 ? 'ตัวเลขติดลบ = ข่าวร้ายของเศรษฐกิจ แต่ระยะสั้นตลาดอาจตีความว่า Fed จะรีบลดดอกเบี้ย (bad news is good news) — ถ้าติดลบต่อเนื่องหลายเดือนจะกลายเป็นสัญญาณถดถอยจริงจัง' : dev < -30000 ? 'อ่อนกว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย แต่กดดันความเชื่อมั่นเศรษฐกิจ' : dev > 30000 ? 'แข็งกว่าคาด = เศรษฐกิจยังดี แต่ลดโอกาส Fed ลดดอกเบี้ยเร็ว ๆ นี้' : 'ใกล้เคียงคาด = เป็นกลาง');
       body += '<br><span style="opacity:.75;">ℹ️ รวมการปรับปรุงตัวเลขย้อนหลังแล้ว จึงอาจต่างจากที่ข่าวรายงานครั้งแรกเล็กน้อย</span>';
       cards.push(analysisCard(accent, 'Nonfarm Payrolls — ' + verdict, body));
@@ -1937,9 +2003,10 @@ window.setHeaderStamp();
     // (FRED อาจตามหลังอยู่หนึ่งรอบ — ถ้าเป็นอย่างนั้นต้องบอก ไม่ใช่เทียบข้ามรอบเงียบๆ)
     let consensusNote = '';
     if(C.actuals){
-      const pairs = [['CPI', d.cpi, C.actuals.cpi], ['Core CPI', d.coreCpi, C.actuals.coreCpi], ['ว่างงาน', d.unrate, C.actuals.unrate]];
+      const pairs = [['CPI', d.cpi, C.actuals.cpi], ['Core CPI', d.coreCpi, C.actuals.coreCpi], ['PPI', d.ppi, C.actuals.ppi], ['ว่างงาน', d.unrate, C.actuals.unrate]];
       const checked = pairs.filter(pr => pr[1] && isValidNum(pr[1].value) && isValidNum(pr[2]));
-      const mismatched = checked.filter(pr => Math.abs(pr[1].value - pr[2]) > 0.05);
+      // เทียบที่ทศนิยม 1 ตำแหน่ง (ความละเอียดที่ประกาศจริง) — PPI MoM ที่คำนวณจากดัชนีอาจเป็น 0.26 ขณะที่ประกาศ 0.3
+      const mismatched = checked.filter(pr => Math.abs(Math.round(pr[1].value * 10) / 10 - pr[2]) > 0.05);
       if(checked.length && mismatched.length){
         consensusNote = ' · ⚠️ ค่าจาก Investing.com เป็นของรอบที่ใหม่/เก่ากว่าตัวเลขบนการ์ด (' + mismatched.map(pr => pr[0]).join(', ') + ') — ใช้เทียบเป็นแนวทางเท่านั้น';
       }else if(checked.length){
@@ -1963,7 +2030,7 @@ window.setHeaderStamp();
         + ' · <a href="#" id="consensusResetInline" style="color:var(--accent); border-bottom:1px dotted var(--accent); text-decoration:none;">↺ คืนค่าเริ่มต้น</a>'
       : 'ที่คาด: ' + autoLine;
     const linkLine = 'ดูต้นทาง: ' + [
-      link(CONSENSUS.links.cpi, 'CPI'), link(CONSENSUS.links.coreCpi, 'Core CPI'),
+      link(CONSENSUS.links.cpi, 'CPI'), link(CONSENSUS.links.coreCpi, 'Core CPI'), link(CONSENSUS.links.ppi, 'PPI'),
       link(CONSENSUS.links.nfp, 'การจ้างงาน'), link(CONSENSUS.links.unrate, 'ว่างงาน'),
       link(CONSENSUS.links.fed, 'Fed')
     ].join(' · ');
@@ -1972,7 +2039,7 @@ window.setHeaderStamp();
     if(d.stale) notes.push('⚠️ ตัวเลขที่ใช้คือค่าล่าสุดที่เคยดึงได้');
     if(missing.length) notes.push('⚠️ วิเคราะห์จากตัวเลขที่มีเท่านั้น (ที่ดึงไม่ได้: ' + esc(missing.map(k => OVERRIDE_LABELS[k] || k).join(', ')) + ')');
     const details = 'ค่าที่ตลาดคาด: Fed ' + consFedText
-      + ' · CPI ' + C.cpi.toFixed(1) + '% · Core ' + C.coreCpi.toFixed(1) + '% · ว่างงาน ' + C.unrate.toFixed(1)
+      + ' · CPI ' + C.cpi.toFixed(1) + '% · Core ' + C.coreCpi.toFixed(1) + '% · PPI ' + signedPct(C.ppi, 1) + '% · ว่างงาน ' + C.unrate.toFixed(1)
       + '% · NFP +' + C.nfp.toLocaleString('en-US')
       + '<br>' + srcLine + esc(consensusNote)
       + '<br>' + linkLine;
@@ -1994,7 +2061,7 @@ window.setHeaderStamp();
     lastFedSignature = fedSignature(d);
   }
   function fedSignature(d){
-    return ['upper','effr','cpi','coreCpi','unrate','nfp']
+    return ['upper','effr','cpi','coreCpi','ppi','unrate','nfp']
       .map(k => (d && d[k] && isValidNum(d[k].value)) ? k + ':' + d[k].value : k + ':-')
       .join('|');
   }
@@ -2285,6 +2352,18 @@ window.setHeaderStamp();
       .formatToParts(d).forEach(p => { parts[p.type] = p.value; });
     return parts;
   }
+  // ค่าคาดของรอบนั้น (ถ้า Investing.com มีแล้ว) ต่อท้ายรายการในปฏิทิน — วันที่ต้องตรงกัน ±1 วัน
+  const CAL_FORECAST_KEYS = { cpi:[['cpi','CPI YoY'], ['coreCpi','Core']], ppi:[['ppi','MoM']], jobs:[['nfp','NFP'], ['unrate','ว่างงาน']], fomc:[['fed','ดอกเบี้ย']] };
+  function calForecast(e){
+    try{
+      const parts = (CAL_FORECAST_KEYS[e.key] || []).map(([k, label]) => {
+        const u = LIVE_UPCOMING[k];
+        if(!u || !isValidNum(u.forecast) || Math.abs(dayDiff(u.releaseDate, e.date)) > 1) return null;
+        return label + ' ' + esc(fmtForecast(k, u.forecast));
+      }).filter(Boolean);
+      return parts.length ? '<br><span class="cal-fc">ตลาดคาด: ' + parts.join(' · ') + '</span>' : '';
+    }catch(err){ return ''; }
+  }
   function renderCalendar(events){
     const box = el('calList');
     if(!box) return;
@@ -2301,7 +2380,7 @@ window.setHeaderStamp();
       const when = diffDays <= 0 ? 'วันนี้' : diffDays === 1 ? 'พรุ่งนี้' : 'อีก ' + diffDays + ' วัน';
       return '<div class="cal-item' + (CAL_HIGH[e.key] ? ' hi' : '') + '">'
         + '<div class="cal-date"><b>' + esc(+p.day) + '</b><span>' + esc(TH_MONTHS[+p.month - 1]) + '</span></div>'
-        + '<div class="cal-name">' + esc(L[0]) + '<small>' + esc(TH_DOW[dayTh] + ' ' + (e.at ? p.hour + ':' + p.minute + ' น.' : '') + (L[1] ? ' · ' + L[1] : '')) + '</small></div>'
+        + '<div class="cal-name">' + esc(L[0]) + '<small>' + esc(TH_DOW[dayTh] + ' ' + (e.at ? p.hour + ':' + p.minute + ' น.' : '') + (L[1] ? ' · ' + L[1] : '')) + calForecast(e) + '</small></div>'
         + '<div class="cal-when' + (diffDays <= 1 ? ' soon' : '') + '">' + esc(when) + '</div>'
         + '</div>';
     }).join('');
@@ -2311,12 +2390,84 @@ window.setHeaderStamp();
       const r = await fetchWithTimeout('/.netlify/functions/calendar', 12000);
       const j = await r.json();
       if(!j || !Array.isArray(j.events)) throw new Error('bad calendar payload');
-      renderCalendar(j.events);
+      CAL_EVENTS = j.events;
     }catch(e){
       console.warn('[calendar]', e);
       // ดึงไม่ได้ — อย่างน้อยโชว์ FOMC จากรายการที่หน้าเว็บมีอยู่แล้ว (14:00 น. เวลานิวยอร์ก ≈ 01:00–02:00 น. ไทย)
-      renderCalendar(FOMC_STATEMENT_DATES.map(d => ({ key:'fomc', date:d, at:null })).filter(e => e.date >= new Date().toISOString().slice(0, 10)));
+      CAL_EVENTS = FOMC_STATEMENT_DATES.map(d => ({ key:'fomc', date:d, at:null })).filter(e => e.date >= new Date().toISOString().slice(0, 10));
     }
+    renderCalendar(CAL_EVENTS);
+    try{ renderNextReleases(); }catch(e){ /* best-effort */ }
+    try{ if(lastFedPayload) renderFedAnalysis(lastFedPayload); }catch(e){ /* best-effort */ }
+  }
+
+  // ---------- "ประกาศครั้งถัดไป · ตลาดคาด …" — ค่าคาดการณ์ก่อนตัวเลขจริงออก ----------
+  // วัน/เวลาประกาศมาจากปฏิทิน (BLS/FOMC — เวลาแน่นอน แปลงเป็นเวลาไทย) ส่วนค่าคาดมาจากแถวที่ยังไม่ประกาศ
+  // ในตารางของ Investing.com (/.netlify/functions/consensus → events[key].upcoming)
+  // ค่าคาดจะแสดงก็ต่อเมื่อวันที่ของสองแหล่งตรงกัน (±1 วัน) — กันเอาค่าคาดของรอบที่ประกาศไปแล้ว
+  // มาแปะกับรอบถัดไป · พอตัวเลขจริงออก รายการนี้จะเลื่อนไปรอบหน้าเอง และการ์ดวิเคราะห์จะเทียบ "จริง vs คาด" ให้
+  var CAL_EVENTS = [];
+  const NEXT_CAL_KEY = { cpi:'cpi', coreCpi:'cpi', ppi:'ppi', unrate:'jobs', nfp:'jobs', fed:'fomc' };
+  function dayDiff(a, b){ return Math.round((Date.parse(a + 'T00:00:00Z') - Date.parse(b + 'T00:00:00Z')) / 86400000); }
+  function nextRelease(key){
+    const calKey = NEXT_CAL_KEY[key];
+    const now = Date.now();
+    const todayUtc = new Date(now).toISOString().slice(0, 10);
+    // เหตุการณ์ที่ยังไม่ถึงเวลา (ไม่มีเวลา = ถือว่ายังไม่ผ่านจนจบวันนั้น)
+    const ev = (CAL_EVENTS || [])
+      .filter(e => e && e.key === calKey && /^\d{4}-\d{2}-\d{2}$/.test(String(e.date || '')))
+      .filter(e => (e.at ? Date.parse(e.at) : Date.parse(e.date + 'T23:59:59Z')) > now)
+      .sort((a, b) => String(a.at || a.date).localeCompare(String(b.at || b.date)))[0] || null;
+    let up = LIVE_UPCOMING[key] || null;
+    if(up && ev && Math.abs(dayDiff(up.releaseDate, ev.date)) > 1) up = null;
+    if(up && !ev && up.releaseDate < todayUtc) up = null;
+    if(!ev && !up) return null;
+    return { date: ev ? ev.date : up.releaseDate, at: ev ? ev.at : null, forecast: up ? up.forecast : null, previous: up ? up.previous : null };
+  }
+  function fmtForecast(key, v){
+    if(!isValidNum(v)) return '';
+    if(key === 'nfp') return fmtJobs(v) + ' ตำแหน่ง';
+    if(key === 'ppi') return signedPct(v, 1) + '%';
+    if(key === 'fed') return v.toFixed(2) + '%';
+    return v.toFixed(1) + '%';
+  }
+  // "พฤ. 13 พ.ย. 19:30 น." (เวลาไทย) · วันนี้/พรุ่งนี้ใช้คำแทนวันที่
+  function fmtReleaseWhen(n){
+    const iso = n.at || (n.date + 'T12:00:00Z');
+    const p = bkk(iso);
+    const t = bkk(new Date().toISOString());
+    const diff = Math.round((Date.UTC(+p.year, +p.month - 1, +p.day) - Date.UTC(+t.year, +t.month - 1, +t.day)) / 86400000);
+    const dow = ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'][new Date(Date.UTC(+p.year, +p.month - 1, +p.day)).getUTCDay()];
+    const day = diff === 0 ? 'วันนี้' : diff === 1 ? 'พรุ่งนี้' : dow + ' ' + (+p.day) + ' ' + TH_MONTHS[+p.month - 1];
+    return { text: day + (n.at ? ' ' + p.hour + ':' + p.minute + ' น.' : ''), today: diff === 0 };
+  }
+  // HTML หนึ่งบรรทัดสำหรับใต้ตัวเลขในการ์ด (ไม่มีข้อมูลเลย = คืนค่าว่าง)
+  function nextReleaseHtml(key, opts){
+    const n = nextRelease(key);
+    if(!n) return '';
+    const w = fmtReleaseWhen(n);
+    let fc = isValidNum(n.forecast) ? (key === 'fed' ? 'ตลาดคาดดอกเบี้ย ' : 'ตลาดคาด ') + '<b>' + esc(fmtForecast(key, n.forecast)) + '</b>' : 'ยังไม่มีค่าคาด';
+    if(key === 'cpi' && isValidNum(n.forecast)){
+      const core = nextRelease('coreCpi');
+      if(core && isValidNum(core.forecast) && core.date === n.date) fc += ' (Core ' + esc(fmtForecast('coreCpi', core.forecast)) + ')';
+    }
+    if(opts && opts.withPrev && isValidNum(n.previous)) fc += ' · ครั้งก่อน ' + esc(fmtForecast(key, n.previous));
+    return (w.today ? '⏰ ประกาศ' : '📅 ครั้งถัดไป ') + esc(w.text) + ' · ' + fc;
+  }
+  function nextReleaseLine(key){
+    try{
+      const h = nextReleaseHtml(key, { withPrev: true });
+      return h ? '<br>' + h : '';
+    }catch(e){ return ''; }
+  }
+  function renderNextReleases(){
+    [['nextFed','fed'], ['nextCpi','cpi'], ['nextPpi','ppi'], ['nextUnrate','unrate'], ['nextNfp','nfp']].forEach(([id, key]) => {
+      const node = el(id);
+      if(!node) return;
+      const h = nextReleaseHtml(key);
+      node.innerHTML = h;
+      node.className = 'next' + (h.indexOf('⏰') === 0 ? ' today' : '');
+    });
   }
   fetchCalendar();
 
