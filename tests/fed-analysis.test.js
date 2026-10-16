@@ -198,6 +198,38 @@ test('a baked consensus from an older round is never used to call a newer print 
   assert.doesNotMatch(h2, /ยังไม่มีค่าคาดของรอบนี้/);
 });
 
+test('the live consensus loads even when the Fed numbers come from the local cache', async () => {
+  const fred = payload({
+    cpi: { value: C.cpi + 0.3, date: '2026-09-01', source: 'fred-csv' },
+    upper: { value: 4.0, date: '2026-10-14', source: 'fred-csv', prevValue: 3.75, changePp: 0.25, sinceDate: '2026-09-17', meetingsSinceChange: 0 },
+    lower: { value: 3.75, date: '2026-10-14', source: 'fred-csv' }
+  });
+  const live = consensusPayload({
+    cpi: { actual: C.cpi + 0.3, forecast: C.cpi + 0.2, previous: C.cpi, releaseDate: '2026-10-14' },
+    coreCpi: { actual: C.coreCpi, forecast: C.coreCpi, previous: C.coreCpi, releaseDate: '2026-10-14' },
+    unrate: { actual: C.unrate, forecast: C.unrate, previous: C.unrate, releaseDate: '2026-10-02' },
+    nfp: { actual: 29000, forecast: 89000, previous: 133000, releaseDate: '2026-10-02' },
+    fed: { actual: 4.0, forecast: 4.0, previous: 3.75, releaseDate: '2026-09-16' }
+  });
+  const sb = makeSandbox({ fetchImpl: fetchStub({ fred, consensus: live }) });
+  // a fresh cached copy: the page must not hit fred-data, but must still fetch the consensus
+  sb.localStorage.setItem('fed-data-cache-v3', JSON.stringify({ data: fred, refreshAfter: Date.now() + 3600e3, savedAt: Date.now() }));
+  const h = html(await runAllScripts(sb));
+  assert.match(h, /ดึงสด/, 'the live consensus must be used');
+  assert.match(h, /CPI เงินเฟ้อ — 🟡 ใกล้เคียงที่คาด/);
+  assert.match(h, /ตรงกับที่ตลาดคาดไว้/, 'the Fed hike must be compared with the live 4.00% forecast');
+});
+
+test('a baked Fed forecast is not compared with a rate set after it was written', async () => {
+  const fred = payload({
+    upper: { value: 4.0, date: '2026-10-14', source: 'fred-csv', prevValue: 3.75, changePp: 0.25, sinceDate: '2026-09-17', meetingsSinceChange: 0 },
+    lower: { value: 3.75, date: '2026-10-14', source: 'fred-csv' }
+  });
+  const h = html(await runAllScripts(makeSandbox({ fetchImpl: fetchStub({ fred, consensus: null }) })));
+  assert.doesNotMatch(h, /เข้มงวดกว่าที่ตลาดคาดไว้/);
+  assert.match(h, /Fed Funds Rate[\s\S]*ยังไม่มีค่าคาดของรอบนี้ให้เทียบ/);
+});
+
 test('a stale/partial payload still produces an honest analysis', async () => {
   const partial = payload({ nfp: undefined, errors: { nfp: 'no usable PAYEMS level' }, stale: true, staleReason: 'all sources timed out' });
   const h = html(await runAllScripts(makeSandbox({ fetchImpl: fetchStub({ fred: partial }) })));
