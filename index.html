@@ -1430,7 +1430,12 @@ window.setHeaderStamp();
       fedHi: num(ov.fedHi, num(sh.fedHi, num(liveFedHi, CONSENSUS.fed.hi))),
       fedLo: num(ov.fedLo, num(sh.fedLo, num(liveFedLo, CONSENSUS.fed.lo))),
       // ค่า "ตามจริง" ของรอบล่าสุดจาก Investing.com — ใช้ตรวจว่า consensus ตรงรอบกับตัวเลขบนการ์ด
-      actuals: live.actuals || null
+      actuals: live.actuals || null,
+      // แต่ละช่องมาจากไหน — 'baked' = ค่าสำรองที่ฝังไว้ (เป็นของรอบประกาศ ณ CONSENSUS.asOf เท่านั้น)
+      from: ['cpi','coreCpi','ppi','unrate','nfp'].reduce((o, k) => {
+        o[k] = isValidNum(ov[k]) ? 'override' : isValidNum(sh[k]) ? 'shared' : isValidNum(live[k]) ? 'live' : 'baked';
+        return o;
+      }, {})
     };
   }
 
@@ -1881,7 +1886,14 @@ window.setHeaderStamp();
     // Investing.com รายงาน "ระดับที่ตลาดคาด" (ขอบบนของกรอบเป้า) จึงเทียบกับขอบบนของกรอบจริง
     const consFedText = isValidNum(C.fedLo) ? (C.fedLo.toFixed(2) + '–' + C.fedHi.toFixed(2) + '%') : (C.fedHi.toFixed(2) + '%');
     const cards = [];
-    const GREEN = 'var(--good)', RED = 'var(--bad)', AMBER = 'var(--warn)';
+    const GREEN = 'var(--good)', RED = 'var(--bad)', AMBER = 'var(--warn)', GREY = 'var(--muted)';
+    // ค่าสำรองที่ฝังไว้เป็น "ค่าคาดของรอบที่ประกาศ ณ CONSENSUS.asOf" (= ตัวเลขของเดือนก่อนหน้านั้น)
+    // ถ้าตัวเลขบนการ์ดเป็นเดือนที่ใหม่กว่า ค่านั้นไม่ใช่ค่าคาดของรอบนี้ → ไม่ตัดสินว่าดี/แย่กว่าคาด
+    // (ต.ค. 2026: CPI ก.ย. 3.7% ถูกเทียบกับค่าคาดรอบ ส.ค. 3.4% แล้วขึ้นว่า "สูงกว่าที่คาด" ทั้งที่ตลาดคาด 3.6%)
+    const bakedMonth = (function(){ const m = /^(\d{4})-(\d{2})/.exec(String(CONSENSUS.asOf)); if(!m) return ''; const dt = new Date(Date.UTC(+m[1], +m[2] - 2, 1)); return dt.toISOString().slice(0, 7); })();
+    const consFor = (key, printDate) => (C.from[key] === 'baked' && bakedMonth && String(printDate || '').slice(0, 7) > bakedMonth) ? null : C[key];
+    const NOCONS = '⚪ ยังไม่มีค่าคาดของรอบนี้';
+    const noConsText = ' · ยังไม่มีค่าคาดของรอบนี้ให้เทียบ (ค่าสำรองที่ฝังไว้เป็นของรอบ ' + esc(thMonth(bakedMonth)) + ')';
 
     // ── 1) Fed Funds Rate ────────────────────────────────────────────────────────────────────
     if(d.upper && d.lower && isValidNum(d.upper.value) && isValidNum(d.lower.value)){
@@ -1917,20 +1929,23 @@ window.setHeaderStamp();
     // ── 2) CPI (headline + core) ─────────────────────────────────────────────────────────────
     if(d.cpi && isValidNum(d.cpi.value)){
       const cpi = d.cpi.value;
-      const dev = cpi - C.cpi;
+      const cons = consFor('cpi', d.cpi.date);
+      const dev = isValidNum(cons) ? cpi - cons : null;
       const chg = isValidNum(d.cpi.changePp) ? d.cpi.changePp : null;
-      let accent = Math.abs(dev) <= 0.1 ? AMBER : (dev > 0 ? RED : GREEN);
-      const verdict = Math.abs(dev) <= 0.1 ? '🟡 ใกล้เคียงที่คาด' : (dev > 0 ? '🔴 สูงกว่าที่คาด' : '🟢 ต่ำกว่าที่คาด');
+      let accent = dev == null ? GREY : Math.abs(dev) <= 0.1 ? AMBER : (dev > 0 ? RED : GREEN);
+      const verdict = dev == null ? NOCONS : Math.abs(dev) <= 0.1 ? '🟡 ใกล้เคียงที่คาด' : (dev > 0 ? '🔴 สูงกว่าที่คาด' : '🟢 ต่ำกว่าที่คาด');
 
       let body = 'CPI เดือน ' + esc(thMonth(d.cpi.date)) + ' อยู่ที่ <b>' + cpi.toFixed(1) + '% YoY</b>';
       if(d.coreCpi && isValidNum(d.coreCpi.value)) body += ' (Core ' + d.coreCpi.value.toFixed(1) + '%)';
-      body += ' · ตลาดคาด ' + C.cpi.toFixed(1) + '% → ' + verdict.replace(/^[^\s]+\s/, '');
-      if(Math.abs(dev) > 0.05) body += ' ' + Math.abs(dev).toFixed(1) + 'pp';
+      if(dev == null) body += noConsText;
+      else body += ' · ตลาดคาด ' + cons.toFixed(1) + '% → ' + verdict.replace(/^[^\s]+\s/, '');
+      if(dev != null && Math.abs(dev) > 0.05) body += ' ' + Math.abs(dev).toFixed(1) + 'pp';
       if(chg != null) body += '<br>เทียบเดือนก่อน (' + esc(thMonth(d.cpi.prev ? d.cpi.prev.date : '')) + ' ' + (d.cpi.prev ? d.cpi.prev.value.toFixed(1) : '–') + '%) = ' + (chg <= -0.05 ? 'ชะลอลง ' + Math.abs(chg).toFixed(1) + 'pp' : chg >= 0.05 ? 'เร่งขึ้น ' + chg.toFixed(1) + 'pp' : 'ทรงตัว');
-      if(d.coreCpi && isValidNum(d.coreCpi.value)) body += ' · Core ' + (d.coreCpi.value > C.coreCpi + 0.1 ? 'ยังสูงกว่าที่คาด (แรงกดดันเงินเฟ้อพื้นฐานยังไม่คลาย)' : d.coreCpi.value < C.coreCpi - 0.1 ? 'ต่ำกว่าที่คาด' : 'ตามคาด');
+      const consCore = d.coreCpi ? consFor('coreCpi', d.coreCpi.date) : null;
+      if(d.coreCpi && isValidNum(d.coreCpi.value) && isValidNum(consCore)) body += ' · Core ' + (d.coreCpi.value > consCore + 0.1 ? 'ยังสูงกว่าที่คาด (แรงกดดันเงินเฟ้อพื้นฐานยังไม่คลาย)' : d.coreCpi.value < consCore - 0.1 ? 'ต่ำกว่าที่คาด' : 'ตามคาด');
       body += cpi > 2 ? '<br>ยัง<b>สูงกว่าเป้าหมาย 2% ของ Fed</b> → เป็นเหตุผลให้ Fed ยังไม่รีบลดดอกเบี้ย' : '<br>อยู่ในกรอบเป้าหมาย 2% ของ Fed แล้ว';
       body += nextReleaseLine('cpi');
-      body += '<br><b>ผลต่อตลาด:</b> ' + (dev > 0.1 ? 'เงินเฟ้อสูงกว่าคาด = กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)' : dev < -0.1 ? 'เงินเฟ้อต่ำกว่าคาด = หนุนหุ้น (Fed มีทางลดดอกเบี้ยเร็วขึ้น)' : 'ตรงคาด = ตลาดมักไม่ตอบสนองรุนแรงเพราะไม่มีเซอร์ไพรส์');
+      if(dev != null) body += '<br><b>ผลต่อตลาด:</b> ' + (dev > 0.1 ? 'เงินเฟ้อสูงกว่าคาด = กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)' : dev < -0.1 ? 'เงินเฟ้อต่ำกว่าคาด = หนุนหุ้น (Fed มีทางลดดอกเบี้ยเร็วขึ้น)' : 'ตรงคาด = ตลาดมักไม่ตอบสนองรุนแรงเพราะไม่มีเซอร์ไพรส์');
       cards.push(analysisCard(accent, 'CPI เงินเฟ้อ — ' + verdict, body));
     }
 
@@ -1938,51 +1953,57 @@ window.setHeaderStamp();
     // ตัวเลขหลักที่ตลาดดูคือ % เปลี่ยนจากเดือนก่อน (ปรับฤดูกาล) — ค่าคาดของ Investing.com ก็เป็น MoM
     if(d.ppi && isValidNum(d.ppi.value)){
       const p = Math.round(d.ppi.value * 10) / 10;   // เทียบที่ความละเอียดเดียวกับที่ประกาศ/ที่คาด
-      const dev = p - C.ppi;
-      const near = Math.abs(dev) < 0.05;   // MoM รายงานทศนิยม 1 ตำแหน่ง: ต่าง 0.1 = พลาดคาดแล้ว
-      const accent = near ? AMBER : (dev > 0 ? RED : GREEN);
-      const verdict = near ? '🟡 ตรงตามคาด' : (dev > 0 ? '🔴 สูงกว่าที่คาด' : '🟢 ต่ำกว่าที่คาด');
+      const cons = consFor('ppi', d.ppi.date);
+      const dev = isValidNum(cons) ? p - cons : null;
+      const near = dev != null && Math.abs(dev) < 0.05;   // MoM รายงานทศนิยม 1 ตำแหน่ง: ต่าง 0.1 = พลาดคาดแล้ว
+      const accent = dev == null ? GREY : near ? AMBER : (dev > 0 ? RED : GREEN);
+      const verdict = dev == null ? NOCONS : near ? '🟡 ตรงตามคาด' : (dev > 0 ? '🔴 สูงกว่าที่คาด' : '🟢 ต่ำกว่าที่คาด');
 
       let body = 'PPI เดือน ' + esc(thMonth(d.ppi.date)) + ' <b>' + signedPct(p, 1) + '% MoM</b>';
       if(isValidNum(d.ppi.yoy)) body += ' (YoY ' + d.ppi.yoy.toFixed(1) + '%)';
-      body += ' · ตลาดคาด ' + signedPct(C.ppi, 1) + '% → ' + verdict.replace(/^[^\s]+\s/, '');
-      if(!near) body += ' ' + Math.abs(dev).toFixed(1) + 'pp';
+      if(dev == null) body += noConsText;
+      else body += ' · ตลาดคาด ' + signedPct(cons, 1) + '% → ' + verdict.replace(/^[^\s]+\s/, '');
+      if(dev != null && !near) body += ' ' + Math.abs(dev).toFixed(1) + 'pp';
       if(d.ppi.prev && isValidNum(d.ppi.prev.value)){
         const chg = p - d.ppi.prev.value;
         body += '<br>เทียบเดือนก่อน (' + esc(thMonth(d.ppi.prev.date)) + ' ' + signedPct(d.ppi.prev.value, 1) + '%) = ' + (chg <= -0.05 ? 'ชะลอลง' : chg >= 0.05 ? 'เร่งขึ้น' : 'ทรงตัว');
       }
       body += nextReleaseLine('ppi');
-      body += '<br><b>ผลต่อตลาด:</b> ' + (dev >= 0.05 ? 'ต้นทุนผู้ผลิตสูงกว่าคาด = มักส่งต่อไปที่ CPI ในเดือนถัด ๆ ไป → กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)' : dev <= -0.05 ? 'ต้นทุนผู้ผลิตต่ำกว่าคาด = แรงกดดันเงินเฟ้อข้างหน้าเบาลง → หนุนหุ้น' : 'ตรงคาด = ตลาดมักไม่ตอบสนองแรง');
+      if(dev != null) body += '<br><b>ผลต่อตลาด:</b> ' + (dev >= 0.05 ? 'ต้นทุนผู้ผลิตสูงกว่าคาด = มักส่งต่อไปที่ CPI ในเดือนถัด ๆ ไป → กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)' : dev <= -0.05 ? 'ต้นทุนผู้ผลิตต่ำกว่าคาด = แรงกดดันเงินเฟ้อข้างหน้าเบาลง → หนุนหุ้น' : 'ตรงคาด = ตลาดมักไม่ตอบสนองแรง');
       cards.push(analysisCard(accent, 'PPI ราคาผู้ผลิต — ' + verdict, body));
     }
 
     // ── 3) Unemployment ──────────────────────────────────────────────────────────────────────
     if(d.unrate && isValidNum(d.unrate.value)){
       const u = d.unrate.value;
-      const dev = u - C.unrate;                    // ต่ำกว่าคาด = ตลาดแรงงานแข็งแรง
+      const cons = consFor('unrate', d.unrate.date);
+      const dev = isValidNum(cons) ? u - cons : null;   // ต่ำกว่าคาด = ตลาดแรงงานแข็งแรง
       const mom = isValidNum(d.unrate.changeMoM) ? d.unrate.changeMoM : null;
-      let accent = Math.abs(dev) <= 0.1 ? AMBER : (dev < 0 ? GREEN : RED);
-      const verdict = Math.abs(dev) <= 0.1 ? '🟡 ใกล้เคียงที่คาด' : (dev < 0 ? '🟢 ดีกว่าที่คาด' : '🔴 แย่กว่าที่คาด');
+      let accent = dev == null ? GREY : Math.abs(dev) <= 0.1 ? AMBER : (dev < 0 ? GREEN : RED);
+      const verdict = dev == null ? NOCONS : Math.abs(dev) <= 0.1 ? '🟡 ใกล้เคียงที่คาด' : (dev < 0 ? '🟢 ดีกว่าที่คาด' : '🔴 แย่กว่าที่คาด');
 
-      let body = 'อัตราว่างงานเดือน ' + esc(thMonth(d.unrate.date)) + ' อยู่ที่ <b>' + u.toFixed(1) + '%</b> · ตลาดคาด ' + C.unrate.toFixed(1) + '% → ' + verdict.replace(/^[^\s]+\s/, '');
-      if(Math.abs(dev) > 0.05) body += ' ' + Math.abs(dev).toFixed(1) + 'pp';
+      let body = 'อัตราว่างงานเดือน ' + esc(thMonth(d.unrate.date)) + ' อยู่ที่ <b>' + u.toFixed(1) + '%</b>'
+        + (dev == null ? noConsText : ' · ตลาดคาด ' + cons.toFixed(1) + '% → ' + verdict.replace(/^[^\s]+\s/, ''));
+      if(dev != null && Math.abs(dev) > 0.05) body += ' ' + Math.abs(dev).toFixed(1) + 'pp';
       if(mom != null) body += '<br>เทียบเดือนก่อน = ' + (mom > 0 ? 'เพิ่มขึ้น ' + mom.toFixed(1) + 'pp (ตลาดแรงงานอ่อนลง)' : mom < 0 ? 'ลดลง ' + Math.abs(mom).toFixed(1) + 'pp' : 'ทรงตัว');
       if(isValidNum(d.unrate.change3m)) body += ' · เทียบ 3 เดือนก่อน = ' + ppDelta(d.unrate.change3m);
       body += nextReleaseLine('unrate');
       body += '<br><b>ข้อควรระวัง:</b> ตัวเลขว่างงานต่ำลงอาจมาจาก "คนออกจากตลาดแรงงาน" ไม่ใช่มีคนได้งานเพิ่ม (ดู participation rate ประกอบ) และตัวเลขนี้เป็นรายเดือน อาจถูก revise ได้';
-      body += '<br><b>ผลต่อตลาด:</b> ' + (dev < -0.1 ? 'ดีกว่าคาด = หนุนความเชื่อมั่น แต่ลดโอกาสที่ Fed จะรีบลดดอกเบี้ย' : dev > 0.1 ? 'แย่กว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย (bad news is good news ระยะสั้น) แต่น่ากังวลเรื่องเศรษฐกิจถดถอย' : 'ตรงคาด = เป็นกลาง');
+      if(dev != null) body += '<br><b>ผลต่อตลาด:</b> ' + (dev < -0.1 ? 'ดีกว่าคาด = หนุนความเชื่อมั่น แต่ลดโอกาสที่ Fed จะรีบลดดอกเบี้ย' : dev > 0.1 ? 'แย่กว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย (bad news is good news ระยะสั้น) แต่น่ากังวลเรื่องเศรษฐกิจถดถอย' : 'ตรงคาด = เป็นกลาง');
       cards.push(analysisCard(accent, 'Unemployment Rate — ' + verdict, body));
     }
 
     // ── 4) Nonfarm Payrolls ──────────────────────────────────────────────────────────────────
     if(d.nfp && isValidNum(d.nfp.value)){
       const n = d.nfp.value;
-      const dev = n - C.nfp;
-      let accent = Math.abs(dev) < 30000 ? AMBER : (dev > 0 ? GREEN : RED);
-      const verdict = Math.abs(dev) < 30000 ? '🟡 ใกล้เคียงที่คาด' : (dev > 0 ? '🟢 ดีกว่าที่คาด' : '🔴 แย่กว่าที่คาด');
+      const cons = consFor('nfp', d.nfp.date);
+      const dev = isValidNum(cons) ? n - cons : null;
+      let accent = dev == null ? GREY : Math.abs(dev) < 30000 ? AMBER : (dev > 0 ? GREEN : RED);
+      const verdict = dev == null ? NOCONS : Math.abs(dev) < 30000 ? '🟡 ใกล้เคียงที่คาด' : (dev > 0 ? '🟢 ดีกว่าที่คาด' : '🔴 แย่กว่าที่คาด');
 
-      let body = 'จ้างงานเดือน ' + esc(thMonth(d.nfp.date)) + ' = <b>' + esc(fmtJobs(n)) + ' ตำแหน่ง</b> · ตลาดคาด +' + C.nfp.toLocaleString('en-US') + ' → ' + verdict.replace(/^[^\s]+\s/, '');
-      if(Math.abs(dev) >= 1000) body += ' ' + Math.abs(dev).toLocaleString('en-US') + ' ตำแหน่ง';
+      let body = 'จ้างงานเดือน ' + esc(thMonth(d.nfp.date)) + ' = <b>' + esc(fmtJobs(n)) + ' ตำแหน่ง</b>'
+        + (dev == null ? noConsText : ' · ตลาดคาด ' + esc(fmtJobs(cons)) + ' → ' + verdict.replace(/^[^\s]+\s/, ''));
+      if(dev != null && Math.abs(dev) >= 1000) body += ' ' + Math.abs(dev).toLocaleString('en-US') + ' ตำแหน่ง';
       if(isValidNum(d.nfp.avg3Change)) body += '<br>ค่าเฉลี่ย 3 เดือนล่าสุด = ' + esc(fmtJobs(d.nfp.avg3Change)) + ' ตำแหน่ง/เดือน' + (isValidNum(d.nfp.prevChange) ? ' · เดือนก่อนหน้า = ' + esc(fmtJobs(d.nfp.prevChange)) : '');
       if(isValidNum(d.nfp.avg3Change)){
         body += n < d.nfp.avg3Change
@@ -1990,7 +2011,7 @@ window.setHeaderStamp();
           : ' → รอบนี้แข็งกว่าค่าเฉลี่ยล่าสุด';
       }
       body += nextReleaseLine('nfp');
-      body += '<br><b>ผลต่อตลาด:</b> ' + (n < 0 ? 'ตัวเลขติดลบ = ข่าวร้ายของเศรษฐกิจ แต่ระยะสั้นตลาดอาจตีความว่า Fed จะรีบลดดอกเบี้ย (bad news is good news) — ถ้าติดลบต่อเนื่องหลายเดือนจะกลายเป็นสัญญาณถดถอยจริงจัง' : dev < -30000 ? 'อ่อนกว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย แต่กดดันความเชื่อมั่นเศรษฐกิจ' : dev > 30000 ? 'แข็งกว่าคาด = เศรษฐกิจยังดี แต่ลดโอกาส Fed ลดดอกเบี้ยเร็ว ๆ นี้' : 'ใกล้เคียงคาด = เป็นกลาง');
+      if(dev != null || n < 0) body += '<br><b>ผลต่อตลาด:</b> ' + (n < 0 ? 'ตัวเลขติดลบ = ข่าวร้ายของเศรษฐกิจ แต่ระยะสั้นตลาดอาจตีความว่า Fed จะรีบลดดอกเบี้ย (bad news is good news) — ถ้าติดลบต่อเนื่องหลายเดือนจะกลายเป็นสัญญาณถดถอยจริงจัง' : dev < -30000 ? 'อ่อนกว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย แต่กดดันความเชื่อมั่นเศรษฐกิจ' : dev > 30000 ? 'แข็งกว่าคาด = เศรษฐกิจยังดี แต่ลดโอกาส Fed ลดดอกเบี้ยเร็ว ๆ นี้' : 'ใกล้เคียงคาด = เป็นกลาง');
       body += '<br><span style="opacity:.75;">ℹ️ รวมการปรับปรุงตัวเลขย้อนหลังแล้ว จึงอาจต่างจากที่ข่าวรายงานครั้งแรกเล็กน้อย</span>';
       cards.push(analysisCard(accent, 'Nonfarm Payrolls — ' + verdict, body));
     }

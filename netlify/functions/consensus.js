@@ -71,6 +71,22 @@ function valueAfter(text, labels) {
   return '';
 }
 
+// Like valueAfter, but keeps looking until the text after a label actually parses as a number, and
+// only from `from` onwards. The live pages also say "Forecast" in places that are not the summary
+// block (menus, table headers), and taking the first hit there is how every forecast came back null
+// in Oct 2026 while Actual/Previous still read fine.
+function numberAfter(text, labels, from = 0) {
+  const hay = text.toLowerCase();
+  for (const label of labels) {
+    const needle = label.toLowerCase();
+    for (let i = hay.indexOf(needle, from); i !== -1; i = hay.indexOf(needle, i + needle.length)) {
+      const n = parseNumber(text.slice(i + label.length, i + label.length + 40));
+      if (n) return n;
+    }
+  }
+  return null;
+}
+
 function parseNumber(raw) {
   const m = /^([+\-−]?\d[\d.,]*)\s*(%|พัน|ล้าน|K|M|mn)?/i.exec(String(raw || '').trim());
   if (!m) return null;
@@ -105,21 +121,25 @@ function parseDate(raw) {
 //   Release date (period) | Time | Actual | Forecast | Previous
 // newest first; a row whose Actual is still empty but has a Forecast is a release that hasn't happened
 // yet. If there are several, the earliest one is "next". null when the table isn't there.
-function parseUpcoming(html) {
+function historyRows(html) {
   const rows = String(html || '').match(/<tr[\s\S]*?<\/tr>/gi) || [];
-  let best = null;
+  const out = [];
   for (const row of rows) {
     const cells = (row.match(/<td[\s\S]*?<\/td>/gi) || []).map(toText);
     if (cells.length < 5) continue;
     const releaseDate = parseDate(cells[0]);
     if (!releaseDate) continue;
-    if (parseNumber(cells[2])) continue; // already released
-    const forecast = parseNumber(cells[3]);
-    if (!forecast) continue;
-    const previous = parseNumber(cells[4]);
-    if (!best || releaseDate < best.releaseDate) {
-      best = { releaseDate, forecast: forecast.value, previous: previous ? previous.value : null };
-    }
+    const num = (c) => { const n = parseNumber(c); return n ? n.value : null; };
+    out.push({ releaseDate, actual: num(cells[2]), forecast: num(cells[3]), previous: num(cells[4]) });
+  }
+  return out;
+}
+
+function parseUpcoming(html) {
+  let best = null;
+  for (const r of historyRows(html)) {
+    if (r.actual != null || r.forecast == null) continue; // already released / no forecast yet
+    if (!best || r.releaseDate < best.releaseDate) best = { releaseDate: r.releaseDate, forecast: r.forecast, previous: r.previous };
   }
   return best;
 }
@@ -127,10 +147,18 @@ function parseUpcoming(html) {
 // Pure parser — exported for tests. Returns nulls for anything it cannot read.
 function parseEventPage(html) {
   const text = toText(html);
-  const actual = parseNumber(valueAfter(text, ['ตามจริง', 'Actual']));
-  const forecast = parseNumber(valueAfter(text, ['คาดการณ์', 'Forecast']));
-  const previous = parseNumber(valueAfter(text, ['ก่อนหน้า', 'Previous']));
+  // Read the summary block from its "Latest Release" label onwards when it can be found.
+  const hay = text.toLowerCase();
+  const anchor = ['ประกาศล่าสุด', 'latest release'].map((l) => hay.indexOf(l)).filter((i) => i >= 0).sort((a, b) => a - b)[0] || 0;
+  const actual = numberAfter(text, ['ตามจริง', 'Actual'], anchor);
+  let forecast = numberAfter(text, ['คาดการณ์', 'Forecast'], anchor);
+  const previous = numberAfter(text, ['ก่อนหน้า', 'Previous'], anchor);
   const releaseDate = parseDate(valueAfter(text, ['ประกาศล่าสุด', 'Latest Release']));
+  // Fallback: the history-table row of that same release carries the forecast too.
+  if (!forecast && releaseDate) {
+    const row = historyRows(html).find((r) => r.releaseDate === releaseDate && r.forecast != null);
+    if (row) forecast = { value: row.forecast, unit: '' };
+  }
   return {
     actual: actual ? actual.value : null,
     forecast: forecast ? forecast.value : null,

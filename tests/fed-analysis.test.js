@@ -105,11 +105,12 @@ test('verdicts are computed against the consensus in both directions', async () 
   assert.match(bearish, /Nonfarm Payrolls — 🔴 แย่กว่าที่คาด/, 'payrolls below consensus must be flagged');
 
   // กลับกันทั้งหมด: เงินเฟ้อต่ำกว่าคาด, ว่างงานต่ำกว่าคาด, จ้างงานเกินคาด
+  // same print month as the baked consensus (Aug 2026), so the baked forecast applies
   const bullishPayload = payload({
-    cpi: { value: C.cpi - 0.5, date: '2026-09-01', source: 'fred-csv', prev: { value: C.cpi - 0.2, date: '2026-08-01' }, changePp: -0.3 },
-    coreCpi: { value: C.coreCpi - 0.4, date: '2026-09-01', source: 'fred-csv' },
-    unrate: { value: C.unrate - 0.3, date: '2026-09-01', source: 'fred-csv', prev: { value: C.unrate - 0.1, date: '2026-08-01' }, changeMoM: -0.2, change3m: -0.3 },
-    nfp: { value: C.nfp + 180000, date: '2026-09-01', source: 'fred-csv', prevDate: '2026-08-01', unit: 'jobs', recentChanges: [C.nfp + 180000, 120000, 150000], prevChange: 120000, avg3Change: 100000 }
+    cpi: { value: C.cpi - 0.5, date: '2026-08-01', source: 'fred-csv', prev: { value: C.cpi - 0.2, date: '2026-07-01' }, changePp: -0.3 },
+    coreCpi: { value: C.coreCpi - 0.4, date: '2026-08-01', source: 'fred-csv' },
+    unrate: { value: C.unrate - 0.3, date: '2026-08-01', source: 'fred-csv', prev: { value: C.unrate - 0.1, date: '2026-07-01' }, changeMoM: -0.2, change3m: -0.3 },
+    nfp: { value: C.nfp + 180000, date: '2026-08-01', source: 'fred-csv', prevDate: '2026-07-01', unit: 'jobs', recentChanges: [C.nfp + 180000, 120000, 150000], prevChange: 120000, avg3Change: 100000 }
   });
   const bullish = html(await runAllScripts(makeSandbox({ fetchImpl: fetchStub({ fred: bullishPayload }) })));
   assert.match(bullish, /CPI เงินเฟ้อ — 🟢 ต่ำกว่าที่คาด/, 'CPI below consensus must be flagged');
@@ -167,6 +168,34 @@ test('when the consensus endpoint is blocked, the page keeps the baked values an
   assert.match(h, /ค่าที่ฝังไว้/, 'the footnote must disclose that the baked consensus is in use');
   assert.match(h, /Investing\.com/, 'the source must still be named');
   assert.match(h, /CPI เงินเฟ้อ/, 'the analysis must still render');
+});
+
+test('a baked consensus from an older round is never used to call a newer print better/worse', async () => {
+  // ต.ค. 2026: CPI ก.ย. 3.7% ถูกเทียบกับค่าคาดรอบ ส.ค. (3.4%) จนขึ้น "สูงกว่าที่คาด" ทั้งที่ตลาดคาด 3.6%
+  const newer = payload({
+    cpi: { value: C.cpi + 0.3, date: '2026-09-01', source: 'fred-csv', prev: { value: C.cpi, date: '2026-08-01' }, changePp: 0.3 },
+    coreCpi: { value: C.coreCpi + 0.2, date: '2026-09-01', source: 'fred-csv' },
+    unrate: { value: C.unrate + 0.1, date: '2026-09-01', source: 'fred-csv' },
+    nfp: { value: 29000, date: '2026-09-01', source: 'fred-csv', prevDate: '2026-08-01', unit: 'jobs' }
+  });
+  const h = html(await runAllScripts(makeSandbox({ fetchImpl: fetchStub({ fred: newer, consensus: null }) })));
+  assert.match(h, /CPI เงินเฟ้อ — ⚪ ยังไม่มีค่าคาดของรอบนี้/);
+  assert.match(h, /Unemployment Rate — ⚪ ยังไม่มีค่าคาดของรอบนี้/);
+  assert.match(h, /Nonfarm Payrolls — ⚪ ยังไม่มีค่าคาดของรอบนี้/);
+  assert.match(h, /ค่าสำรองที่ฝังไว้เป็นของรอบ ส\.ค\. 2026/);
+  assert.doesNotMatch(h, /สูงกว่าที่คาด|ต่ำกว่าที่คาด|ดีกว่าที่คาด|แย่กว่าที่คาด/, 'no verdict may be drawn from another round\'s forecast');
+
+  // a live forecast for the same print still produces a verdict
+  const live = consensusPayload({
+    cpi: { actual: C.cpi + 0.3, forecast: C.cpi + 0.2, previous: C.cpi, releaseDate: '2026-10-14' },
+    coreCpi: { actual: C.coreCpi + 0.2, forecast: C.coreCpi + 0.1, previous: C.coreCpi, releaseDate: '2026-10-14' },
+    unrate: { actual: C.unrate + 0.1, forecast: C.unrate + 0.1, previous: C.unrate, releaseDate: '2026-10-02' },
+    nfp: { actual: 29000, forecast: 50000, previous: 133000, releaseDate: '2026-10-02' },
+    fed: { actual: 4.0, forecast: 4.0, previous: 3.75, releaseDate: '2026-09-16' }
+  });
+  const h2 = html(await runAllScripts(makeSandbox({ fetchImpl: fetchStub({ fred: newer, consensus: live }) })));
+  assert.match(h2, /CPI เงินเฟ้อ — 🟡 ใกล้เคียงที่คาด/);
+  assert.doesNotMatch(h2, /ยังไม่มีค่าคาดของรอบนี้/);
 });
 
 test('a stale/partial payload still produces an honest analysis', async () => {
