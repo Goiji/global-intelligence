@@ -1435,7 +1435,7 @@ window.setHeaderStamp();
       from: ['cpi','coreCpi','ppi','unrate','nfp'].reduce((o, k) => {
         o[k] = isValidNum(ov[k]) ? 'override' : isValidNum(sh[k]) ? 'shared' : isValidNum(live[k]) ? 'live' : 'baked';
         return o;
-      }, {})
+      }, { fed: isValidNum(ov.fedHi) ? 'override' : isValidNum(sh.fedHi) ? 'shared' : isValidNum(liveFedHi) ? 'live' : 'baked' })
     };
   }
 
@@ -1916,7 +1916,9 @@ window.setHeaderStamp();
         if(meetings != null) body += ' (ผ่านการประชุม FOMC มาแล้ว ' + meetings + ' ครั้ง)';
         if(isValidNum(d.upper.prevValue)) body += ' · ก่อนหน้านั้น ' + d.upper.prevValue.toFixed(2) + '%';
       }
-      if(consHi < hi - 0.001) body += ' · เข้มงวดกว่าที่ตลาดคาดไว้ (' + consFedText + ') → กดดันสินทรัพย์เสี่ยง';
+      // ค่าที่ฝังไว้เป็นค่าคาดของ FOMC ก่อน CONSENSUS.asOf — ถ้ากรอบดอกเบี้ยเปลี่ยนหลังวันนั้น ห้ามเอามาเทียบ
+      if(C.from.fed === 'baked' && since && since > CONSENSUS.asOf) body += ' · ยังไม่มีค่าคาดของรอบนี้ให้เทียบ';
+      else if(consHi < hi - 0.001) body += ' · เข้มงวดกว่าที่ตลาดคาดไว้ (' + consFedText + ') → กดดันสินทรัพย์เสี่ยง';
       else if(consHi > hi + 0.001) body += ' · ผ่อนคลายกว่าที่ตลาดคาดไว้ (' + consFedText + ') → หนุนสินทรัพย์เสี่ยง';
       else body += ' · ตรงกับที่ตลาดคาดไว้ (' + consFedText + ')';
       const nextFomc = el('fomcDateLabel');
@@ -2093,6 +2095,9 @@ window.setHeaderStamp();
     const statusEl = el('fredFetchStatus');
     const now = Date.now();
     loadSharedConsensus();   // เช็คค่ากลางทุก ~1 นาที (TTL กันเอง) แม้รอบนี้ Fed จะใช้แคช
+    // ค่าคาดสดต้องโหลดทุกครั้ง (TTL กันเองใน loadConsensus) — เดิมเรียกหลังเช็คแคช Fed เลยไม่เคยโหลด
+    // ตอนที่ตัวเลข Fed ยังอยู่ในแคช (ได้ถึง 3 ชม.) หน้าเว็บจึงค้างที่ค่าคาดที่ฝังไว้
+    loadConsensus();
 
     // 1) Local cache — but only while the server says the numbers can't have changed yet.
     let cached = null;
@@ -2114,7 +2119,6 @@ window.setHeaderStamp();
     if(!force && now < fedNextFetchAt) return;
     fedNextFetchAt = now + FED_POLL_MS;
 
-        loadConsensus();   // ยิงขนานไปเลย ไม่ต้องรอกัน — ได้ค่าสดเมื่อไรบทวิเคราะห์จะถูกสร้างใหม่ทันที
     try{
       // no-cache: our own localStorage cache + `refreshAfter` already throttle this call, so the
       // browser's HTTP cache would only add a second, longer delay on top after a release.
