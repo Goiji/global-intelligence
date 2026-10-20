@@ -202,3 +202,16 @@ test('wti: CNBC @CL.1 quote strings are parsed', () => {
   assert.equal(r.pct, 1.06);
   assert.throws(() => wti.parseCnbc(JSON.stringify({ FormattedQuoteResult: { FormattedQuote: [{ last: '' }] } })));
 });
+
+test('wti: Stooq cl.f CSV is parsed, and N/D is rejected', () => {
+  const r = wti.parseStooq('Symbol,Date,Time,Open,High,Low,Close,Prev\r\nCL.F,2026-10-19,23:59:58,97.95,99.2,97.6,98.95,97.91\r\n');
+  assert.equal(r.price, 98.95);
+  assert.equal(r.pct, 1.06);
+  assert.equal(r.asOf, '2026-10-19T23:59:58');
+  assert.throws(() => wti.parseStooq('Symbol,Date,Time,Open,High,Low,Close,Prev\nCL.F,N/D,N/D,N/D,N/D,N/D,N/D,N/D\n'));
+});
+
+test('wti: NYMEX sources are tried in order, with a second Yahoo host', () => {
+  assert.deepEqual(wti.SOURCES.map((s) => s.name), ['yahoo:CL=F', 'yahoo2:CL=F', 'cnbc:@CL.1', 'stooq:cl.f']);
+  assert.match(wti.SOURCES[1].url, /^https:\/\/query2\.finance\.yahoo\.com\//);
+});

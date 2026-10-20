@@ -6,14 +6,17 @@
 // The card used to read CLUSDT / CL-USDT-SWAP perpetuals on crypto exchanges. Those track CL but
 // trade on their own order books (and through NYMEX's weekend close), so they drift from the WTI
 // number the news quotes. Neither source below sends CORS headers, hence the function.
-// Sources, in order (both delayed ~10 min by the exchange, no key):
-//   1. Yahoo Finance chart API, symbol CL=F (continuous front month)
-//   2. CNBC quote service, symbol @CL.1 (front month)
+// Sources, in order (all NYMEX front month, delayed ~10–15 min by the exchange, no key):
+//   1. Yahoo Finance chart API, symbol CL=F — query1 host, then the query2 mirror
+//   2. CNBC quote service, symbol @CL.1
+//   3. Stooq CSV quote, symbol cl.f
 // The page falls back to the crypto perpetuals (labelled as such) if this function fails.
 
 const TIMEOUT_MS = 5000;
 const TTL_S = 60;
 const YAHOO = 'https://query1.finance.yahoo.com/v8/finance/chart/CL=F?interval=1d&range=5d';
+const YAHOO2 = YAHOO.replace('//query1.', '//query2.');
+const STOOQ = 'https://stooq.com/q/l/?s=cl.f&f=sd2t2ohlcp&h&e=csv';
 const CNBC = 'https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=%40CL.1&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json';
 
 let memCache = { data: null, expiresAt: 0, lastGood: null };
@@ -71,9 +74,22 @@ function parseCnbc(text) {
   return finish(num(q.last), num(q.previous_day_closing), q.last_time || null);
 }
 
+// Header row + one data row: Symbol,Date,Time,Open,High,Low,Close,Prev ("N/D" when unknown).
+function parseStooq(text) {
+  const lines = String(text).trim().split(/\r?\n/);
+  if (lines.length < 2) throw new Error('no data row');
+  const head = lines[0].split(',').map((h) => h.trim().toLowerCase());
+  const row = lines[1].split(',');
+  const col = (re) => { const i = head.findIndex((h) => re.test(h)); return i >= 0 ? row[i] : undefined; };
+  const date = col(/^date$/), time = col(/^time$/);
+  return finish(num(col(/^close$/)), num(col(/^prev/)), date && date !== 'N/D' ? (date + (time ? 'T' + time : '')) : null);
+}
+
 const SOURCES = [
   { name: 'yahoo:CL=F', url: YAHOO, parse: parseYahoo },
-  { name: 'cnbc:@CL.1', url: CNBC, parse: parseCnbc }
+  { name: 'yahoo2:CL=F', url: YAHOO2, parse: parseYahoo },
+  { name: 'cnbc:@CL.1', url: CNBC, parse: parseCnbc },
+  { name: 'stooq:cl.f', url: STOOQ, parse: parseStooq }
 ];
 
 exports.handler = async function () {
@@ -101,4 +117,4 @@ exports.handler = async function () {
   return { statusCode: 502, headers: { ...headers, 'Cache-Control': 'no-store' }, body: JSON.stringify({ error: 'no source answered', errors }) };
 };
 
-module.exports.__test = { parseYahoo, parseCnbc, num };
+module.exports.__test = { parseYahoo, parseCnbc, parseStooq, num, SOURCES };
