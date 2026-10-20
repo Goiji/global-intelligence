@@ -175,3 +175,30 @@ test('markets: dollar is DXY from ECB rates, FRED broad index only as fallback',
   assert.equal(body.series.dollar.date, '2026-10-20');
   assert.equal(body.series.dollar.latest, 102.225);
 });
+
+// ---------------- WTI (NYMEX CL) ----------------
+const wti = require('../netlify/functions/wti.js').__test;
+
+test('wti: Yahoo CL=F compares the live price with the previous session settle', () => {
+  const t = (d) => Date.parse(d + 'T04:00:00Z') / 1000;
+  const body = (lastBarDay, marketDay) => JSON.stringify({ chart: { result: [{
+    meta: { regularMarketPrice: 98.95, regularMarketTime: t(marketDay), previousClose: 1 },
+    timestamp: [t('2026-10-15'), t('2026-10-16'), t(lastBarDay)],
+    indicators: { quote: [{ close: [96.1, 97.91, 98.95] }] }
+  }] } });
+  const live = wti.parseYahoo(body('2026-10-19', '2026-10-19'));
+  assert.equal(live.price, 98.95);
+  assert.equal(live.prevClose, 97.91);
+  assert.equal(live.pct, 1.06);
+  // Last bar is a finished earlier day (e.g. Yahoo hasn't opened today's bar): it is the reference.
+  assert.equal(wti.parseYahoo(body('2026-10-16', '2026-10-19')).prevClose, 98.95);
+});
+
+test('wti: CNBC @CL.1 quote strings are parsed', () => {
+  const r = wti.parseCnbc(JSON.stringify({ FormattedQuoteResult: { FormattedQuote: [
+    { symbol: '@CL.1', last: '98.95', previous_day_closing: '97.91', last_time: '2026-10-19T21:59:58.000-0400' }
+  ] } }));
+  assert.equal(r.price, 98.95);
+  assert.equal(r.pct, 1.06);
+  assert.throws(() => wti.parseCnbc(JSON.stringify({ FormattedQuoteResult: { FormattedQuote: [{ last: '' }] } })));
+});
