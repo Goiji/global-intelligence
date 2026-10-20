@@ -104,3 +104,27 @@ test('regressions that were fixed once must not come back', () => {
   // 6) The TradingView bundle must not be fetched on page load any more.
   assert.doesNotMatch(HTML, /\n\s*loadTradingViewChart\(\);/, 'TradingView is being loaded eagerly again');
 });
+
+test('FX % change compares against the business day before the newest one', async () => {
+  const sandbox = makeSandbox();
+  SCRIPTS.forEach((src) => vm.runInNewContext(src, sandbox, { filename: 'index.html' }));
+  await new Promise((resolve) => setImmediate(resolve));
+  const { pickFxPair } = sandbox;
+  assert.equal(typeof pickFxPair, 'function');
+  const d16 = { THB: 33.415, JPY: 158.02, CNY: 6.6862 };
+  const d19 = { THB: 33.555, JPY: 158.24, CNY: 6.6807 };
+  const series = { '2026-10-15': { THB: 33.54, JPY: 157.98, CNY: 6.691 }, '2026-10-16': d16, '2026-10-19': d19 };
+  // "latest" served stale (16 Oct) while the range already has 19 Oct: used to show 0.00%.
+  let p = pickFxPair({ date: '2026-10-16', rates: d16 }, series);
+  assert.equal(p.date, '2026-10-19');
+  assert.equal(p.now.THB, 33.555);
+  assert.equal(p.prevDate, '2026-10-16');
+  // Range lagging behind latest: compare latest with the range's newest day.
+  p = pickFxPair({ date: '2026-10-20', rates: { ...d19, THB: 33.6 } }, series);
+  assert.equal(p.date, '2026-10-20');
+  assert.equal(p.prevDate, '2026-10-19');
+  // Range failed: still show the price, no %.
+  p = pickFxPair({ date: '2026-10-19', rates: d19 }, null);
+  assert.equal(p.prev, null);
+  assert.equal(pickFxPair(null, null), null);
+});

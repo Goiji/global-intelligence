@@ -2182,6 +2182,22 @@ window.setHeaderStamp();
   }
   const pctChange = (now, ref) => (isFinite(now) && isFinite(ref) && ref) ? (now - ref) / ref * 100 : null;
 
+  // เลือกวันล่าสุด + วันทำการก่อนหน้าจากชุดเดียวกัน: เดิมเอา "วันรองสุดท้าย" ของช่วง 10 วันมาเทียบ
+  // กับ latest — ถ้า latest ค้างเป็นวันเก่า (เช่น 16 ต.ค.) แต่ช่วงวันมีถึง 19 ต.ค. แล้ว วันรองสุดท้าย
+  // ก็คือ 16 ต.ค. วันเดียวกัน % จึงขึ้น 0.00% ทั้งสามแถว ตอนนี้ใช้วันที่ใหม่กว่าเสมอ แล้วเทียบกับวันก่อนหน้ามัน
+  function pickFxPair(latest, series){
+    const ok = (x) => x && x.THB && x.JPY && x.CNY;
+    const days = Object.keys(series || {}).filter(d => ok(series[d])).sort();
+    let date = latest && ok(latest.rates) ? latest.date : null;
+    let now = date ? latest.rates : null;
+    const last = days[days.length - 1];
+    if(last && (!date || last >= date)){ date = last; now = series[last]; }
+    if(!now) return null;
+    const prevDate = days.filter(d => d < date).pop() || null;
+    return { date, now, prevDate, prev: prevDate ? series[prevDate] : null };
+  }
+  window.pickFxPair = pickFxPair;   // tests/index-html.test.js
+  const LIVE_NOTE_BASE = 'ราคาทองอ้างอิง PAXG (โทเคนที่หนุนด้วยทองคำจริง)';
   const livePx = { gold: null, usdThb: null };
   async function fetchLivePrices(){
     try{
@@ -2196,6 +2212,8 @@ window.setHeaderStamp();
     // frankfurter.app moved to frankfurter.dev as its official domain — the old .app host
     // still resolves but seems to have gotten flaky. Try the new domain first, old one as
     // fallback, and try both param styles (v1 "base/symbols" and legacy "from/to").
+    // cache:'no-store' — the "latest" URL never changes, so the browser's HTTP cache could hand
+    // back an older day's rates while the dated range call below (its URL changes daily) was fresh.
     async function getFxRates(){
       const urls = [
         'https://api.frankfurter.dev/v1/latest?base=USD&symbols=THB,JPY,CNY',
@@ -2205,36 +2223,39 @@ window.setHeaderStamp();
       let lastErr = 'unknown error';
       for(const url of urls){
         try{
-          const r = await fetchWithTimeout(url, 6000);
+          const r = await fetchWithTimeout(url, 6000, { cache: 'no-store' });
           if(!r.ok){ lastErr = url + ': HTTP ' + r.status; continue; }
           const j = await r.json();
-          if(j.rates && j.rates.THB && j.rates.JPY && j.rates.CNY) return j.rates;
+          if(j.rates && j.rates.THB && j.rates.JPY && j.rates.CNY) return { date: j.date, rates: j.rates };
           lastErr = url + ': response missing THB/JPY/CNY — ' + JSON.stringify(j).slice(0,150);
         }catch(e){ lastErr = url + ': ' + e.message; }
       }
       throw new Error(lastErr);
     }
-    // อัตราของวันทำการก่อนหน้า (ไว้คิด % เปลี่ยนแปลง) — ดึงช่วง 10 วันล่าสุดแล้วเอาวันรองสุดท้าย
-    // ไม่สำเร็จก็ไม่เป็นไร แค่ไม่โชว์ % (ราคายังขึ้นตามปกติ)
-    async function getPrevFxRates(){
+    // อัตรา 10 วันล่าสุด (ไว้คิด % เปลี่ยนแปลงเทียบวันทำการก่อนหน้า) — ไม่สำเร็จก็ไม่เป็นไร แค่ไม่โชว์ %
+    async function getFxSeries(){
       try{
         const start = new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10);
-        const r = await fetchWithTimeout('https://api.frankfurter.dev/v1/' + start + '..?base=USD&symbols=THB,JPY,CNY', 6000);
+        const r = await fetchWithTimeout('https://api.frankfurter.dev/v1/' + start + '..?base=USD&symbols=THB,JPY,CNY', 6000, { cache: 'no-store' });
         if(!r.ok) return null;
         const j = await r.json();
-        const days = Object.keys((j && j.rates) || {}).sort();
-        return days.length >= 2 ? j.rates[days[days.length - 2]] : null;
+        return (j && j.rates) || null;
       }catch(e){ return null; }
     }
     try{
-      const [rates, prev] = await Promise.all([getFxRates(), getPrevFxRates()]);
+      const [latestRes, seriesRes] = await Promise.allSettled([getFxRates(), getFxSeries()]);
+      const pair = pickFxPair(latestRes.status === 'fulfilled' ? latestRes.value : null,
+                              seriesRes.status === 'fulfilled' ? seriesRes.value : null);
+      if(!pair) throw (latestRes.reason || new Error('no FX data'));
       const fx = (x) => ({ usd: x.THB, jpy: (x.THB / x.JPY) * 100, cny: x.THB / x.CNY });
-      const now = fx(rates);
-      livePx.usdThb = rates.THB;
-      const ref = (prev && prev.THB && prev.JPY && prev.CNY) ? fx(prev) : {};
+      const now = fx(pair.now);
+      livePx.usdThb = pair.now.THB;
+      const ref = pair.prev ? fx(pair.prev) : {};
       setPrice('lpUsdThb', now.usd.toFixed(2) + ' บาท', pctChange(now.usd, ref.usd));
       setPrice('lpJpyThb', now.jpy.toFixed(3) + ' บาท', pctChange(now.jpy, ref.jpy));
       setPrice('lpCnyThb', now.cny.toFixed(3) + ' บาท', pctChange(now.cny, ref.cny));
+      el('livePricesNote').textContent = LIVE_NOTE_BASE + ' · ค่าเงินเป็นอัตรากลาง ECB ณ ' + thDay(pair.date)
+        + ' (ออกวันละครั้งราว 21:00 น. เวลาไทย ไม่ใช่ real-time)' + (pair.prevDate ? ' · % เทียบ ' + thDay(pair.prevDate) : '');
     }catch(e){
       el('lpUsdThb').textContent = 'ดึงไม่สำเร็จ';
       el('lpJpyThb').textContent = 'ดึงไม่สำเร็จ';
