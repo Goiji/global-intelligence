@@ -2517,7 +2517,15 @@ window.setHeaderStamp();
   }
   fetchCalendar();
 
-  // ---------- WTI Oil (Alpha Vantage, optional key — no free CORS-friendly oil source exists) ----------
+  // ---------- WTI Oil ----------
+  // ราคาหลักคือ WTI จริงจาก NYMEX (สัญญา CL เดือนใกล้สุด) ผ่าน /.netlify/functions/wti — หน่วง ~10 นาที
+  // ถ้าฟังก์ชันล่ม ค่อยใช้สัญญา perpetual บนกระดานคริปโตด้านล่าง (วิ่งตาม CL แต่ไม่เท่ากันเป๊ะ) และบอกไว้ใต้ราคา
+  async function tryNymexOil(){
+    const r = await fetchWithTimeout('/.netlify/functions/wti', 8000);
+    const j = await r.json();
+    if(!r.ok || !isValidNum(j.price)) throw new Error(j.error || 'HTTP ' + r.status);
+    return { price: j.price, pct: j.pct, source: 'NYMEX', status: 'NYMEX · สัญญาเดือนใกล้สุด (หน่วง ~10 นาที)' };
+  }
   // Alpha Vantage does not send CORS headers at all, so this always goes through a CORS proxy,
   // same as the FRED and calendar fixes elsewhere in this app.
   // Hyperliquid is a DEX that launched real WTI oil perpetual futures (via their HIP-3
@@ -2584,9 +2592,9 @@ window.setHeaderStamp();
       const raw = await storageGet('oil-price-cache');
       if(raw){
         const c = JSON.parse(raw);
-        if(isValidNum(c.at) && Date.now() - c.at < OIL_CACHE_MS && isValidNum(c.price)){
+        if(isValidNum(c.at) && Date.now() - c.at < OIL_CACHE_MS && isValidNum(c.price) && c.status){
           setPrice('lpOil', '$' + c.price.toFixed(2), c.pct);
-          setOilStatus('');
+          setOilStatus(c.status || '');
           return;
         }
       }
@@ -2594,8 +2602,9 @@ window.setHeaderStamp();
 
     const trail = [];
 
-    // Free, no-key attempts first — same underlying WTI contract, different exchanges.
+    // NYMEX first; the crypto perpetuals only as a labelled stand-in.
     const freeAttempts = [
+      ['NYMEX', tryNymexOil],
       ['Binance', tryBinanceOil],
       ['OKX', tryOkxOil],
       ['Hyperliquid', tryHyperliquidOil]
@@ -2603,9 +2612,10 @@ window.setHeaderStamp();
     for(const [name, fn] of freeAttempts){
             try{
         const res = await fn();
+        const status = res.status || ('NYMEX ดึงไม่ได้ ใช้ ' + res.source + ' แทน (ใกล้เคียง แต่ไม่ใช่ราคา NYMEX)');
         setPrice('lpOil', '$' + res.price.toFixed(2), res.pct);
-        setOilStatus('');
-        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, at: Date.now(), price: res.price, pct: res.pct, source: res.source })); }catch(e){}
+        setOilStatus(status);
+        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, at: Date.now(), price: res.price, pct: res.pct, source: res.source, status })); }catch(e){}
         return;
       }catch(e){ trail.push(name + ': ' + e.message); }
     }
@@ -2616,9 +2626,10 @@ window.setHeaderStamp();
       const r = await fetchWithTimeout('/.netlify/functions/oil-price', 10000);
       const j = await r.json();
       if(j.price){
+        const status = 'ราคาปิดรายวันจาก Alpha Vantage' + (j.asOf ? ' (' + thDay(j.asOf) + ')' : '');
         setPrice('lpOil', '$' + j.price.toFixed(2), null);
-        setOilStatus('');
-        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, at: Date.now(), price: j.price, source: 'Alpha Vantage (server)' })); }catch(e){}
+        setOilStatus(status);
+        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, at: Date.now(), price: j.price, source: 'Alpha Vantage (server)', status })); }catch(e){}
         return;
       }
       trail.push('server function: ' + (j.error || 'unknown error'));
