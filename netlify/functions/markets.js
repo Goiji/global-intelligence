@@ -7,9 +7,10 @@
 // Every series comes from FRED. The public graph CSV needs no key; FRED_API_KEY (optional, the
 // same one fred-data.js uses) is tried first when it's set. Daily series are thinned to one point
 // per week so a year of history stays ~52 points. Market series (10y/2y/VIX/dollar) are daily
-// closes, so they lag the live market by about a day — the page labels them that way. VIX is the
-// exception: Cboe's own delayed quote (~15 min behind) is laid over the FRED close, so the card shows
-// today's level while the market is open and yesterday's close by the next morning in Asia.
+// closes and FRED files each one the next day, so on their own they lag the live market by about a
+// day. Live overlays close that gap: Cboe's delayed quotes (~15 min behind) for VIX and the 10-year
+// (TNX), and the Treasury's own daily par yield curve (out the same evening, a day before FRED) for
+// the 2-year and as the 10-year fallback. FRED stays the history behind each sparkline.
 // The dollar is the ICE DXY formula applied to the ECB's daily reference rates (via Frankfurter,
 // out the same afternoon in Europe) — FRED's broad index (DTWEXBGS) is published once a week and
 // ran up to a week behind. FRED's broad index is the fallback if Frankfurter fails.
@@ -26,6 +27,8 @@ const FRANKFURTER = 'https://api.frankfurter.dev/v1/';
 // × USDSEK^0.042 × USDCHF^0.036. With USD-based rates (units per dollar) every exponent is positive.
 const DXY_WEIGHTS = { EUR: 0.576, JPY: 0.136, GBP: 0.119, CAD: 0.091, SEK: 0.042, CHF: 0.036 };
 const CBOE_VIX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json';
+const CBOE_TNX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_TNX.json';
+const TREASURY_CSV = 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/all/';
 const TTL_S = 60 * 60;
 const RELEASE_TTL_S = 15 * 60;
 const { isReleaseDay, cacheControl } = require('./fred-data.js').__test;
@@ -145,8 +148,29 @@ function parseCboeQuote(text) {
   return { value, change: isFinite(change) ? change : null, date, time };
 }
 
+// Cboe's TNX is quoted as 10× the yield (49.49 = 4.949%); scale it back to percent.
+function tnxToPercent(q) {
+  if (q.value <= 20) return q;
+  return { ...q, value: q.value / 10, change: q.change != null ? q.change / 10 : null };
+}
+
+// Treasury daily par yield curve CSV (newest row first, dates MM/DD/YYYY) → latest { date, us2y, us10y }.
+function parseTreasuryCurve(text) {
+  const lines = String(text).trim().split(/\r?\n/);
+  const head = (lines.shift() || '').split(',').map((h) => h.replace(/"/g, '').trim());
+  const i2 = head.indexOf('2 Yr'), i10 = head.indexOf('10 Yr');
+  if (i2 < 0 || i10 < 0) throw new Error('treasury: no 2 Yr / 10 Yr columns');
+  const rows = lines.map((line) => {
+    const c = line.split(',');
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec((c[0] || '').replace(/"/g, '').trim());
+    return m && { date: `${m[3]}-${m[1]}-${m[2]}`, us2y: parseFloat(c[i2]), us10y: parseFloat(c[i10]) };
+  }).filter((r) => r && isFinite(r.us2y) && isFinite(r.us10y)).sort((a, b) => b.date.localeCompare(a.date));
+  if (!rows.length) throw new Error('treasury: no rows');
+  return rows[0];
+}
+
 // Lay a newer live quote over the FRED series: replace the point for the same day or append a new one.
-function mergeLive(series, live) {
+function mergeLive(series, live, source = 'cboe') {
   if (!series || !live || live.date < series.date) return series;
   const round = (v) => Math.round(v * 1000) / 1000;
   const hist = series.hist.filter((p) => p[0] < live.date).concat([[live.date, round(live.value)]]);
@@ -160,7 +184,7 @@ function mergeLive(series, live) {
     prev,
     change: prev != null ? round(live.value - prev) : null,
     hist,
-    source: 'cboe'
+    source
   };
 }
 
@@ -191,13 +215,31 @@ async function loadVixLive() {
   return parseCboeQuote(await fetchText(CBOE_VIX));
 }
 
+async function loadTnxLive() {
+  return tnxToPercent(parseCboeQuote(await fetchText(CBOE_TNX)));
+}
+
+// This month's curve; in the first days of a month it can be empty, so fall back to last month's.
+async function loadTreasuryCurve(now = new Date()) {
+  const month = (d) => d.toISOString().slice(0, 7).replace('-', '');
+  const url = (m) => `${TREASURY_CSV}${m}?type=daily_treasury_yield_curve&field_tdr_date_value_month=${m}&page&_format=csv`;
+  try {
+    return parseTreasuryCurve(await fetchText(url(month(now))));
+  } catch (e) {
+    const last = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
+    return parseTreasuryCurve(await fetchText(url(month(last))));
+  }
+}
+
 async function buildPayload(apiKey) {
   const keys = Object.keys(SERIES);
-  const [results, vixLive] = await Promise.all([
+  const [results, vixLive, tnxLive, curve] = await Promise.all([
     Promise.allSettled(keys.map((k) => (k === 'dollar'
       ? loadDxy().catch((e) => loadSeries(k, apiKey).then((s) => ({ ...s, dxyError: e.message })))
       : loadSeries(k, apiKey)))),
-    loadVixLive().catch((e) => ({ error: e.message }))
+    loadVixLive().catch((e) => ({ error: e.message })),
+    loadTnxLive().catch((e) => ({ error: e.message })),
+    loadTreasuryCurve().catch((e) => ({ error: e.message }))
   ]);
   const series = {}, errors = {};
   results.forEach((r, i) => {
@@ -207,6 +249,14 @@ async function buildPayload(apiKey) {
   // FRED stays the backbone (history); a failed Cboe call just leaves the FRED close in place.
   if (vixLive.error) errors.vixLive = vixLive.error;
   else if (series.vix) series.vix = mergeLive(series.vix, vixLive);
+  // Yields: Treasury's same-day close first, then the Cboe 10-year quote on top when it's as new or newer.
+  if (curve.error) errors.treasury = curve.error;
+  else {
+    if (series.us2y) series.us2y = mergeLive(series.us2y, { value: curve.us2y, change: null, date: curve.date }, 'treasury');
+    if (series.us10y) series.us10y = mergeLive(series.us10y, { value: curve.us10y, change: null, date: curve.date }, 'treasury');
+  }
+  if (tnxLive.error) errors.tnxLive = tnxLive.error;
+  else if (series.us10y) series.us10y = mergeLive(series.us10y, tnxLive);
   const out = { series, asOf: new Date().toISOString() };
   if (series.us10y && series.us2y) out.spread2s10s = Math.round((series.us10y.latest - series.us2y.latest) * 100) / 100;
   if (Object.keys(errors).length) out.errors = errors;
@@ -245,4 +295,4 @@ exports.handler = async function () {
   }
 };
 
-module.exports.__test = { parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, mergeLive, dxyFromRates, parseDxySeries, SERIES };
+module.exports.__test = { parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, SERIES };

@@ -176,6 +176,34 @@ test('markets: dollar is DXY from ECB rates, FRED broad index only as fallback',
   assert.equal(body.series.dollar.latest, 102.225);
 });
 
+test('markets: 10-year from Cboe TNX and 2-year from the Treasury curve beat the day-late FRED close', async (t) => {
+  assert.deepEqual(markets.tnxToPercent({ value: 49.49, change: -1.81, date: '2026-10-22', time: 'x' }),
+    { value: 4.949, change: -0.181, date: '2026-10-22', time: 'x' });
+  const csv = 'Date,"1 Mo","2 Yr","10 Yr","30 Yr"\n10/22/2026,4.30,4.70,4.96,5.40\n10/21/2026,4.31,4.81,5.13,5.55\n';
+  assert.deepEqual(markets.parseTreasuryCurve(csv), { date: '2026-10-22', us2y: 4.7, us10y: 4.96 });
+  assert.throws(() => markets.parseTreasuryCurve('Date,"1 Mo"\n'));
+
+  const { handler } = require('../netlify/functions/markets.js');
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-10-23T03:00:00Z') });
+  const realFetch = global.fetch;
+  global.fetch = async (url) => {
+    const u = String(url);
+    if (u.includes('_TNX')) return { ok: true, status: 200, text: async () => JSON.stringify({ data: { current_price: 49.49, price_change: -1.81, last_trade_time: '2026-10-22T16:59:00' } }) };
+    if (u.includes('cboe')) return { ok: false, status: 503, text: async () => '' };
+    if (u.includes('treasury.gov')) return { ok: true, status: 200, text: async () => csv };
+    return { ok: true, status: 200, text: async () => 'observation_date,X\n2026-10-20,5.12\n2026-10-21,5.13\n' };
+  };
+  t.after(() => { global.fetch = realFetch; });
+  const body = JSON.parse((await handler()).body);
+  assert.equal(body.series.us10y.source, 'cboe');
+  assert.equal(body.series.us10y.latest, 4.949);
+  assert.equal(body.series.us10y.date, '2026-10-22');
+  assert.equal(body.series.us10y.change, -0.181);
+  assert.equal(body.series.us2y.source, 'treasury');
+  assert.equal(body.series.us2y.latest, 4.7);
+  assert.equal(body.series.us2y.change, -0.43);
+});
+
 // ---------------- WTI (NYMEX CL) ----------------
 const wti = require('../netlify/functions/wti.js').__test;
 
