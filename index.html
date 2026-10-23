@@ -506,7 +506,7 @@ body{margin:0}
 </section>
 
 <section class="card full">
-<h2>📈 ตลาดสหรัฐฯ <span class="h-en">US Markets · ราคาปิดล่าสุด</span></h2>
+<h2>📈 ตลาดสหรัฐฯ <span class="h-en">US Markets · ราคาล่าสุด</span></h2>
 <div class="mkt-grid" id="mktGrid">
   <div class="metric mkt"><div class="name">บอนด์สหรัฐ 10 ปี</div><div class="num" id="mkUs10y">–</div><div class="spark" id="spUs10y"></div></div>
   <div class="metric mkt"><div class="name">บอนด์สหรัฐ 2 ปี</div><div class="num" id="mkUs2y">–</div><div class="spark" id="spUs2y"></div></div>
@@ -2364,8 +2364,11 @@ window.setHeaderStamp();
       if(S.unrate) setSpark('spUnrate', S.unrate, { upIsBad:true, dec:1 });
       patchSparksFromLive();
       marketsNextAt = Date.now() + Math.max(nextIn, 60 * 1000);
-      const d = S.us10y && S.us10y.date;
-      el('mktNote').textContent = 'ราคาปิด ณ ' + (d ? thDay(d) : '–') + ' (ช้ากว่าตลาดประมาณ 1 วันทำการ) · DXY จากอัตรา ECB ' + (S.dollar && S.dollar.date ? thDay(S.dollar.date) : '–') + ' · VIX ราคาจาก Cboe ช้า ~15 นาที อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน';
+      const yieldNote = (name, s) => !s ? '' : s.source === 'cboe' && s.time
+        ? name + ' จาก Cboe ' + thDay(s.date).replace(/ \d{4}$/, '') + ' ' + s.time.slice(11, 16) + ' NY (ช้า ~15 นาที)'
+        : s.source === 'treasury' ? name + ' ราคาปิด ' + thDay(s.date) + ' (กระทรวงการคลังสหรัฐ)'
+        : name + ' ราคาปิด ' + thDay(s.date) + ' (FRED ช้ากว่าตลาดประมาณ 1 วันทำการ)';
+      el('mktNote').textContent = [yieldNote('บอนด์ 10 ปี', S.us10y), yieldNote('2 ปี', S.us2y)].filter(Boolean).join(' · ') + ' · DXY จากอัตรา ECB ' + (S.dollar && S.dollar.date ? thDay(S.dollar.date) : '–') + ' · VIX ราคาจาก Cboe ช้า ~15 นาที · อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน';
     }catch(e){
       console.warn('[markets]', e);
       el('mktNote').textContent = 'ดึงข้อมูลตลาดไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ';
