@@ -1,7 +1,7 @@
 // Netlify Function: US market snapshot + 12-month histories for the dashboard's sparklines.
 //
 //   GET /.netlify/functions/markets
-//   → { series: { us10y, us2y, vix, dollar, cpi, unrate, fedUpper }, spread2s10s, asOf, ttl }
+//   → { series: { sp500, nasdaq100, us10y, us2y, vix, dollar, cpi, unrate, fedUpper }, spread2s10s, asOf, ttl }
 //     each series: { label, unit, latest, date, prev, change, hist: [[isoDate, value], ...] }
 //
 // Every series comes from FRED. The public graph CSV needs no key; FRED_API_KEY (optional, the
@@ -11,6 +11,8 @@
 // day. Live overlays close that gap: Cboe's delayed quotes (~15 min behind) for VIX and the 10-year
 // (TNX), and the Treasury's own daily par yield curve (out the same evening, a day before FRED) for
 // the 2-year and as the 10-year fallback. FRED stays the history behind each sparkline.
+// Stock indices work the same way: FRED's SP500 / NASDAQ100 daily closes are the history, and
+// Cboe's delayed index quotes (_SPX / _NDX, ~15 min behind) lay today's level on top.
 // The dollar is the ICE DXY formula applied to the ECB's daily reference rates (via Frankfurter,
 // out the same afternoon in Europe) — FRED's broad index (DTWEXBGS) is published once a week and
 // ran up to a week behind. FRED's broad index is the fallback if Frankfurter fails.
@@ -28,12 +30,16 @@ const FRANKFURTER = 'https://api.frankfurter.dev/v1/';
 const DXY_WEIGHTS = { EUR: 0.576, JPY: 0.136, GBP: 0.119, CAD: 0.091, SEK: 0.042, CHF: 0.036 };
 const CBOE_VIX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.json';
 const CBOE_TNX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_TNX.json';
+const CBOE_SPX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_SPX.json';
+const CBOE_NDX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_NDX.json';
 const TREASURY_CSV = 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/all/';
 const TTL_S = 60 * 60;
 const RELEASE_TTL_S = 15 * 60;
 const { isReleaseDay, cacheControl } = require('./fred-data.js').__test;
 
 const SERIES = {
+  sp500:     { id: 'SP500',     label: 'S&P 500', unit: '', cadence: 'daily' },
+  nasdaq100: { id: 'NASDAQ100', label: 'Nasdaq 100', unit: '', cadence: 'daily' },
   us10y:    { id: 'DGS10',    label: 'US 10Y', unit: '%', cadence: 'daily' },
   us2y:     { id: 'DGS2',     label: 'US 2Y', unit: '%', cadence: 'daily' },
   vix:      { id: 'VIXCLS',   label: 'VIX', unit: '', cadence: 'daily' },
@@ -215,6 +221,10 @@ async function loadVixLive() {
   return parseCboeQuote(await fetchText(CBOE_VIX));
 }
 
+async function loadIndexLive(url) {
+  return parseCboeQuote(await fetchText(url));
+}
+
 async function loadTnxLive() {
   return tnxToPercent(parseCboeQuote(await fetchText(CBOE_TNX)));
 }
@@ -233,13 +243,15 @@ async function loadTreasuryCurve(now = new Date()) {
 
 async function buildPayload(apiKey) {
   const keys = Object.keys(SERIES);
-  const [results, vixLive, tnxLive, curve] = await Promise.all([
+  const [results, vixLive, tnxLive, curve, spxLive, ndxLive] = await Promise.all([
     Promise.allSettled(keys.map((k) => (k === 'dollar'
       ? loadDxy().catch((e) => loadSeries(k, apiKey).then((s) => ({ ...s, dxyError: e.message })))
       : loadSeries(k, apiKey)))),
     loadVixLive().catch((e) => ({ error: e.message })),
     loadTnxLive().catch((e) => ({ error: e.message })),
-    loadTreasuryCurve().catch((e) => ({ error: e.message }))
+    loadTreasuryCurve().catch((e) => ({ error: e.message })),
+    loadIndexLive(CBOE_SPX).catch((e) => ({ error: e.message })),
+    loadIndexLive(CBOE_NDX).catch((e) => ({ error: e.message }))
   ]);
   const series = {}, errors = {};
   results.forEach((r, i) => {
@@ -249,6 +261,10 @@ async function buildPayload(apiKey) {
   // FRED stays the backbone (history); a failed Cboe call just leaves the FRED close in place.
   if (vixLive.error) errors.vixLive = vixLive.error;
   else if (series.vix) series.vix = mergeLive(series.vix, vixLive);
+  if (spxLive.error) errors.spxLive = spxLive.error;
+  else if (series.sp500) series.sp500 = mergeLive(series.sp500, spxLive);
+  if (ndxLive.error) errors.ndxLive = ndxLive.error;
+  else if (series.nasdaq100) series.nasdaq100 = mergeLive(series.nasdaq100, ndxLive);
   // Yields: Treasury's same-day close first, then the Cboe 10-year quote on top when it's as new or newer.
   if (curve.error) errors.treasury = curve.error;
   else {
