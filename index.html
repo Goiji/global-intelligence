@@ -551,6 +551,7 @@ body{margin:0}
   <div class="metric"><div class="name">PPI ราคาผู้ผลิต (MoM)</div><div class="num" id="ppiMom">–</div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div></div>
   <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">4.1%</div><div class="spark" id="spUnrate"></div><div class="next" id="nextUnrate"></div></div>
   <div class="metric"><div class="name">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num up" id="nfp">+162,000</div><div class="next" id="nextNfp"></div></div>
+  <div class="metric"><div class="name">Initial Jobless Claims (รายสัปดาห์)</div><div class="num" id="claims">–</div><div class="next" id="claimsInfo"></div><div class="next" id="nextClaims"></div></div>
 </div>
 <div class="muted" style="margin-top:12px; font-size:11px; line-height:1.6;" id="fedAsOf"></div>
 
@@ -1241,7 +1242,7 @@ window.setHeaderStamp();
 
   function hasAnyFedField(d){
     // coreCpi ต้องนับด้วย ไม่งั้น response ที่ได้แต่ core CPI จะถูกมองว่า "ไม่มีข้อมูลเลย" แล้วตกไป error
-    return !!(d && (d.upper || d.lower || d.effr || d.cpi || d.coreCpi || d.ppi || d.unrate || d.nfp));
+    return !!(d && (d.upper || d.lower || d.effr || d.cpi || d.coreCpi || d.ppi || d.unrate || d.nfp || d.claims));
   }
 
   const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -1273,7 +1274,8 @@ window.setHeaderStamp();
     // rest (that was the original CPI "." bug: one null took down every card after it).
     let applied = 0;
     try{
-      const { upper, lower, effr, cpi, coreCpi, ppi, unrate, nfp } = data || {};
+      const { upper, lower, effr, cpi, coreCpi, ppi, unrate, nfp, claims } = data || {};
+      if(claims && isValidNum(claims.value)) applied++;   // วาดโดย renderClaims() (รวมค่าคาดจาก /consensus)
 
       if(upper && lower && isValidNum(upper.value) && isValidNum(lower.value)){
         el('fedRange').textContent = lower.value.toFixed(2) + '–' + upper.value.toFixed(2) + '%';
@@ -1334,6 +1336,7 @@ window.setHeaderStamp();
 
     // สร้างบทวิเคราะห์ "ดี/แย่แค่ไหน" ใหม่จากค่าที่เพิ่งได้ (แยก try/catch ไม่ให้พังการ์ดหลัก)
     try{ renderFedAnalysis(data); }catch(e){ /* analysis is best-effort */ }
+    try{ lastFedPayload = data; renderClaims(); }catch(e){ /* best-effort */ }
     try{ renderNextReleases(); }catch(e){ /* best-effort */ }
     try{ lastLiveFed = data; patchSparksFromLive(); }catch(e){ /* sparklines are best-effort */ }
     return applied;
@@ -1354,6 +1357,49 @@ window.setHeaderStamp();
   //      — ค่าจะถูกบันทึกฝั่งเซิร์ฟเวอร์ (function consensus-override) ให้ "ทุกคนที่เปิดเว็บเห็นค่าเดียวกัน"
   //        (แก้/ลบต้องใส่รหัสจาก env CONSENSUS_OVERRIDE_PASSWORD) · ถ้าเซิร์ฟเวอร์ไม่พร้อม จะเก็บใน
   //        localStorage ของเครื่องนั้นแทน (คนละเครื่องไม่เห็นค่ากัน) · จะแก้ในไฟล์ตรงนี้ก็ได้
+  // ---------- Initial Jobless Claims (ผู้ขอรับสวัสดิการว่างงานครั้งแรก รายสัปดาห์) ----------
+  // ตัวเลขจริงมาจาก FRED (ICSA, ปรับฤดูกาล, สัปดาห์สิ้นสุดวันเสาร์) ผ่าน /fred-data · ค่าคาด/ครั้งก่อนมาจาก
+  // Investing.com ผ่าน /consensus (events.claims) · ถ้า FRED ยังไม่อัปเดตรอบที่เพิ่งประกาศ (หรือล่ม)
+  // ใช้ "ตามจริง" ของ Investing.com แทน — DOL ประกาศทุกวันพฤหัสฯ 8:30 ET (19:30 น. ไทยช่วง DST / 20:30 น. ช่วงหน้าหนาว)
+  var LIVE_CLAIMS = null;   // { actual, forecast, previous, releaseDate }
+  function fmtClaims(v){ return isValidNum(v) ? Math.round(v / 1000).toLocaleString('en-US') + 'K' : '–'; }
+  function fmtClaimsDelta(v){ return (v >= 0 ? '+' : '−') + Math.round(Math.abs(v) / 1000).toLocaleString('en-US') + 'K'; }
+  function addDaysIso(date, n){ const t = Date.parse(String(date) + 'T00:00:00Z'); return isFinite(t) ? new Date(t + n * 86400000).toISOString().slice(0, 10) : null; }
+  function claimsView(){
+    const f = (lastFedPayload && lastFedPayload.claims) || null;
+    const L = LIVE_CLAIMS;
+    const fredOk = !!(f && isValidNum(f.value) && /^\d{4}-\d{2}-\d{2}$/.test(String(f.date || '')));
+    const liveOk = !!(L && isValidNum(L.actual) && /^\d{4}-\d{2}-\d{2}$/.test(String(L.releaseDate || '')));
+    // สัปดาห์สิ้นสุดวันเสาร์ → ประกาศวันพฤหัสฯ ถัดไป (+5 วัน; สัปดาห์ที่มีวันหยุดเลื่อนเป็นวันพุธ)
+    const fredRelease = fredOk ? addDaysIso(f.date, 5) : null;
+    if(liveOk && (!fredOk || dayDiff(L.releaseDate, fredRelease) > 2)){
+      return { value: L.actual, prev: isValidNum(L.previous) ? L.previous : null, weekEnd: null, releaseDate: L.releaseDate,
+               forecast: isValidNum(L.forecast) ? L.forecast : null, source: 'Investing.com' };
+    }
+    if(!fredOk) return null;
+    const sameRound = liveOk && Math.abs(dayDiff(L.releaseDate, fredRelease)) <= 2;
+    return { value: f.value, prev: f.prev && isValidNum(f.prev.value) ? f.prev.value : (sameRound && isValidNum(L.previous) ? L.previous : null),
+             weekEnd: f.date, releaseDate: fredRelease, avg4: f.avg4, prevAvg4: f.prevAvg4,
+             forecast: sameRound && isValidNum(L.forecast) ? L.forecast : null,
+             mismatch: sameRound && Math.abs(L.actual - f.value) > 1500 ? L.actual : null, source: 'FRED' };
+  }
+  function renderClaims(){
+    const v = claimsView();
+    const num = el('claims'), info = el('claimsInfo');
+    if(!num || !v) return;
+    num.textContent = fmtClaims(v.value);
+    // ต่ำกว่าคาด = ตลาดแรงงานดีกว่าคาด (เขียว) · สูงกว่าคาด = แย่กว่าคาด (แดง)
+    const dev = isValidNum(v.forecast) ? v.value - v.forecast : null;
+    num.className = 'num' + (dev == null || Math.abs(dev) < 3000 ? '' : dev < 0 ? ' up' : ' down');
+    if(info){
+      const bits = [];
+      bits.push(v.weekEnd ? 'สัปดาห์สิ้นสุด ' + esc(thDay(v.weekEnd)) : 'ประกาศ ' + esc(thDay(v.releaseDate)));
+      bits.push(isValidNum(v.forecast) ? 'คาด <b>' + esc(fmtClaims(v.forecast)) + '</b>' : 'ยังไม่มีค่าคาด');
+      if(isValidNum(v.prev)) bits.push('ครั้งก่อน ' + esc(fmtClaims(v.prev)));
+      info.innerHTML = bits.join(' · ');
+    }
+  }
+
   const CONSENSUS = {
     asOf: '2026-09-12',
     source: 'Investing.com',
@@ -1842,7 +1888,12 @@ window.setHeaderStamp();
         if(u && /^\d{4}-\d{2}-\d{2}$/.test(String(u.releaseDate || '')) && isValidNum(u.forecast)) upcoming[k] = { releaseDate: u.releaseDate, forecast: u.forecast, previous: isValidNum(u.previous) ? u.previous : null };
       });
       LIVE_UPCOMING = upcoming;
+      const c = ev.claims;
+      if(c && isValidNum(c.actual) && /^\d{4}-\d{2}-\d{2}$/.test(String(c.releaseDate || ''))){
+        LIVE_CLAIMS = { actual: c.actual, forecast: isValidNum(c.forecast) ? c.forecast : null, previous: isValidNum(c.previous) ? c.previous : null, releaseDate: c.releaseDate };
+      }
       try{
+        renderClaims();
         renderNextReleases();
         if(CAL_EVENTS && CAL_EVENTS.length) renderCalendar(CAL_EVENTS);
         if(lastFedPayload) renderFedAnalysis(lastFedPayload);
@@ -2016,6 +2067,29 @@ window.setHeaderStamp();
       if(dev != null || n < 0) body += '<br><b>ผลต่อตลาด:</b> ' + (n < 0 ? 'ตัวเลขติดลบ = ข่าวร้ายของเศรษฐกิจ แต่ระยะสั้นตลาดอาจตีความว่า Fed จะรีบลดดอกเบี้ย (bad news is good news) — ถ้าติดลบต่อเนื่องหลายเดือนจะกลายเป็นสัญญาณถดถอยจริงจัง' : dev < -30000 ? 'อ่อนกว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย แต่กดดันความเชื่อมั่นเศรษฐกิจ' : dev > 30000 ? 'แข็งกว่าคาด = เศรษฐกิจยังดี แต่ลดโอกาส Fed ลดดอกเบี้ยเร็ว ๆ นี้' : 'ใกล้เคียงคาด = เป็นกลาง');
       body += '<br><span style="opacity:.75;">ℹ️ รวมการปรับปรุงตัวเลขย้อนหลังแล้ว จึงอาจต่างจากที่ข่าวรายงานครั้งแรกเล็กน้อย</span>';
       cards.push(analysisCard(accent, 'Nonfarm Payrolls — ' + verdict, body));
+    }
+
+    // ── 5) Initial Jobless Claims (รายสัปดาห์) ───────────────────────────────────────────────
+    const cl = claimsView();
+    if(cl){
+      const dev = isValidNum(cl.forecast) ? cl.value - cl.forecast : null;
+      // ต่ำกว่าคาด = ดี (คนตกงานใหม่น้อยกว่าคาด) · ±3K ถือว่าตามคาด
+      const accent = dev == null ? GREY : Math.abs(dev) < 3000 ? AMBER : (dev < 0 ? GREEN : RED);
+      const verdict = dev == null ? '⚪ ยังไม่มีค่าคาดของรอบนี้' : Math.abs(dev) < 3000 ? '🟡 ใกล้เคียงที่คาด' : (dev < 0 ? '🟢 ต่ำกว่าคาด (ดี)' : '🔴 สูงกว่าคาด (แย่)');
+      let body = 'ผู้ขอรับสวัสดิการว่างงานครั้งแรก' + (cl.weekEnd ? ' สัปดาห์สิ้นสุด ' + esc(thDay(cl.weekEnd)) : ' (ประกาศ ' + esc(thDay(cl.releaseDate)) + ')')
+        + ' = <b>' + esc(fmtClaims(cl.value)) + '</b>'
+        + (dev == null ? '' : ' · ตลาดคาด ' + esc(fmtClaims(cl.forecast)) + (Math.abs(dev) >= 1000 ? ' (' + (dev < 0 ? 'ต่ำกว่า' : 'สูงกว่า') + 'คาด ' + esc(fmtClaims(Math.abs(dev))) + ')' : ''));
+      if(isValidNum(cl.prev)) body += '<br>สัปดาห์ก่อน = ' + esc(fmtClaims(cl.prev)) + ' (' + esc(fmtClaimsDelta(cl.value - cl.prev)) + ')';
+      if(isValidNum(cl.avg4)) body += (isValidNum(cl.prev) ? ' · ' : '<br>') + 'ค่าเฉลี่ย 4 สัปดาห์ = ' + esc(fmtClaims(cl.avg4))
+        + (isValidNum(cl.prevAvg4) ? ' (' + (cl.avg4 > cl.prevAvg4 ? 'เพิ่มขึ้น' : cl.avg4 < cl.prevAvg4 ? 'ลดลง' : 'ทรงตัว') + ')' : '');
+      body += '<br>ระดับ: ' + (cl.value < 230000 ? 'ต่ำ = ตลาดแรงงานยังแน่น' : cl.value < 300000 ? 'ปานกลาง = ตลาดแรงงานเริ่มผ่อนคลาย' : 'สูง = สัญญาณตลาดแรงงานอ่อนแรง');
+      if(cl.mismatch) body += '<br><span style="color:var(--warn);">⚠️ Investing.com รายงานรอบนี้ ' + esc(fmtClaims(cl.mismatch)) + ' (ต่างจาก FRED — อาจเป็นการปรับตัวเลข)</span>';
+      body += nextReleaseLine('claims');
+      if(dev != null && Math.abs(dev) >= 3000) body += '<br><b>ผลต่อตลาด:</b> ' + (dev < 0
+        ? 'ตลาดแรงงานแข็งกว่าคาด = ลดแรงกดดันให้ Fed ต้องรีบลดดอกเบี้ย (มักหนุนดอลลาร์/บอนด์ยีลด์ และกดทองคำระยะสั้น)'
+        : 'คนตกงานใหม่มากกว่าคาด = ตลาดแรงงานเริ่มอ่อน เพิ่มโอกาส Fed ลดดอกเบี้ย (มักกดดอลลาร์/บอนด์ยีลด์)');
+      body += '<br><span style="opacity:.75;">ℹ️ ตัวเลขรายสัปดาห์ผันผวนสูง ดูค่าเฉลี่ย 4 สัปดาห์ประกอบ · แหล่ง: ' + esc(cl.source === 'FRED' ? 'FRED (ICSA) / DOL' : 'Investing.com') + '</span>';
+      cards.push(analysisCard(accent, 'Initial Jobless Claims — ' + verdict, body));
     }
 
     // ── footnote + สถานะ ────────────────────────────────────────────────────────────────────
@@ -2388,6 +2462,7 @@ window.setHeaderStamp();
     jobs:  ['ตัวเลขจ้างงาน (Non-farm Payrolls)', 'Employment Situation · อัตราว่างงาน'],
     ppi:   ['PPI ราคาผู้ผลิต', 'Producer Price Index'],
     jolts: ['ตำแหน่งงานว่าง (JOLTS)', 'Job Openings & Labor Turnover'],
+    claims: ['ผู้ขอรับสวัสดิการว่างงาน (รายสัปดาห์)', 'Initial Jobless Claims'],
     gdp:   ['GDP สหรัฐฯ', 'Gross Domestic Product'],
     pce:   ['PCE เงินเฟ้อที่ Fed ใช้', 'Personal Income & Outlays'],
     fomc:  ['ประชุม FOMC — ประกาศดอกเบี้ย', 'Fed statement + แถลงข่าว']
@@ -2402,7 +2477,7 @@ window.setHeaderStamp();
     return parts;
   }
   // ค่าคาดของรอบนั้น (ถ้า Investing.com มีแล้ว) ต่อท้ายรายการในปฏิทิน — วันที่ต้องตรงกัน ±1 วัน
-  const CAL_FORECAST_KEYS = { cpi:[['cpi','CPI YoY'], ['coreCpi','Core']], ppi:[['ppi','MoM']], jobs:[['nfp','NFP'], ['unrate','ว่างงาน']], fomc:[['fed','ดอกเบี้ย']] };
+  const CAL_FORECAST_KEYS = { cpi:[['cpi','CPI YoY'], ['coreCpi','Core']], ppi:[['ppi','MoM']], jobs:[['nfp','NFP'], ['unrate','ว่างงาน']], fomc:[['fed','ดอกเบี้ย']], claims:[['claims','Claims']] };
   function calForecast(e){
     try{
       const parts = (CAL_FORECAST_KEYS[e.key] || []).map(([k, label]) => {
@@ -2434,6 +2509,26 @@ window.setHeaderStamp();
         + '</div>';
     }).join('');
   }
+  // วันพฤหัสฯ ถัดไป 2 รอบ เวลา 8:30 น. นิวยอร์ก (สัปดาห์ที่พฤหัสฯ เป็นวันหยุด เช่น Thanksgiving → วันพุธ)
+  // ตรงกับ claimsReleaseDate() ใน netlify/functions/fred-data.js
+  function localClaimsEvents(){
+    const out = [];
+    const now = Date.now();
+    for(let w = 0; w < 4 && out.length < 2; w++){
+      const base = new Date(now + w * 7 * 86400000);
+      const thu = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate() + (4 - base.getUTCDay())));
+      const m = thu.getUTCMonth() + 1, d = thu.getUTCDate();
+      const holiday = (m === 11 && d >= 22 && d <= 28) || (m === 1 && d === 1) || (m === 6 && d === 19) || (m === 7 && d === 4) || (m === 12 && d === 25);
+      const day = holiday ? new Date(thu.getTime() - 86400000) : thu;
+      const date = day.toISOString().slice(0, 10);
+      // 8:30 ET = 12:30 UTC ช่วง DST (นิวยอร์กเป็น 8 โมงตอน 12:00 UTC) / 13:30 UTC ช่วงหน้าหนาว
+      const probe = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), 12));
+      const nyHour = +new Intl.DateTimeFormat('en-US', { timeZone:'America/New_York', hour:'2-digit', hourCycle:'h23' }).format(probe);
+      const at = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), nyHour === 8 ? 12 : 13, 30)).toISOString();
+      if(Date.parse(at) > now - 2 * 3600e3 && !out.some(e => e.date === date)) out.push({ key:'claims', date, at, source:'local' });
+    }
+    return out;
+  }
   async function fetchCalendar(){
     try{
       const r = await fetchWithTimeout('/.netlify/functions/calendar', 12000);
@@ -2445,6 +2540,12 @@ window.setHeaderStamp();
       // ดึงไม่ได้ — อย่างน้อยโชว์ FOMC จากรายการที่หน้าเว็บมีอยู่แล้ว (14:00 น. เวลานิวยอร์ก ≈ 01:00–02:00 น. ไทย)
       CAL_EVENTS = FOMC_STATEMENT_DATES.map(d => ({ key:'fomc', date:d, at:null })).filter(e => e.date >= new Date().toISOString().slice(0, 10));
     }
+    // Jobless claims ประกาศทุกพฤหัสฯ — ถ้าปฏิทินจากเซิร์ฟเวอร์ไม่มี (ฟังก์ชันล่ม/เวอร์ชันเก่า) คำนวณเองจากตารางประจำ
+    try{
+      if(!CAL_EVENTS.some(e => e && e.key === 'claims')){
+        CAL_EVENTS = CAL_EVENTS.concat(localClaimsEvents()).sort((a, b) => String(a.at || a.date).localeCompare(String(b.at || b.date)));
+      }
+    }catch(e){ /* best-effort */ }
     renderCalendar(CAL_EVENTS);
     try{ renderNextReleases(); }catch(e){ /* best-effort */ }
     try{ if(lastFedPayload) renderFedAnalysis(lastFedPayload); }catch(e){ /* best-effort */ }
@@ -2456,7 +2557,7 @@ window.setHeaderStamp();
   // ค่าคาดจะแสดงก็ต่อเมื่อวันที่ของสองแหล่งตรงกัน (±1 วัน) — กันเอาค่าคาดของรอบที่ประกาศไปแล้ว
   // มาแปะกับรอบถัดไป · พอตัวเลขจริงออก รายการนี้จะเลื่อนไปรอบหน้าเอง และการ์ดวิเคราะห์จะเทียบ "จริง vs คาด" ให้
   var CAL_EVENTS = [];
-  const NEXT_CAL_KEY = { cpi:'cpi', coreCpi:'cpi', ppi:'ppi', unrate:'jobs', nfp:'jobs', fed:'fomc' };
+  const NEXT_CAL_KEY = { cpi:'cpi', coreCpi:'cpi', ppi:'ppi', unrate:'jobs', nfp:'jobs', fed:'fomc', claims:'claims' };
   function dayDiff(a, b){ return Math.round((Date.parse(a + 'T00:00:00Z') - Date.parse(b + 'T00:00:00Z')) / 86400000); }
   function nextRelease(key){
     const calKey = NEXT_CAL_KEY[key];
@@ -2476,6 +2577,7 @@ window.setHeaderStamp();
   function fmtForecast(key, v){
     if(!isValidNum(v)) return '';
     if(key === 'nfp') return fmtJobs(v) + ' ตำแหน่ง';
+    if(key === 'claims') return fmtClaims(v);
     if(key === 'ppi') return signedPct(v, 1) + '%';
     if(key === 'fed') return v.toFixed(2) + '%';
     return v.toFixed(1) + '%';
@@ -2510,7 +2612,7 @@ window.setHeaderStamp();
     }catch(e){ return ''; }
   }
   function renderNextReleases(){
-    [['nextFed','fed'], ['nextCpi','cpi'], ['nextPpi','ppi'], ['nextUnrate','unrate'], ['nextNfp','nfp']].forEach(([id, key]) => {
+    [['nextFed','fed'], ['nextCpi','cpi'], ['nextPpi','ppi'], ['nextUnrate','unrate'], ['nextNfp','nfp'], ['nextClaims','claims']].forEach(([id, key]) => {
       const node = el(id);
       if(!node) return;
       const h = nextReleaseHtml(key);

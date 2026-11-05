@@ -11,7 +11,7 @@
 ├── REVIEW-2026-09.md                   ← รายงานตรวจโค้ดรอบ ก.ย. 2026 (แก้แล้วอะไร / เหลืออะไร)
 ├── tools/dev-server.js                 ← เซิร์ฟเวอร์ทดสอบในเครื่อง (static + Functions จริง)
 └── netlify/functions/
-    ├── fred-data.js                    ← Fed Rate / EFFR / CPI(+core) / PPI / Unemployment / Payrolls
+    ├── fred-data.js                    ← Fed Rate / EFFR / CPI(+core) / PPI / Unemployment / Payrolls / Jobless Claims
     ├── consensus.js                    ← ค่า "ที่คาด" (consensus) จาก Investing.com (แคช 3 ชม.)
     ├── consensus-override.js           ← ที่เก็บ "ค่าที่คาดที่แก้เอง" ฝั่งเซิร์ฟเวอร์ (ทุกคนเห็นค่าเดียวกัน · แก้ต้องใส่รหัส)
     ├── cmc-fear-greed.js               ← Fear & Greed (CoinMarketCap keyless → alternative.me)
@@ -104,6 +104,7 @@ Site configuration → Environment variables → Add a variable:
 | `unrate` | UNRATE | รายเดือน | รายเดือน (มี BLS สำรอง) |
 | `nfp` | PAYEMS | *(ไม่มี — hardcode `-23,000` ใน HTML)* | เพิ่มใหม่ = ส่วนต่างเดือนต่อเดือน × 1,000 |
 | `ppi` | PPIFIS (BLS WPSFD4) + PPIFID สำหรับ YoY | *(ไม่มี)* | เพิ่มใหม่ = PPI final demand **MoM** (ตัวเลขหลักที่ตลาดดู, ปรับฤดูกาล) + `yoy` จากดัชนีไม่ปรับฤดูกาล แบบที่ BLS รายงาน · วันประกาศจะเช็ก BLS ตรงเหมือน CPI |
+| `claims` | **ICSA** (DOL ผ่าน FRED, รายสัปดาห์) | *(ไม่มี)* | เพิ่มใหม่ = Initial Jobless Claims สัปดาห์ล่าสุด + สัปดาห์ก่อน + ค่าเฉลี่ย 4 สัปดาห์ · ค่าคาด/ครั้งก่อนจาก Investing.com (`consensus` → `events.claims`) · ถ้า FRED ยังไม่อัปเดตรอบที่เพิ่งประกาศ หน้าเว็บใช้ "ตามจริง" ของ Investing.com แทน |
 
 **ทำไมต้องเทียบตามวันที่:** CPI เดือน ต.ค. 2025 หายไปทั้งเดือน (FRED ใส่ ".") เพราะหน่วยงานรัฐปิด
 (lapse in appropriations) โค้ดเก่าที่ใช้ `levels[12]` จึงเลื่อนไปเทียบ **ก.ค. 2025** แทน ส.ค. 2025
@@ -125,11 +126,11 @@ Site configuration → Environment variables → Add a variable:
 | Function | ทำอะไร | แหล่งข้อมูล | ต้องตั้งค่าไหม |
 |---|---|---|---|
 | `markets` | บอนด์ 10 ปี / 2 ปี, ส่วนต่าง 10Y−2Y, VIX, ดัชนีดอลลาร์ (DXY) + ประวัติ 12 เดือนสำหรับกราฟเล็ก (รวม CPI / ว่างงาน / ดอกเบี้ย Fed) | FRED (ราคาปิด ช้ากว่าตลาด ~1 วัน) · DXY คำนวณจากอัตรา ECB (Frankfurter) รายวัน · VIX ใช้ราคาจาก Cboe ช้า ~15 นาที · แคช 1 ชม. | ไม่ต้อง (มี `FRED_API_KEY` จะใช้ API ทางการก่อน) |
-| `calendar` | วันประกาศ CPI, จ้างงาน, PPI, JOLTS, FOMC (+ GDP, PCE) เป็นเวลาไทย | ปฏิทิน iCal ของ BLS + รายการ FOMC · GDP/PCE มาจาก FRED release dates | GDP/PCE จะขึ้นเฉพาะเมื่อตั้ง `FRED_API_KEY` |
+| `calendar` | วันประกาศ CPI, จ้างงาน, PPI, JOLTS, FOMC, Jobless Claims รายสัปดาห์ (+ GDP, PCE) เป็นเวลาไทย | ปฏิทิน iCal ของ BLS + รายการ FOMC · Jobless Claims คำนวณจากตารางประจำของ DOL (ทุกพฤหัสฯ 8:30 ET = 19:30/20:30 น. ไทย, สัปดาห์ที่พฤหัสฯ เป็นวันหยุดเลื่อนเป็นวันพุธ — แสดง 2 รอบถัดไป) · GDP/PCE มาจาก FRED release dates | GDP/PCE จะขึ้นเฉพาะเมื่อตั้ง `FRED_API_KEY` |
 | `gold-th` | ทองแท่ง/รูปพรรณ 96.5% บาทละ (รับซื้อ/ขายออก) | สมาคมค้าทองคำ (goldtraders.or.th) → สำรอง api.chnwt.dev | ไม่ต้อง · ถ้าดึงไม่ได้ หน้าเว็บจะโชว์ "≈ ประมาณการ" จากราคาโลก × ค่าเงินบาท |
 
 **เช็คว่าทำงานไหม:** เปิด `/.netlify/functions/markets`, `/.netlify/functions/calendar`, `/.netlify/functions/gold-th` บนเว็บจริง
-— `calendar` ควรมี `"sources":["fomc","bls",...]` (ถ้ามีแค่ `fomc` แปลว่าดึงปฏิทิน BLS ไม่ได้ หน้าเว็บจะโชว์แค่ FOMC)
+— `calendar` ควรมี `"sources":["fomc","dol-schedule","bls",...]` (ถ้ามีแค่ `fomc` กับ `dol-schedule` แปลว่าดึงปฏิทิน BLS ไม่ได้ หน้าเว็บจะโชว์แค่ FOMC)
 
 **ข่าวไทย:** หมวด "ข่าวไทย" ในการ์ดข่าวล่าสุดดึงจาก Google News ฉบับภาษาไทย (`news-feed?lang=th`) — แสดงอย่างเดียว ไม่นำไปคิดคะแนนความเสี่ยง และไม่ต้องแปล
 
