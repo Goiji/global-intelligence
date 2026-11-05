@@ -9,6 +9,9 @@
 //   2. FRED release dates API — only when FRED_API_KEY is set. Adds the BEA releases
 //      (PCE / personal income, GDP) that BLS doesn't publish, and backs up CPI / jobs.
 //   3. FOMC statement dates (2:00 pm ET) — the same list fred-data.js keeps.
+//   4. Weekly initial jobless claims (DOL, Thursday 8:30 ET; Wednesday in holiday weeks) — computed
+//      from the fixed weekly schedule, so it needs no upstream. Only the next two are listed so the
+//      weekly entries don't crowd the monthly releases out of the card.
 // If 1 and 2 both fail the card still shows FOMC, so it never comes back empty.
 
 const { __test: fred } = require('./fred-data.js');
@@ -29,7 +32,7 @@ const BLS_MATCH = [
 // FRED release ids → our key (10 CPI · 50 Employment Situation · 53 GDP · 54 Personal Income & Outlays/PCE)
 const FRED_RELEASES = { 10: 'cpi', 50: 'jobs', 53: 'gdp', 54: 'pce' };
 // Usual release time (ET) when a source gives only a date.
-const DEFAULT_ET = { cpi: '08:30', jobs: '08:30', ppi: '08:30', jolts: '10:00', gdp: '08:30', pce: '08:30', fomc: '14:00' };
+const DEFAULT_ET = { cpi: '08:30', jobs: '08:30', ppi: '08:30', jolts: '10:00', gdp: '08:30', pce: '08:30', fomc: '14:00', claims: '08:30' };
 
 let memCache = { data: null, expiresAt: 0, lastGood: null };
 
@@ -133,6 +136,10 @@ function fomcEvents() {
   return (fred.FOMC_STATEMENT_DATES || []).map((date) => ({ key: 'fomc', date, at: etToUtcIso(date, DEFAULT_ET.fomc), source: 'fomc' }));
 }
 
+function claimsEvents(now = new Date()) {
+  return fred.upcomingClaimsDates(2, now).map((date) => ({ key: 'claims', date, at: etToUtcIso(date, DEFAULT_ET.claims), source: 'dol-schedule' }));
+}
+
 // Keep upcoming events within the horizon, one per (key, date), soonest first.
 function mergeEvents(lists, now = new Date()) {
   const today = now.toISOString().slice(0, 10);
@@ -147,7 +154,7 @@ function mergeEvents(lists, now = new Date()) {
 }
 
 async function buildPayload(apiKey) {
-  const lists = [fomcEvents()], sources = ['fomc'], errors = {};
+  const lists = [fomcEvents(), claimsEvents()], sources = ['fomc', 'dol-schedule'], errors = {};
   try { lists.push(blsEvents(await fetchText(BLS_ICS))); sources.push('bls'); }
   catch (e) { errors.bls = e.message; }
   if (apiKey) {
@@ -178,16 +185,20 @@ exports.handler = async function () {
   }
   try {
     const data = await buildPayload((process.env.FRED_API_KEY || '').trim());
-    // FOMC-only means the release sources failed — cache that briefly so we retry soon.
-    const ttl = data.sources.length > 1 ? TTL_S : 30 * 60;
-    memCache = { data, expiresAt: now + ttl * 1000, lastGood: data.sources.length > 1 ? data : memCache.lastGood };
-    if (data.sources.length === 1 && memCache.lastGood) {
-      return { statusCode: 200, headers, body: JSON.stringify({ ...memCache.lastGood, events: mergeEvents([memCache.lastGood.events]), stale: true }) };
+    // Only the computed sources (FOMC + claims schedule) means the release feeds failed — cache that
+    // briefly so we retry soon.
+    const fetched = data.sources.some((s) => s === 'bls' || s === 'fred');
+    const ttl = fetched ? TTL_S : 30 * 60;
+    memCache = { data, expiresAt: now + ttl * 1000, lastGood: fetched ? data : memCache.lastGood };
+    if (!fetched && memCache.lastGood) {
+      // the claims dates are computed, so always take today's rather than the cached copy's
+      const kept = memCache.lastGood.events.filter((e) => e.key !== 'claims');
+      return { statusCode: 200, headers, body: JSON.stringify({ ...memCache.lastGood, events: mergeEvents([kept, claimsEvents()]), stale: true }) };
     }
     return { statusCode: 200, headers, body: JSON.stringify(data) };
   } catch (e) {
-    return { statusCode: 200, headers, body: JSON.stringify({ events: mergeEvents([fomcEvents()]), sources: ['fomc'], errors: { all: e.message } }) };
+    return { statusCode: 200, headers, body: JSON.stringify({ events: mergeEvents([fomcEvents(), claimsEvents()]), sources: ['fomc', 'dol-schedule'], errors: { all: e.message } }) };
   }
 };
 
-module.exports.__test = { parseIcs, icsStart, blsEvents, fredEvents, fomcEvents, mergeEvents, etToUtcIso, nyOffsetMinutes };
+module.exports.__test = { parseIcs, icsStart, blsEvents, fredEvents, fomcEvents, claimsEvents, mergeEvents, etToUtcIso, nyOffsetMinutes };

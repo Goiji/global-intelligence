@@ -1,6 +1,6 @@
 // Netlify Function: live US macro data for the dashboard —
 // Fed funds target range, effective fed funds rate, CPI (headline + core), PPI (final demand),
-// unemployment, nonfarm payrolls.
+// unemployment, nonfarm payrolls, weekly initial jobless claims.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // WHY THIS WAS REWRITTEN (Sep 2026)
@@ -76,7 +76,12 @@ const TARGETS = {
   // change of the seasonally adjusted index (FRED PPIFIS = BLS WPSFD4); the 12-month change BLS quotes
   // is from the NOT-adjusted index (FRED PPIFID = BLS WPUFD4).
   ppi: { fred: 'PPIFIS', bls: 'WPSFD4', cadence: 'monthly' },
-  ppiNsa: { fred: 'PPIFID', bls: 'WPUFD4', cadence: 'monthly' }
+  ppiNsa: { fred: 'PPIFID', bls: 'WPUFD4', cadence: 'monthly' },
+  // Initial jobless claims, seasonally adjusted, weekly (week ending Saturday). DOL publishes them
+  // every Thursday 8:30 ET (Wednesday when Thursday is a federal holiday); FRED mirrors them as ICSA
+  // within minutes. No BLS copy exists (it is a DOL/ETA series), so the chain is fred-api → fred-csv;
+  // if both fail the page still shows Investing.com's "Actual" from /consensus.
+  claims: { fred: 'ICSA', cadence: 'weekly' }
 };
 
 // Cheap sanity ranges: if a "value" falls outside these we treat the fetch as failed instead of
@@ -85,7 +90,8 @@ const SANITY = {
   pctLevel: [-5, 30], // fed funds / unemployment, in %
   pctYoy: [-20, 30], // inflation YoY, in %
   pctMom: [-5, 5], // inflation MoM, in %
-  jobsChange: [-4e6, 4e6] // monthly payroll change, in jobs
+  jobsChange: [-4e6, 4e6], // monthly payroll change, in jobs
+  claims: [50000, 7e6] // weekly initial claims (record high was ~6.1M in Apr 2020)
 };
 
 // In-memory cache for this function instance (resets on cold start — fine, the CDN + browser
@@ -154,8 +160,38 @@ function isReleaseDay(now = new Date()) {
   const jobsDay = (dow === 5 && day <= 10) || (dow === 4 && day <= 7);
   const today = isoDay(now);
   const fomc = FOMC_STATEMENT_DATES.includes(today) || FOMC_STATEMENT_DATES.includes(daysAgoIso(1, now));
+  // Weekly jobless claims: every Thursday, moved to Wednesday when Thursday is a holiday.
+  const claimsDay = claimsReleaseDate(now) === today;
   // `firstFriday` kept as an alias of jobsDay for older callers.
-  return { release: cpiWindow || jobsDay || fomc, cpiWindow, jobsDay, firstFriday: jobsDay, fomc };
+  return { release: cpiWindow || jobsDay || fomc || claimsDay, cpiWindow, jobsDay, firstFriday: jobsDay, fomc, claimsDay };
+}
+
+// ── weekly jobless claims schedule ────────────────────────────────────────────────────────────
+// DOL releases the weekly claims report on Thursday at 8:30 ET. When that Thursday is a federal
+// holiday (Thanksgiving, and Jan 1 / Juneteenth / Jul 4 / Dec 25 when they fall on a Thursday) it
+// comes out on Wednesday instead. The report covers the week that ended the previous Saturday.
+function isThanksgiving(y, m, d) {
+  // 4th Thursday of November
+  return m === 11 && d >= 22 && d <= 28 && new Date(Date.UTC(y, 10, d)).getUTCDay() === 4;
+}
+function isClaimsHoliday(y, m, d) {
+  return isThanksgiving(y, m, d) || (m === 1 && d === 1) || (m === 6 && d === 19) || (m === 7 && d === 4) || (m === 12 && d === 25);
+}
+// Release date ('YYYY-MM-DD') of the claims report for the week containing `now` (Sun–Sat, UTC).
+function claimsReleaseDate(now = new Date()) {
+  const thu = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + (4 - now.getUTCDay())));
+  const y = thu.getUTCFullYear(), m = thu.getUTCMonth() + 1, d = thu.getUTCDate();
+  return isoDay(isClaimsHoliday(y, m, d) ? new Date(thu.getTime() - 86400000) : thu);
+}
+// The next `n` claims release dates from `now` (today included).
+function upcomingClaimsDates(n = 2, now = new Date()) {
+  const out = [];
+  const today = isoDay(now);
+  for (let w = 0; out.length < n && w < n + 2; w++) {
+    const d = claimsReleaseDate(new Date(now.getTime() + w * 7 * 86400000));
+    if (d >= today && !out.includes(d)) out.push(d);
+  }
+  return out;
 }
 
 // Monthly fields that should already show last month's print but don't yet.
@@ -169,18 +205,21 @@ const PENDING_TTL_S = 3 * 60;
 function awaitingFields(data, now = new Date()) {
   const mins = now.getUTCHours() * 60 + now.getUTCMinutes();
   if (mins < 12 * 60 + 25 || mins >= 16 * 60) return [];
-  const { cpiWindow, jobsDay } = isReleaseDay(now);
+  const { cpiWindow, jobsDay, claimsDay } = isReleaseDay(now);
   // PPI lands in the same mid-month window as CPI (usually the day before or after it).
   const keys = [...(cpiWindow ? ['cpi', 'coreCpi', 'ppi'] : []), ...(jobsDay ? ['unrate', 'nfp'] : [])];
   const expected = monthsAgoIso(1, now);
-  return keys.filter((k) => data && data[k] && data[k].date && data[k].date < expected);
+  const out = keys.filter((k) => data && data[k] && data[k].date && data[k].date < expected);
+  // Claims released today cover the week that ended last Saturday (4–5 days ago).
+  if (claimsDay && data && data.claims && data.claims.date && data.claims.date < daysAgoIso(7, now)) out.push('claims');
+  return out;
 }
 
 // Seconds until the 12:25 UTC watch window opens on a CPI / jobs day (null if not applicable), so
 // a payload built just before the release can't be cached past the moment the new print lands.
 function secondsUntilWatch(now = new Date()) {
-  const { cpiWindow, jobsDay } = isReleaseDay(now);
-  if (!cpiWindow && !jobsDay) return null;
+  const { cpiWindow, jobsDay, claimsDay } = isReleaseDay(now);
+  if (!cpiWindow && !jobsDay && !claimsDay) return null;
   const open = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12, 25);
   return now.getTime() < open ? Math.ceil((open - now.getTime()) / 1000) : null;
 }
@@ -314,7 +353,7 @@ async function getObservations(key, { apiKey, deadline, transformation = null, l
       // Daily series need a window long enough to still contain the previous rate level (FOMC
       // meetings are ~6 weeks apart, so 120 days shows the last change and when it happened);
       // monthly ones need ~26 months so a by-date year-ago lookup works when a month is missing.
-      const cosd = spec.cadence === 'daily' ? daysAgoIso(120) : monthsAgoIso(26);
+      const cosd = spec.cadence === 'daily' || spec.cadence === 'weekly' ? daysAgoIso(120) : monthsAgoIso(26);
       const url =
         `${FRED_CSV}?id=${spec.fred}&cosd=${cosd}` + (transformation ? `&transformation=${transformation}` : '');
       const obs = parseFredCsv(await fetchText(url, deadline));
@@ -578,6 +617,33 @@ async function ppiMetric(apiKey, deadline, opts = {}) {
   return out;
 }
 
+// Weekly initial jobless claims (ICSA): the latest week, the week before it, and the 4-week moving
+// average — consecutive weeks only, matched by date so a missing week can't fake a big swing.
+// Pure so the tests can pin it down.
+function claimsFromLevels(obs, source) {
+  const weeks = obs.filter((o) => inRange(o.value, SANITY.claims)); // newest-first
+  const latest = weeks[0];
+  if (!latest) throw new Error('no usable ICSA observation');
+  const out = { value: Math.round(latest.value), date: latest.date, unit: 'claims', source, method: 'ICSA (SA, week ending Saturday)' };
+  const run = [latest];
+  for (let i = 1; i < weeks.length && run.length < 5; i++) {
+    if (weeks[i].date !== daysAgoIso(7, new Date(run[run.length - 1].date + 'T00:00:00Z'))) break;
+    run.push(weeks[i]);
+  }
+  if (run[1]) {
+    out.prev = { value: Math.round(run[1].value), date: run[1].date };
+    out.change = out.value - out.prev.value;
+  }
+  if (run.length >= 4) out.avg4 = Math.round(run.slice(0, 4).reduce((a, o) => a + o.value, 0) / 4);
+  if (run.length >= 5) out.prevAvg4 = Math.round(run.slice(1, 5).reduce((a, o) => a + o.value, 0) / 4);
+  return out;
+}
+
+async function claimsMetric(apiKey, deadline) {
+  const { obs, source } = await getObservations('claims', { apiKey, deadline, limit: 30 });
+  return claimsFromLevels(obs, source);
+}
+
 async function payrollsMetric(apiKey, deadline, opts = {}) {
   const { obs, source } = await getObservations('payrolls', { apiKey, deadline, ...opts });
   return payrollsFromLevels(obs, source);
@@ -591,7 +657,8 @@ const METRICS = {
   cpi: (apiKey, deadline, opts) => yoyMetric('cpi', apiKey, deadline, opts),
   coreCpi: (apiKey, deadline, opts) => yoyMetric('coreCpi', apiKey, deadline, opts),
   nfp: (apiKey, deadline, opts) => payrollsMetric(apiKey, deadline, opts),
-  ppi: (apiKey, deadline, opts) => ppiMetric(apiKey, deadline, opts)
+  ppi: (apiKey, deadline, opts) => ppiMetric(apiKey, deadline, opts),
+  claims: (apiKey, deadline) => claimsMetric(apiKey, deadline)
 };
 
 // For fields still showing the previous month on a release morning, ask BLS directly and take its
@@ -733,6 +800,9 @@ module.exports.__test = {
   yoyFromLevels,
   payrollsFromLevels,
   ppiFromLevels,
+  claimsFromLevels,
+  claimsReleaseDate,
+  upcomingClaimsDates,
   rateChangeInfo,
   TARGETS,
   SANITY,

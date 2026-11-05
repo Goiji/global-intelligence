@@ -103,8 +103,8 @@ test('parseEventPage is honest about pages it cannot read', () => {
   assert.equal(p.forecast, null);
 });
 
-test('the event table points at the six pages the dashboard needs', () => {
-  assert.deepEqual(Object.keys(EVENTS).sort(), ['coreCpi', 'cpi', 'fed', 'nfp', 'ppi', 'unrate']);
+test('the event table points at the seven pages the dashboard needs', () => {
+  assert.deepEqual(Object.keys(EVENTS).sort(), ['claims', 'coreCpi', 'cpi', 'fed', 'nfp', 'ppi', 'unrate']);
   for (const [key, spec] of Object.entries(EVENTS)) {
     assert.match(spec.slug, /-\d+$/, `${key} must end with the Investing.com event id`);
     assert.ok(Array.isArray(spec.range) && spec.range.length === 2, `${key} needs a sanity range`);
@@ -113,6 +113,7 @@ test('the event table points at the six pages the dashboard needs', () => {
   assert.equal(EVENTS.coreCpi.slug.endsWith('-736'), true);
   assert.equal(EVENTS.nfp.slug, 'nonfarm-payrolls-227');
   assert.equal(EVENTS.ppi.slug, 'ppi-238');            // U.S. PPI MoM
+  assert.equal(EVENTS.claims.slug, 'initial-jobless-claims-294');
 });
 
 // The PPI MoM page as it looked before the 10 Sep 2026 release: the summary block still describes the
