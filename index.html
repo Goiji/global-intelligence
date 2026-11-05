@@ -394,7 +394,7 @@ body{margin:0}
   .spark svg{display:block;width:100%;height:30px;overflow:visible}
   .spark-cap{font-size:10px;color:var(--muted);margin-top:2px;display:flex;justify-content:space-between}
   /* US markets */
-  .mkt-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .mkt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
   .mkt .num{font-size:24px}
   .mkt .delta{font-size:11px;font-weight:600;margin-left:6px}
   .mkt .zone{font-size:11px;color:var(--muted);margin-top:2px}
@@ -508,6 +508,8 @@ body{margin:0}
 <section class="card full">
 <h2>📈 ตลาดสหรัฐฯ <span class="h-en">US Markets · ราคาล่าสุด</span></h2>
 <div class="mkt-grid" id="mktGrid">
+  <div class="metric mkt"><div class="name">หุ้น S&amp;P 500</div><div class="num" id="mkSp500">–</div><div class="spark" id="spSp500"></div><div class="zone" id="mkSp500Zone"></div></div>
+  <div class="metric mkt"><div class="name">หุ้น Nasdaq 100</div><div class="num" id="mkNdx">–</div><div class="spark" id="spNdx"></div><div class="zone" id="mkNdxZone"></div></div>
   <div class="metric mkt"><div class="name">บอนด์สหรัฐ 10 ปี</div><div class="num" id="mkUs10y">–</div><div class="spark" id="spUs10y"></div></div>
   <div class="metric mkt"><div class="name">บอนด์สหรัฐ 2 ปี</div><div class="num" id="mkUs2y">–</div><div class="spark" id="spUs2y"></div></div>
   <div class="metric mkt"><div class="name">ส่วนต่าง 10 ปี − 2 ปี</div><div class="num" id="mkSpread">–</div><div class="zone" id="mkSpreadZone"></div></div>
@@ -548,6 +550,7 @@ body{margin:0}
   <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">3.50–3.75%</div><div class="spark" id="spFed"></div><div class="next" id="nextFed"></div></div>
   <div class="metric"><div class="name">Effective Fed Funds Rate</div><div class="num" id="fedEffr">3.63%</div></div>
   <div class="metric"><div class="name">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.4%</div><div class="spark" id="spCpi"></div><div class="next" id="nextCpi"></div></div>
+  <div class="metric"><div class="name">Core PCE (YoY) · เงินเฟ้อที่ Fed ใช้</div><div class="num" id="corePce">–</div><div class="next" id="corePceInfo"></div><div class="next" id="nextPce"></div></div>
   <div class="metric"><div class="name">PPI ราคาผู้ผลิต (MoM)</div><div class="num" id="ppiMom">–</div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div></div>
   <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">4.1%</div><div class="spark" id="spUnrate"></div><div class="next" id="nextUnrate"></div></div>
   <div class="metric"><div class="name">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num up" id="nfp">+162,000</div><div class="next" id="nextNfp"></div></div>
@@ -1242,7 +1245,7 @@ window.setHeaderStamp();
 
   function hasAnyFedField(d){
     // coreCpi ต้องนับด้วย ไม่งั้น response ที่ได้แต่ core CPI จะถูกมองว่า "ไม่มีข้อมูลเลย" แล้วตกไป error
-    return !!(d && (d.upper || d.lower || d.effr || d.cpi || d.coreCpi || d.ppi || d.unrate || d.nfp || d.claims));
+    return !!(d && (d.upper || d.lower || d.effr || d.cpi || d.coreCpi || d.ppi || d.unrate || d.nfp || d.claims || d.corePce));
   }
 
   const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -1274,7 +1277,7 @@ window.setHeaderStamp();
     // rest (that was the original CPI "." bug: one null took down every card after it).
     let applied = 0;
     try{
-      const { upper, lower, effr, cpi, coreCpi, ppi, unrate, nfp, claims } = data || {};
+      const { upper, lower, effr, cpi, coreCpi, ppi, unrate, nfp, claims, pce, corePce } = data || {};
       if(claims && isValidNum(claims.value)) applied++;   // วาดโดย renderClaims() (รวมค่าคาดจาก /consensus)
 
       if(upper && lower && isValidNum(upper.value) && isValidNum(lower.value)){
@@ -1287,6 +1290,17 @@ window.setHeaderStamp();
       }
       if(cpi && isValidNum(cpi.value)){
         el('cpiYoy').textContent = cpi.value.toFixed(1) + '%';
+        applied++;
+      }
+      // Core PCE: เป้า 2% ของ Fed วัดจากตัวนี้ (BEA ประกาศปลายเดือน ช้ากว่า CPI ~2 สัปดาห์)
+      if(corePce && isValidNum(corePce.value)){
+        el('corePce').textContent = corePce.value.toFixed(1) + '%';
+        const bits = ['เดือน ' + thMonth(corePce.date)];
+        if(isValidNum(corePce.changePp)) bits.push(corePce.changePp > 0 ? 'เร่งขึ้น ' + corePce.changePp.toFixed(1) + ' pp' : corePce.changePp < 0 ? 'ชะลอ ' + Math.abs(corePce.changePp).toFixed(1) + ' pp' : 'ทรงตัว');
+        if(pce && isValidNum(pce.value) && pce.date === corePce.date) bits.push('PCE ทั่วไป ' + pce.value.toFixed(1) + '%');
+        bits.push('เป้า Fed 2%');
+        const info = el('corePceInfo');
+        if(info) info.textContent = bits.join(' · ');
         applied++;
       }
       if(ppi && isValidNum(ppi.value)){
@@ -1312,6 +1326,9 @@ window.setHeaderStamp();
       if(cpi && cpi.date && isValidNum(cpi.value)){
         bits.push('CPI ' + thMonth(cpi.date) + ' ' + cpi.value.toFixed(1) + '%'
           + (coreCpi && isValidNum(coreCpi.value) ? ' (core ' + coreCpi.value.toFixed(1) + '%)' : ''));
+      }
+      if(corePce && corePce.date && isValidNum(corePce.value)){
+        bits.push('Core PCE ' + thMonth(corePce.date) + ' ' + corePce.value.toFixed(1) + '%');
       }
       if(ppi && ppi.date && isValidNum(ppi.value)){
         bits.push('PPI ' + thMonth(ppi.date) + ' ' + signedPct(ppi.value, 1) + '% MoM'
@@ -2420,6 +2437,18 @@ window.setHeaderStamp();
       const bp = (c) => (c == null ? '' : '<span class="delta ' + (c > 0 ? 'up' : c < 0 ? 'down' : 'flat') + '">' + (c > 0 ? '+' : '') + Math.round(c * 100) + ' bp</span>');
       if(S.us10y){ el('mkUs10y').innerHTML = esc(S.us10y.latest.toFixed(2)) + '%' + bp(S.us10y.change); setSpark('spUs10y', S.us10y, { color:'var(--accent)' }); }
       if(S.us2y){ el('mkUs2y').innerHTML = esc(S.us2y.latest.toFixed(2)) + '%' + bp(S.us2y.change); setSpark('spUs2y', S.us2y, { color:'var(--accent)' }); }
+      // ดัชนีหุ้น: ระดับดัชนี + % เปลี่ยนจากวันทำการก่อน · ใต้กราฟบอกเวลาราคา (Cboe ช้า ~15 นาที หรือราคาปิดจาก FRED)
+      [['sp500', 'mkSp500', 'spSp500', 'mkSp500Zone'], ['nasdaq100', 'mkNdx', 'spNdx', 'mkNdxZone']].forEach(function(row){
+        const s = S[row[0]];
+        if(!s || !isValidNum(s.latest)) return;
+        const pct = (isValidNum(s.change) && isValidNum(s.prev) && s.prev) ? s.change / s.prev * 100 : null;
+        el(row[1]).innerHTML = esc(s.latest.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 }))
+          + (pct == null ? '' : '<span class="delta ' + (pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat') + '">' + (pct > 0 ? '+' : '') + pct.toFixed(2) + '%</span>');
+        setSpark(row[2], s, { dec:0 });
+        el(row[3]).textContent = s.source === 'cboe' && s.time
+          ? 'Cboe ' + thDay(s.date).replace(/ \d{4}$/, '') + ' ' + s.time.slice(11, 16) + ' NY (ช้า ~15 นาที)'
+          : 'ราคาปิด ' + thDay(s.date);
+      });
       if(isFinite(j.spread2s10s)){
         el('mkSpread').innerHTML = (j.spread2s10s > 0 ? '+' : '') + esc(Math.round(j.spread2s10s * 100)) + ' bp';
         el('mkSpreadZone').textContent = j.spread2s10s < 0 ? '⚠️ กลับหัว (inverted) — สัญญาณเตือนเศรษฐกิจชะลอ' : 'ปกติ (ระยะยาว > ระยะสั้น)';
@@ -2557,7 +2586,7 @@ window.setHeaderStamp();
   // ค่าคาดจะแสดงก็ต่อเมื่อวันที่ของสองแหล่งตรงกัน (±1 วัน) — กันเอาค่าคาดของรอบที่ประกาศไปแล้ว
   // มาแปะกับรอบถัดไป · พอตัวเลขจริงออก รายการนี้จะเลื่อนไปรอบหน้าเอง และการ์ดวิเคราะห์จะเทียบ "จริง vs คาด" ให้
   var CAL_EVENTS = [];
-  const NEXT_CAL_KEY = { cpi:'cpi', coreCpi:'cpi', ppi:'ppi', unrate:'jobs', nfp:'jobs', fed:'fomc', claims:'claims' };
+  const NEXT_CAL_KEY = { cpi:'cpi', coreCpi:'cpi', ppi:'ppi', unrate:'jobs', nfp:'jobs', fed:'fomc', claims:'claims', pce:'pce' };
   function dayDiff(a, b){ return Math.round((Date.parse(a + 'T00:00:00Z') - Date.parse(b + 'T00:00:00Z')) / 86400000); }
   function nextRelease(key){
     const calKey = NEXT_CAL_KEY[key];
@@ -2612,7 +2641,7 @@ window.setHeaderStamp();
     }catch(e){ return ''; }
   }
   function renderNextReleases(){
-    [['nextFed','fed'], ['nextCpi','cpi'], ['nextPpi','ppi'], ['nextUnrate','unrate'], ['nextNfp','nfp'], ['nextClaims','claims']].forEach(([id, key]) => {
+    [['nextFed','fed'], ['nextCpi','cpi'], ['nextPpi','ppi'], ['nextUnrate','unrate'], ['nextNfp','nfp'], ['nextClaims','claims'], ['nextPce','pce']].forEach(([id, key]) => {
       const node = el(id);
       if(!node) return;
       const h = nextReleaseHtml(key);
