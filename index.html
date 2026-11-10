@@ -656,7 +656,7 @@ body{margin:0}
 <div class="metrics" id="fedMetrics">
   <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">3.50–3.75%</div><div class="spark" id="spFed"></div><div class="next" id="nextFed"></div></div>
   <div class="metric"><div class="name">Effective Fed Funds Rate</div><div class="num" id="fedEffr">3.63%</div></div>
-  <div class="metric"><div class="name" data-en="CPI inflation (YoY)">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.4%</div><div class="spark" id="spCpi"></div><div class="next" id="nextCpi"></div></div>
+  <div class="metric"><div class="name" data-en="CPI inflation (YoY)">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.4%</div><div class="spark" id="spCpi"></div><div class="next" id="cpiInfo"></div><div class="next" id="nextCpi"></div></div>
   <div class="metric"><div class="name" data-en="Core PCE (YoY) · the Fed's inflation gauge">Core PCE (YoY) · เงินเฟ้อที่ Fed ใช้</div><div class="num" id="corePce">–</div><div class="next" id="corePceInfo"></div><div class="next" id="nextPce"></div></div>
   <div class="metric"><div class="name" data-en="PPI producer prices (MoM)">PPI ราคาผู้ผลิต (MoM)</div><div class="num" id="ppiMom">–</div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div></div>
   <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">4.1%</div><div class="spark" id="spUnrate"></div><div class="next" id="nextUnrate"></div></div>
@@ -1431,6 +1431,19 @@ window.setHeaderStamp();
     return '';
   }
 
+  // เดือนที่ BLS ประกาศแต่ไม่มี YoY (ต.ค. 2026: ไม่มีข้อมูล ต.ค. 2025 เพราะรัฐบาลสหรัฐฯ ปิดชั่วคราว) —
+  // ตัวเลขใหญ่บนการ์ดยังเป็น YoY ของเดือนก่อน เลยต้องบอกให้ชัดว่าเป็นของเดือนไหน และโชว์ MoM ของเดือนใหม่แทน
+  function cpiNoYoyHtml(cpi, coreCpi){
+    const n = cpi && cpi.latestNoYoy;
+    if(!n || !n.date || !cpi.date || !(n.date > cpi.date)) return '';
+    let mom = isValidNum(n.mom) ? 'MoM <b>' + esc(signedPct(n.mom, 1)) + '%</b>' : '';
+    const cn = coreCpi && coreCpi.latestNoYoy;
+    if(mom && cn && cn.date === n.date && isValidNum(cn.mom)) mom += ' (Core ' + esc(signedPct(cn.mom, 1)) + '%)';
+    return tr('ตัวเลข YoY ของ ', 'YoY is for ') + esc(thMonth(cpi.date)) + ' · '
+      + tr('<b>' + esc(thMonth(n.date)) + '</b> ไม่มี YoY (ไม่มีข้อมูล ' + esc(thMonth(n.yearAgoDate)) + ')', '<b>' + esc(thMonth(n.date)) + '</b> has no YoY (no ' + esc(thMonth(n.yearAgoDate)) + ' data)')
+      + (mom ? ' · ' + mom : '');
+  }
+
   function applyFedData(data){
     // Each field is applied independently with validation — one bad value must never abort the
     // rest (that was the original CPI "." bug: one null took down every card after it).
@@ -1451,6 +1464,7 @@ window.setHeaderStamp();
         el('cpiYoy').textContent = cpi.value.toFixed(1) + '%';
         applied++;
       }
+      try{ const ci = el('cpiInfo'); if(ci) ci.innerHTML = cpiNoYoyHtml(cpi, coreCpi); }catch(e){ /* best-effort */ }
       // Core PCE: เป้า 2% ของ Fed วัดจากตัวนี้ (BEA ประกาศปลายเดือน ช้ากว่า CPI ~2 สัปดาห์)
       if(corePce && isValidNum(corePce.value)){
         el('corePce').textContent = corePce.value.toFixed(1) + '%';
@@ -2179,6 +2193,7 @@ window.setHeaderStamp();
       const consCore = d.coreCpi ? consFor('coreCpi', d.coreCpi.date) : null;
       if(d.coreCpi && isValidNum(d.coreCpi.value) && isValidNum(consCore)) body += ' · Core ' + (d.coreCpi.value > consCore + 0.1 ? tr('ยังสูงกว่าที่คาด (แรงกดดันเงินเฟ้อพื้นฐานยังไม่คลาย)', 'still above forecast (underlying inflation pressure hasn\'t eased)') : d.coreCpi.value < consCore - 0.1 ? tr('ต่ำกว่าที่คาด', 'below forecast') : tr('ตามคาด', 'as expected'));
       body += cpi > 2 ? tr('<br>ยัง<b>สูงกว่าเป้าหมาย 2% ของ Fed</b> → เป็นเหตุผลให้ Fed ยังไม่รีบลดดอกเบี้ย', '<br>Still <b>above the Fed\'s 2% target</b> → a reason for the Fed not to rush rate cuts') : tr('<br>อยู่ในกรอบเป้าหมาย 2% ของ Fed แล้ว', '<br>Now within the Fed\'s 2% target');
+      try{ const nh = cpiNoYoyHtml(d.cpi, d.coreCpi); if(nh) body += '<br>⚠️ ' + nh; }catch(e){ /* best-effort */ }
       body += nextReleaseLine('cpi');
       if(dev != null) body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (dev > 0.1 ? tr('เงินเฟ้อสูงกว่าคาด = กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)', 'hotter inflation = pressure on stocks/bonds (slower Fed cuts)') : dev < -0.1 ? tr('เงินเฟ้อต่ำกว่าคาด = หนุนหุ้น (Fed มีทางลดดอกเบี้ยเร็วขึ้น)', 'cooler inflation = supports stocks (room for faster Fed cuts)') : tr('ตรงคาด = ตลาดมักไม่ตอบสนองรุนแรงเพราะไม่มีเซอร์ไพรส์', 'in line = markets usually don\'t react much, no surprise'));
       cards.push(analysisCard(accent, tr('CPI เงินเฟ้อ — ', 'CPI inflation — ') + verdict, body));
@@ -2823,10 +2838,12 @@ window.setHeaderStamp();
     if(!MONTHLY_REF_KEYS[key]) return null;
     const field = lastFedPayload && lastFedPayload[key];
     if(!field || !/^\d{4}-\d{2}-\d{2}$/.test(String(field.date || ''))) return null;
+    // เดือนที่ประกาศแบบไม่มี YoY ถือว่าเข้าระบบแล้ว (ไม่ต้องรอตัวเลขที่จะไม่มีวันมา)
+    const month = (field.latestNoYoy && field.latestNoYoy.date > field.date) ? field.latestNoYoy.date : field.date;
     return (CAL_EVENTS || [])
       .filter(e => e && e.key === calKey && e.at && /^\d{4}-\d{2}-\d{2}$/.test(String(e.date || '')))
       .filter(e => { const t = Date.parse(e.at); return t <= now && t > now - PENDING_GRACE_MS; })
-      .filter(e => { const ref = refMonthFor(e.date); return ref && field.date < ref; })
+      .filter(e => { const ref = refMonthFor(e.date); return ref && month < ref; })
       .sort((a, b) => String(b.at).localeCompare(String(a.at)))[0] || null;
   }
   function nextRelease(key){

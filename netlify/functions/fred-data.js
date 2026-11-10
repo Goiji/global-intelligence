@@ -214,7 +214,9 @@ function awaitingFields(data, now = new Date()) {
   // PPI lands in the same mid-month window as CPI (usually the day before or after it).
   const keys = [...(cpiWindow ? ['cpi', 'coreCpi', 'ppi'] : []), ...(jobsDay ? ['unrate', 'nfp'] : [])];
   const expected = monthsAgoIso(1, now);
-  const out = keys.filter((k) => data && data[k] && data[k].date && data[k].date < expected);
+  // `latestNoYoy` = BLS already published that month, just without a 12-month change (see yoyMetric).
+  const monthOf = (f) => (f.latestNoYoy && f.latestNoYoy.date > f.date ? f.latestNoYoy.date : f.date);
+  const out = keys.filter((k) => data && data[k] && data[k].date && monthOf(data[k]) < expected);
   // Claims released today cover the week that ended last Saturday (4–5 days ago).
   if (claimsDay && data && data.claims && data.claims.date && data.claims.date < daysAgoIso(7, now)) out.push('claims');
   return out;
@@ -540,7 +542,31 @@ async function yoyMetric(key, apiKey, deadline, opts = {}) {
     final.prev = { value: prev.value, date: prev.date };
     final.changePp = +(final.value - prev.value).toFixed(2);
   }
+  // A month BLS published WITHOUT a 12-month change. October 2026 is the first case: October 2025
+  // was never collected (2025 lapse in appropriations), so BLS printed only the monthly change and
+  // FRED's pc1 for that month is "." — the YoY above is therefore still last month's. Expose the
+  // newer month and its MoM so the page can say so, and so the release isn't treated as "awaiting"
+  // a YoY number that will never arrive.
+  if (levels && levels.obs.length) {
+    const nm = noYoyMonth(levels.obs, final.date);
+    if (nm) final.latestNoYoy = nm;
+  }
   return final;
+}
+
+// The newest level month, when it is newer than the YoY month and has no year-ago level to compare
+// with. Returns { date, mom, level, yearAgoDate } (mom = SA month-over-month %, by date) or null.
+function noYoyMonth(obs, yoyDate) {
+  let latest;
+  try { latest = latestOf(obs, [1, 10000]); } catch (e) { return null; }
+  if (!latest || !latest.date || !(latest.date > yoyDate)) return null;
+  const yearAgoDate = yearAgoIso(latest.date);
+  const yearAgo = atDate(obs, yearAgoDate);
+  if (yearAgo && yearAgo.value) return null; // a normal month — the YoY path should have used it
+  const before = atDate(obs, monthBeforeIso(latest.date));
+  const mom = before && before.value ? ((latest.value - before.value) / before.value) * 100 : null;
+  if (mom !== null && !inRange(mom, SANITY.pctMom)) return null;
+  return { date: latest.date, mom: mom === null ? null : +mom.toFixed(2), level: latest.value, yearAgoDate };
 }
 
 // Nonfarm payrolls: monthly *change* in jobs, derived from the PAYEMS level (thousands of jobs).
@@ -675,7 +701,8 @@ async function refreshFromBls(data, keys, apiKey, deadline) {
   const updated = [];
   results.forEach((res, i) => {
     const k = keys[i];
-    if (res.status === 'fulfilled' && res.value && res.value.date > data[k].date) {
+    const month = (f) => (f && f.latestNoYoy && f.latestNoYoy.date > f.date ? f.latestNoYoy.date : (f && f.date) || '');
+    if (res.status === 'fulfilled' && res.value && month(res.value) > month(data[k])) {
       data[k] = res.value;
       updated.push(k);
     }
@@ -791,6 +818,7 @@ exports.handler = async function () {
 
 // Exported for local unit testing (node --test / plain require). Netlify ignores extra exports.
 module.exports.__test = {
+  noYoyMonth,
   parseFredCsv,
   parseFredApiJson,
   parseBlsJson,

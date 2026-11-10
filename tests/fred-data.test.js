@@ -281,3 +281,68 @@ test('the day after an FOMC statement still counts as a release day', () => {
   assert.equal(isReleaseDay(new Date('2026-10-29T12:00:00Z')).fomc, true);  // statement Oct 28
   assert.equal(isReleaseDay(new Date('2026-10-30T12:00:00Z')).fomc, false);
 });
+
+// October 2026: BLS printed only the monthly change (October 2025 was never collected), so the
+// YoY stays on September and the payload must carry the newer month + its MoM instead.
+test('noYoyMonth flags a newer month that has no year-ago level, with its SA MoM', () => {
+  const { noYoyMonth } = require('../netlify/functions/fred-data.js').__test;
+  const obs = [
+    { date: '2026-10-01', value: 338.29 },
+    { date: '2026-09-01', value: 336.94 },
+    { date: '2025-11-01', value: 325.0 },
+    { date: '2025-09-01', value: 324.9 }
+  ];
+  const r = noYoyMonth(obs, '2026-09-01');
+  assert.equal(r.date, '2026-10-01');
+  assert.equal(r.yearAgoDate, '2025-10-01');
+  assert.equal(r.mom, 0.4);
+  // a normal month (year-ago present) or no newer month → nothing to flag
+  assert.equal(noYoyMonth(obs, '2026-10-01'), null);
+  assert.equal(noYoyMonth([...obs, { date: '2025-10-01', value: 325 }], '2026-09-01'), null);
+});
+
+test('a month published without YoY is not "awaiting" on release day', () => {
+  const { awaitingFields } = require('../netlify/functions/fred-data.js').__test;
+  const now = new Date('2026-11-10T13:45:00Z');
+  const stale = { cpi: { value: 3.7, date: '2026-09-01' }, coreCpi: { value: 2.6, date: '2026-09-01' } };
+  assert.deepEqual(awaitingFields(stale, now), ['cpi', 'coreCpi']);
+  const inNoYoy = {
+    cpi: { value: 3.7, date: '2026-09-01', latestNoYoy: { date: '2026-10-01', mom: 0.4 } },
+    coreCpi: { value: 2.6, date: '2026-09-01', latestNoYoy: { date: '2026-10-01', mom: 0.3 } }
+  };
+  assert.deepEqual(awaitingFields(inNoYoy, now), []);
+});
+
+test('Oct 2026 release day: FRED has the October level but no YoY → September YoY + October MoM, not awaiting', async (t) => {
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-11-10T13:50:00Z') });
+  const months = [];
+  for (let d = new Date(Date.UTC(2024, 6, 1)); d <= new Date(Date.UTC(2026, 9, 1)); d.setUTCMonth(d.getUTCMonth() + 1)) {
+    months.push(d.toISOString().slice(0, 10));
+  }
+  const level = (i) => 315 + i * 0.8;
+  const realFetch = global.fetch;
+  global.fetch = async (url) => {
+    const ok = (text) => ({ ok: true, status: 200, text: async () => text });
+    if (url.includes('fredgraph.csv?id=CPIAUCSL')) {
+      const pc1 = url.includes('transformation=pc1');
+      const rows = months.map((m, i) => {
+        if (m === '2025-10-01') return `${m},.`; // never collected
+        if (pc1) return `${m},${m === '2026-10-01' ? '.' : '3.7'}`;
+        return `${m},${level(i)}`;
+      });
+      return ok('observation_date,CPIAUCSL\n' + rows.join('\n'));
+    }
+    return { ok: false, status: 503, text: async () => '' };
+  };
+  t.after(() => { global.fetch = realFetch; });
+
+  _expireCache();
+  const body = JSON.parse((await handler()).body);
+  assert.equal(body.cpi.date, '2026-09-01');
+  assert.equal(body.cpi.value, 3.7);
+  assert.equal(body.cpi.latestNoYoy.date, '2026-10-01');
+  assert.equal(body.cpi.latestNoYoy.yearAgoDate, '2025-10-01');
+  const i = months.indexOf('2026-10-01');
+  assert.equal(body.cpi.latestNoYoy.mom, +(((level(i) - level(i - 1)) / level(i - 1)) * 100).toFixed(2));
+  assert.ok(!(body.awaiting || []).includes('cpi'));
+});

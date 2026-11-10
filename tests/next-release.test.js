@@ -139,3 +139,31 @@ test('without the consensus function the tiles still show when the next release 
     assert.match(h, /ครั้งถัดไป/);
   });
 }
+
+// A release with no 12-month change (Oct 2026): the tile names the YoY's month, says the new month
+// has no YoY, shows its MoM, and does not keep "waiting" for a number that will never come.
+{
+  const firstOfMonth = (ms, back) => { const d = new Date(ms); return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - back, 1)).toISOString().slice(0, 10); };
+  const JUST_RELEASED = NOW - 10 * 60 * 1000;
+  const cal = { events: [{ key: 'cpi', date: iso(JUST_RELEASED), at: new Date(JUST_RELEASED).toISOString() }, { key: 'cpi', date: iso(NOW + 30 * DAY), at: new Date(NOW + 30 * DAY).toISOString() }] };
+  const ref = firstOfMonth(JUST_RELEASED, 1), prevMonth = firstOfMonth(JUST_RELEASED, 2);
+  const yearAgo = String(+ref.slice(0, 4) - 1) + ref.slice(4);
+
+  test('a month published without YoY shows its MoM and is not flagged as waiting', async () => {
+    const payload = fred({
+      cpi: { value: 3.7, date: prevMonth, source: 'fred-csv', latestNoYoy: { date: ref, mom: 0.4, yearAgoDate: yearAgo } },
+      coreCpi: { value: 2.6, date: prevMonth, source: 'fred-csv', latestNoYoy: { date: ref, mom: 0.3, yearAgoDate: yearAgo } }
+    });
+    const sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredPayload: payload, cal, cons: null }) }));
+    const info = node(sb, 'cpiInfo').innerHTML;
+    assert.match(info, /ไม่มี YoY/);
+    assert.match(info, /MoM <b>\+0\.4%<\/b> \(Core \+0\.3%\)/);
+    assert.doesNotMatch(node(sb, 'nextCpi').innerHTML, /รอตัวเลขใหม่/);
+    assert.match(node(sb, 'fedAnalysis').innerHTML, /ไม่มี YoY/);
+  });
+
+  test('a normal month leaves the extra CPI line empty', async () => {
+    const sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ cal, cons: null }) }));
+    assert.equal(node(sb, 'cpiInfo').innerHTML, '');
+  });
+}
