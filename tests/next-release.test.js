@@ -108,3 +108,34 @@ test('without the consensus function the tiles still show when the next release 
   assert.match(node(sb, 'nextPpi').innerHTML, /ครั้งถัดไป .* · ยังไม่มีค่าคาด/);
   assert.match(node(sb, 'fedAnalysis').innerHTML, /PPI ราคาผู้ผลิต/, 'PPI is still analysed against the baked consensus');
 });
+
+// Release day: the CPI time has just passed but FRED/BLS still serve last month's figure. The tile
+// must say so instead of jumping straight to next month's date (which made a stale number look new).
+{
+  const firstOfMonth = (ms, back) => { const d = new Date(ms); return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - back, 1)).toISOString().slice(0, 10); };
+  const JUST_RELEASED = NOW - 10 * 60 * 1000;
+  const NEXT_MONTH = NOW + 30 * DAY;
+  const releaseDayCal = () => ({
+    events: [
+      { key: 'cpi', date: iso(JUST_RELEASED), at: new Date(JUST_RELEASED).toISOString() },
+      { key: 'cpi', date: iso(NEXT_MONTH), at: new Date(NEXT_MONTH).toISOString() }
+    ]
+  });
+  const refMonth = firstOfMonth(JUST_RELEASED, 1);
+
+  test('right after the CPI release, an old figure is flagged as waiting instead of showing next month', async () => {
+    const stale = fred({ cpi: { value: 3.7, date: firstOfMonth(JUST_RELEASED, 2), source: 'fred-csv' } });
+    const sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredPayload: stale, cal: releaseDayCal(), cons: null }) }));
+    const n = node(sb, 'nextCpi');
+    assert.match(n.innerHTML, /^⏳ ประกาศแล้ว .* · รอตัวเลขใหม่เข้าระบบ/);
+    assert.match(n.className, /today/);
+  });
+
+  test('once the new month is in, the tile moves on to the next release', async () => {
+    const fresh = fred({ cpi: { value: 3.8, date: refMonth, source: 'fred-csv' } });
+    const sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredPayload: fresh, cal: releaseDayCal(), cons: null }) }));
+    const h = node(sb, 'nextCpi').innerHTML;
+    assert.doesNotMatch(h, /รอตัวเลขใหม่/);
+    assert.match(h, /ครั้งถัดไป/);
+  });
+}
