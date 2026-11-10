@@ -11,7 +11,7 @@
 ├── REVIEW-2026-09.md                   ← รายงานตรวจโค้ดรอบ ก.ย. 2026 (แก้แล้วอะไร / เหลืออะไร)
 ├── tools/dev-server.js                 ← เซิร์ฟเวอร์ทดสอบในเครื่อง (static + Functions จริง)
 └── netlify/functions/
-    ├── fred-data.js                    ← Fed Rate / EFFR / CPI(+core) / PPI / Unemployment / Payrolls / Jobless Claims
+    ├── fred-data.js                    ← Fed Rate / EFFR / CPI(+core) / PCE(+core) / PPI / Unemployment / Payrolls / Jobless Claims
     ├── consensus.js                    ← ค่า "ที่คาด" (consensus) จาก Investing.com (แคช 3 ชม.)
     ├── consensus-override.js           ← ที่เก็บ "ค่าที่คาดที่แก้เอง" ฝั่งเซิร์ฟเวอร์ (ทุกคนเห็นค่าเดียวกัน · แก้ต้องใส่รหัส)
     ├── cmc-fear-greed.js               ← Fear & Greed (CoinMarketCap keyless → alternative.me)

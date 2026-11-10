@@ -1,6 +1,6 @@
 // Netlify Function: live US macro data for the dashboard —
 // Fed funds target range, effective fed funds rate, CPI (headline + core), PPI (final demand),
-// unemployment, nonfarm payrolls, weekly initial jobless claims.
+// unemployment, nonfarm payrolls, weekly initial jobless claims, PCE price index (headline + core).
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // WHY THIS WAS REWRITTEN (Sep 2026)
@@ -81,7 +81,12 @@ const TARGETS = {
   // every Thursday 8:30 ET (Wednesday when Thursday is a federal holiday); FRED mirrors them as ICSA
   // within minutes. No BLS copy exists (it is a DOL/ETA series), so the chain is fred-api → fred-csv;
   // if both fail the page still shows Investing.com's "Actual" from /consensus.
-  claims: { fred: 'ICSA', cadence: 'weekly' }
+  claims: { fred: 'ICSA', cadence: 'weekly' },
+  // PCE price index (BEA "Personal Income and Outlays", late each month, 8:30 ET) — core PCE is the
+  // inflation gauge the Fed's 2% target is defined on. BEA (not BLS) publishes it, so there is no BLS
+  // copy: the chain is fred-api → fred-csv, same as claims.
+  pce: { fred: 'PCEPI', cadence: 'monthly' },
+  corePce: { fred: 'PCEPILFE', cadence: 'monthly' }
 };
 
 // Cheap sanity ranges: if a "value" falls outside these we treat the fetch as failed instead of
@@ -516,7 +521,7 @@ async function yoyMetric(key, apiKey, deadline, opts = {}) {
   } else if (official) {
     final = official;
   }
-  if (!final) throw new Error(trail.join(' | ') || 'both CPI paths failed');
+  if (!final) throw new Error(trail.join(' | ') || `both ${key} paths failed`);
 
   // Previous month's YoY, so the page can say "ชะลอ/เร่ง" without any human input. Taken from
   // whichever series produced the headline number (and, when that is the levels path, computed
@@ -658,7 +663,9 @@ const METRICS = {
   coreCpi: (apiKey, deadline, opts) => yoyMetric('coreCpi', apiKey, deadline, opts),
   nfp: (apiKey, deadline, opts) => payrollsMetric(apiKey, deadline, opts),
   ppi: (apiKey, deadline, opts) => ppiMetric(apiKey, deadline, opts),
-  claims: (apiKey, deadline) => claimsMetric(apiKey, deadline)
+  claims: (apiKey, deadline) => claimsMetric(apiKey, deadline),
+  pce: (apiKey, deadline, opts) => yoyMetric('pce', apiKey, deadline, opts),
+  corePce: (apiKey, deadline, opts) => yoyMetric('corePce', apiKey, deadline, opts)
 };
 
 // For fields still showing the previous month on a release morning, ask BLS directly and take its
