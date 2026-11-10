@@ -651,16 +651,16 @@ body{margin:0}
   </div>
 </div>
 <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
-  <div id="fredFetchStatus" class="muted" style="font-size:11px;"></div>
+  <div id="fredFetchStatus" class="muted" style="font-size:11px;" data-en="Loading the latest numbers…">กำลังโหลดตัวเลขล่าสุด…</div>
 </div>
 <div class="metrics" id="fedMetrics">
-  <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">3.50–3.75%</div><div class="spark" id="spFed"></div><div class="next" id="nextFed"></div></div>
-  <div class="metric"><div class="name">Effective Fed Funds Rate</div><div class="num" id="fedEffr">3.63%</div></div>
-  <div class="metric"><div class="name" data-en="CPI inflation (YoY)">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.4%</div><div class="spark" id="spCpi"></div><div class="next" id="cpiInfo"></div><div class="next" id="nextCpi"></div></div>
+  <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">–</div><div class="spark" id="spFed"></div><div class="next" id="nextFed"></div></div>
+  <div class="metric"><div class="name">Effective Fed Funds Rate</div><div class="num" id="fedEffr">–</div></div>
+  <div class="metric"><div class="name" data-en="CPI inflation (YoY)">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">–</div><div class="spark" id="spCpi"></div><div class="next" id="cpiInfo"></div><div class="next" id="nextCpi"></div></div>
   <div class="metric"><div class="name" data-en="Core PCE (YoY) · the Fed's inflation gauge">Core PCE (YoY) · เงินเฟ้อที่ Fed ใช้</div><div class="num" id="corePce">–</div><div class="next" id="corePceInfo"></div><div class="next" id="nextPce"></div></div>
   <div class="metric"><div class="name" data-en="PPI producer prices (MoM)">PPI ราคาผู้ผลิต (MoM)</div><div class="num" id="ppiMom">–</div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div></div>
-  <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">4.1%</div><div class="spark" id="spUnrate"></div><div class="next" id="nextUnrate"></div></div>
-  <div class="metric"><div class="name" data-en="Nonfarm Payrolls (latest month)">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num up" id="nfp">+162,000</div><div class="next" id="nextNfp"></div></div>
+  <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">–</div><div class="spark" id="spUnrate"></div><div class="next" id="nextUnrate"></div></div>
+  <div class="metric"><div class="name" data-en="Nonfarm Payrolls (latest month)">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num" id="nfp">–</div><div class="next" id="nextNfp"></div></div>
   <div class="metric"><div class="name" data-en="Initial Jobless Claims (weekly)">Initial Jobless Claims (รายสัปดาห์)</div><div class="num" id="claims">–</div><div class="next" id="claimsInfo"></div><div class="next" id="nextClaims"></div></div>
 </div>
 <div class="muted" style="margin-top:12px; font-size:11px; line-height:1.6;" id="fedAsOf"></div>
@@ -1388,7 +1388,8 @@ window.setHeaderStamp();
   // then the BLS public API — so it works in production, deploy previews and branch deploys alike.
   // The server also tells us when the numbers could next change (`refreshAfter`): ~15 min on
   // CPI / jobs-report / FOMC days, ~3 h otherwise. We re-poll on that schedule, plus whenever the
-  // tab becomes visible again. Only the pre-load placeholders in the markup above are hardcoded.
+  // tab becomes visible again. Nothing is hardcoded: until real data (fresh, or the last payload this
+  // browser saved) arrives, the cards show "–" — a baked-in number could be mistaken for a live one.
   const FED_CACHE_KEY = 'fed-data-cache-v3';  // v3: TTL-based cache, adds nfp/coreCpi fields
   const FED_POLL_MS = 10 * 60 * 1000;         // safety-net poll; the server TTL usually decides
   const FED_TICK_MS = 60 * 1000;              // how often we check whether refreshAfter has passed
@@ -2415,7 +2416,7 @@ window.setHeaderStamp();
       const reason = (e && e.message) ? e.message : String(e);
       console.warn('[fred-data]', reason);
       if(statusEl) statusEl.textContent = tr('⚠️ อัปเดตตัวเลขล่าสุดไม่ได้ในขณะนี้ — ระบบจะลองใหม่อัตโนมัติ', '⚠️ Can\'t update the latest numbers right now. Retrying automatically.');
-      // Prefer the last payload we actually saved over the hardcoded placeholders.
+      // Fall back to the last payload we actually saved; with none, the cards stay at "–".
       if(cached && cached.data) applyFedData(cached.data);
       // ให้บทวิเคราะห์บอกด้วยว่ายังสร้างไม่ได้ เพราะอะไร (ไม่ปล่อยให้ค้างข้อความ "กำลังรอ" เงียบๆ)
       try{ renderFedAnalysis(null, reason); }catch(e){ /* best-effort */ }
