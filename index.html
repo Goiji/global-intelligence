@@ -525,7 +525,6 @@ body{margin:0}
   <div class="metric mkt"><div class="name">หุ้น Nasdaq 100</div><div class="num" id="mkNdx">–</div><div class="spark" id="spNdx"></div><div class="zone" id="mkNdxZone"></div></div>
   <div class="metric mkt"><div class="name">บอนด์สหรัฐ 10 ปี</div><div class="num" id="mkUs10y">–</div><div class="spark" id="spUs10y"></div></div>
   <div class="metric mkt"><div class="name">บอนด์สหรัฐ 2 ปี</div><div class="num" id="mkUs2y">–</div><div class="spark" id="spUs2y"></div></div>
-  <div class="metric mkt"><div class="name">ส่วนต่าง 10 ปี − 2 ปี</div><div class="num" id="mkSpread">–</div><div class="zone" id="mkSpreadZone"></div></div>
   <div class="metric mkt"><div class="name">VIX ดัชนีความกลัว</div><div class="num" id="mkVix">–</div><div class="spark" id="spVix"></div><div class="zone" id="mkVixZone"></div></div>
   <div class="metric mkt"><div class="name">MOVE ความผันผวนบอนด์ <div class="tip"><button type="button" class="tip-btn" aria-label="MOVE คืออะไร" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
     <p><b>MOVE Index</b> คือ "VIX ของตลาดบอนด์" วัดความผันผวนที่ตลาดคาดของพันธบัตรรัฐบาลสหรัฐฯ ใน 1 เดือนข้างหน้า (คำนวณจากราคา option ของบอนด์ 2, 5, 10, 30 ปี)</p>
@@ -2475,10 +2474,6 @@ window.setHeaderStamp();
           ? 'Cboe ' + thDay(s.date).replace(/ \d{4}$/, '') + ' ' + s.time.slice(11, 16) + ' NY (ช้า ~15 นาที)'
           : 'ราคาปิด ' + thDay(s.date);
       });
-      if(isFinite(j.spread2s10s)){
-        el('mkSpread').innerHTML = (j.spread2s10s > 0 ? '+' : '') + esc(Math.round(j.spread2s10s * 100)) + ' bp';
-        el('mkSpreadZone').textContent = j.spread2s10s < 0 ? '⚠️ กลับหัว (inverted) — สัญญาณเตือนเศรษฐกิจชะลอ' : 'ปกติ (ระยะยาว > ระยะสั้น)';
-      }
       if(S.vix){
         const v = S.vix.latest;
         el('mkVix').textContent = v.toFixed(2);
