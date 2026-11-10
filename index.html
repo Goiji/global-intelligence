@@ -3,6 +3,45 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<script>
+// ── ภาษาของหน้าเว็บ (ไทย / English) ──────────────────────────────────────────────────────────
+// เลือกได้จากปุ่ม "ไทย | Eng" มุมขวาบน · จำไว้ใน localStorage ('gi-lang') · ?lang=en / ?lang=th ในลิงก์ก็ได้
+// ค่าเริ่มต้น = ไทย · ข้อความในสคริปต์ใช้ tr('ไทย', 'English') · ข้อความใน HTML ใช้ data-en="..." (แทน textContent)
+// หรือคู่ <span class="i18n-th">…</span><span class="i18n-en">…</span> สำหรับบล็อกที่มีแท็กข้างใน (CSS ซ่อนอีกภาษา)
+// เปลี่ยนภาษา = บันทึกค่าแล้วโหลดหน้าใหม่ (ข้อมูลส่วนใหญ่มาจากแคช จึงเร็ว) — ทุกส่วนจึงสร้างใหม่ด้วยภาษาเดียวกันหมด
+(function(){
+  var lang = 'th';
+  try{
+    var m = /[?&]lang=(th|en)\b/i.exec((window.location && window.location.search) || '');
+    if(m){ lang = m[1].toLowerCase(); try{ localStorage.setItem('gi-lang', lang); }catch(e){} }
+    else if(localStorage.getItem('gi-lang') === 'en') lang = 'en';
+  }catch(e){}
+  window.GI_LANG = lang;
+  window.GI_LOCALE = lang === 'en' ? 'en-GB' : 'th-TH';
+  window.tr = function(th, en){ return (lang === 'en' && en != null) ? en : th; };
+  try{ document.documentElement.lang = lang; }catch(e){}
+  window.giSetLang = function(next){
+    next = next === 'en' ? 'en' : 'th';
+    if(next === lang) return;
+    try{ localStorage.setItem('gi-lang', next); }catch(e){}
+    try{
+      var u = new URL(window.location.href);
+      if(u.searchParams.has('lang')){ u.searchParams.set('lang', next); window.location.replace(u.toString()); return; }
+    }catch(e){}
+    window.location.reload();
+  };
+  // แทนข้อความใน HTML ที่ติด data-en / data-en-ph / data-en-aria / data-en-title (เรียกซ้ำได้ ทำครั้งเดียวต่อ element)
+  window.giApplyStatic = function(){
+    if(lang !== 'en' || !document.querySelectorAll) return;
+    try{
+      Array.prototype.forEach.call(document.querySelectorAll('[data-en]'), function(n){ n.textContent = n.getAttribute('data-en'); n.removeAttribute('data-en'); });
+      [['data-en-ph', 'placeholder'], ['data-en-aria', 'aria-label'], ['data-en-title', 'title']].forEach(function(p){
+        Array.prototype.forEach.call(document.querySelectorAll('[' + p[0] + ']'), function(n){ n.setAttribute(p[1], n.getAttribute(p[0])); n.removeAttribute(p[0]); });
+      });
+    }catch(e){}
+  };
+})();
+</script>
 <title>Global Intelligence — World Risk, Macro &amp; BTC Dashboard</title>
 <meta name="description" content="แดชบอร์ดสรุปความเสี่ยงโลกจากพาดหัวข่าวสด ตัวเลขเศรษฐกิจสหรัฐฯ (Fed / CPI / ว่างงาน / จ้างงาน) ราคาสินทรัพย์จริง และคะแนนน่าซื้อ BTC — ฟรี ไม่มีค่าใช้จ่าย ไม่ใช่คำแนะนำการลงทุน">
 <meta name="theme-color" content="#0b1020">
@@ -441,130 +480,173 @@ body{margin:0}
     #btcTab .price-block{text-align:left;width:100%}
   }
 
+  /* ---------- ภาษา: ปุ่มสลับ ไทย | Eng (มุมขวาบน) + บล็อกสองภาษา ---------- */
+  html[lang="en"] .i18n-th{display:none!important}
+  html:not([lang="en"]) .i18n-en{display:none!important}
+  .lang-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.02);align-self:center}
+  .lang-toggle button{border:0;background:transparent;color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.04em;padding:6px 12px;border-radius:999px;cursor:pointer;line-height:1;transition:color .2s,background .2s}
+  .lang-toggle button:hover{color:var(--text)}
+  .lang-toggle button[aria-pressed="true"]{background:rgba(212,178,106,.16);color:var(--accent-hi);box-shadow:inset 0 0 0 1px var(--gold-line)}
+  @media(max-width:480px){ .tabbar{padding:10px 12px} .tabbtn{padding:8px 11px;font-size:13px} .lang-toggle button{padding:6px 9px} }
+  /* คำภาษาอังกฤษตัดคำกลางคำไม่ได้เหมือนภาษาไทย — กันการ์ดตลาดบนมือถือดันจอกว้างเกิน */
+  @media(max-width:800px){ .grid{grid-template-columns:minmax(0,1fr)} .mkt-grid{grid-template-columns:repeat(2,minmax(0,1fr))} .mkt .name,.tv-btn{overflow-wrap:anywhere} }
+
 </style>
 </head>
 <body>
 <script>try{ if(/[?&]debug\b/.test(location.search)) document.body.classList.add('debug'); }catch(e){}</script>
 <nav class="tabbar">
-  <button class="tabbtn active" data-tab="newsTab">🌍 ข่าวโลก & AI</button>
+  <button class="tabbtn active" data-tab="newsTab" data-en="🌍 World News & AI">🌍 ข่าวโลก & AI</button>
   <button class="tabbtn" data-tab="btcTab">₿ BTC Buy Score</button>
+  <div class="lang-toggle" role="group" aria-label="ภาษา / Language">
+    <button type="button" data-lang="th" lang="th" aria-pressed="true" title="ภาษาไทย">ไทย</button>
+    <button type="button" data-lang="en" lang="en" aria-pressed="false" title="English">Eng</button>
+  </div>
 </nav>
+<script>
+(function(){
+  // ปุ่มสลับภาษา — ไม่ใช่ .tabbtn จึงไม่ไปชนกับตัวสลับแท็บด้านล่าง
+  var lang = window.GI_LANG === 'en' ? 'en' : 'th';
+  var btns = document.querySelectorAll ? document.querySelectorAll('.lang-toggle button[data-lang]') : [];
+  Array.prototype.forEach.call(btns, function(b){
+    var mine = b.getAttribute('data-lang');
+    b.setAttribute('aria-pressed', mine === lang ? 'true' : 'false');
+    b.addEventListener('click', function(){ if(window.giSetLang) window.giSetLang(mine); });
+  });
+  if(window.giApplyStatic) window.giApplyStatic();
+})();
+</script>
 
 <section id="newsTab" class="tabpage active">
 
 <div class="wrap">
 <header class="top">
-<div><div class="eyebrow">GLOBAL INTELLIGENCE</div><div class="title">Daily World Dashboard</div><div class="sub" id="newsSub">สรุปความเสี่ยงโลก ตลาด และเศรษฐกิจสหรัฐฯ ประจำวัน</div></div>
-<div class="date">อัปเดตล่าสุด<br><b id="today"></b></div>
+<div><div class="eyebrow">GLOBAL INTELLIGENCE</div><div class="title">Daily World Dashboard</div><div class="sub" id="newsSub" data-en="Daily snapshot of global risk, markets and the US economy">สรุปความเสี่ยงโลก ตลาด และเศรษฐกิจสหรัฐฯ ประจำวัน</div></div>
+<div class="date"><span data-en="Last updated">อัปเดตล่าสุด</span><br><b id="today"></b></div>
 </header>
 
 <main class="grid">
 <section class="card full">
-<h2>🌍 ดัชนีความเสี่ยงโลก <span class="h-en">World Risk Score</span></h2>
+<h2>🌍 <span data-en="World Risk Score">ดัชนีความเสี่ยงโลก</span> <span class="h-en i18n-th">World Risk Score</span></h2>
 <div class="hero"><div class="score" id="riskScore">–</div><div><span class="badge" id="riskBadge">–</span><div class="change" id="riskChange"></div><div class="muted" id="riskConfidence"></div></div></div>
 <div class="risk-scale" aria-hidden="true"><div class="bar"><div class="pin" id="riskPin" style="left:0%; display:none;"></div></div><div class="ticks"><span style="left:0">0</span><span style="left:40%">40</span><span style="left:60%">60</span><span style="left:75%">75</span><span style="left:100%">100</span></div></div>
 <div id="riskTrend" style="margin-top:10px;"></div>
 <div class="metrics" id="categoryMetrics">
-<div class="metric"><div class="name">ภูมิรัฐศาสตร์</div><div class="num">–</div></div>
-<div class="metric"><div class="name">เศรษฐกิจ</div><div class="num">–</div></div>
-<div class="metric"><div class="name">พลังงาน</div><div class="num">–</div></div>
-<div class="metric"><div class="name">การเงิน</div><div class="num">–</div></div>
-<div class="metric"><div class="name">เทคโนโลยี / AI</div><div class="num">–</div></div>
+<div class="metric"><div class="name" data-en="Geopolitics">ภูมิรัฐศาสตร์</div><div class="num">–</div></div>
+<div class="metric"><div class="name" data-en="Economy">เศรษฐกิจ</div><div class="num">–</div></div>
+<div class="metric"><div class="name" data-en="Energy">พลังงาน</div><div class="num">–</div></div>
+<div class="metric"><div class="name" data-en="Finance">การเงิน</div><div class="num">–</div></div>
+<div class="metric"><div class="name" data-en="Tech / AI">เทคโนโลยี / AI</div><div class="num">–</div></div>
 </div>
-<details class="why" id="riskWhyBox" style="display:none;"><summary>ℹ️ คะแนนมาจากข่าวไหน</summary><div id="riskWhy"></div></details>
+<details class="why" id="riskWhyBox" style="display:none;"><summary data-en="ℹ️ Which headlines drive the score">ℹ️ คะแนนมาจากข่าวไหน</summary><div id="riskWhy"></div></details>
 </section>
 
 <section class="card">
-<h2>📰 ทิศทางสินทรัพย์จากข่าว <span class="h-en">News Outlook</span></h2>
+<h2>📰 <span data-en="News Outlook">ทิศทางสินทรัพย์จากข่าว</span> <span class="h-en i18n-th">News Outlook</span></h2>
 <div class="bars" id="assetBars">
-<div class="barrow"><span>🥇 ทองคำ</span><div class="track"><div class="fill green" style="width:0%"></div></div><b>–</b></div>
-<div class="barrow"><span>🛢 น้ำมัน</span><div class="track"><div class="fill green" style="width:0%"></div></div><b>–</b></div>
-<div class="barrow"><span>💵 ดอลลาร์</span><div class="track"><div class="fill blue" style="width:0%"></div></div><b>–</b></div>
+<div class="barrow"><span data-en="🥇 Gold">🥇 ทองคำ</span><div class="track"><div class="fill green" style="width:0%"></div></div><b>–</b></div>
+<div class="barrow"><span data-en="🛢 Oil">🛢 น้ำมัน</span><div class="track"><div class="fill green" style="width:0%"></div></div><b>–</b></div>
+<div class="barrow"><span data-en="💵 Dollar">💵 ดอลลาร์</span><div class="track"><div class="fill blue" style="width:0%"></div></div><b>–</b></div>
 <div class="barrow"><span>₿ Bitcoin</span><div class="track"><div class="fill blue" style="width:0%"></div></div><b>–</b></div>
-<div class="barrow"><span>📈 หุ้น</span><div class="track"><div class="fill yellow" style="width:0%"></div></div><b>–</b></div>
+<div class="barrow"><span data-en="📈 Stocks">📈 หุ้น</span><div class="track"><div class="fill yellow" style="width:0%"></div></div><b>–</b></div>
 </div>
-<div class="muted" style="font-size:10px; margin-top:10px;">คะแนน 0–100 ประเมินจากโทนข่าว (สูง = ข่าวหนุนให้ราคาขึ้น) ไม่ใช่ราคาจริง</div>
+<div class="muted" style="font-size:10px; margin-top:10px;" data-en="Scores 0–100 from the tone of the news (high = news supports higher prices). Not actual prices.">คะแนน 0–100 ประเมินจากโทนข่าว (สูง = ข่าวหนุนให้ราคาขึ้น) ไม่ใช่ราคาจริง</div>
 </section>
 
 <section class="card">
-<h2>📡 ราคาตลาด <span class="h-en">Live · เทียบ 24 ชม.</span></h2>
+<h2>📡 <span data-en="Market Prices">ราคาตลาด</span> <span class="h-en" data-en="Live · vs 24h">Live · เทียบ 24 ชม.</span></h2>
 
 <div id="livePrices" style="display:flex; flex-direction:column; gap:12px;">
   <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed var(--line);">
-    <span>🥇 ทองคำ <span class="muted" style="font-size:10px;">(ต่อออนซ์)</span></span><b id="lpGold" style="font-size:16px;">กำลังโหลด…</b>
+    <span><span data-en="🥇 Gold">🥇 ทองคำ</span> <span class="muted" style="font-size:10px;" data-en="(per oz)">(ต่อออนซ์)</span></span><b id="lpGold" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
   </div>
   <div style="padding:10px 0; border-bottom:1px dashed var(--line);">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <span>🇹🇭 ทองไทย 96.5% <span class="muted" style="font-size:10px;">(บาทละ · ขายออก)</span></span><b id="lpGoldTh" style="font-size:16px;">กำลังโหลด…</b>
+      <span><span data-en="🇹🇭 Thai gold 96.5%">🇹🇭 ทองไทย 96.5%</span> <span class="muted" style="font-size:10px;" data-en="(per baht-weight · sell)">(บาทละ · ขายออก)</span></span><b id="lpGoldTh" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
     </div>
     <div id="lpGoldThSub" class="muted" style="font-size:10px; margin-top:4px; text-align:right;"></div>
   </div>
   <div style="padding:10px 0; border-bottom:1px dashed var(--line);">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <span>🛢 น้ำมัน WTI <span class="muted" style="font-size:10px;">(ต่อบาร์เรล)</span></span><b id="lpOil" style="font-size:16px;">กำลังโหลด…</b>
+      <span><span data-en="🛢 WTI oil">🛢 น้ำมัน WTI</span> <span class="muted" style="font-size:10px;" data-en="(per barrel)">(ต่อบาร์เรล)</span></span><b id="lpOil" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
     </div>
     <div id="avFetchStatusVisible" class="muted" style="font-size:10px; margin-top:4px; text-align:right;"></div>
   </div>
   <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed var(--line);">
-    <span>💵 USD/THB</span><b id="lpUsdThb" style="font-size:16px;">กำลังโหลด…</b>
+    <span>💵 USD/THB</span><b id="lpUsdThb" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
   </div>
   <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed var(--line);">
-    <span>💴 JPY/THB <span class="muted" style="font-size:10px;">(ต่อ 100 เยน)</span></span><b id="lpJpyThb" style="font-size:16px;">กำลังโหลด…</b>
+    <span>💴 JPY/THB <span class="muted" style="font-size:10px;" data-en="(per 100 yen)">(ต่อ 100 เยน)</span></span><b id="lpJpyThb" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
   </div>
   <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0;">
-    <span>🇨🇳 CNY/THB <span class="muted" style="font-size:10px;">(ต่อ 1 หยวน)</span></span><b id="lpCnyThb" style="font-size:16px;">กำลังโหลด…</b>
+    <span>🇨🇳 CNY/THB <span class="muted" style="font-size:10px;" data-en="(per 1 yuan)">(ต่อ 1 หยวน)</span></span><b id="lpCnyThb" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
   </div>
 </div>
-<div id="livePricesNote" class="muted" style="font-size:10px; margin-top:10px;">ราคาทองอ้างอิง PAXG (โทเคนที่หนุนด้วยทองคำจริง)</div>
+<div id="livePricesNote" class="muted" style="font-size:10px; margin-top:10px;" data-en="Gold price tracks PAXG (a token backed by physical gold)">ราคาทองอ้างอิง PAXG (โทเคนที่หนุนด้วยทองคำจริง)</div>
 </section>
 
 <section class="card full">
-<h2>📈 ตลาดสหรัฐฯ <span class="h-en">US Markets · ราคาล่าสุด</span></h2>
+<h2>📈 <span data-en="US Markets">ตลาดสหรัฐฯ</span> <span class="h-en" data-en="Latest prices">US Markets · ราคาล่าสุด</span></h2>
 <div class="mkt-grid" id="mktGrid">
-  <div class="metric mkt"><div class="name">หุ้น S&amp;P 500</div><div class="num" id="mkSp500">–</div><div class="spark" id="spSp500"></div><div class="zone" id="mkSp500Zone"></div></div>
-  <div class="metric mkt"><div class="name">หุ้น Nasdaq 100</div><div class="num" id="mkNdx">–</div><div class="spark" id="spNdx"></div><div class="zone" id="mkNdxZone"></div></div>
-  <div class="metric mkt"><div class="name">บอนด์สหรัฐ 10 ปี</div><div class="num" id="mkUs10y">–</div><div class="spark" id="spUs10y"></div></div>
-  <div class="metric mkt"><div class="name">บอนด์สหรัฐ 2 ปี</div><div class="num" id="mkUs2y">–</div><div class="spark" id="spUs2y"></div></div>
-  <div class="metric mkt"><div class="name">VIX ดัชนีความกลัว</div><div class="num" id="mkVix">–</div><div class="spark" id="spVix"></div><div class="zone" id="mkVixZone"></div></div>
-  <div class="metric mkt"><div class="name">MOVE ความผันผวนบอนด์ <div class="tip"><button type="button" class="tip-btn" aria-label="MOVE คืออะไร" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+  <div class="metric mkt"><div class="name" data-en="S&P 500 index">หุ้น S&amp;P 500</div><div class="num" id="mkSp500">–</div><div class="spark" id="spSp500"></div><div class="zone" id="mkSp500Zone"></div></div>
+  <div class="metric mkt"><div class="name" data-en="Nasdaq 100 index">หุ้น Nasdaq 100</div><div class="num" id="mkNdx">–</div><div class="spark" id="spNdx"></div><div class="zone" id="mkNdxZone"></div></div>
+  <div class="metric mkt"><div class="name" data-en="US 10-year yield">บอนด์สหรัฐ 10 ปี</div><div class="num" id="mkUs10y">–</div><div class="spark" id="spUs10y"></div></div>
+  <div class="metric mkt"><div class="name" data-en="US 2-year yield">บอนด์สหรัฐ 2 ปี</div><div class="num" id="mkUs2y">–</div><div class="spark" id="spUs2y"></div></div>
+  <div class="metric mkt"><div class="name" data-en="VIX fear index">VIX ดัชนีความกลัว</div><div class="num" id="mkVix">–</div><div class="spark" id="spVix"></div><div class="zone" id="mkVixZone"></div></div>
+  <div class="metric mkt"><div class="name"><span data-en="MOVE bond volatility">MOVE ความผันผวนบอนด์</span> <div class="tip"><button type="button" class="tip-btn" aria-label="MOVE คืออะไร" data-en-aria="What is MOVE?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
     <p><b>MOVE Index</b> คือ "VIX ของตลาดบอนด์" วัดความผันผวนที่ตลาดคาดของพันธบัตรรัฐบาลสหรัฐฯ ใน 1 เดือนข้างหน้า (คำนวณจากราคา option ของบอนด์ 2, 5, 10, 30 ปี)</p>
     <p><b>อ่านค่า:</b> 🟢 ต่ำกว่า 80 สงบ · 🟡 80–110 ปกติ · 🟠 110–140 กังวล · 🔴 140 ขึ้นไป ตึงเครียด (ช่วง SVB ล้ม มี.ค. 2023 พุ่งเกือบ 200)</p>
     <p><b>ทำไมสำคัญ:</b> บอนด์คือหลักประกันหลักในตลาด repo พอบอนด์ผันผวนแรง ผู้ให้กู้จะขึ้น haircut (ให้กู้ได้น้อยลงต่อหลักประกันเท่าเดิม) สภาพคล่องในระบบเลยหดตัว MOVE จึงมักขยับนำ haircut และนำ VIX</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>MOVE Index</b> is the "VIX of the bond market": the volatility the market expects in US Treasuries over the next month (derived from option prices on 2-, 5-, 10- and 30-year Treasuries).</p>
+    <p><b>How to read it:</b> 🟢 below 80 calm · 🟡 80–110 normal · 🟠 110–140 worried · 🔴 140 and up stressed (it spiked to almost 200 when SVB failed in March 2023)</p>
+    <p><b>Why it matters:</b> Treasuries are the main collateral in the repo market. When bonds swing hard, lenders raise haircuts (they lend less against the same collateral), so liquidity in the system shrinks. That is why MOVE tends to lead haircuts, and VIX.</p>
+    </div>
   </div></div></div><div class="num" id="mkMove">–</div><div class="spark" id="spMove"></div><div class="zone" id="mkMoveZone"></div>
-    <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3AMOVE" target="_blank" rel="noopener noreferrer"><span>เปิดใน TradingView ↗</span></a></div>
-  <div class="metric mkt"><div class="name">SOFR − IORB (ตลาด repo) <div class="tip"><button type="button" class="tip-btn" aria-label="SOFR − IORB คืออะไร" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3AMOVE" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  <div class="metric mkt"><div class="name"><span data-en="SOFR − IORB (repo market)">SOFR − IORB (ตลาด repo)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="SOFR − IORB คืออะไร" data-en-aria="What is SOFR − IORB?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
     <p><b>SOFR</b> = ดอกเบี้ยกู้ข้ามคืนโดยเอาพันธบัตรสหรัฐฯ ค้ำ (ตลาด repo) คือต้นทุนเงินสดจริงในระบบ · <b>IORB</b> = ดอกเบี้ยที่ Fed จ่ายให้เงินสำรองที่ธนาคารฝากไว้</p>
     <p><b>อ่านค่า (SOFR ลบ IORB):</b> 🟢 ติดลบ เงินสดล้นระบบ · 🟡 0 ถึง +5 bp เริ่มตึง · 🟠 +5 ถึง +15 bp repo ตึงตัว · 🔴 เกิน +15 bp ตึงหนัก</p>
     <p><b>ค่าเป็นบวกและถ่างขึ้น</b> แปลว่าคนต้องยอมจ่ายแพงกว่าที่ Fed ให้เพื่อหาเงินสดมาถือบอนด์ ถ้าตึงมาก haircut มักโดนปรับขึ้นตาม (ก.ย. 2019 SOFR พุ่งเกิน 5% ในวันเดียวจน Fed ต้องอัดฉีดเงิน)</p>
     <p>ช่วงสิ้นเดือน สิ้นไตรมาส หรือวันจ่ายภาษี spread กระโดดชั่วคราวได้เป็นเรื่องปกติ ให้ดูว่าค้างอยู่สูงหลายวันหรือไม่ · ข้อมูลจาก FRED ประกาศเช้าวันทำการถัดไป</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>SOFR</b> = the overnight rate for borrowing cash against US Treasuries (the repo market), i.e. the real cost of cash in the system · <b>IORB</b> = the rate the Fed pays on reserves banks keep with it.</p>
+    <p><b>How to read it (SOFR minus IORB):</b> 🟢 negative, cash is plentiful · 🟡 0 to +5 bp starting to tighten · 🟠 +5 to +15 bp repo is tight · 🔴 above +15 bp severe strain</p>
+    <p><b>A positive, widening spread</b> means borrowers are paying more than the Fed pays just to find cash to hold bonds. When it gets very tight, haircuts usually go up too (in Sept 2019 SOFR jumped above 5% in a single day and the Fed had to inject cash).</p>
+    <p>Short jumps around month-end, quarter-end or tax days are normal; what matters is whether it stays high for several days · Data from FRED, published the next business morning.</p>
+    </div>
   </div></div></div><div class="num" id="mkSofr">–</div><div class="spark" id="spSofr"></div><div class="zone" id="mkSofrZone"></div>
-    <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3ASOFR-FRED%3AIORB" target="_blank" rel="noopener noreferrer"><span>เปิดใน TradingView ↗</span></a></div>
-  <div class="metric mkt"><div class="name" id="mkDollarName">ดัชนีดอลลาร์ (DXY)</div><div class="num" id="mkDollar">–</div><div class="spark" id="spDollar"></div></div>
+    <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3ASOFR-FRED%3AIORB" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  <div class="metric mkt"><div class="name" id="mkDollarName" data-en="Dollar index (DXY)">ดัชนีดอลลาร์ (DXY)</div><div class="num" id="mkDollar">–</div><div class="spark" id="spDollar"></div></div>
 </div>
-<div class="muted" id="mktNote" style="font-size:11px; margin-top:10px;">กราฟเล็ก = ย้อนหลัง 12 เดือน</div>
+<div class="muted" id="mktNote" style="font-size:11px; margin-top:10px;" data-en="Mini charts = last 12 months">กราฟเล็ก = ย้อนหลัง 12 เดือน</div>
 </section>
 
 <section class="card full">
-<h2>🔥 ข่าวสำคัญ <span class="h-en">Top Events</span></h2>
+<h2>🔥 <span data-en="Top Events">ข่าวสำคัญ</span> <span class="h-en i18n-th">Top Events</span></h2>
 <div class="events" id="topEvents">
-<div class="event"><div class="rank">กำลังโหลด…</div></div>
+<div class="event"><div class="rank" data-en="Loading…">กำลังโหลด…</div></div>
 </div>
 </section>
 
 <section class="card full">
-<h2>🗞️ ข่าวล่าสุด <span class="h-en">Latest News · 48 ชม.</span></h2>
+<h2>🗞️ <span data-en="Latest News">ข่าวล่าสุด</span> <span class="h-en" data-en="Last 48 hours">Latest News · 48 ชม.</span></h2>
 <div class="news-filters" id="newsFilters"></div>
-<div class="news-list" id="newsList"><div class="muted" style="font-size:12px;">กำลังโหลดข่าว…</div></div>
-<button type="button" class="news-more" id="newsMoreBtn" style="display:none;">ดูข่าวเพิ่ม</button>
+<div class="news-list" id="newsList"><div class="muted" style="font-size:12px;" data-en="Loading news…">กำลังโหลดข่าว…</div></div>
+<button type="button" class="news-more" id="newsMoreBtn" style="display:none;" data-en="More news">ดูข่าวเพิ่ม</button>
 </section>
 
 <section class="card full">
 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
-  <h2 style="margin-bottom:0;">🏦 ดอกเบี้ย Fed & เศรษฐกิจสหรัฐฯ <span class="h-en">US Macro</span></h2>
+  <h2 style="margin-bottom:0;">🏦 <span data-en="Fed Rates & US Economy">ดอกเบี้ย Fed & เศรษฐกิจสหรัฐฯ</span> <span class="h-en i18n-th">US Macro</span></h2>
   <div style="display:flex; align-items:center; gap:10px; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:8px 14px;">
-    <span style="font-size:11px; color:var(--muted);">📅 FOMC ครั้งถัดไปอีก</span>
+    <span style="font-size:11px; color:var(--muted);" data-en="📅 Next FOMC in">📅 FOMC ครั้งถัดไปอีก</span>
     <b id="fomcDays" style="font-size:20px; color:var(--accent);">–</b>
-    <span style="font-size:11px; color:var(--muted);">วัน</span>
+    <span style="font-size:11px; color:var(--muted);" data-en="days">วัน</span>
     <span id="fomcDateLabel" style="font-size:11px; color:var(--muted);"></span>
   </div>
 </div>
@@ -574,58 +656,59 @@ body{margin:0}
 <div class="metrics" id="fedMetrics">
   <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">3.50–3.75%</div><div class="spark" id="spFed"></div><div class="next" id="nextFed"></div></div>
   <div class="metric"><div class="name">Effective Fed Funds Rate</div><div class="num" id="fedEffr">3.63%</div></div>
-  <div class="metric"><div class="name">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.4%</div><div class="spark" id="spCpi"></div><div class="next" id="nextCpi"></div></div>
-  <div class="metric"><div class="name">Core PCE (YoY) · เงินเฟ้อที่ Fed ใช้</div><div class="num" id="corePce">–</div><div class="next" id="corePceInfo"></div><div class="next" id="nextPce"></div></div>
-  <div class="metric"><div class="name">PPI ราคาผู้ผลิต (MoM)</div><div class="num" id="ppiMom">–</div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div></div>
+  <div class="metric"><div class="name" data-en="CPI inflation (YoY)">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">3.4%</div><div class="spark" id="spCpi"></div><div class="next" id="nextCpi"></div></div>
+  <div class="metric"><div class="name" data-en="Core PCE (YoY) · the Fed's inflation gauge">Core PCE (YoY) · เงินเฟ้อที่ Fed ใช้</div><div class="num" id="corePce">–</div><div class="next" id="corePceInfo"></div><div class="next" id="nextPce"></div></div>
+  <div class="metric"><div class="name" data-en="PPI producer prices (MoM)">PPI ราคาผู้ผลิต (MoM)</div><div class="num" id="ppiMom">–</div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div></div>
   <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">4.1%</div><div class="spark" id="spUnrate"></div><div class="next" id="nextUnrate"></div></div>
-  <div class="metric"><div class="name">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num up" id="nfp">+162,000</div><div class="next" id="nextNfp"></div></div>
-  <div class="metric"><div class="name">Initial Jobless Claims (รายสัปดาห์)</div><div class="num" id="claims">–</div><div class="next" id="claimsInfo"></div><div class="next" id="nextClaims"></div></div>
+  <div class="metric"><div class="name" data-en="Nonfarm Payrolls (latest month)">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num up" id="nfp">+162,000</div><div class="next" id="nextNfp"></div></div>
+  <div class="metric"><div class="name" data-en="Initial Jobless Claims (weekly)">Initial Jobless Claims (รายสัปดาห์)</div><div class="num" id="claims">–</div><div class="next" id="claimsInfo"></div><div class="next" id="nextClaims"></div></div>
 </div>
 <div class="muted" style="margin-top:12px; font-size:11px; line-height:1.6;" id="fedAsOf"></div>
 
 <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line);">
   <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
-    <h3 style="font-size:14px; margin-bottom:6px;">🔍 วิเคราะห์: ตัวเลขออกมาดี/แย่แค่ไหน เทียบกับที่คาด</h3>
+    <h3 style="font-size:14px; margin-bottom:6px;" data-en="🔍 Analysis: how good or bad the numbers are vs. forecasts">🔍 วิเคราะห์: ตัวเลขออกมาดี/แย่แค่ไหน เทียบกับที่คาด</h3>
     <span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-      <button id="consensusEditBtn" type="button" class="tabbtn" style="padding:3px 10px; font-size:11px; border-radius:8px; line-height:1.5;">✏️ แก้ค่า "ที่คาด" เอง</button>
+      <button id="consensusEditBtn" type="button" class="tabbtn" style="padding:3px 10px; font-size:11px; border-radius:8px; line-height:1.5;" data-en="✏️ Edit forecasts">✏️ แก้ค่า "ที่คาด" เอง</button>
     </span>
   </div>
   <div id="consensusEditPanel" style="display:none; margin:0 0 12px; padding:12px; background:var(--panel2); border:1px solid var(--line); border-radius:10px;"></div>
   <div id="fedAnalysis" style="display:flex; flex-direction:column; gap:12px;">
-    <div class="muted" style="font-size:11.5px;">⏳ กำลังดึงตัวเลขจริงเพื่อวิเคราะห์…</div>
+    <div class="muted" style="font-size:11.5px;" data-en="⏳ Fetching the latest numbers to analyse…">⏳ กำลังดึงตัวเลขจริงเพื่อวิเคราะห์…</div>
   </div>
 </div>
 </section>
 
 <section class="card full">
-<h2>🗓️ ปฏิทินเศรษฐกิจ <span class="h-en">Economic Calendar · เวลาไทย</span></h2>
-<div class="cal-list" id="calList"><div class="muted" style="font-size:12px;">กำลังโหลด…</div></div>
+<h2>🗓️ <span data-en="Economic Calendar">ปฏิทินเศรษฐกิจ</span> <span class="h-en" data-en="Bangkok time (GMT+7)">Economic Calendar · เวลาไทย</span></h2>
+<div class="cal-list" id="calList"><div class="muted" style="font-size:12px;" data-en="Loading…">กำลังโหลด…</div></div>
 </section>
 
 <section class="card full">
-<h2>📋 สรุปเช้านี้ <span class="h-en">Morning Brief</span></h2>
-<div class="brief" id="aiBrief">กำลังวิเคราะห์ข่าวล่าสุด…</div>
+<h2>📋 <span data-en="Morning Brief">สรุปเช้านี้</span> <span class="h-en i18n-th">Morning Brief</span></h2>
+<div class="brief" id="aiBrief" data-en="Analysing the latest news…">กำลังวิเคราะห์ข่าวล่าสุด…</div>
 </section>
 
 <section class="card full">
-<h2>👀 สิ่งที่ต้องจับตาวันนี้ <span class="h-en">Watch List</span></h2>
+<h2>👀 <span data-en="Watch List">สิ่งที่ต้องจับตาวันนี้</span> <span class="h-en i18n-th">Watch List</span></h2>
 <div class="watch" id="watchList"></div>
 </section>
 </main>
 <div class="footer">
-  <span id="newsStatus">กำลังโหลดข่าว…</span> ·
-  ไม่ใช่คำแนะนำการลงทุน ·
-  <button id="newsRefreshBtn" style="padding:4px 10px; font-size:11px;">🔄 รีเฟรชข่าว</button>
+  <span id="newsStatus" data-en="Loading news…">กำลังโหลดข่าว…</span> ·
+  <span data-en="Not investment advice">ไม่ใช่คำแนะนำการลงทุน</span> ·
+  <button id="newsRefreshBtn" style="padding:4px 10px; font-size:11px;" data-en="🔄 Refresh news">🔄 รีเฟรชข่าว</button>
 </div>
 </div>
 <script>
+if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data-en ของแท็บข่าว (ก่อนสคริปต์ด้านล่างเริ่มเขียนทับ)
 // Single source of truth for the "อัปเดตล่าสุด" stamp.
 // There used to be THREE separate inline scripts writing this one element, and the last one (near
 // the bottom of the file) wrote a date-only string — so the time of day was always wiped out.
 window.setHeaderStamp = function(){
   var el = document.getElementById('today');
   if(!el) return;
-  el.textContent = new Date().toLocaleDateString('th-TH',
+  el.textContent = new Date().toLocaleDateString(window.GI_LOCALE || 'th-TH',
     { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
 };
 window.setHeaderStamp();
@@ -633,6 +716,10 @@ window.setHeaderStamp();
 <script>
 (function(){
   const el = id => document.getElementById(id);
+  // ภาษา UI (ดูสคริปต์ใน <head>) — EN = โหมดอังกฤษ: ไม่แปลพาดหัวเป็นไทย แสดงต้นฉบับภาษาอังกฤษแทน
+  const tr = window.tr || ((th) => th);
+  const EN = window.GI_LANG === 'en';
+  const LOCALE = window.GI_LOCALE || 'th-TH';
 
   // ---------- storage: window.storage (Claude artifact) with localStorage fallback ----------
   // window.storage only exists inside Claude's own artifact runtime, and even there it can be
@@ -663,14 +750,26 @@ window.setHeaderStamp();
   }
 
   const RSS_FEEDS = [
-    { key:'geopolitical', label:'ภูมิรัฐศาสตร์', q:'geopolitics OR conflict OR war' },
-    { key:'economic',     label:'เศรษฐกิจ',     q:'federal reserve OR inflation OR interest rates' },
-    { key:'energy',       label:'พลังงาน',       q:'oil price OR energy crisis OR OPEC' },
-    { key:'financial',    label:'การเงิน',    q:'stock market OR wall street OR bonds' },
-    { key:'techAi',       label:'เทคโนโลยี / AI',    q:'artificial intelligence OR tech industry' },
+    { key:'geopolitical', label:tr('ภูมิรัฐศาสตร์', 'Geopolitics'), q:'geopolitics OR conflict OR war' },
+    { key:'economic',     label:tr('เศรษฐกิจ', 'Economy'),     q:'federal reserve OR inflation OR interest rates' },
+    { key:'energy',       label:tr('พลังงาน', 'Energy'),       q:'oil price OR energy crisis OR OPEC' },
+    { key:'financial',    label:tr('การเงิน', 'Finance'),    q:'stock market OR wall street OR bonds' },
+    { key:'techAi',       label:tr('เทคโนโลยี / AI', 'Tech / AI'),    q:'artificial intelligence OR tech industry' },
     // ข่าวภาษาไทย — แสดงในรายการข่าวล่าสุดเท่านั้น ไม่นำไปคิดคะแนนความเสี่ยง (คำสำคัญเป็นภาษาอังกฤษ) และไม่ต้องแปล
-    { key:'thai',         label:'ข่าวไทย',         q:'เศรษฐกิจไทย OR ค่าเงินบาท OR ตลาดหุ้นไทย OR ราคาทอง OR แบงก์ชาติ', lang:'th', listOnly:true }
+    { key:'thai',         label:tr('ข่าวไทย', 'Thai news'),         q:'เศรษฐกิจไทย OR ค่าเงินบาท OR ตลาดหุ้นไทย OR ราคาทอง OR แบงก์ชาติ', lang:'th', listOnly:true }
   ];
+
+  // ป้ายหมวดตามภาษาปัจจุบัน — แคชข่าวเก่าเก็บป้ายเป็นภาษาที่ใช้ตอนบันทึก จึงต้องแปลงจาก key (หรือจากป้ายเดิมทั้งสองภาษา) ตอนแสดง
+  const FEED_LABEL_PAIRS = { geopolitical:['ภูมิรัฐศาสตร์','Geopolitics'], economic:['เศรษฐกิจ','Economy'], energy:['พลังงาน','Energy'],
+    financial:['การเงิน','Finance'], techAi:['เทคโนโลยี / AI','Tech / AI'], thai:['ข่าวไทย','Thai news'] };
+  function feedLabel(key, stored){
+    let pair = FEED_LABEL_PAIRS[key];
+    if(!pair && stored){
+      const s = String(stored).toLowerCase();
+      pair = Object.values(FEED_LABEL_PAIRS).find(p => p[0].toLowerCase() === s || p[1].toLowerCase() === s) || null;
+    }
+    return pair ? tr(pair[0], pair[1]) : (stored || key || '');
+  }
 
   async function fetchFeed(feed){
     // Goes through our own Netlify Function, which now reads Google News RSS server-side and
@@ -744,6 +843,7 @@ window.setHeaderStamp();
 
   async function translateToThai(text){
     if(!text) return '';
+    if(EN) return text;   // โหมดอังกฤษ: ใช้พาดหัวต้นฉบับ ไม่ยิง MyMemory
     if(_translationCache.has(text)) return _translationCache.get(text);
     if(Date.now() < _translationBlockedUntil){
       _translationCache.set(text, text);
@@ -872,31 +972,47 @@ window.setHeaderStamp();
       if(pick) usedStories.add(storyKey(pick.title));
       return pick ? { f, pick } : null;
     }).filter(Boolean).slice(0,3).map(({ f, pick }, i)=>({
-      rank: i+1, category: f.label.toUpperCase(), title: cleanHeadline(pick.title, pick.source),
+      rank: i+1, catKey: f.key, category: f.label.toUpperCase(), title: cleanHeadline(pick.title, pick.source),
       rawDescription: pick.description || '',
       description: 'พาดหัวข่าวล่าสุดจากหมวด ' + f.label + ' (คะแนนความเสี่ยงหมวดนี้ ' + categories[f.key] + '/100)',
       marketImpact: categories[f.key]
     }));
 
-    const labelMap = { geopolitical:'ภูมิรัฐศาสตร์', economic:'เศรษฐกิจมหภาค', energy:'พลังงาน', financial:'ตลาดการเงิน', techAi:'เทคโนโลยี/AI' };
-    const assetLabelMap = { gold:'ทองคำ', oil:'น้ำมัน', usd:'ดอลลาร์สหรัฐ', bitcoin:'Bitcoin', stocks:'ตลาดหุ้น' };
+    const brief = buildBrief({ worldRiskScore, badge, categories, assets, headlines: totalHeadlines });
+    const watch = sorted.slice(0,4).map(f => ({ key: f.key, title: f.label, subtitle: categories[f.key]+'/100' }));
 
-    const rankedCats = Object.entries(categories).sort((a,b)=>b[1]-a[1]);
+    return { worldRiskScore, badge, confidence, categories, drivers, assets, topEvents, aiBrief: brief, headlines: totalHeadlines, watch, news: buildNewsList(allFeeds) };
+  }
+
+  // "สรุปเช้านี้" — สร้างจากตัวเลขตอนแสดงผล (ไม่ใช่ข้อความที่แคชไว้) จึงสลับภาษาได้แม้ใช้ข้อมูลจากแคช
+  function buildBrief(d){
+    const categories = d.categories || {}, assets = d.assets || {};
+    const rankedCats = Object.entries(categories).filter(([, v]) => isFinite(v)).sort((a,b)=>b[1]-a[1]);
+    const rankedAssets = Object.entries(assets).filter(([, v]) => isFinite(v)).sort((a,b)=>b[1]-a[1]);
+    if(!rankedCats.length || !rankedAssets.length) return d.aiBrief || '';
+    const labelMap = { geopolitical:tr('ภูมิรัฐศาสตร์','geopolitics'), economic:tr('เศรษฐกิจมหภาค','the macro economy'), energy:tr('พลังงาน','energy'), financial:tr('ตลาดการเงิน','financial markets'), techAi:tr('เทคโนโลยี/AI','tech/AI') };
+    const assetLabelMap = { gold:tr('ทองคำ','gold'), oil:tr('น้ำมัน','oil'), usd:tr('ดอลลาร์สหรัฐ','the US dollar'), bitcoin:'Bitcoin', stocks:tr('ตลาดหุ้น','stocks') };
+    const n = isFinite(d.headlines) ? d.headlines : Math.round((d.confidence || 0) / 4);
     const catLines = rankedCats.map(([k,v],i) => `${i+1}. ${labelMap[k]||k} ${v}/100`).join(' · ');
-    const rankedAssets = Object.entries(assets).sort((a,b)=>b[1]-a[1]);
+    const topCat = rankedCats[0], lowCat = rankedCats[rankedCats.length-1];
     const topAsset = rankedAssets[0], bottomAsset = rankedAssets[rankedAssets.length-1];
-
-    const brief = `วันนี้คะแนนความเสี่ยงโลกโดยรวมอยู่ที่ ${worldRiskScore}/100 (${BADGE_TH[badge] || badge}) `
-      + `ประเมินจากข่าวล่าสุด ${totalHeadlines} ข่าว\n\n`
+    const badge = BADGE_TH[d.badge] || d.badge;
+    if(EN){
+      const cap = s => String(s).charAt(0).toUpperCase() + String(s).slice(1);
+      return `Today's overall World Risk Score is ${d.worldRiskScore}/100 (${badge}), based on ${n} recent headlines.\n\n`
+        + `Scores by category, highest risk first: ${catLines}\n\n`
+        + `The highest-risk category is ${labelMap[topCat[0]]||topCat[0]} (${topCat[1]}/100) and deserves a close watch, `
+        + `while ${labelMap[lowCat[0]]||lowCat[0]} (${lowCat[1]}/100) is calmer than the others right now.\n\n`
+        + `News direction: ${cap(assetLabelMap[topAsset[0]] || topAsset[0])} gets the most support from the news (${topAsset[1]}/100), `
+        + `while ${assetLabelMap[bottomAsset[0]] || bottomAsset[0]} is under the most pressure (${bottomAsset[1]}/100).`;
+    }
+    return `วันนี้คะแนนความเสี่ยงโลกโดยรวมอยู่ที่ ${d.worldRiskScore}/100 (${badge}) `
+      + `ประเมินจากข่าวล่าสุด ${n} ข่าว\n\n`
       + `คะแนนแยกตามหมวด เรียงจากเสี่ยงมากไปน้อย: ${catLines}\n\n`
-      + `หมวดที่มีคะแนนความเสี่ยงสูงสุดคือ${labelMap[rankedCats[0][0]]||rankedCats[0][0]} (${rankedCats[0][1]}/100) ควรจับตาเป็นพิเศษ `
-      + `ขณะที่หมวด${labelMap[rankedCats[rankedCats.length-1][0]]||rankedCats[rankedCats.length-1][0]} (${rankedCats[rankedCats.length-1][1]}/100) ค่อนข้างสงบกว่าหมวดอื่นในตอนนี้\n\n`
+      + `หมวดที่มีคะแนนความเสี่ยงสูงสุดคือ${labelMap[topCat[0]]||topCat[0]} (${topCat[1]}/100) ควรจับตาเป็นพิเศษ `
+      + `ขณะที่หมวด${labelMap[lowCat[0]]||lowCat[0]} (${lowCat[1]}/100) ค่อนข้างสงบกว่าหมวดอื่นในตอนนี้\n\n`
       + `ทิศทางจากข่าว: สินทรัพย์ที่ได้แรงหนุนมากที่สุดคือ${assetLabelMap[topAsset[0]]} (${topAsset[1]}/100) `
       + `ส่วน${assetLabelMap[bottomAsset[0]]} (${bottomAsset[1]}/100) ถูกกดดันมากที่สุด`;
-
-    const watch = sorted.slice(0,4).map(f => ({ title: f.label, subtitle: categories[f.key]+'/100' }));
-
-    return { worldRiskScore, badge, confidence, categories, drivers, assets, topEvents, aiBrief: brief, watch, news: buildNewsList(allFeeds) };
   }
 
   // ---------- รายการ "ข่าวล่าสุด" ----------
@@ -933,9 +1049,9 @@ window.setHeaderStamp();
   function newsAgo(ts){
     if(!ts) return '';
     const mins = Math.max(0, Math.round((Date.now() - ts) / 60000));
-    if(mins < 60) return mins <= 1 ? 'เมื่อสักครู่' : mins + ' นาทีที่แล้ว';
+    if(mins < 60) return mins <= 1 ? tr('เมื่อสักครู่', 'just now') : mins + tr(' นาทีที่แล้ว', ' min ago');
     const hrs = Math.round(mins / 60);
-    return hrs < 24 ? hrs + ' ชม. ที่แล้ว' : Math.round(hrs / 24) + ' วันที่แล้ว';
+    return hrs < 24 ? hrs + tr(' ชม. ที่แล้ว', 'h ago') : Math.round(hrs / 24) + tr(' วันที่แล้ว', 'd ago');
   }
 
   // "คะแนนมาจากข่าวไหน" — พาดหัวที่ดันคะแนนแต่ละหมวด พร้อมคำที่ระบบจับได้ (แดง = เพิ่มความเสี่ยง, เขียว = ลด)
@@ -948,23 +1064,24 @@ window.setHeaderStamp();
       const rows = d.drivers[k] || [];
       const list = rows.length ? rows.map(r => {
         const en = cleanHeadline(r.title);
-        const th = _translationCache.get(r.title);
+        const th = EN ? null : _translationCache.get(r.title);
         const hasTh = th && th !== r.title && !/MYMEMORY/i.test(th);
         return '<div class="why-row"><div>' + esc(hasTh ? th : en) + '</div>'
           + (hasTh ? '<div class="why-en">' + esc(en) + '</div>' : '')
           + '<div class="why-chips">'
           + r.hits.map(h => '<span class="chip ' + (h.w > 0 ? 'risk' : 'calm') + '" title="' + esc(h.term) + '">'
-            + esc(RISK_TERM_TH[h.term] || h.term) + (h.w > 0 ? ' +' : ' −') + Math.abs(h.w) + '</span>').join('')
+            + esc(EN ? h.term : (RISK_TERM_TH[h.term] || h.term)) + (h.w > 0 ? ' +' : ' −') + Math.abs(h.w) + '</span>').join('')
           + '</div></div>';
-      }).join('') : '<div class="muted" style="font-size:12px;">ไม่มีคำบ่งชี้ความเสี่ยงในพาดหัวรอบนี้ (คะแนนกลาง ๆ)</div>';
+      }).join('') : '<div class="muted" style="font-size:12px;">' + tr('ไม่มีคำบ่งชี้ความเสี่ยงในพาดหัวรอบนี้ (คะแนนกลาง ๆ)', 'No risk keywords in this round of headlines (neutral score)') + '</div>';
       return '<div class="why-cat"><div class="why-head"><b>' + esc(l) + '</b><span>' + esc((d.categories || {})[k] ?? '–') + '/100</span></div>' + list + '</div>';
     }).join('')
-      + '<div class="muted" style="font-size:11px; margin-top:8px;">คะแนนคิดจาก 5 พาดหัวล่าสุดของแต่ละหมวด: คำบ่งชี้ความเสี่ยงยิ่งมาก คะแนนยิ่งสูง · 50 = กลาง ๆ</div>';
+      + '<div class="muted" style="font-size:11px; margin-top:8px;">' + tr('คะแนนคิดจาก 5 พาดหัวล่าสุดของแต่ละหมวด: คำบ่งชี้ความเสี่ยงยิ่งมาก คะแนนยิ่งสูง · 50 = กลาง ๆ', 'Each category is scored from its 5 latest headlines: the more risk keywords, the higher the score · 50 = neutral') + '</div>';
     translateRiskWhy(d, labels);
   }
   // แปลพาดหัวในกล่อง "คะแนนมาจากข่าวไหน" (ไม่เกิน 15 ข่าว) — ใช้แคชคำแปลเดียวกับรายการข่าว จึงแปลซ้ำแค่พาดหัวใหม่
   let _riskWhyToken = 0;
   async function translateRiskWhy(d, labels){
+    if(EN) return;
     const titles = [];
     labels.forEach(([k]) => (d.drivers[k] || []).forEach(r => {
       if(!/[\u0E00-\u0E7F]/.test(r.title) && !_translationCache.has(r.title) && !titles.includes(r.title)) titles.push(r.title);
@@ -988,7 +1105,7 @@ window.setHeaderStamp();
     if(filters){
       const counts = {};
       all.forEach(n => { counts[n.cat] = (counts[n.cat] || 0) + 1; });
-      const chips = [['all', 'ทั้งหมด', all.length]].concat(RSS_FEEDS.filter(f => counts[f.key]).map(f => [f.key, f.label, counts[f.key]]));
+      const chips = [['all', tr('ทั้งหมด', 'All'), all.length]].concat(RSS_FEEDS.filter(f => counts[f.key]).map(f => [f.key, f.label, counts[f.key]]));
       filters.innerHTML = chips.map(([k, l, c]) =>
         '<button type="button" data-cat="' + esc(k) + '" class="' + (newsView.filter === k ? 'on' : '') + '">' + esc(l) + '<span>' + c + '</span></button>'
       ).join('');
@@ -996,17 +1113,17 @@ window.setHeaderStamp();
     const pool = newsView.filter === 'all' ? all : all.filter(n => n.cat === newsView.filter);
     const visible = pool.slice(0, newsView.shown);
     if(!visible.length){
-      list.innerHTML = '<div class="muted" style="font-size:12px;">ยังไม่มีข่าวในช่วง 48 ชม. ที่ผ่านมา</div>';
+      list.innerHTML = '<div class="muted" style="font-size:12px;">' + tr('ยังไม่มีข่าวในช่วง 48 ชม. ที่ผ่านมา', 'No news in the past 48 hours') + '</div>';
     }else{
       list.innerHTML = visible.map(n => {
-        const th = _translationCache.get(n.title);
+        const th = EN ? null : _translationCache.get(n.title);
         const hasTh = th && th !== n.title && !/MYMEMORY/i.test(th);
         const tag = n.link ? 'a' : 'div';
         const attrs = n.link ? ' href="' + esc(n.link) + '" target="_blank" rel="noopener noreferrer"' : '';
         return '<' + tag + ' class="news-item"' + attrs + '>'
           + '<div class="nt">' + esc(hasTh ? th : n.title) + '</div>'
           + (hasTh ? '<div class="ne">' + esc(n.title) + '</div>' : '')
-          + '<div class="nm">' + (newsView.filter === 'all' ? '<span class="tag">' + esc(n.catLabel) + '</span>' : '')
+          + '<div class="nm">' + (newsView.filter === 'all' ? '<span class="tag">' + esc(feedLabel(n.cat, n.catLabel)) + '</span>' : '')
           + (n.source ? '<span>' + esc(n.source) + '</span>' : '')
           + (n.ts ? '<span>' + esc(newsAgo(n.ts)) + '</span>' : '') + '</div>'
           + '</' + tag + '>';
@@ -1015,12 +1132,13 @@ window.setHeaderStamp();
     if(more){
       const left = pool.length - visible.length;
       more.style.display = left > 0 ? '' : 'none';
-      more.textContent = 'ดูข่าวเพิ่ม (' + left + ')';
+      more.textContent = tr('ดูข่าวเพิ่ม', 'More news') + ' (' + left + ')';
     }
     translateVisibleNews(visible);
   }
   // แปลเฉพาะพาดหัวที่อยู่บนจอ (ประหยัดโควต้าแปลฟรี) — คำแปลถูกแคชไว้ จึงแปลซ้ำแค่ข่าวใหม่
   async function translateVisibleNews(visible){
+    if(EN) return;
     const todo = visible.filter(n => !/[\u0E00-\u0E7F]/.test(n.title) && !_translationCache.has(n.title));
     if(!todo.length) return;
     const token = ++newsView.token;
@@ -1041,7 +1159,9 @@ window.setHeaderStamp();
     if(more) more.addEventListener('click', function(){ newsView.shown += NEWS_PAGE; renderNewsList(); });
   })();
 
-  const BADGE_TH = { 'CRISIS':'วิกฤต · Crisis', 'DEFENSIVE':'ระวัง · Defensive', 'NEUTRAL':'ปานกลาง · Neutral', 'RISK-ON':'ความเสี่ยงต่ำ · Risk-on' };
+  const BADGE_TH = EN
+    ? { 'CRISIS':'Crisis', 'DEFENSIVE':'Defensive', 'NEUTRAL':'Neutral', 'RISK-ON':'Risk-on' }
+    : { 'CRISIS':'วิกฤต · Crisis', 'DEFENSIVE':'ระวัง · Defensive', 'NEUTRAL':'ปานกลาง · Neutral', 'RISK-ON':'ความเสี่ยงต่ำ · Risk-on' };
   function badgeColor(badge){
     if(badge === 'CRISIS') return { bg:'#ff657722', fg:'#ff8b98' };
     if(badge === 'DEFENSIVE') return { bg:'#ff657722', fg:'#ff8b98' };
@@ -1063,16 +1183,16 @@ window.setHeaderStamp();
     const bc = badgeColor(d.badge);
     el('riskBadge').style.background = bc.bg;
     el('riskBadge').style.color = bc.fg;
-    el('riskConfidence').textContent = 'ความครอบคลุมของข่าว ' + d.confidence + '%';
+    el('riskConfidence').textContent = tr('ความครอบคลุมของข่าว ', 'News coverage ') + d.confidence + '%';
 
     const cats = d.categories;
     const catBox = el('categoryMetrics');
-    const labels = [['geopolitical','ภูมิรัฐศาสตร์'],['economic','เศรษฐกิจ'],['energy','พลังงาน'],['financial','การเงิน'],['techAi','เทคโนโลยี / AI']];
+    const labels = ['geopolitical','economic','energy','financial','techAi'].map(k => [k, feedLabel(k)]);
     catBox.innerHTML = labels.map(([k,l]) => `<div class="metric"><div class="name">${l}</div><div class="num">${cats[k] ?? '–'}</div></div>`).join('');
     renderRiskWhy(d, labels);
 
     const assets = d.assets;
-    const assetDefs = [['gold','🥇 ทองคำ'],['oil','🛢 น้ำมัน'],['usd','💵 ดอลลาร์'],['bitcoin','₿ Bitcoin'],['stocks','📈 หุ้น']];
+    const assetDefs = [['gold',tr('🥇 ทองคำ','🥇 Gold')],['oil',tr('🛢 น้ำมัน','🛢 Oil')],['usd',tr('💵 ดอลลาร์','💵 Dollar')],['bitcoin','₿ Bitcoin'],['stocks',tr('📈 หุ้น','📈 Stocks')]];
     el('assetBars').innerHTML = assetDefs.map(([k,l]) => {
       const v = assets[k] ?? 0;
       return `<div class="barrow"><span>${l}</span><div class="track"><div class="fill ${assetBarClass(v)}" style="width:${v}%"></div></div><b>${v}</b></div>`;
@@ -1084,24 +1204,28 @@ window.setHeaderStamp();
     // ก่อนใส่ innerHTML เสมอ — เดิมโค้ดนี้ต่อสตริงดิบ พาดหัวที่ฝัง markup หรือ onerror= มาได้จะรันทันที
     // (self-XSS/stored-XSS ผ่าน feed) esc() ถูกประกาศไว้ในสคริปต์เดียวกันอยู่แล้ว
     el('topEvents').innerHTML = (d.topEvents || []).map(ev => {
-      const safeTitleTh = (ev.titleTh && !/MYMEMORY/i.test(ev.titleTh)) ? ev.titleTh : ev.title;
-      const safeDescTh = (ev.descriptionTh && !/MYMEMORY/i.test(ev.descriptionTh)) ? ev.descriptionTh : ev.description;
+      const cat = feedLabel(ev.catKey, ev.category);
+      const genericDesc = tr('พาดหัวข่าวล่าสุดจากหมวด ' + cat + ' (คะแนนความเสี่ยงหมวดนี้ ' + ev.marketImpact + '/100)',
+                             'Latest headline in ' + cat + ' (category risk score ' + ev.marketImpact + '/100)');
+      // โหมดอังกฤษ: พาดหัวต้นฉบับ ไม่ต้องมีบรรทัดภาษาอังกฤษซ้ำด้านล่าง
+      const safeTitleTh = (!EN && ev.titleTh && !/MYMEMORY/i.test(ev.titleTh)) ? ev.titleTh : ev.title;
+      const safeDescTh = (!EN && ev.descriptionTh && !/MYMEMORY/i.test(ev.descriptionTh)) ? ev.descriptionTh : genericDesc;
       return `<div class="event">
-        <div class="rank">0${esc(ev.rank)} · ${esc(ev.category)}</div>
+        <div class="rank">0${esc(ev.rank)} · ${esc(String(cat).toUpperCase())}</div>
         <h3>${esc(safeTitleTh)}</h3>
-        <div class="muted" style="font-size:11px; margin-top:-6px; margin-bottom:8px;">${esc(ev.title)}</div>
+        ${EN ? '' : `<div class="muted" style="font-size:11px; margin-top:-6px; margin-bottom:8px;">${esc(ev.title)}</div>`}
         <p>${esc(safeDescTh)}</p>
-        <div class="impact">ผลกระทบต่อตลาด · ${esc(ev.marketImpact)}/100</div>
+        <div class="impact">${tr('ผลกระทบต่อตลาด', 'Market impact')} · ${esc(ev.marketImpact)}/100</div>
       </div>`;
     }).join('');
 
-    el('aiBrief').innerHTML = d.aiBrief.split('\n\n').map(p => `<p style="margin-bottom:10px;">${p}</p>`).join('')
-      + '<span class="muted">— สรุปอัตโนมัติจากพาดหัวข่าว ไม่ใช่คำแนะนำการลงทุน</span>';
+    el('aiBrief').innerHTML = String(buildBrief(d) || '').split('\n\n').map(p => `<p style="margin-bottom:10px;">${esc(p)}</p>`).join('')
+      + '<span class="muted">' + tr('— สรุปอัตโนมัติจากพาดหัวข่าว ไม่ใช่คำแนะนำการลงทุน', '— Auto-generated from headlines. Not investment advice.') + '</span>';
 
     if(Array.isArray(d.news)) renderNewsList(d.news);
 
     el('watchList').innerHTML = (d.watch || []).map(w =>
-      `<div><b>${w.title}</b><span class="muted">${w.subtitle}</span></div>`
+      `<div><b>${esc(feedLabel(w.key, w.title))}</b><span class="muted">${esc(w.subtitle)}</span></div>`
     ).join('');
   }
 
@@ -1130,7 +1254,7 @@ window.setHeaderStamp();
   function renderSparkline(hist){
     const box = el('riskTrend');
     if(!box || hist.length < 2){
-      if(box) box.innerHTML = '<div class="muted" style="font-size:11px;">เก็บข้อมูลแนวโน้มไว้แล้ว — จะเห็นกราฟเมื่อมีข้อมูลตั้งแต่ 2 วันขึ้นไป</div>';
+      if(box) box.innerHTML = '<div class="muted" style="font-size:11px;">' + tr('เก็บข้อมูลแนวโน้มไว้แล้ว — จะเห็นกราฟเมื่อมีข้อมูลตั้งแต่ 2 วันขึ้นไป', 'Trend tracking has started. The chart appears once there are 2 or more days of data.') + '</div>';
       return;
     }
     const w = 320, h = 48, pad = 4;
@@ -1148,7 +1272,7 @@ window.setHeaderStamp();
       <svg viewBox="0 0 ${w} ${h}" style="width:100%; height:${h}px; display:block;">
         <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
-      <div class="muted" style="font-size:10px; margin-top:2px;">แนวโน้ม ${hist.length} วันล่าสุด (${hist[0].date} → ${hist[hist.length-1].date})</div>
+      <div class="muted" style="font-size:10px; margin-top:2px;">${tr('แนวโน้ม ' + hist.length + ' วันล่าสุด', 'Trend, last ' + hist.length + ' days')} (${hist[0].date} → ${hist[hist.length-1].date})</div>
     `;
   }
 
@@ -1170,12 +1294,12 @@ window.setHeaderStamp();
       .find(d => d > now);
     if(!next){
       el('fomcDays').textContent = '–';
-      el('fomcDateLabel').textContent = 'ยังไม่มีตารางปี 2028 — ต้องอัปเดตรายการวันที่';
+      el('fomcDateLabel').textContent = tr('ยังไม่มีตารางปี 2028 — ต้องอัปเดตรายการวันที่', 'No 2028 schedule yet. The date list needs updating.');
       return;
     }
     const days = Math.ceil((next - now) / 86400000);
     el('fomcDays').textContent = days;
-    el('fomcDateLabel').textContent = next.toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
+    el('fomcDateLabel').textContent = next.toLocaleDateString(LOCALE, { year:'numeric', month:'long', day:'numeric' });
   }
 
   // "จากเมื่อวาน" = เทียบกับคะแนน *สุดท้าย* ของวันก่อนหน้าใน news-score-history (บันทึกวันละ 1 จุด
@@ -1193,39 +1317,41 @@ window.setHeaderStamp();
   }
 
   async function refreshNews(){
-    el('newsStatus').textContent = 'กำลังดึงข่าวสด…';
+    el('newsStatus').textContent = tr('กำลังดึงข่าวสด…', 'Fetching live news…');
     try{
       const feedResults = await Promise.all(RSS_FEEDS.map(fetchFeed));
       const gotAny = feedResults.some(f => f.titles.length > 0);
       if(!gotAny){
         console.warn('[news] every feed came back empty (news-feed function unreachable?)');
-        el('newsStatus').textContent = 'โหลดข่าวใหม่ไม่ได้ในขณะนี้ — แสดงข่าวล่าสุดที่มี';
+        el('newsStatus').textContent = tr('โหลดข่าวใหม่ไม่ได้ในขณะนี้ — แสดงข่าวล่าสุดที่มี', 'Can\'t load new headlines right now. Showing the latest available.');
         return;
       }
-      el('newsStatus').textContent = 'กำลังวิเคราะห์ข่าว…';
+      el('newsStatus').textContent = tr('กำลังวิเคราะห์ข่าว…', 'Analysing news…');
       const d = computeAnalysis(feedResults);
 
       const diff = await computeChangeLabel(d.worldRiskScore);
-      el('riskChange').textContent = diff == null ? 'ยังไม่มีคะแนนของเมื่อวานให้เทียบ'
-        : diff > 0 ? '▲ +' + diff + ' จากเมื่อวาน' : diff < 0 ? '▼ ' + diff + ' จากเมื่อวาน' : 'เท่ากับเมื่อวาน';
+      el('riskChange').textContent = diff == null ? tr('ยังไม่มีคะแนนของเมื่อวานให้เทียบ', 'No score from yesterday to compare yet')
+        : diff > 0 ? '▲ +' + diff + tr(' จากเมื่อวาน', ' vs yesterday') : diff < 0 ? '▼ ' + diff + tr(' จากเมื่อวาน', ' vs yesterday') : tr('เท่ากับเมื่อวาน', 'Same as yesterday');
       el('riskChange').style.color = diff == null ? 'var(--muted)' : diff > 0 ? 'var(--bad)' : diff < 0 ? 'var(--good)' : 'var(--muted)';
 
       renderData(d); // render English-first immediately so the page isn't blank while translating
 
-      el('newsStatus').textContent = 'กำลังแปลพาดหัวข่าวเป็นไทย…';
-      await Promise.all(d.topEvents.map(async ev => {
-        ev.titleTh = await translateToThai(ev.title);
-        if(ev.rawDescription) ev.descriptionTh = await translateToThai(ev.rawDescription);
-      }));
-      renderData(d); // re-render with Thai translations filled in
+      if(!EN){   // โหมดอังกฤษไม่ต้องแปล (ไม่ใส่ titleTh ด้วย — แคชจะได้แปลให้ตอนกลับมาโหมดไทย)
+        el('newsStatus').textContent = 'กำลังแปลพาดหัวข่าวเป็นไทย…';
+        await Promise.all(d.topEvents.map(async ev => {
+          ev.titleTh = await translateToThai(ev.title);
+          if(ev.rawDescription) ev.descriptionTh = await translateToThai(ev.rawDescription);
+        }));
+        renderData(d); // re-render with Thai translations filled in
+      }
 
       await recordScoreHistory(d.worldRiskScore);
       await storageSet('news-dashboard-cache', JSON.stringify({ data: d, ts: Date.now() }));
-      el('newsStatus').textContent = 'อัปเดตข่าว ' + new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
+      el('newsStatus').textContent = tr('อัปเดตข่าว ', 'News updated ') + new Date().toLocaleTimeString(LOCALE, { hour:'2-digit', minute:'2-digit' });
       if(window.setHeaderStamp) window.setHeaderStamp();
     }catch(e){
       console.warn('[news]', e);
-      el('newsStatus').textContent = 'โหลดข่าวไม่สำเร็จ — ลองกดรีเฟรชอีกครั้ง';
+      el('newsStatus').textContent = tr('โหลดข่าวไม่สำเร็จ — ลองกดรีเฟรชอีกครั้ง', 'Couldn\'t load news. Try refreshing again.');
     }
   }
 
@@ -1238,10 +1364,15 @@ window.setHeaderStamp();
       if(raw){
         const c = JSON.parse(raw);
         renderData(c.data);
+        // แคชที่บันทึกตอนอยู่โหมดอังกฤษไม่มีคำแปลพาดหัว — กลับมาโหมดไทยแล้วแปลให้ (ส่วนใหญ่ได้จากแคชคำแปล)
+        if(!EN && c.data && Array.isArray(c.data.topEvents) && c.data.topEvents.some(ev => ev && !ev.titleTh)){
+          Promise.all(c.data.topEvents.map(async ev => { if(ev && !ev.titleTh) ev.titleTh = await translateToThai(ev.title); }))
+            .then(() => renderData(c.data)).catch(() => {});
+        }
         // แคชรุ่นก่อนยังไม่มีรายการข่าวล่าสุด — ถือว่าหมดอายุ ให้ดึงใหม่ทันที
         ageMs = Array.isArray(c.data && c.data.news) ? Date.now() - c.ts : Infinity;
         const mins = Math.round(ageMs / 60000);
-        el('newsStatus').textContent = 'อัปเดตข่าว ' + new Date(c.ts).toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
+        el('newsStatus').textContent = tr('อัปเดตข่าว ', 'News updated ') + new Date(c.ts).toLocaleTimeString(LOCALE, { hour:'2-digit', minute:'2-digit' });
       }
     }catch(e){ /* no cache yet */ }
     try{
@@ -1273,7 +1404,9 @@ window.setHeaderStamp();
     return !!(d && (d.upper || d.lower || d.effr || d.cpi || d.coreCpi || d.ppi || d.unrate || d.nfp || d.claims || d.corePce));
   }
 
-  const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  // ชื่อเดือนย่อตามภาษา (ชื่อตัวแปรเดิมคงไว้ — ถูกใช้หลายที่)
+  const TH_MONTHS = EN ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+                       : ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   function thMonth(dateStr){
     const m = /^(\d{4})-(\d{2})/.exec(String(dateStr || ''));
     return m ? TH_MONTHS[parseInt(m[2], 10) - 1] + ' ' + m[1] : String(dateStr || '');
@@ -1291,9 +1424,9 @@ window.setHeaderStamp();
   }
 
   function fedStatusText(data){
-    if(data && data.stale) return '⚠️ แสดงตัวเลขล่าสุดที่มี — ระบบจะอัปเดตให้อัตโนมัติ';
+    if(data && data.stale) return tr('⚠️ แสดงตัวเลขล่าสุดที่มี — ระบบจะอัปเดตให้อัตโนมัติ', '⚠️ Showing the latest numbers available. They will update automatically.');
     // วันประกาศตัวเลข: BLS ออกแล้วแต่แหล่งข้อมูลยังไม่อัปเดต — เซิร์ฟเวอร์จะเช็กใหม่ทุกไม่กี่นาที
-    if(data && Array.isArray(data.awaiting) && data.awaiting.length) return '⏳ รอตัวเลขใหม่ที่เพิ่งประกาศ — ระบบเช็กซ้ำทุก ~3 นาที';
+    if(data && Array.isArray(data.awaiting) && data.awaiting.length) return tr('⏳ รอตัวเลขใหม่ที่เพิ่งประกาศ — ระบบเช็กซ้ำทุก ~3 นาที', '⏳ Waiting for the just-released numbers. Re-checking every ~3 min.');
     return '';
   }
 
@@ -1320,10 +1453,10 @@ window.setHeaderStamp();
       // Core PCE: เป้า 2% ของ Fed วัดจากตัวนี้ (BEA ประกาศปลายเดือน ช้ากว่า CPI ~2 สัปดาห์)
       if(corePce && isValidNum(corePce.value)){
         el('corePce').textContent = corePce.value.toFixed(1) + '%';
-        const bits = ['เดือน ' + thMonth(corePce.date)];
-        if(isValidNum(corePce.changePp)) bits.push(corePce.changePp > 0 ? 'เร่งขึ้น ' + corePce.changePp.toFixed(1) + ' pp' : corePce.changePp < 0 ? 'ชะลอ ' + Math.abs(corePce.changePp).toFixed(1) + ' pp' : 'ทรงตัว');
-        if(pce && isValidNum(pce.value) && pce.date === corePce.date) bits.push('PCE ทั่วไป ' + pce.value.toFixed(1) + '%');
-        bits.push('เป้า Fed 2%');
+        const bits = [tr('เดือน ', '') + thMonth(corePce.date)];
+        if(isValidNum(corePce.changePp)) bits.push(corePce.changePp > 0 ? tr('เร่งขึ้น ', 'up ') + corePce.changePp.toFixed(1) + ' pp' : corePce.changePp < 0 ? tr('ชะลอ ', 'down ') + Math.abs(corePce.changePp).toFixed(1) + ' pp' : tr('ทรงตัว', 'unchanged'));
+        if(pce && isValidNum(pce.value) && pce.date === corePce.date) bits.push(tr('PCE ทั่วไป ', 'Headline PCE ') + pce.value.toFixed(1) + '%');
+        bits.push(tr('เป้า Fed 2%', 'Fed target 2%'));
         const info = el('corePceInfo');
         if(info) info.textContent = bits.join(' · ');
         applied++;
@@ -1331,7 +1464,7 @@ window.setHeaderStamp();
       if(ppi && isValidNum(ppi.value)){
         el('ppiMom').textContent = signedPct(ppi.value, 1) + '%';
         const yoyEl = el('ppiYoy');
-        if(yoyEl) yoyEl.textContent = 'เดือน ' + thMonth(ppi.date) + (isValidNum(ppi.yoy) ? ' · YoY ' + ppi.yoy.toFixed(1) + '%' : '');
+        if(yoyEl) yoyEl.textContent = tr('เดือน ', '') + thMonth(ppi.date) + (isValidNum(ppi.yoy) ? ' · YoY ' + ppi.yoy.toFixed(1) + '%' : '');
         applied++;
       }
       if(unrate && isValidNum(unrate.value)){
@@ -1360,18 +1493,18 @@ window.setHeaderStamp();
           + (isValidNum(ppi.yoy) ? ' (YoY ' + ppi.yoy.toFixed(1) + '%)' : ''));
       }
       if(unrate && unrate.date){
-        bits.push('ว่างงาน ' + thMonth(unrate.date) + (isValidNum(unrate.value) ? ' ' + unrate.value.toFixed(1) + '%' : ''));
+        bits.push(tr('ว่างงาน ', 'Unemployment ') + thMonth(unrate.date) + (isValidNum(unrate.value) ? ' ' + unrate.value.toFixed(1) + '%' : ''));
       }
       if(nfp && nfp.date){
-        bits.push('จ้างงาน ' + thMonth(nfp.date) + (isValidNum(nfp.value) ? ' ' + fmtJobs(nfp.value) : ''));
+        bits.push(tr('จ้างงาน ', 'Payrolls ') + thMonth(nfp.date) + (isValidNum(nfp.value) ? ' ' + fmtJobs(nfp.value) : ''));
       }
       if(effr && effr.date) bits.push('EFFR ' + thDay(effr.date));
 
       if(bits.length){
         const warnBits = [];
         if(cpi && cpi.warning) warnBits.push('CPI: ' + cpi.warning);
-        if(data.stale) warnBits.push('อาจยังไม่ใช่ตัวเลขล่าสุด');
-        el('fedAsOf').innerHTML = 'ข้อมูลล่าสุด: ' + esc(bits.join(' · '))
+        if(data.stale) warnBits.push(tr('อาจยังไม่ใช่ตัวเลขล่าสุด', 'may not be the latest numbers'));
+        el('fedAsOf').innerHTML = tr('ข้อมูลล่าสุด: ', 'Latest data: ') + esc(bits.join(' · '))
           + (warnBits.length ? '<br><span style="color:var(--warn);">⚠️ ' + esc(warnBits.join(' · ')) + '</span>' : '');
       }
     }catch(e){ /* never let a render hiccup break the page */ }
@@ -1435,9 +1568,9 @@ window.setHeaderStamp();
     num.className = 'num' + (dev == null || Math.abs(dev) < 3000 ? '' : dev < 0 ? ' up' : ' down');
     if(info){
       const bits = [];
-      bits.push(v.weekEnd ? 'สัปดาห์สิ้นสุด ' + esc(thDay(v.weekEnd)) : 'ประกาศ ' + esc(thDay(v.releaseDate)));
-      bits.push(isValidNum(v.forecast) ? 'คาด <b>' + esc(fmtClaims(v.forecast)) + '</b>' : 'ยังไม่มีค่าคาด');
-      if(isValidNum(v.prev)) bits.push('ครั้งก่อน ' + esc(fmtClaims(v.prev)));
+      bits.push(v.weekEnd ? tr('สัปดาห์สิ้นสุด ', 'Week ending ') + esc(thDay(v.weekEnd)) : tr('ประกาศ ', 'Released ') + esc(thDay(v.releaseDate)));
+      bits.push(isValidNum(v.forecast) ? tr('คาด ', 'Forecast ') + '<b>' + esc(fmtClaims(v.forecast)) + '</b>' : tr('ยังไม่มีค่าคาด', 'No forecast yet'));
+      if(isValidNum(v.prev)) bits.push(tr('ครั้งก่อน ', 'Previous ') + esc(fmtClaims(v.prev)));
       info.innerHTML = bits.join(' · ');
     }
   }
@@ -1540,12 +1673,12 @@ window.setHeaderStamp();
     { key:'cpi',     label:'CPI YoY',                unit:'%',  step:0.1,  min:0,     max:30,    scale:1 },
     { key:'coreCpi', label:'Core CPI YoY',           unit:'%',  step:0.1,  min:0,     max:30,    scale:1 },
     { key:'ppi',     label:'PPI MoM',                unit:'%',  step:0.1,  min:-5,    max:5,     scale:1 },
-    { key:'unrate',  label:'ว่างงาน',                 unit:'%',  step:0.1,  min:0,     max:30,    scale:1 },
-    { key:'nfp',     label:'จ้างงานใหม่',             unit:'พัน', step:1,    min:-2000, max:2000,  scale:1000 },
-    { key:'fedLo',   label:'Fed ขอบล่าง',            unit:'%',  step:0.25, min:0,     max:25,    scale:1 },
-    { key:'fedHi',   label:'Fed ขอบบน',              unit:'%',  step:0.25, min:0,     max:25,    scale:1 }
+    { key:'unrate',  label:tr('ว่างงาน', 'Unemployment'),        unit:'%',  step:0.1,  min:0,     max:30,    scale:1 },
+    { key:'nfp',     label:tr('จ้างงานใหม่', 'New jobs'),          unit:tr('พัน', 'K'), step:1,    min:-2000, max:2000,  scale:1000 },
+    { key:'fedLo',   label:tr('Fed ขอบล่าง', 'Fed lower bound'),   unit:'%',  step:0.25, min:0,     max:25,    scale:1 },
+    { key:'fedHi',   label:tr('Fed ขอบบน', 'Fed upper bound'),     unit:'%',  step:0.25, min:0,     max:25,    scale:1 }
   ];
-  const OVERRIDE_LABELS = { cpi:'CPI', coreCpi:'Core CPI', ppi:'PPI', unrate:'ว่างงาน', nfp:'NFP', fedLo:'Fed ขอบล่าง', fedHi:'Fed ขอบบน' };
+  const OVERRIDE_LABELS = { cpi:'CPI', coreCpi:'Core CPI', ppi:'PPI', unrate:tr('ว่างงาน', 'Unemployment'), nfp:'NFP', fedLo:tr('Fed ขอบล่าง', 'Fed lower'), fedHi:tr('Fed ขอบบน', 'Fed upper') };
   function consensusField(key){ return CONSENSUS_FIELDS.filter(f => f.key === key)[0] || null; }
 
   function readConsensusOverride(){
@@ -1740,7 +1873,7 @@ window.setHeaderStamp();
   function useSharedPassword(){
     if(!sharedEnabled()) return;
     if(typeof window.prompt !== 'function') return;
-    const pwd = window.prompt('รหัสสำหรับแก้ค่าที่แชร์ (ทุกคนที่เข้าเว็บจะเห็นค่าชุดเดียวกัน)');
+    const pwd = window.prompt(tr('รหัสสำหรับแก้ค่าที่แชร์ (ทุกคนที่เข้าเว็บจะเห็นค่าชุดเดียวกัน)', 'Password for editing the shared values (everyone who visits sees the same set)'));
     if(pwd == null) return;                            // ยกเลิก
     if(!String(pwd).length){ sharedStatusState = 'bad-password'; refreshConsensusEditorState(); return; }
     sessionPassword = String(pwd);
@@ -1749,31 +1882,31 @@ window.setHeaderStamp();
 
   function sharedStatusLine(){
     const S = 'id="consensusSharedStatus" class="muted" style="font-size:10px; margin-top:9px; line-height:1.55;"';
-    if(!SHARED) return '<div ' + S + '>⏳ กำลังตรวจสอบที่เก็บค่ากลาง…</div>';
-    if(!SHARED.enabled) return '<div ' + S + ' style="color:var(--warn);">⚠️ ที่เก็บค่ากลาง (เซิร์ฟเวอร์) ยังไม่พร้อม — ค่าที่แก้ตอนนี้จะเห็นในเครื่องนี้เท่านั้น</div>';
+    if(!SHARED) return '<div ' + S + '>' + tr('⏳ กำลังตรวจสอบที่เก็บค่ากลาง…', '⏳ Checking the shared store…') + '</div>';
+    if(!SHARED.enabled) return '<div ' + S + ' style="color:var(--warn);">' + tr('⚠️ ที่เก็บค่ากลาง (เซิร์ฟเวอร์) ยังไม่พร้อม — ค่าที่แก้ตอนนี้จะเห็นในเครื่องนี้เท่านั้น', '⚠️ The shared (server) store isn\'t available. Edits are only visible on this device.') + '</div>';
     let when = '';
     if(SHARED.updatedAt){
-      try{ when = ' (อัปเดตล่าสุด ' + new Date(SHARED.updatedAt).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) + ')'; }
-      catch(e){ when = ' (อัปเดตล่าสุด ' + esc(SHARED.updatedAt) + ')'; }
+      try{ when = tr(' (อัปเดตล่าสุด ', ' (last updated ') + new Date(SHARED.updatedAt).toLocaleString(LOCALE, { dateStyle: 'medium', timeStyle: 'short' }) + ')'; }
+      catch(e){ when = tr(' (อัปเดตล่าสุด ', ' (last updated ') + esc(SHARED.updatedAt) + ')'; }
     }
-    const btn = ' <button type="button" id="consensusPasswordBtn" class="tabbtn" style="padding:2px 9px; font-size:10px;">🔑 ' + (sessionPassword ? 'ลองบันทึกใหม่' : 'ใส่รหัสแล้วแชร์') + '</button>';
+    const btn = ' <button type="button" id="consensusPasswordBtn" class="tabbtn" style="padding:2px 9px; font-size:10px;">🔑 ' + (sessionPassword ? tr('ลองบันทึกใหม่', 'Try saving again') : tr('ใส่รหัสแล้วแชร์', 'Enter password to share')) + '</button>';
     switch(sharedStatusState){
       case 'pending':
-        return '<div ' + S + '>⏳ กำลังบันทึกต่อเซิร์ฟเวอร์…</div>';
+        return '<div ' + S + '>' + tr('⏳ กำลังบันทึกต่อเซิร์ฟเวอร์…', '⏳ Saving to the server…') + '</div>';
       case 'needs-password':
       case 'bad-password':
-        return '<div ' + S + '>' + (sharedStatusState === 'bad-password' ? '❌ รหัสไม่ถูกต้อง · ' : '')
+        return '<div ' + S + '>' + (sharedStatusState === 'bad-password' ? tr('❌ รหัสไม่ถูกต้อง · ', '❌ Wrong password · ') : '')
           + '🔑 ' + (pendingClearFirst
-            ? 'การล้างค่ากลางยังไม่ได้บันทึก — ยืนยันรหัสแล้วทุกคนจะกลับไปเห็นค่าอัตโนมัติ'
-            : 'ค่าที่แก้ยังอยู่เฉพาะเครื่องนี้ — ยืนยันรหัสแล้วทุกคนจะเห็นค่าชุดเดียวกัน') + btn + '</div>';
+            ? tr('การล้างค่ากลางยังไม่ได้บันทึก — ยืนยันรหัสแล้วทุกคนจะกลับไปเห็นค่าอัตโนมัติ', 'Clearing the shared values isn\'t saved yet. Confirm the password and everyone goes back to automatic values.')
+            : tr('ค่าที่แก้ยังอยู่เฉพาะเครื่องนี้ — ยืนยันรหัสแล้วทุกคนจะเห็นค่าชุดเดียวกัน', 'Your edits are only on this device. Confirm the password and everyone sees the same values.')) + btn + '</div>';
       case 'error':
-        return '<div ' + S + ' style="color:var(--warn);">⚠️ บันทึกเซิร์ฟเวอร์ไม่สำเร็จ — ค่าล่าสุดอาจเห็นแค่เครื่องนี้' + btn + '</div>';
+        return '<div ' + S + ' style="color:var(--warn);">' + tr('⚠️ บันทึกเซิร์ฟเวอร์ไม่สำเร็จ — ค่าล่าสุดอาจเห็นแค่เครื่องนี้', '⚠️ Saving to the server failed. The latest values may only be on this device.') + btn + '</div>';
       case 'ok':
         return '<div ' + S + '>' + (SHARED.value
-          ? '☁️ บันทึกฝั่งเซิร์ฟเวอร์แล้ว — ทุกคนที่เปิดเว็บเห็นค่าชุดนี้' + when
-          : '☁️ ล้างค่ากลางแล้ว — ทุกคนกลับไปเห็นค่าอัตโนมัติ' + when) + '</div>';
+          ? tr('☁️ บันทึกฝั่งเซิร์ฟเวอร์แล้ว — ทุกคนที่เปิดเว็บเห็นค่าชุดนี้', '☁️ Saved on the server. Everyone who opens the site sees these values') + when
+          : tr('☁️ ล้างค่ากลางแล้ว — ทุกคนกลับไปเห็นค่าอัตโนมัติ', '☁️ Shared values cleared. Everyone is back on automatic values') + when) + '</div>';
       default:
-        return '<div ' + S + '>☁️ ที่เก็บค่ากลางพร้อมใช้งาน — ยังไม่มีค่าที่ตั้งเอง (ทุกคนเห็นค่าอัตโนมัติ)</div>';
+        return '<div ' + S + '>' + tr('☁️ ที่เก็บค่ากลางพร้อมใช้งาน — ยังไม่มีค่าที่ตั้งเอง (ทุกคนเห็นค่าอัตโนมัติ)', '☁️ Shared store ready. No custom values yet (everyone sees automatic values)') + '</div>';
     }
   }
 
@@ -1782,7 +1915,7 @@ window.setHeaderStamp();
 
   function fmtConsensusNum(key, v){
     if(!isValidNum(v)) return '—';
-    if(key === 'nfp') return fmtJobs(v) + ' ตำแหน่ง';
+    if(key === 'nfp') return fmtJobs(v) + tr(' ตำแหน่ง', ' jobs');
     if(key === 'ppi') return signedPct(v, 1) + '%';   // MoM ติดลบได้ — ใส่เครื่องหมายเสมอ
     // ทศนิยม 1 ตำแหน่งตามที่ Investing.com รายงาน (3.75 = กรอบ Fed ให้แสดง 2 ตำแหน่ง)
     const r = Number(v.toFixed(2));
@@ -1791,10 +1924,10 @@ window.setHeaderStamp();
   function consensusSummaryLine(){
     const C = activeConsensus();
     const mark = k => (C.overridden.indexOf(k) >= 0 ? '✏️ ' : (C.sharedOverridden.indexOf(k) >= 0 ? '☁️ ' : ''));
-    return 'ตอนนี้ใช้: ' + mark('cpi') + 'CPI ' + fmtConsensusNum('cpi', C.cpi)
+    return tr('ตอนนี้ใช้: ', 'In use: ') + mark('cpi') + 'CPI ' + fmtConsensusNum('cpi', C.cpi)
       + ' · ' + mark('coreCpi') + 'Core ' + fmtConsensusNum('coreCpi', C.coreCpi)
       + ' · ' + mark('ppi') + 'PPI ' + fmtConsensusNum('ppi', C.ppi)
-      + ' · ' + mark('unrate') + 'ว่างงาน ' + fmtConsensusNum('unrate', C.unrate)
+      + ' · ' + mark('unrate') + tr('ว่างงาน ', 'Unemployment ') + fmtConsensusNum('unrate', C.unrate)
       + ' · ' + mark('nfp') + 'NFP ' + fmtConsensusNum('nfp', C.nfp)
       + ' · ' + mark('fedLo') + mark('fedHi') + 'Fed ' + fmtConsensusNum('fedLo', C.fedLo) + '–' + fmtConsensusNum('fedHi', C.fedHi);
   }
@@ -1818,28 +1951,31 @@ window.setHeaderStamp();
         + f.label + ' (' + f.unit + ')'
         + '<input type="number" inputmode="decimal" step="' + f.step + '" data-ckey="' + f.key + '"'
         + ' value="' + (show === '' ? '' : show) + '" placeholder="' + auto + '"'
-        + ' title="' + (mine ? 'ใช้ค่าที่คุณตั้งเอง (เครื่องนี้)' : shared ? 'ใช้ค่าที่แชร์จากเซิร์ฟเวอร์ (ทุกคนเห็น)' : 'ว่าง = ใช้ค่าอัตโนมัติ') + '"'
+        + ' title="' + (mine ? tr('ใช้ค่าที่คุณตั้งเอง (เครื่องนี้)', 'Using your own value (this device)') : shared ? tr('ใช้ค่าที่แชร์จากเซิร์ฟเวอร์ (ทุกคนเห็น)', 'Using the shared server value (everyone sees it)') : tr('ว่าง = ใช้ค่าอัตโนมัติ', 'Empty = automatic value')) + '"'
         + ' style="' + EDIT_INPUT_STYLE + (mine ? ' border-color:var(--amber);' : (shared ? ' border-color:var(--accent);' : '')) + '"></label>';
     };
     panel.innerHTML =
       '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap;">'
-      + '<b style="font-size:12px;">✏️ แก้ค่า "ที่คาด" ที่ใช้ตัดสินว่าดี/แย่กว่าคาด</b>'
-      + '<span class="muted" style="font-size:10px;">บันทึกทันทีที่แก้ · ไม่ต้องกดบันทึก</span>'
+      + '<b style="font-size:12px;">' + tr('✏️ แก้ค่า "ที่คาด" ที่ใช้ตัดสินว่าดี/แย่กว่าคาด', '✏️ Edit the forecasts used to judge better/worse than expected') + '</b>'
+      + '<span class="muted" style="font-size:10px;">' + tr('บันทึกทันทีที่แก้ · ไม่ต้องกดบันทึก', 'Saved as you type · no save button needed') + '</span>'
       + '</div>'
       + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(118px,1fr)); gap:8px; margin-top:10px;">'
       + CONSENSUS_FIELDS.map(input).join('')
       + '</div>'
       + '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;">'
-      + '<label class="muted" style="font-size:10px;">วันที่อ้างอิง<input type="date" data-ckey="asOf" value="' + esc(ov.asOf || sh.asOf || '') + '" style="' + EDIT_INPUT_STYLE + '"></label>'
-      + '<button type="button" id="consensusResetBtn" class="tabbtn" style="' + EDIT_BTN_STYLE + '">↺ คืนค่าเริ่มต้น (ใช้ค่าจาก Investing.com)</button>'
-      + '<button type="button" id="consensusCloseBtn" class="tabbtn" style="' + EDIT_BTN_STYLE + '">✕ ปิด</button>'
+      + '<label class="muted" style="font-size:10px;">' + tr('วันที่อ้างอิง', 'Reference date') + '<input type="date" data-ckey="asOf" value="' + esc(ov.asOf || sh.asOf || '') + '" style="' + EDIT_INPUT_STYLE + '"></label>'
+      + '<button type="button" id="consensusResetBtn" class="tabbtn" style="' + EDIT_BTN_STYLE + '">' + tr('↺ คืนค่าเริ่มต้น (ใช้ค่าจาก Investing.com)', '↺ Reset (use Investing.com values)') + '</button>'
+      + '<button type="button" id="consensusCloseBtn" class="tabbtn" style="' + EDIT_BTN_STYLE + '">' + tr('✕ ปิด', '✕ Close') + '</button>'
       + '</div>'
       + '<div class="muted" style="font-size:10.5px; margin-top:9px; line-height:1.6;">' + esc(consensusSummaryLine()) + '</div>'
       + sharedStatusLine()
       + '<div class="muted" style="font-size:10px; margin-top:6px; line-height:1.6; opacity:.85;">'
-      + 'ช่องที่เว้นว่าง = ใช้ค่าอัตโนมัติ · ช่องที่ใส่ค่า = ใช้ค่านี้แทน (✏️ = เครื่องนี้ · ☁️ = ที่แชร์) · เลขในวงเล็บคือหน่วย '
+      + tr('ช่องที่เว้นว่าง = ใช้ค่าอัตโนมัติ · ช่องที่ใส่ค่า = ใช้ค่านี้แทน (✏️ = เครื่องนี้ · ☁️ = ที่แชร์) · เลขในวงเล็บคือหน่วย '
       + '(การจ้างงานกรอกเป็น "พันตำแหน่ง" เช่น 55 = 55,000 ตำแหน่ง)<br>'
-      + 'ค่าที่แก้จะถูกบันทึกฝั่งเซิร์ฟเวอร์ — ทุกคนที่เปิดเว็บเห็นค่าเดียวกัน (แก้/ลบต้องใส่รหัส) · ถ้าเซิร์ฟเวอร์ไม่พร้อม จะเก็บในเครื่องนี้แทน'
+      + 'ค่าที่แก้จะถูกบันทึกฝั่งเซิร์ฟเวอร์ — ทุกคนที่เปิดเว็บเห็นค่าเดียวกัน (แก้/ลบต้องใส่รหัส) · ถ้าเซิร์ฟเวอร์ไม่พร้อม จะเก็บในเครื่องนี้แทน',
+        'Empty field = automatic value · filled field = use this value instead (✏️ = this device · ☁️ = shared) · the unit is in brackets '
+      + '(enter payrolls in thousands, e.g. 55 = 55,000 jobs)<br>'
+      + 'Edits are saved on the server so everyone sees the same values (editing/clearing needs the password) · if the server is unavailable they stay on this device')
       + '</div>';
 
     const inputs = panel.querySelectorAll ? panel.querySelectorAll('input[data-ckey]') : [];
@@ -1874,8 +2010,8 @@ window.setHeaderStamp();
     if(!btn) return;
     const hasShared = !!(SHARED && SHARED.value);
     btn.textContent = consensusEditorOpen
-      ? '✕ ปิดช่องแก้ค่า "ที่คาด"'
-      : (CONSENSUS_OVERRIDE ? '✏️ แก้ค่า "ที่คาด" (ตั้งเองอยู่)' : (hasShared ? '☁️ แก้ค่า "ที่คาด" (แชร์อยู่)' : '✏️ แก้ค่า "ที่คาด" เอง'));
+      ? tr('✕ ปิดช่องแก้ค่า "ที่คาด"', '✕ Close forecast editor')
+      : (CONSENSUS_OVERRIDE ? tr('✏️ แก้ค่า "ที่คาด" (ตั้งเองอยู่)', '✏️ Edit forecasts (custom)') : (hasShared ? tr('☁️ แก้ค่า "ที่คาด" (แชร์อยู่)', '☁️ Edit forecasts (shared)') : tr('✏️ แก้ค่า "ที่คาด" เอง', '✏️ Edit forecasts')));
     btn.style.color = CONSENSUS_OVERRIDE ? 'var(--amber)' : (hasShared ? 'var(--accent)' : '');
     btn.style.borderColor = CONSENSUS_OVERRIDE ? 'var(--amber)' : (hasShared ? 'var(--accent)' : '');
   }
@@ -1970,8 +2106,8 @@ window.setHeaderStamp();
     const d = data || {};
     if(!hasAnyFedField(d)){
       box.innerHTML = failReason
-        ? '<div class="muted" style="font-size:11.5px;">⚠️ วิเคราะห์อัตโนมัติยังทำไม่ได้ในขณะนี้ — จะแสดงทันทีที่ได้ตัวเลข</div>'
-        : '<div class="muted" style="font-size:11.5px;">⏳ กำลังรอตัวเลขจริงเพื่อวิเคราะห์…</div>';
+        ? '<div class="muted" style="font-size:11.5px;">' + tr('⚠️ วิเคราะห์อัตโนมัติยังทำไม่ได้ในขณะนี้ — จะแสดงทันทีที่ได้ตัวเลข', '⚠️ The automatic analysis isn\'t available right now. It will appear as soon as the numbers arrive.') + '</div>'
+        : '<div class="muted" style="font-size:11.5px;">' + tr('⏳ กำลังรอตัวเลขจริงเพื่อวิเคราะห์…', '⏳ Waiting for the actual numbers to analyse…') + '</div>';
       return;
     }
 
@@ -1985,8 +2121,10 @@ window.setHeaderStamp();
     // (ต.ค. 2026: CPI ก.ย. 3.7% ถูกเทียบกับค่าคาดรอบ ส.ค. 3.4% แล้วขึ้นว่า "สูงกว่าที่คาด" ทั้งที่ตลาดคาด 3.6%)
     const bakedMonth = (function(){ const m = /^(\d{4})-(\d{2})/.exec(String(CONSENSUS.asOf)); if(!m) return ''; const dt = new Date(Date.UTC(+m[1], +m[2] - 2, 1)); return dt.toISOString().slice(0, 7); })();
     const consFor = (key, printDate) => (C.from[key] === 'baked' && bakedMonth && String(printDate || '').slice(0, 7) > bakedMonth) ? null : C[key];
-    const NOCONS = '⚪ ยังไม่มีค่าคาดของรอบนี้';
-    const noConsText = ' · ยังไม่มีค่าคาดของรอบนี้ให้เทียบ (ค่าสำรองที่ฝังไว้เป็นของรอบ ' + esc(thMonth(bakedMonth)) + ')';
+    const NOCONS = tr('⚪ ยังไม่มีค่าคาดของรอบนี้', '⚪ No forecast for this release yet');
+    const noConsText = tr(' · ยังไม่มีค่าคาดของรอบนี้ให้เทียบ (ค่าสำรองที่ฝังไว้เป็นของรอบ ', ' · no forecast for this release to compare against (the built-in fallback is for the ') + esc(thMonth(bakedMonth)) + tr(')', ' release)');
+    // ส่วนท้ายของ verdict (ตัดอีโมจิออก) ใช้ต่อท้าย "ตลาดคาด … →" — โหมดอังกฤษทำเป็นตัวพิมพ์เล็ก
+    const verdictTail = v => { const t = v.replace(/^[^\s]+\s/, ''); return EN ? t.charAt(0).toLowerCase() + t.slice(1) : t; };
 
     // ── 1) Fed Funds Rate ────────────────────────────────────────────────────────────────────
     if(d.upper && d.lower && isValidNum(d.upper.value) && isValidNum(d.lower.value)){
@@ -1997,27 +2135,28 @@ window.setHeaderStamp();
       const fresh = age != null && age <= 45;      // ขึ้น/ลงครั้งล่าสุดภายใน FOMC รอบล่าสุด
       const meetings = d.upper.meetingsSinceChange;
 
-      let accent = AMBER, verdict = '🟡 คงที่';
-      let body = 'เป้าดอกเบี้ยล่าสุด <b>' + lo.toFixed(2) + '–' + hi.toFixed(2) + '%</b>';
+      let accent = AMBER, verdict = tr('🟡 คงที่', '🟡 Unchanged');
+      let body = tr('เป้าดอกเบี้ยล่าสุด ', 'Current target range ') + '<b>' + lo.toFixed(2) + '–' + hi.toFixed(2) + '%</b>';
       if(fresh && isValidNum(d.upper.changePp) && d.upper.changePp !== 0){
-        const dir = d.upper.changePp > 0 ? 'ขึ้น' : 'ลด';
-        accent = d.upper.changePp > 0 ? RED : GREEN;
-        verdict = (d.upper.changePp > 0 ? '🔴 ' : '🟢 ') + dir + 'ดอกเบี้ย ' + Math.abs(d.upper.changePp).toFixed(2) + 'pp';
-        body += ' — FOMC ' + dir + 'เมื่อ ' + esc(thMonth(since)) + ' (มีผลมาระยะหนึ่งแล้ว)';
+        const up = d.upper.changePp > 0;
+        const dir = up ? 'ขึ้น' : 'ลด';
+        accent = up ? RED : GREEN;
+        verdict = (up ? '🔴 ' : '🟢 ') + tr(dir + 'ดอกเบี้ย ', up ? 'Rate hike ' : 'Rate cut ') + Math.abs(d.upper.changePp).toFixed(2) + 'pp';
+        body += tr(' — FOMC ' + dir + 'เมื่อ ' + esc(thMonth(since)) + ' (มีผลมาระยะหนึ่งแล้ว)', ' — the FOMC ' + (up ? 'raised' : 'cut') + ' rates in ' + esc(thMonth(since)) + ' (already in effect for a while)');
       }else{
-        body += since ? ' — ยังไม่ขยับตั้งแต่ ' + esc(thMonth(since)) : '';
-        if(meetings != null) body += ' (ผ่านการประชุม FOMC มาแล้ว ' + meetings + ' ครั้ง)';
-        if(isValidNum(d.upper.prevValue)) body += ' · ก่อนหน้านั้น ' + d.upper.prevValue.toFixed(2) + '%';
+        body += since ? tr(' — ยังไม่ขยับตั้งแต่ ', ' — unchanged since ') + esc(thMonth(since)) : '';
+        if(meetings != null) body += tr(' (ผ่านการประชุม FOMC มาแล้ว ' + meetings + ' ครั้ง)', ' (' + meetings + ' FOMC meeting' + (meetings === 1 ? '' : 's') + ' since)');
+        if(isValidNum(d.upper.prevValue)) body += tr(' · ก่อนหน้านั้น ', ' · before that ') + d.upper.prevValue.toFixed(2) + '%';
       }
       // ค่าที่ฝังไว้เป็นค่าคาดของ FOMC ก่อน CONSENSUS.asOf — ถ้ากรอบดอกเบี้ยเปลี่ยนหลังวันนั้น ห้ามเอามาเทียบ
-      if(C.from.fed === 'baked' && since && since > CONSENSUS.asOf) body += ' · ยังไม่มีค่าคาดของรอบนี้ให้เทียบ';
-      else if(consHi < hi - 0.001) body += ' · เข้มงวดกว่าที่ตลาดคาดไว้ (' + consFedText + ') → กดดันสินทรัพย์เสี่ยง';
-      else if(consHi > hi + 0.001) body += ' · ผ่อนคลายกว่าที่ตลาดคาดไว้ (' + consFedText + ') → หนุนสินทรัพย์เสี่ยง';
-      else body += ' · ตรงกับที่ตลาดคาดไว้ (' + consFedText + ')';
+      if(C.from.fed === 'baked' && since && since > CONSENSUS.asOf) body += tr(' · ยังไม่มีค่าคาดของรอบนี้ให้เทียบ', ' · no forecast for this meeting to compare against');
+      else if(consHi < hi - 0.001) body += tr(' · เข้มงวดกว่าที่ตลาดคาดไว้ (', ' · tighter than the market expected (') + consFedText + tr(') → กดดันสินทรัพย์เสี่ยง', ') → pressure on risk assets');
+      else if(consHi > hi + 0.001) body += tr(' · ผ่อนคลายกว่าที่ตลาดคาดไว้ (', ' · looser than the market expected (') + consFedText + tr(') → หนุนสินทรัพย์เสี่ยง', ') → supports risk assets');
+      else body += tr(' · ตรงกับที่ตลาดคาดไว้ (', ' · in line with market expectations (') + consFedText + ')';
       const nextFomc = el('fomcDateLabel');
-      if(nextFomc && nextFomc.textContent) body += ' · รอบถัดไป ' + esc(nextFomc.textContent);
+      if(nextFomc && nextFomc.textContent) body += tr(' · รอบถัดไป ', ' · next meeting ') + esc(nextFomc.textContent);
       body += nextReleaseLine('fed');
-      body += '<br><b>ผลต่อตลาด:</b> ' + (fresh ? (d.upper.changePp > 0 ? 'การขึ้นดอกเบี้ยกดดันหุ้น/คริปโตและหนุนดอลลาร์' : 'การลดดอกเบี้ยหนุนหุ้น/คริปโตและกดดันดอลลาร์') : 'การยืนดอกเบี้ยนิ่ง = เป็นกลาง ไม่มีเซอร์ไพรส์จากฝั่งนโยบาย');
+      body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (fresh ? (d.upper.changePp > 0 ? tr('การขึ้นดอกเบี้ยกดดันหุ้น/คริปโตและหนุนดอลลาร์', 'a hike pressures stocks/crypto and supports the dollar') : tr('การลดดอกเบี้ยหนุนหุ้น/คริปโตและกดดันดอลลาร์', 'a cut supports stocks/crypto and weighs on the dollar')) : tr('การยืนดอกเบี้ยนิ่ง = เป็นกลาง ไม่มีเซอร์ไพรส์จากฝั่งนโยบาย', 'holding rates steady = neutral, no policy surprise'));
       cards.push(analysisCard(accent, 'Fed Funds Rate — ' + verdict, body));
     }
 
@@ -2028,20 +2167,20 @@ window.setHeaderStamp();
       const dev = isValidNum(cons) ? cpi - cons : null;
       const chg = isValidNum(d.cpi.changePp) ? d.cpi.changePp : null;
       let accent = dev == null ? GREY : Math.abs(dev) <= 0.1 ? AMBER : (dev > 0 ? RED : GREEN);
-      const verdict = dev == null ? NOCONS : Math.abs(dev) <= 0.1 ? '🟡 ใกล้เคียงที่คาด' : (dev > 0 ? '🔴 สูงกว่าที่คาด' : '🟢 ต่ำกว่าที่คาด');
+      const verdict = dev == null ? NOCONS : Math.abs(dev) <= 0.1 ? tr('🟡 ใกล้เคียงที่คาด', '🟡 Close to forecast') : (dev > 0 ? tr('🔴 สูงกว่าที่คาด', '🔴 Above forecast') : tr('🟢 ต่ำกว่าที่คาด', '🟢 Below forecast'));
 
-      let body = 'CPI เดือน ' + esc(thMonth(d.cpi.date)) + ' อยู่ที่ <b>' + cpi.toFixed(1) + '% YoY</b>';
+      let body = tr('CPI เดือน ' + esc(thMonth(d.cpi.date)) + ' อยู่ที่ ', esc(thMonth(d.cpi.date)) + ' CPI came in at ') + '<b>' + cpi.toFixed(1) + '% YoY</b>';
       if(d.coreCpi && isValidNum(d.coreCpi.value)) body += ' (Core ' + d.coreCpi.value.toFixed(1) + '%)';
       if(dev == null) body += noConsText;
-      else body += ' · ตลาดคาด ' + cons.toFixed(1) + '% → ' + verdict.replace(/^[^\s]+\s/, '');
-      if(dev != null && Math.abs(dev) > 0.05) body += ' ' + Math.abs(dev).toFixed(1) + 'pp';
-      if(chg != null) body += '<br>เทียบเดือนก่อน (' + esc(thMonth(d.cpi.prev ? d.cpi.prev.date : '')) + ' ' + (d.cpi.prev ? d.cpi.prev.value.toFixed(1) : '–') + '%) = ' + (chg <= -0.05 ? 'ชะลอลง ' + Math.abs(chg).toFixed(1) + 'pp' : chg >= 0.05 ? 'เร่งขึ้น ' + chg.toFixed(1) + 'pp' : 'ทรงตัว');
+      else body += tr(' · ตลาดคาด ', ' · forecast ') + cons.toFixed(1) + '% → ' + verdictTail(verdict);
+      if(dev != null && Math.abs(dev) > 0.05) body += tr(' ', ' by ') + Math.abs(dev).toFixed(1) + 'pp';
+      if(chg != null) body += tr('<br>เทียบเดือนก่อน (', '<br>vs previous month (') + esc(thMonth(d.cpi.prev ? d.cpi.prev.date : '')) + ' ' + (d.cpi.prev ? d.cpi.prev.value.toFixed(1) : '–') + '%) = ' + (chg <= -0.05 ? tr('ชะลอลง ', 'slowed ') + Math.abs(chg).toFixed(1) + 'pp' : chg >= 0.05 ? tr('เร่งขึ้น ', 'accelerated ') + chg.toFixed(1) + 'pp' : tr('ทรงตัว', 'unchanged'));
       const consCore = d.coreCpi ? consFor('coreCpi', d.coreCpi.date) : null;
-      if(d.coreCpi && isValidNum(d.coreCpi.value) && isValidNum(consCore)) body += ' · Core ' + (d.coreCpi.value > consCore + 0.1 ? 'ยังสูงกว่าที่คาด (แรงกดดันเงินเฟ้อพื้นฐานยังไม่คลาย)' : d.coreCpi.value < consCore - 0.1 ? 'ต่ำกว่าที่คาด' : 'ตามคาด');
-      body += cpi > 2 ? '<br>ยัง<b>สูงกว่าเป้าหมาย 2% ของ Fed</b> → เป็นเหตุผลให้ Fed ยังไม่รีบลดดอกเบี้ย' : '<br>อยู่ในกรอบเป้าหมาย 2% ของ Fed แล้ว';
+      if(d.coreCpi && isValidNum(d.coreCpi.value) && isValidNum(consCore)) body += ' · Core ' + (d.coreCpi.value > consCore + 0.1 ? tr('ยังสูงกว่าที่คาด (แรงกดดันเงินเฟ้อพื้นฐานยังไม่คลาย)', 'still above forecast (underlying inflation pressure hasn\'t eased)') : d.coreCpi.value < consCore - 0.1 ? tr('ต่ำกว่าที่คาด', 'below forecast') : tr('ตามคาด', 'as expected'));
+      body += cpi > 2 ? tr('<br>ยัง<b>สูงกว่าเป้าหมาย 2% ของ Fed</b> → เป็นเหตุผลให้ Fed ยังไม่รีบลดดอกเบี้ย', '<br>Still <b>above the Fed\'s 2% target</b> → a reason for the Fed not to rush rate cuts') : tr('<br>อยู่ในกรอบเป้าหมาย 2% ของ Fed แล้ว', '<br>Now within the Fed\'s 2% target');
       body += nextReleaseLine('cpi');
-      if(dev != null) body += '<br><b>ผลต่อตลาด:</b> ' + (dev > 0.1 ? 'เงินเฟ้อสูงกว่าคาด = กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)' : dev < -0.1 ? 'เงินเฟ้อต่ำกว่าคาด = หนุนหุ้น (Fed มีทางลดดอกเบี้ยเร็วขึ้น)' : 'ตรงคาด = ตลาดมักไม่ตอบสนองรุนแรงเพราะไม่มีเซอร์ไพรส์');
-      cards.push(analysisCard(accent, 'CPI เงินเฟ้อ — ' + verdict, body));
+      if(dev != null) body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (dev > 0.1 ? tr('เงินเฟ้อสูงกว่าคาด = กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)', 'hotter inflation = pressure on stocks/bonds (slower Fed cuts)') : dev < -0.1 ? tr('เงินเฟ้อต่ำกว่าคาด = หนุนหุ้น (Fed มีทางลดดอกเบี้ยเร็วขึ้น)', 'cooler inflation = supports stocks (room for faster Fed cuts)') : tr('ตรงคาด = ตลาดมักไม่ตอบสนองรุนแรงเพราะไม่มีเซอร์ไพรส์', 'in line = markets usually don\'t react much, no surprise'));
+      cards.push(analysisCard(accent, tr('CPI เงินเฟ้อ — ', 'CPI inflation — ') + verdict, body));
     }
 
     // ── 2b) PPI ราคาผู้ผลิต (final demand, MoM) ─────────────────────────────────────────────
@@ -2052,20 +2191,20 @@ window.setHeaderStamp();
       const dev = isValidNum(cons) ? p - cons : null;
       const near = dev != null && Math.abs(dev) < 0.05;   // MoM รายงานทศนิยม 1 ตำแหน่ง: ต่าง 0.1 = พลาดคาดแล้ว
       const accent = dev == null ? GREY : near ? AMBER : (dev > 0 ? RED : GREEN);
-      const verdict = dev == null ? NOCONS : near ? '🟡 ตรงตามคาด' : (dev > 0 ? '🔴 สูงกว่าที่คาด' : '🟢 ต่ำกว่าที่คาด');
+      const verdict = dev == null ? NOCONS : near ? tr('🟡 ตรงตามคาด', '🟡 In line') : (dev > 0 ? tr('🔴 สูงกว่าที่คาด', '🔴 Above forecast') : tr('🟢 ต่ำกว่าที่คาด', '🟢 Below forecast'));
 
-      let body = 'PPI เดือน ' + esc(thMonth(d.ppi.date)) + ' <b>' + signedPct(p, 1) + '% MoM</b>';
+      let body = tr('PPI เดือน ' + esc(thMonth(d.ppi.date)), esc(thMonth(d.ppi.date)) + ' PPI') + ' <b>' + signedPct(p, 1) + '% MoM</b>';
       if(isValidNum(d.ppi.yoy)) body += ' (YoY ' + d.ppi.yoy.toFixed(1) + '%)';
       if(dev == null) body += noConsText;
-      else body += ' · ตลาดคาด ' + signedPct(cons, 1) + '% → ' + verdict.replace(/^[^\s]+\s/, '');
-      if(dev != null && !near) body += ' ' + Math.abs(dev).toFixed(1) + 'pp';
+      else body += tr(' · ตลาดคาด ', ' · forecast ') + signedPct(cons, 1) + '% → ' + verdictTail(verdict);
+      if(dev != null && !near) body += tr(' ', ' by ') + Math.abs(dev).toFixed(1) + 'pp';
       if(d.ppi.prev && isValidNum(d.ppi.prev.value)){
         const chg = p - d.ppi.prev.value;
-        body += '<br>เทียบเดือนก่อน (' + esc(thMonth(d.ppi.prev.date)) + ' ' + signedPct(d.ppi.prev.value, 1) + '%) = ' + (chg <= -0.05 ? 'ชะลอลง' : chg >= 0.05 ? 'เร่งขึ้น' : 'ทรงตัว');
+        body += tr('<br>เทียบเดือนก่อน (', '<br>vs previous month (') + esc(thMonth(d.ppi.prev.date)) + ' ' + signedPct(d.ppi.prev.value, 1) + '%) = ' + (chg <= -0.05 ? tr('ชะลอลง', 'slowed') : chg >= 0.05 ? tr('เร่งขึ้น', 'accelerated') : tr('ทรงตัว', 'unchanged'));
       }
       body += nextReleaseLine('ppi');
-      if(dev != null) body += '<br><b>ผลต่อตลาด:</b> ' + (dev >= 0.05 ? 'ต้นทุนผู้ผลิตสูงกว่าคาด = มักส่งต่อไปที่ CPI ในเดือนถัด ๆ ไป → กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)' : dev <= -0.05 ? 'ต้นทุนผู้ผลิตต่ำกว่าคาด = แรงกดดันเงินเฟ้อข้างหน้าเบาลง → หนุนหุ้น' : 'ตรงคาด = ตลาดมักไม่ตอบสนองแรง');
-      cards.push(analysisCard(accent, 'PPI ราคาผู้ผลิต — ' + verdict, body));
+      if(dev != null) body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (dev >= 0.05 ? tr('ต้นทุนผู้ผลิตสูงกว่าคาด = มักส่งต่อไปที่ CPI ในเดือนถัด ๆ ไป → กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)', 'producer costs above forecast = often pass through to CPI in the following months → pressure on stocks/bonds (slower Fed cuts)') : dev <= -0.05 ? tr('ต้นทุนผู้ผลิตต่ำกว่าคาด = แรงกดดันเงินเฟ้อข้างหน้าเบาลง → หนุนหุ้น', 'producer costs below forecast = less inflation pressure ahead → supports stocks') : tr('ตรงคาด = ตลาดมักไม่ตอบสนองแรง', 'in line = markets usually don\'t react much'));
+      cards.push(analysisCard(accent, tr('PPI ราคาผู้ผลิต — ', 'PPI producer prices — ') + verdict, body));
     }
 
     // ── 3) Unemployment ──────────────────────────────────────────────────────────────────────
@@ -2075,16 +2214,17 @@ window.setHeaderStamp();
       const dev = isValidNum(cons) ? u - cons : null;   // ต่ำกว่าคาด = ตลาดแรงงานแข็งแรง
       const mom = isValidNum(d.unrate.changeMoM) ? d.unrate.changeMoM : null;
       let accent = dev == null ? GREY : Math.abs(dev) <= 0.1 ? AMBER : (dev < 0 ? GREEN : RED);
-      const verdict = dev == null ? NOCONS : Math.abs(dev) <= 0.1 ? '🟡 ใกล้เคียงที่คาด' : (dev < 0 ? '🟢 ดีกว่าที่คาด' : '🔴 แย่กว่าที่คาด');
+      const verdict = dev == null ? NOCONS : Math.abs(dev) <= 0.1 ? tr('🟡 ใกล้เคียงที่คาด', '🟡 Close to forecast') : (dev < 0 ? tr('🟢 ดีกว่าที่คาด', '🟢 Better than forecast') : tr('🔴 แย่กว่าที่คาด', '🔴 Worse than forecast'));
 
-      let body = 'อัตราว่างงานเดือน ' + esc(thMonth(d.unrate.date)) + ' อยู่ที่ <b>' + u.toFixed(1) + '%</b>'
-        + (dev == null ? noConsText : ' · ตลาดคาด ' + cons.toFixed(1) + '% → ' + verdict.replace(/^[^\s]+\s/, ''));
-      if(dev != null && Math.abs(dev) > 0.05) body += ' ' + Math.abs(dev).toFixed(1) + 'pp';
-      if(mom != null) body += '<br>เทียบเดือนก่อน = ' + (mom > 0 ? 'เพิ่มขึ้น ' + mom.toFixed(1) + 'pp (ตลาดแรงงานอ่อนลง)' : mom < 0 ? 'ลดลง ' + Math.abs(mom).toFixed(1) + 'pp' : 'ทรงตัว');
-      if(isValidNum(d.unrate.change3m)) body += ' · เทียบ 3 เดือนก่อน = ' + ppDelta(d.unrate.change3m);
+      let body = tr('อัตราว่างงานเดือน ' + esc(thMonth(d.unrate.date)) + ' อยู่ที่ ', esc(thMonth(d.unrate.date)) + ' unemployment rate: ') + '<b>' + u.toFixed(1) + '%</b>'
+        + (dev == null ? noConsText : tr(' · ตลาดคาด ', ' · forecast ') + cons.toFixed(1) + '% → ' + verdictTail(verdict));
+      if(dev != null && Math.abs(dev) > 0.05) body += tr(' ', ' by ') + Math.abs(dev).toFixed(1) + 'pp';
+      if(mom != null) body += tr('<br>เทียบเดือนก่อน = ', '<br>vs previous month = ') + (mom > 0 ? tr('เพิ่มขึ้น ', 'up ') + mom.toFixed(1) + tr('pp (ตลาดแรงงานอ่อนลง)', 'pp (labour market softening)') : mom < 0 ? tr('ลดลง ', 'down ') + Math.abs(mom).toFixed(1) + 'pp' : tr('ทรงตัว', 'unchanged'));
+      if(isValidNum(d.unrate.change3m)) body += tr(' · เทียบ 3 เดือนก่อน = ', ' · vs 3 months ago = ') + ppDelta(d.unrate.change3m);
       body += nextReleaseLine('unrate');
-      body += '<br><b>ข้อควรระวัง:</b> ตัวเลขว่างงานต่ำลงอาจมาจาก "คนออกจากตลาดแรงงาน" ไม่ใช่มีคนได้งานเพิ่ม (ดู participation rate ประกอบ) และตัวเลขนี้เป็นรายเดือน อาจถูก revise ได้';
-      if(dev != null) body += '<br><b>ผลต่อตลาด:</b> ' + (dev < -0.1 ? 'ดีกว่าคาด = หนุนความเชื่อมั่น แต่ลดโอกาสที่ Fed จะรีบลดดอกเบี้ย' : dev > 0.1 ? 'แย่กว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย (bad news is good news ระยะสั้น) แต่น่ากังวลเรื่องเศรษฐกิจถดถอย' : 'ตรงคาด = เป็นกลาง');
+      body += tr('<br><b>ข้อควรระวัง:</b> ตัวเลขว่างงานต่ำลงอาจมาจาก "คนออกจากตลาดแรงงาน" ไม่ใช่มีคนได้งานเพิ่ม (ดู participation rate ประกอบ) และตัวเลขนี้เป็นรายเดือน อาจถูก revise ได้',
+                 '<br><b>Caveat:</b> a lower unemployment rate can come from people leaving the labour force rather than more people finding jobs (check the participation rate too), and this monthly figure can be revised');
+      if(dev != null) body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (dev < -0.1 ? tr('ดีกว่าคาด = หนุนความเชื่อมั่น แต่ลดโอกาสที่ Fed จะรีบลดดอกเบี้ย', 'better than forecast = supports confidence, but lowers the odds of quick Fed cuts') : dev > 0.1 ? tr('แย่กว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย (bad news is good news ระยะสั้น) แต่น่ากังวลเรื่องเศรษฐกิจถดถอย', 'worse than forecast = raises the odds of Fed cuts (bad news is good news short term) but adds recession worries') : tr('ตรงคาด = เป็นกลาง', 'in line = neutral'));
       cards.push(analysisCard(accent, 'Unemployment Rate — ' + verdict, body));
     }
 
@@ -2094,20 +2234,20 @@ window.setHeaderStamp();
       const cons = consFor('nfp', d.nfp.date);
       const dev = isValidNum(cons) ? n - cons : null;
       let accent = dev == null ? GREY : Math.abs(dev) < 30000 ? AMBER : (dev > 0 ? GREEN : RED);
-      const verdict = dev == null ? NOCONS : Math.abs(dev) < 30000 ? '🟡 ใกล้เคียงที่คาด' : (dev > 0 ? '🟢 ดีกว่าที่คาด' : '🔴 แย่กว่าที่คาด');
+      const verdict = dev == null ? NOCONS : Math.abs(dev) < 30000 ? tr('🟡 ใกล้เคียงที่คาด', '🟡 Close to forecast') : (dev > 0 ? tr('🟢 ดีกว่าที่คาด', '🟢 Better than forecast') : tr('🔴 แย่กว่าที่คาด', '🔴 Worse than forecast'));
 
-      let body = 'จ้างงานเดือน ' + esc(thMonth(d.nfp.date)) + ' = <b>' + esc(fmtJobs(n)) + ' ตำแหน่ง</b>'
-        + (dev == null ? noConsText : ' · ตลาดคาด ' + esc(fmtJobs(cons)) + ' → ' + verdict.replace(/^[^\s]+\s/, ''));
-      if(dev != null && Math.abs(dev) >= 1000) body += ' ' + Math.abs(dev).toLocaleString('en-US') + ' ตำแหน่ง';
-      if(isValidNum(d.nfp.avg3Change)) body += '<br>ค่าเฉลี่ย 3 เดือนล่าสุด = ' + esc(fmtJobs(d.nfp.avg3Change)) + ' ตำแหน่ง/เดือน' + (isValidNum(d.nfp.prevChange) ? ' · เดือนก่อนหน้า = ' + esc(fmtJobs(d.nfp.prevChange)) : '');
+      let body = tr('จ้างงานเดือน ' + esc(thMonth(d.nfp.date)) + ' = ', esc(thMonth(d.nfp.date)) + ' payrolls = ') + '<b>' + esc(fmtJobs(n)) + tr(' ตำแหน่ง', ' jobs') + '</b>'
+        + (dev == null ? noConsText : tr(' · ตลาดคาด ', ' · forecast ') + esc(fmtJobs(cons)) + ' → ' + verdictTail(verdict));
+      if(dev != null && Math.abs(dev) >= 1000) body += tr(' ', ' by ') + Math.abs(dev).toLocaleString('en-US') + tr(' ตำแหน่ง', ' jobs');
+      if(isValidNum(d.nfp.avg3Change)) body += tr('<br>ค่าเฉลี่ย 3 เดือนล่าสุด = ', '<br>3-month average = ') + esc(fmtJobs(d.nfp.avg3Change)) + tr(' ตำแหน่ง/เดือน', ' jobs/month') + (isValidNum(d.nfp.prevChange) ? tr(' · เดือนก่อนหน้า = ', ' · previous month = ') + esc(fmtJobs(d.nfp.prevChange)) : '');
       if(isValidNum(d.nfp.avg3Change)){
         body += n < d.nfp.avg3Change
-          ? ' → รอบนี้อ่อนกว่าค่าเฉลี่ยล่าสุด (ตลาดแรงงานชะลอ)'
-          : ' → รอบนี้แข็งกว่าค่าเฉลี่ยล่าสุด';
+          ? tr(' → รอบนี้อ่อนกว่าค่าเฉลี่ยล่าสุด (ตลาดแรงงานชะลอ)', ' → weaker than the recent average (labour market slowing)')
+          : tr(' → รอบนี้แข็งกว่าค่าเฉลี่ยล่าสุด', ' → stronger than the recent average');
       }
       body += nextReleaseLine('nfp');
-      if(dev != null || n < 0) body += '<br><b>ผลต่อตลาด:</b> ' + (n < 0 ? 'ตัวเลขติดลบ = ข่าวร้ายของเศรษฐกิจ แต่ระยะสั้นตลาดอาจตีความว่า Fed จะรีบลดดอกเบี้ย (bad news is good news) — ถ้าติดลบต่อเนื่องหลายเดือนจะกลายเป็นสัญญาณถดถอยจริงจัง' : dev < -30000 ? 'อ่อนกว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย แต่กดดันความเชื่อมั่นเศรษฐกิจ' : dev > 30000 ? 'แข็งกว่าคาด = เศรษฐกิจยังดี แต่ลดโอกาส Fed ลดดอกเบี้ยเร็ว ๆ นี้' : 'ใกล้เคียงคาด = เป็นกลาง');
-      body += '<br><span style="opacity:.75;">ℹ️ รวมการปรับปรุงตัวเลขย้อนหลังแล้ว จึงอาจต่างจากที่ข่าวรายงานครั้งแรกเล็กน้อย</span>';
+      if(dev != null || n < 0) body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (n < 0 ? tr('ตัวเลขติดลบ = ข่าวร้ายของเศรษฐกิจ แต่ระยะสั้นตลาดอาจตีความว่า Fed จะรีบลดดอกเบี้ย (bad news is good news) — ถ้าติดลบต่อเนื่องหลายเดือนจะกลายเป็นสัญญาณถดถอยจริงจัง', 'a negative print = bad news for the economy, but short term markets may read it as the Fed cutting sooner (bad news is good news). Several negative months in a row would be a serious recession signal') : dev < -30000 ? tr('อ่อนกว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย แต่กดดันความเชื่อมั่นเศรษฐกิจ', 'weaker than forecast = higher odds of Fed cuts, but weighs on economic confidence') : dev > 30000 ? tr('แข็งกว่าคาด = เศรษฐกิจยังดี แต่ลดโอกาส Fed ลดดอกเบี้ยเร็ว ๆ นี้', 'stronger than forecast = the economy is still solid, but lowers the odds of a Fed cut soon') : tr('ใกล้เคียงคาด = เป็นกลาง', 'close to forecast = neutral'));
+      body += '<br><span style="opacity:.75;">' + tr('ℹ️ รวมการปรับปรุงตัวเลขย้อนหลังแล้ว จึงอาจต่างจากที่ข่าวรายงานครั้งแรกเล็กน้อย', 'ℹ️ Includes revisions to earlier months, so it can differ slightly from the first reported headline') + '</span>';
       cards.push(analysisCard(accent, 'Nonfarm Payrolls — ' + verdict, body));
     }
 
@@ -2117,73 +2257,73 @@ window.setHeaderStamp();
       const dev = isValidNum(cl.forecast) ? cl.value - cl.forecast : null;
       // ต่ำกว่าคาด = ดี (คนตกงานใหม่น้อยกว่าคาด) · ±3K ถือว่าตามคาด
       const accent = dev == null ? GREY : Math.abs(dev) < 3000 ? AMBER : (dev < 0 ? GREEN : RED);
-      const verdict = dev == null ? '⚪ ยังไม่มีค่าคาดของรอบนี้' : Math.abs(dev) < 3000 ? '🟡 ใกล้เคียงที่คาด' : (dev < 0 ? '🟢 ต่ำกว่าคาด (ดี)' : '🔴 สูงกว่าคาด (แย่)');
-      let body = 'ผู้ขอรับสวัสดิการว่างงานครั้งแรก' + (cl.weekEnd ? ' สัปดาห์สิ้นสุด ' + esc(thDay(cl.weekEnd)) : ' (ประกาศ ' + esc(thDay(cl.releaseDate)) + ')')
+      const verdict = dev == null ? NOCONS : Math.abs(dev) < 3000 ? tr('🟡 ใกล้เคียงที่คาด', '🟡 Close to forecast') : (dev < 0 ? tr('🟢 ต่ำกว่าคาด (ดี)', '🟢 Below forecast (good)') : tr('🔴 สูงกว่าคาด (แย่)', '🔴 Above forecast (bad)'));
+      let body = tr('ผู้ขอรับสวัสดิการว่างงานครั้งแรก', 'Initial jobless claims') + (cl.weekEnd ? tr(' สัปดาห์สิ้นสุด ', ', week ending ') + esc(thDay(cl.weekEnd)) : tr(' (ประกาศ ', ' (released ') + esc(thDay(cl.releaseDate)) + ')')
         + ' = <b>' + esc(fmtClaims(cl.value)) + '</b>'
-        + (dev == null ? '' : ' · ตลาดคาด ' + esc(fmtClaims(cl.forecast)) + (Math.abs(dev) >= 1000 ? ' (' + (dev < 0 ? 'ต่ำกว่า' : 'สูงกว่า') + 'คาด ' + esc(fmtClaims(Math.abs(dev))) + ')' : ''));
-      if(isValidNum(cl.prev)) body += '<br>สัปดาห์ก่อน = ' + esc(fmtClaims(cl.prev)) + ' (' + esc(fmtClaimsDelta(cl.value - cl.prev)) + ')';
-      if(isValidNum(cl.avg4)) body += (isValidNum(cl.prev) ? ' · ' : '<br>') + 'ค่าเฉลี่ย 4 สัปดาห์ = ' + esc(fmtClaims(cl.avg4))
-        + (isValidNum(cl.prevAvg4) ? ' (' + (cl.avg4 > cl.prevAvg4 ? 'เพิ่มขึ้น' : cl.avg4 < cl.prevAvg4 ? 'ลดลง' : 'ทรงตัว') + ')' : '');
-      body += '<br>ระดับ: ' + (cl.value < 230000 ? 'ต่ำ = ตลาดแรงงานยังแน่น' : cl.value < 300000 ? 'ปานกลาง = ตลาดแรงงานเริ่มผ่อนคลาย' : 'สูง = สัญญาณตลาดแรงงานอ่อนแรง');
-      if(cl.mismatch) body += '<br><span style="color:var(--warn);">⚠️ Investing.com รายงานรอบนี้ ' + esc(fmtClaims(cl.mismatch)) + ' (ต่างจาก FRED — อาจเป็นการปรับตัวเลข)</span>';
+        + (dev == null ? '' : tr(' · ตลาดคาด ', ' · forecast ') + esc(fmtClaims(cl.forecast)) + (Math.abs(dev) >= 1000 ? ' (' + (dev < 0 ? tr('ต่ำกว่า', '') : tr('สูงกว่า', '')) + tr('คาด ', '') + esc(fmtClaims(Math.abs(dev))) + tr('', dev < 0 ? ' below' : ' above') + ')' : ''));
+      if(isValidNum(cl.prev)) body += tr('<br>สัปดาห์ก่อน = ', '<br>previous week = ') + esc(fmtClaims(cl.prev)) + ' (' + esc(fmtClaimsDelta(cl.value - cl.prev)) + ')';
+      if(isValidNum(cl.avg4)) body += (isValidNum(cl.prev) ? ' · ' : '<br>') + tr('ค่าเฉลี่ย 4 สัปดาห์ = ', '4-week average = ') + esc(fmtClaims(cl.avg4))
+        + (isValidNum(cl.prevAvg4) ? ' (' + (cl.avg4 > cl.prevAvg4 ? tr('เพิ่มขึ้น', 'rising') : cl.avg4 < cl.prevAvg4 ? tr('ลดลง', 'falling') : tr('ทรงตัว', 'flat')) + ')' : '');
+      body += tr('<br>ระดับ: ', '<br>Level: ') + (cl.value < 230000 ? tr('ต่ำ = ตลาดแรงงานยังแน่น', 'low = labour market still tight') : cl.value < 300000 ? tr('ปานกลาง = ตลาดแรงงานเริ่มผ่อนคลาย', 'moderate = labour market loosening') : tr('สูง = สัญญาณตลาดแรงงานอ่อนแรง', 'high = sign of a weak labour market'));
+      if(cl.mismatch) body += '<br><span style="color:var(--warn);">' + tr('⚠️ Investing.com รายงานรอบนี้ ', '⚠️ Investing.com reports ') + esc(fmtClaims(cl.mismatch)) + tr(' (ต่างจาก FRED — อาจเป็นการปรับตัวเลข)', ' for this release (differs from FRED, possibly a revision)') + '</span>';
       body += nextReleaseLine('claims');
-      if(dev != null && Math.abs(dev) >= 3000) body += '<br><b>ผลต่อตลาด:</b> ' + (dev < 0
-        ? 'ตลาดแรงงานแข็งกว่าคาด = ลดแรงกดดันให้ Fed ต้องรีบลดดอกเบี้ย (มักหนุนดอลลาร์/บอนด์ยีลด์ และกดทองคำระยะสั้น)'
-        : 'คนตกงานใหม่มากกว่าคาด = ตลาดแรงงานเริ่มอ่อน เพิ่มโอกาส Fed ลดดอกเบี้ย (มักกดดอลลาร์/บอนด์ยีลด์)');
-      body += '<br><span style="opacity:.75;">ℹ️ ตัวเลขรายสัปดาห์ผันผวนสูง ดูค่าเฉลี่ย 4 สัปดาห์ประกอบ · แหล่ง: ' + esc(cl.source === 'FRED' ? 'FRED (ICSA) / DOL' : 'Investing.com') + '</span>';
+      if(dev != null && Math.abs(dev) >= 3000) body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (dev < 0
+        ? tr('ตลาดแรงงานแข็งกว่าคาด = ลดแรงกดดันให้ Fed ต้องรีบลดดอกเบี้ย (มักหนุนดอลลาร์/บอนด์ยีลด์ และกดทองคำระยะสั้น)', 'labour market stronger than forecast = less pressure on the Fed to cut quickly (tends to lift the dollar/bond yields and weigh on gold short term)')
+        : tr('คนตกงานใหม่มากกว่าคาด = ตลาดแรงงานเริ่มอ่อน เพิ่มโอกาส Fed ลดดอกเบี้ย (มักกดดอลลาร์/บอนด์ยีลด์)', 'more new jobless claims than forecast = labour market softening, higher odds of Fed cuts (tends to weigh on the dollar/bond yields)'));
+      body += '<br><span style="opacity:.75;">' + tr('ℹ️ ตัวเลขรายสัปดาห์ผันผวนสูง ดูค่าเฉลี่ย 4 สัปดาห์ประกอบ · แหล่ง: ', 'ℹ️ Weekly data is noisy, check the 4-week average too · source: ') + esc(cl.source === 'FRED' ? 'FRED (ICSA) / DOL' : 'Investing.com') + '</span>';
       cards.push(analysisCard(accent, 'Initial Jobless Claims — ' + verdict, body));
     }
 
     // ── footnote + สถานะ ────────────────────────────────────────────────────────────────────
-    const when = new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
+    const when = new Date().toLocaleTimeString(LOCALE, { hour:'2-digit', minute:'2-digit' });
     const missing = d.errors ? Object.keys(d.errors) : [];
 
     // ตรวจว่าค่า consensus ของ Investing.com เป็นของ "รอบเดียวกับตัวเลขบนการ์ด" หรือไม่
     // (FRED อาจตามหลังอยู่หนึ่งรอบ — ถ้าเป็นอย่างนั้นต้องบอก ไม่ใช่เทียบข้ามรอบเงียบๆ)
     let consensusNote = '';
     if(C.actuals){
-      const pairs = [['CPI', d.cpi, C.actuals.cpi], ['Core CPI', d.coreCpi, C.actuals.coreCpi], ['PPI', d.ppi, C.actuals.ppi], ['ว่างงาน', d.unrate, C.actuals.unrate]];
+      const pairs = [['CPI', d.cpi, C.actuals.cpi], ['Core CPI', d.coreCpi, C.actuals.coreCpi], ['PPI', d.ppi, C.actuals.ppi], [tr('ว่างงาน', 'Unemployment'), d.unrate, C.actuals.unrate]];
       const checked = pairs.filter(pr => pr[1] && isValidNum(pr[1].value) && isValidNum(pr[2]));
       // เทียบที่ทศนิยม 1 ตำแหน่ง (ความละเอียดที่ประกาศจริง) — PPI MoM ที่คำนวณจากดัชนีอาจเป็น 0.26 ขณะที่ประกาศ 0.3
       const mismatched = checked.filter(pr => Math.abs(Math.round(pr[1].value * 10) / 10 - pr[2]) > 0.05);
       if(checked.length && mismatched.length){
-        consensusNote = ' · ⚠️ ค่าจาก Investing.com เป็นของรอบที่ใหม่/เก่ากว่าตัวเลขบนการ์ด (' + mismatched.map(pr => pr[0]).join(', ') + ') — ใช้เทียบเป็นแนวทางเท่านั้น';
+        consensusNote = tr(' · ⚠️ ค่าจาก Investing.com เป็นของรอบที่ใหม่/เก่ากว่าตัวเลขบนการ์ด (', ' · ⚠️ Investing.com values are for a newer/older release than the cards (') + mismatched.map(pr => pr[0]).join(', ') + tr(') — ใช้เทียบเป็นแนวทางเท่านั้น', '), use them as a rough guide only');
       }else if(checked.length){
-        consensusNote = ' · ✅ ตรวจแล้วว่าค่าคาดตรงรอบเดียวกับตัวเลขบนการ์ด';
+        consensusNote = tr(' · ✅ ตรวจแล้วว่าค่าคาดตรงรอบเดียวกับตัวเลขบนการ์ด', ' · ✅ checked: forecasts match the same release as the cards');
       }
     }
 
     const link = (href, text) => '<a class="metric-link" style="color:var(--accent); border-bottom:1px dotted var(--accent);" target="_blank" rel="noopener" href="' + esc(href) + '">' + text + '</a>';
     const autoLine = C.live
-      ? esc(C.source) + ' (ดึงสด · ' + esc(thDay(C.asOf)) + ')'
-      : esc(C.source) + ' (ค่าที่ฝังไว้ ณ ' + esc(thDay(C.asOf)) + ')';
+      ? esc(C.source) + tr(' (ดึงสด · ', ' (live · ') + esc(thDay(C.asOf)) + ')'
+      : esc(C.source) + tr(' (ค่าที่ฝังไว้ ณ ', ' (built-in values as of ') + esc(thDay(C.asOf)) + ')';
     // แสดงที่มาของค่าที่คาดต่อช่อง: ☁️ = ที่แชร์จากเซิร์ฟเวอร์ (ทุกคนเห็น) · ✏️ = ที่ตั้งเองในเครื่อง
     const ovParts = [];
-    if(C.shared) ovParts.push('☁️ ที่แชร์จากเซิร์ฟเวอร์ (' + C.sharedOverridden.map(k => OVERRIDE_LABELS[k] || k).join(', ') + ')'
-      + (C.sharedSavedAt ? ' เมื่อ ' + esc(C.sharedSavedAt) : ''));
-    if(C.override) ovParts.push('✏️ ค่าที่คุณตั้งเอง (' + C.overridden.map(k => OVERRIDE_LABELS[k] || k).join(', ') + ')'
-      + (C.savedAt ? ' เมื่อ ' + esc(C.savedAt) : ''));
+    if(C.shared) ovParts.push(tr('☁️ ที่แชร์จากเซิร์ฟเวอร์ (', '☁️ shared from server (') + C.sharedOverridden.map(k => OVERRIDE_LABELS[k] || k).join(', ') + ')'
+      + (C.sharedSavedAt ? tr(' เมื่อ ', ' on ') + esc(C.sharedSavedAt) : ''));
+    if(C.override) ovParts.push(tr('✏️ ค่าที่คุณตั้งเอง (', '✏️ your own values (') + C.overridden.map(k => OVERRIDE_LABELS[k] || k).join(', ') + ')'
+      + (C.savedAt ? tr(' เมื่อ ', ' on ') + esc(C.savedAt) : ''));
     const srcLine = ovParts.length
-      ? 'ที่คาด: ' + ovParts.join(' · ')
-        + ' — อัตโนมัติ: ' + autoLine
-        + ' · <a href="#" id="consensusResetInline" style="color:var(--accent); border-bottom:1px dotted var(--accent); text-decoration:none;">↺ คืนค่าเริ่มต้น</a>'
-      : 'ที่คาด: ' + autoLine;
-    const linkLine = 'ดูต้นทาง: ' + [
+      ? tr('ที่คาด: ', 'Forecasts: ') + ovParts.join(' · ')
+        + tr(' — อัตโนมัติ: ', ' — automatic: ') + autoLine
+        + ' · <a href="#" id="consensusResetInline" style="color:var(--accent); border-bottom:1px dotted var(--accent); text-decoration:none;">' + tr('↺ คืนค่าเริ่มต้น', '↺ Reset') + '</a>'
+      : tr('ที่คาด: ', 'Forecasts: ') + autoLine;
+    const linkLine = tr('ดูต้นทาง: ', 'Sources: ') + [
       link(CONSENSUS.links.cpi, 'CPI'), link(CONSENSUS.links.coreCpi, 'Core CPI'), link(CONSENSUS.links.ppi, 'PPI'),
-      link(CONSENSUS.links.nfp, 'การจ้างงาน'), link(CONSENSUS.links.unrate, 'ว่างงาน'),
+      link(CONSENSUS.links.nfp, tr('การจ้างงาน', 'Payrolls')), link(CONSENSUS.links.unrate, tr('ว่างงาน', 'Unemployment')),
       link(CONSENSUS.links.fed, 'Fed')
     ].join(' · ');
 
     const notes = [];
-    if(d.stale) notes.push('⚠️ ตัวเลขที่ใช้คือค่าล่าสุดที่เคยดึงได้');
-    if(missing.length) notes.push('⚠️ วิเคราะห์จากตัวเลขที่มีเท่านั้น (ที่ดึงไม่ได้: ' + esc(missing.map(k => OVERRIDE_LABELS[k] || k).join(', ')) + ')');
-    const details = 'ค่าที่ตลาดคาด: Fed ' + consFedText
-      + ' · CPI ' + C.cpi.toFixed(1) + '% · Core ' + C.coreCpi.toFixed(1) + '% · PPI ' + signedPct(C.ppi, 1) + '% · ว่างงาน ' + C.unrate.toFixed(1)
+    if(d.stale) notes.push(tr('⚠️ ตัวเลขที่ใช้คือค่าล่าสุดที่เคยดึงได้', '⚠️ Using the last numbers that were fetched successfully'));
+    if(missing.length) notes.push(tr('⚠️ วิเคราะห์จากตัวเลขที่มีเท่านั้น (ที่ดึงไม่ได้: ', '⚠️ Analysis uses only the available numbers (missing: ') + esc(missing.map(k => OVERRIDE_LABELS[k] || k).join(', ')) + ')');
+    const details = tr('ค่าที่ตลาดคาด: Fed ', 'Market forecasts: Fed ') + consFedText
+      + ' · CPI ' + C.cpi.toFixed(1) + '% · Core ' + C.coreCpi.toFixed(1) + '% · PPI ' + signedPct(C.ppi, 1) + '% · ' + tr('ว่างงาน ', 'Unemployment ') + C.unrate.toFixed(1)
       + '% · NFP +' + C.nfp.toLocaleString('en-US')
       + '<br>' + srcLine + esc(consensusNote)
       + '<br>' + linkLine;
     const foot = (notes.length ? notes.join('<br>') + '<br>' : '')
-      + '<details><summary style="cursor:pointer; list-style:none;">ℹ️ ที่มาของค่าที่คาด · อัปเดต ' + esc(when) + '</summary>'
+      + '<details><summary style="cursor:pointer; list-style:none;">' + tr('ℹ️ ที่มาของค่าที่คาด · อัปเดต ', 'ℹ️ Where the forecasts come from · updated ') + esc(when) + '</summary>'
       + '<div style="margin-top:6px;">' + details + '</div></details>';
 
     box.innerHTML = cards.join('') + '<div class="muted" style="font-size:10px; line-height:1.6; opacity:.8;">' + foot + '</div>';
@@ -2195,7 +2335,7 @@ window.setHeaderStamp();
     // แจ้งเตือนในหน้าเฉพาะเมื่อตัวเลขขยับจากการ์ดครั้งก่อน (ผู้ใช้ที่เปิดหน้านานๆ จะรู้ว่าเลขใหม่มา)
     if(lastFedSignature && lastFedSignature !== fedSignature(d)){
       const statusEl2 = el('fredFetchStatus');
-      if(statusEl2) statusEl2.textContent = '🔔 มีตัวเลขใหม่ — อัปเดตบทวิเคราะห์แล้ว';
+      if(statusEl2) statusEl2.textContent = tr('🔔 มีตัวเลขใหม่ — อัปเดตบทวิเคราะห์แล้ว', '🔔 New numbers are in. The analysis has been updated.');
     }
     lastFedSignature = fedSignature(d);
   }
@@ -2243,7 +2383,7 @@ window.setHeaderStamp();
       try{
         data = await r.json();
       }catch(parseErr){
-        throw new Error('เซิร์ฟเวอร์ตอบกลับมาไม่ใช่ JSON (HTTP ' + r.status + ') — หน้านี้ต้องรันบน Netlify จึงจะใช้ Functions ได้ (เปิด index.html ตรงๆ จากดิสก์จะดึงสดไม่ได้)');
+        throw new Error(tr('เซิร์ฟเวอร์ตอบกลับมาไม่ใช่ JSON (HTTP ' + r.status + ') — หน้านี้ต้องรันบน Netlify จึงจะใช้ Functions ได้ (เปิด index.html ตรงๆ จากดิสก์จะดึงสดไม่ได้)', 'The server did not return JSON (HTTP ' + r.status + '). This page must run on Netlify to use Functions (opening index.html straight from disk cannot fetch live data).'));
       }
       if(data && data.error && !hasAnyFedField(data)) throw new Error(data.error);
       if(!r.ok && !hasAnyFedField(data)) throw new Error('HTTP ' + r.status);
@@ -2258,7 +2398,7 @@ window.setHeaderStamp();
       fedNextFetchAt = now + FED_POLL_MS;
       const reason = (e && e.message) ? e.message : String(e);
       console.warn('[fred-data]', reason);
-      if(statusEl) statusEl.textContent = '⚠️ อัปเดตตัวเลขล่าสุดไม่ได้ในขณะนี้ — ระบบจะลองใหม่อัตโนมัติ';
+      if(statusEl) statusEl.textContent = tr('⚠️ อัปเดตตัวเลขล่าสุดไม่ได้ในขณะนี้ — ระบบจะลองใหม่อัตโนมัติ', '⚠️ Can\'t update the latest numbers right now. Retrying automatically.');
       // Prefer the last payload we actually saved over the hardcoded placeholders.
       if(cached && cached.data) applyFedData(cached.data);
       // ให้บทวิเคราะห์บอกด้วยว่ายังสร้างไม่ได้ เพราะอะไร (ไม่ปล่อยให้ค้างข้อความ "กำลังรอ" เงียบๆ)
@@ -2313,7 +2453,7 @@ window.setHeaderStamp();
     return { date, now, prevDate, prev: prevDate ? series[prevDate] : null };
   }
   window.pickFxPair = pickFxPair;   // tests/index-html.test.js
-  const LIVE_NOTE_BASE = 'ราคาทองอ้างอิง PAXG (โทเคนที่หนุนด้วยทองคำจริง)';
+  const LIVE_NOTE_BASE = tr('ราคาทองอ้างอิง PAXG (โทเคนที่หนุนด้วยทองคำจริง)', 'Gold price tracks PAXG (a token backed by physical gold)');
   const livePx = { gold: null, usdThb: null };
   async function fetchLivePrices(){
     try{
@@ -2323,7 +2463,7 @@ window.setHeaderStamp();
       if(isNaN(price)) throw new Error('no PAXG price');
       setPrice('lpGold', '$' + price.toLocaleString('en-US',{maximumFractionDigits:2}), parseFloat(j.priceChangePercent));
       livePx.gold = price;
-    }catch(e){ el('lpGold').textContent = 'ดึงไม่สำเร็จ'; console.warn('[gold]', e); }
+    }catch(e){ el('lpGold').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable'); console.warn('[gold]', e); }
 
     // frankfurter.app moved to frankfurter.dev as its official domain — the old .app host
     // still resolves but seems to have gotten flaky. Try the new domain first, old one as
@@ -2367,15 +2507,15 @@ window.setHeaderStamp();
       const now = fx(pair.now);
       livePx.usdThb = pair.now.THB;
       const ref = pair.prev ? fx(pair.prev) : {};
-      setPrice('lpUsdThb', now.usd.toFixed(2) + ' บาท', pctChange(now.usd, ref.usd));
-      setPrice('lpJpyThb', now.jpy.toFixed(3) + ' บาท', pctChange(now.jpy, ref.jpy));
-      setPrice('lpCnyThb', now.cny.toFixed(3) + ' บาท', pctChange(now.cny, ref.cny));
-      el('livePricesNote').textContent = LIVE_NOTE_BASE + ' · ค่าเงินเป็นอัตรากลาง ECB ณ ' + thDay(pair.date)
-        + ' (ออกวันละครั้งราว 21:00 น. เวลาไทย ไม่ใช่ real-time)' + (pair.prevDate ? ' · % เทียบ ' + thDay(pair.prevDate) : '');
+      setPrice('lpUsdThb', now.usd.toFixed(2) + tr(' บาท', ' THB'), pctChange(now.usd, ref.usd));
+      setPrice('lpJpyThb', now.jpy.toFixed(3) + tr(' บาท', ' THB'), pctChange(now.jpy, ref.jpy));
+      setPrice('lpCnyThb', now.cny.toFixed(3) + tr(' บาท', ' THB'), pctChange(now.cny, ref.cny));
+      el('livePricesNote').textContent = LIVE_NOTE_BASE + tr(' · ค่าเงินเป็นอัตรากลาง ECB ณ ', ' · FX are ECB reference rates as of ') + thDay(pair.date)
+        + tr(' (ออกวันละครั้งราว 21:00 น. เวลาไทย ไม่ใช่ real-time)', ' (published once a day around 21:00 Bangkok time, not real-time)') + (pair.prevDate ? tr(' · % เทียบ ', ' · % vs ') + thDay(pair.prevDate) : '');
     }catch(e){
-      el('lpUsdThb').textContent = 'ดึงไม่สำเร็จ';
-      el('lpJpyThb').textContent = 'ดึงไม่สำเร็จ';
-      el('lpCnyThb').textContent = 'ดึงไม่สำเร็จ';
+      el('lpUsdThb').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable');
+      el('lpJpyThb').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable');
+      el('lpCnyThb').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable');
       console.warn('[fx]', e);
     }
   }
@@ -2388,20 +2528,21 @@ window.setHeaderStamp();
       const r = await fetchWithTimeout('/.netlify/functions/gold-th', 9000);
       const j = await r.json();
       if(!r.ok || !j.barSell) throw new Error(j.error || 'HTTP ' + r.status);
-      el('lpGoldTh').textContent = fmtBaht(j.barSell) + ' บาท';
-      el('lpGoldThSub').textContent = 'ทองแท่งรับซื้อ ' + fmtBaht(j.barBuy)
-        + (j.ornamentSell ? ' · รูปพรรณขายออก ' + fmtBaht(j.ornamentSell) : '')
-        + ' · สมาคมค้าทองคำ' + (j.updated ? ' ' + j.updated : '');
+      el('lpGoldTh').textContent = fmtBaht(j.barSell) + tr(' บาท', ' THB');
+      // j.updated มาจากเว็บสมาคมค้าทองคำเป็นภาษาไทย (เช่น "10/11/2569 เวลา 09:30") — แสดงตามต้นทาง
+      el('lpGoldThSub').textContent = tr('ทองแท่งรับซื้อ ', 'Bar buy ') + fmtBaht(j.barBuy)
+        + (j.ornamentSell ? tr(' · รูปพรรณขายออก ', ' · Jewellery sell ') + fmtBaht(j.ornamentSell) : '')
+        + tr(' · สมาคมค้าทองคำ', ' · Gold Traders Association') + (j.updated ? ' ' + j.updated : '');
       return;
     }catch(e){ console.warn('[gold-th]', e); }
     // ประมาณการ: ทอง 96.5% น้ำหนัก 1 บาท = 15.244 กรัม (1 ทรอยออนซ์ = 31.1035 กรัม)
     await livePricesReady;
     if(livePx.gold && livePx.usdThb){
       const est = livePx.gold * livePx.usdThb * (15.244 / 31.1035) * 0.965;
-      el('lpGoldTh').textContent = '≈ ' + fmtBaht(Math.round(est / 50) * 50) + ' บาท';
-      el('lpGoldThSub').textContent = 'ประมาณจากราคาโลก × ค่าเงินบาท (ยังไม่รวมค่าพรีเมียมในประเทศ)';
+      el('lpGoldTh').textContent = '≈ ' + fmtBaht(Math.round(est / 50) * 50) + tr(' บาท', ' THB');
+      el('lpGoldThSub').textContent = tr('ประมาณจากราคาโลก × ค่าเงินบาท (ยังไม่รวมค่าพรีเมียมในประเทศ)', 'Estimated from world price × USD/THB (excludes the local premium)');
     }else{
-      el('lpGoldTh').textContent = 'ดึงไม่สำเร็จ';
+      el('lpGoldTh').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable');
     }
   }
   fetchThaiGold();
@@ -2429,7 +2570,7 @@ window.setHeaderStamp();
     if(!svg){ box.innerHTML = ''; return; }
     const first = series.hist[0][1], last = series.hist[series.hist.length - 1][1];
     const dec = (opts && opts.dec != null) ? opts.dec : 2;
-    box.innerHTML = svg + '<div class="spark-cap"><span>12 เดือน</span><span>' + first.toFixed(dec) + ' → ' + last.toFixed(dec) + '</span></div>';
+    box.innerHTML = svg + '<div class="spark-cap"><span>' + tr('12 เดือน', '12 months') + '</span><span>' + first.toFixed(dec) + ' → ' + last.toFixed(dec) + '</span></div>';
   }
 
   // ---------- ตลาดสหรัฐฯ + กราฟย้อนหลังในการ์ด Fed ----------
@@ -2471,13 +2612,13 @@ window.setHeaderStamp();
           + (pct == null ? '' : '<span class="delta ' + (pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat') + '">' + (pct > 0 ? '+' : '') + pct.toFixed(2) + '%</span>');
         setSpark(row[2], s, { dec:0 });
         el(row[3]).textContent = s.source === 'cboe' && s.time
-          ? 'Cboe ' + thDay(s.date).replace(/ \d{4}$/, '') + ' ' + s.time.slice(11, 16) + ' NY (ช้า ~15 นาที)'
-          : 'ราคาปิด ' + thDay(s.date);
+          ? 'Cboe ' + thDay(s.date).replace(/ \d{4}$/, '') + ' ' + s.time.slice(11, 16) + tr(' NY (ช้า ~15 นาที)', ' NY (~15 min delay)')
+          : tr('ราคาปิด ', 'Close ') + thDay(s.date);
       });
       if(S.vix){
         const v = S.vix.latest;
         el('mkVix').textContent = v.toFixed(2);
-        el('mkVixZone').textContent = v >= 30 ? '🔴 ตลาดตื่นตระหนก' : v >= 20 ? '🟠 กังวล' : v >= 15 ? '🟡 ปกติ' : '🟢 สงบ';
+        el('mkVixZone').textContent = v >= 30 ? tr('🔴 ตลาดตื่นตระหนก', '🔴 Panic') : v >= 20 ? tr('🟠 กังวล', '🟠 Worried') : v >= 15 ? tr('🟡 ปกติ', '🟡 Normal') : tr('🟢 สงบ', '🟢 Calm');
         if(S.vix.source === 'cboe' && S.vix.time) el('mkVixZone').textContent += ' · ' + thDay(S.vix.date).replace(/ \d{4}$/, '') + ' ' + S.vix.time.slice(11, 16) + ' NY';
         setSpark('spVix', S.vix, { upIsBad:true });
       }
@@ -2485,7 +2626,7 @@ window.setHeaderStamp();
       if(S.move && isValidNum(S.move.latest)){
         const m = S.move.latest;
         el('mkMove').innerHTML = esc(m.toFixed(2)) + (isValidNum(S.move.change) ? '<span class="delta ' + (S.move.change > 0 ? 'down' : S.move.change < 0 ? 'up' : 'flat') + '">' + (S.move.change > 0 ? '+' : '') + S.move.change.toFixed(2) + '</span>' : '');
-        el('mkMoveZone').textContent = (m >= 140 ? '🔴 บอนด์ตึงเครียด' : m >= 110 ? '🟠 กังวล' : m >= 80 ? '🟡 ปกติ' : '🟢 สงบ') + ' · ปิด ' + thDay(S.move.date);
+        el('mkMoveZone').textContent = (m >= 140 ? tr('🔴 บอนด์ตึงเครียด', '🔴 Bond stress') : m >= 110 ? tr('🟠 กังวล', '🟠 Worried') : m >= 80 ? tr('🟡 ปกติ', '🟡 Normal') : tr('🟢 สงบ', '🟢 Calm')) + tr(' · ปิด ', ' · close ') + thDay(S.move.date);
         setSpark('spMove', S.move, { upIsBad:true, dec:0 });
       }
       // SOFR − IORB (bp): บวกและถ่างขึ้น = เงินสดขาด ตลาด repo ตึง
@@ -2494,12 +2635,12 @@ window.setHeaderStamp();
         const ch = S.sofrSpread.change;
         el('mkSofr').innerHTML = (r > 0 ? '+' : '') + esc(r) + ' bp'
           + (isValidNum(ch) && Math.round(ch) !== 0 ? '<span class="delta ' + (ch > 0 ? 'down' : 'up') + '">' + (ch > 0 ? '+' : '') + Math.round(ch) + ' bp</span>' : '');
-        el('mkSofrZone').textContent = (sp > 15 ? '🔴 repo ตึงหนัก' : sp > 5 ? '🟠 repo ตึงตัว' : sp >= 0 ? '🟡 เริ่มตึง' : '🟢 เงินสดล้นระบบ')
+        el('mkSofrZone').textContent = (sp > 15 ? tr('🔴 repo ตึงหนัก', '🔴 Severe repo strain') : sp > 5 ? tr('🟠 repo ตึงตัว', '🟠 Repo tight') : sp >= 0 ? tr('🟡 เริ่มตึง', '🟡 Tightening') : tr('🟢 เงินสดล้นระบบ', '🟢 Cash plentiful'))
           + (isValidNum(S.sofrSpread.sofr) && isValidNum(S.sofrSpread.iorb) ? ' · SOFR ' + S.sofrSpread.sofr.toFixed(2) + '% · IORB ' + S.sofrSpread.iorb.toFixed(2) + '%' : '')
           + ' · ' + thDay(S.sofrSpread.date);
         setSpark('spSofr', S.sofrSpread, { upIsBad:true, dec:0 });
       }
-      if(S.dollar) el('mkDollarName').textContent = S.dollar.source === 'ecb-dxy' ? 'ดัชนีดอลลาร์ (DXY)' : 'ดัชนีดอลลาร์ (Broad)';
+      if(S.dollar) el('mkDollarName').textContent = S.dollar.source === 'ecb-dxy' ? tr('ดัชนีดอลลาร์ (DXY)', 'Dollar index (DXY)') : tr('ดัชนีดอลลาร์ (Broad)', 'Dollar index (Broad)');
       if(S.dollar){ el('mkDollar').innerHTML = esc(S.dollar.latest.toFixed(2)) + (S.dollar.change != null ? '<span class="delta ' + (S.dollar.change >= 0 ? 'up' : 'down') + '">' + (S.dollar.change >= 0 ? '+' : '') + S.dollar.change.toFixed(2) + '</span>' : ''); setSpark('spDollar', S.dollar, { color:'var(--accent)' }); }
       if(S.fedUpper) setSpark('spFed', S.fedUpper, { color:'var(--accent)', dec:2 });
       if(S.cpi) setSpark('spCpi', S.cpi, { upIsBad:true, dec:1 });
@@ -2507,13 +2648,16 @@ window.setHeaderStamp();
       patchSparksFromLive();
       marketsNextAt = Date.now() + Math.max(nextIn, 60 * 1000);
       const yieldNote = (name, s) => !s ? '' : s.source === 'cboe' && s.time
-        ? name + ' จาก Cboe ' + thDay(s.date).replace(/ \d{4}$/, '') + ' ' + s.time.slice(11, 16) + ' NY (ช้า ~15 นาที)'
-        : s.source === 'treasury' ? name + ' ราคาปิด ' + thDay(s.date) + ' (กระทรวงการคลังสหรัฐ)'
-        : name + ' ราคาปิด ' + thDay(s.date) + ' (FRED ช้ากว่าตลาดประมาณ 1 วันทำการ)';
-      el('mktNote').textContent = [yieldNote('บอนด์ 10 ปี', S.us10y), yieldNote('2 ปี', S.us2y)].filter(Boolean).join(' · ') + ' · DXY จากอัตรา ECB ' + (S.dollar && S.dollar.date ? thDay(S.dollar.date) : '–') + ' · VIX ราคาจาก Cboe ช้า ~15 นาที · MOVE ราคาปิด (ICE ผ่าน Yahoo) · SOFR/IORB จาก FRED · อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน';
+        ? name + tr(' จาก Cboe ', ' from Cboe ') + thDay(s.date).replace(/ \d{4}$/, '') + ' ' + s.time.slice(11, 16) + tr(' NY (ช้า ~15 นาที)', ' NY (~15 min delay)')
+        : s.source === 'treasury' ? name + tr(' ราคาปิด ', ' close ') + thDay(s.date) + tr(' (กระทรวงการคลังสหรัฐ)', ' (US Treasury)')
+        : name + tr(' ราคาปิด ', ' close ') + thDay(s.date) + tr(' (FRED ช้ากว่าตลาดประมาณ 1 วันทำการ)', ' (FRED, about 1 business day behind the market)');
+      el('mktNote').textContent = [yieldNote(tr('บอนด์ 10 ปี', '10Y yield'), S.us10y), yieldNote(tr('2 ปี', '2Y'), S.us2y)].filter(Boolean).join(' · ')
+        + tr(' · DXY จากอัตรา ECB ', ' · DXY from ECB rates ') + (S.dollar && S.dollar.date ? thDay(S.dollar.date) : '–')
+        + tr(' · VIX ราคาจาก Cboe ช้า ~15 นาที · MOVE ราคาปิด (ICE ผ่าน Yahoo) · SOFR/IORB จาก FRED · อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน',
+             ' · VIX from Cboe, ~15 min delay · MOVE daily close (ICE via Yahoo) · SOFR/IORB from FRED · updated hourly · mini charts = last 12 months');
     }catch(e){
       console.warn('[markets]', e);
-      el('mktNote').textContent = 'ดึงข้อมูลตลาดไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ';
+      el('mktNote').textContent = tr('ดึงข้อมูลตลาดไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ', 'Can\'t load market data right now. Retrying automatically.');
       marketsNextAt = Date.now() + 10 * 60 * 1000;
     }
   }
@@ -2544,7 +2688,16 @@ window.setHeaderStamp();
   document.addEventListener('keydown', function(ev){ if(ev.key === 'Escape') closeTips(null); });
 
   // ---------- ปฏิทินเศรษฐกิจ ----------
-  const CAL_LABELS = {
+  const CAL_LABELS = EN ? {
+    cpi:   ['US CPI inflation', 'Consumer Price Index'],
+    jobs:  ['Jobs report (Non-farm Payrolls)', 'Employment Situation · unemployment rate'],
+    ppi:   ['PPI producer prices', 'Producer Price Index'],
+    jolts: ['Job openings (JOLTS)', 'Job Openings & Labor Turnover'],
+    claims: ['Jobless claims (weekly)', 'Initial Jobless Claims'],
+    gdp:   ['US GDP', 'Gross Domestic Product'],
+    pce:   ['PCE, the Fed\'s inflation gauge', 'Personal Income & Outlays'],
+    fomc:  ['FOMC meeting: rate decision', 'Fed statement + press conference']
+  } : {
     cpi:   ['CPI เงินเฟ้อสหรัฐฯ', 'Consumer Price Index'],
     jobs:  ['ตัวเลขจ้างงาน (Non-farm Payrolls)', 'Employment Situation · อัตราว่างงาน'],
     ppi:   ['PPI ราคาผู้ผลิต', 'Producer Price Index'],
@@ -2555,7 +2708,8 @@ window.setHeaderStamp();
     fomc:  ['ประชุม FOMC — ประกาศดอกเบี้ย', 'Fed statement + แถลงข่าว']
   };
   const CAL_HIGH = { cpi:1, jobs:1, fomc:1, pce:1 };
-  const TH_DOW = ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+  const TH_DOW = EN ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] : ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+  const TIME_SUFFIX = tr(' น.', '');   // "19:30 น." ↔ "19:30" 
   function bkk(iso){
     const d = new Date(iso);
     const parts = {};
@@ -2564,7 +2718,7 @@ window.setHeaderStamp();
     return parts;
   }
   // ค่าคาดของรอบนั้น (ถ้า Investing.com มีแล้ว) ต่อท้ายรายการในปฏิทิน — วันที่ต้องตรงกัน ±1 วัน
-  const CAL_FORECAST_KEYS = { cpi:[['cpi','CPI YoY'], ['coreCpi','Core']], ppi:[['ppi','MoM']], jobs:[['nfp','NFP'], ['unrate','ว่างงาน']], fomc:[['fed','ดอกเบี้ย']], claims:[['claims','Claims']] };
+  const CAL_FORECAST_KEYS = { cpi:[['cpi','CPI YoY'], ['coreCpi','Core']], ppi:[['ppi','MoM']], jobs:[['nfp','NFP'], ['unrate',tr('ว่างงาน','Unemployment')]], fomc:[['fed',tr('ดอกเบี้ย','Rate')]], claims:[['claims','Claims']] };
   function calForecast(e){
     try{
       const parts = (CAL_FORECAST_KEYS[e.key] || []).map(([k, label]) => {
@@ -2572,7 +2726,7 @@ window.setHeaderStamp();
         if(!u || !isValidNum(u.forecast) || Math.abs(dayDiff(u.releaseDate, e.date)) > 1) return null;
         return label + ' ' + esc(fmtForecast(k, u.forecast));
       }).filter(Boolean);
-      return parts.length ? '<br><span class="cal-fc">ตลาดคาด: ' + parts.join(' · ') + '</span>' : '';
+      return parts.length ? '<br><span class="cal-fc">' + tr('ตลาดคาด: ', 'Forecast: ') + parts.join(' · ') + '</span>' : '';
     }catch(err){ return ''; }
   }
   function renderCalendar(events){
@@ -2581,17 +2735,17 @@ window.setHeaderStamp();
     const now = Date.now();
     const today = bkk(new Date(now).toISOString());
     const items = (events || []).filter(e => Date.parse(e.at || e.date) > now - 2 * 3600e3).slice(0, 7);
-    if(!items.length){ box.innerHTML = '<div class="muted" style="font-size:12px;">ยังไม่มีกำหนดการในช่วงนี้</div>'; return; }
+    if(!items.length){ box.innerHTML = '<div class="muted" style="font-size:12px;">' + tr('ยังไม่มีกำหนดการในช่วงนี้', 'Nothing scheduled in this period') + '</div>'; return; }
     box.innerHTML = items.map(e => {
       const L = CAL_LABELS[e.key] || [e.title || e.key, ''];
       const at = e.at || (e.date + 'T12:00:00Z');
       const p = bkk(at);
       const dayTh = new Date(Date.UTC(+p.year, +p.month - 1, +p.day)).getUTCDay();
       const diffDays = Math.round((Date.UTC(+p.year, +p.month - 1, +p.day) - Date.UTC(+today.year, +today.month - 1, +today.day)) / 86400000);
-      const when = diffDays <= 0 ? 'วันนี้' : diffDays === 1 ? 'พรุ่งนี้' : 'อีก ' + diffDays + ' วัน';
+      const when = diffDays <= 0 ? tr('วันนี้', 'Today') : diffDays === 1 ? tr('พรุ่งนี้', 'Tomorrow') : tr('อีก ' + diffDays + ' วัน', 'In ' + diffDays + ' days');
       return '<div class="cal-item' + (CAL_HIGH[e.key] ? ' hi' : '') + '">'
         + '<div class="cal-date"><b>' + esc(+p.day) + '</b><span>' + esc(TH_MONTHS[+p.month - 1]) + '</span></div>'
-        + '<div class="cal-name">' + esc(L[0]) + '<small>' + esc(TH_DOW[dayTh] + ' ' + (e.at ? p.hour + ':' + p.minute + ' น.' : '') + (L[1] ? ' · ' + L[1] : '')) + calForecast(e) + '</small></div>'
+        + '<div class="cal-name">' + esc(L[0]) + '<small>' + esc(TH_DOW[dayTh] + ' ' + (e.at ? p.hour + ':' + p.minute + TIME_SUFFIX : '') + (L[1] ? ' · ' + L[1] : '')) + calForecast(e) + '</small></div>'
         + '<div class="cal-when' + (diffDays <= 1 ? ' soon' : '') + '">' + esc(when) + '</div>'
         + '</div>';
     }).join('');
@@ -2663,7 +2817,7 @@ window.setHeaderStamp();
   }
   function fmtForecast(key, v){
     if(!isValidNum(v)) return '';
-    if(key === 'nfp') return fmtJobs(v) + ' ตำแหน่ง';
+    if(key === 'nfp') return fmtJobs(v) + tr(' ตำแหน่ง', ' jobs');
     if(key === 'claims') return fmtClaims(v);
     if(key === 'ppi') return signedPct(v, 1) + '%';
     if(key === 'fed') return v.toFixed(2) + '%';
@@ -2675,22 +2829,22 @@ window.setHeaderStamp();
     const p = bkk(iso);
     const t = bkk(new Date().toISOString());
     const diff = Math.round((Date.UTC(+p.year, +p.month - 1, +p.day) - Date.UTC(+t.year, +t.month - 1, +t.day)) / 86400000);
-    const dow = ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'][new Date(Date.UTC(+p.year, +p.month - 1, +p.day)).getUTCDay()];
-    const day = diff === 0 ? 'วันนี้' : diff === 1 ? 'พรุ่งนี้' : dow + ' ' + (+p.day) + ' ' + TH_MONTHS[+p.month - 1];
-    return { text: day + (n.at ? ' ' + p.hour + ':' + p.minute + ' น.' : ''), today: diff === 0 };
+    const dow = TH_DOW[new Date(Date.UTC(+p.year, +p.month - 1, +p.day)).getUTCDay()];
+    const day = diff === 0 ? tr('วันนี้', 'today') : diff === 1 ? tr('พรุ่งนี้', 'tomorrow') : dow + ' ' + (+p.day) + ' ' + TH_MONTHS[+p.month - 1];
+    return { text: day + (n.at ? ' ' + p.hour + ':' + p.minute + TIME_SUFFIX : ''), today: diff === 0 };
   }
   // HTML หนึ่งบรรทัดสำหรับใต้ตัวเลขในการ์ด (ไม่มีข้อมูลเลย = คืนค่าว่าง)
   function nextReleaseHtml(key, opts){
     const n = nextRelease(key);
     if(!n) return '';
     const w = fmtReleaseWhen(n);
-    let fc = isValidNum(n.forecast) ? (key === 'fed' ? 'ตลาดคาดดอกเบี้ย ' : 'ตลาดคาด ') + '<b>' + esc(fmtForecast(key, n.forecast)) + '</b>' : 'ยังไม่มีค่าคาด';
+    let fc = isValidNum(n.forecast) ? (key === 'fed' ? tr('ตลาดคาดดอกเบี้ย ', 'Rate forecast ') : tr('ตลาดคาด ', 'Forecast ')) + '<b>' + esc(fmtForecast(key, n.forecast)) + '</b>' : tr('ยังไม่มีค่าคาด', 'No forecast yet');
     if(key === 'cpi' && isValidNum(n.forecast)){
       const core = nextRelease('coreCpi');
       if(core && isValidNum(core.forecast) && core.date === n.date) fc += ' (Core ' + esc(fmtForecast('coreCpi', core.forecast)) + ')';
     }
-    if(opts && opts.withPrev && isValidNum(n.previous)) fc += ' · ครั้งก่อน ' + esc(fmtForecast(key, n.previous));
-    return (w.today ? '⏰ ประกาศ' : '📅 ครั้งถัดไป ') + esc(w.text) + ' · ' + fc;
+    if(opts && opts.withPrev && isValidNum(n.previous)) fc += tr(' · ครั้งก่อน ', ' · previous ') + esc(fmtForecast(key, n.previous));
+    return (w.today ? tr('⏰ ประกาศ', '⏰ Release ') : tr('📅 ครั้งถัดไป ', '📅 Next ')) + esc(w.text) + ' · ' + fc;
   }
   function nextReleaseLine(key){
     try{
@@ -2716,7 +2870,7 @@ window.setHeaderStamp();
     const r = await fetchWithTimeout('/.netlify/functions/wti', 8000);
     const j = await r.json();
     if(!r.ok || !isValidNum(j.price)) throw new Error(j.error || 'HTTP ' + r.status);
-    return { price: j.price, pct: j.pct, source: 'NYMEX', status: 'NYMEX · สัญญาเดือนใกล้สุด (หน่วง ~10 นาที)' };
+    return { price: j.price, pct: j.pct, source: 'NYMEX', status: tr('NYMEX · สัญญาเดือนใกล้สุด (หน่วง ~10 นาที)', 'NYMEX · front-month contract (~10 min delay)') };
   }
   // Alpha Vantage does not send CORS headers at all, so this always goes through a CORS proxy,
   // same as the FRED and calendar fixes elsewhere in this app.
@@ -2784,7 +2938,8 @@ window.setHeaderStamp();
       const raw = await storageGet('oil-price-cache');
       if(raw){
         const c = JSON.parse(raw);
-        if(isValidNum(c.at) && Date.now() - c.at < OIL_CACHE_MS && isValidNum(c.price) && c.status){
+        // c.lang: ข้อความสถานะในแคชเป็นภาษาตอนบันทึก — เปลี่ยนภาษาแล้วดึงใหม่
+        if(isValidNum(c.at) && Date.now() - c.at < OIL_CACHE_MS && isValidNum(c.price) && c.status && (c.lang || 'th') === (EN ? 'en' : 'th')){
           setPrice('lpOil', '$' + c.price.toFixed(2), c.pct);
           setOilStatus(c.status || '');
           return;
@@ -2804,10 +2959,10 @@ window.setHeaderStamp();
     for(const [name, fn] of freeAttempts){
             try{
         const res = await fn();
-        const status = res.status || ('NYMEX ดึงไม่ได้ ใช้ ' + res.source + ' แทน (ใกล้เคียง แต่ไม่ใช่ราคา NYMEX)');
+        const status = res.status || tr('NYMEX ดึงไม่ได้ ใช้ ' + res.source + ' แทน (ใกล้เคียง แต่ไม่ใช่ราคา NYMEX)', 'NYMEX unavailable, using ' + res.source + ' instead (close, but not the NYMEX price)');
         setPrice('lpOil', '$' + res.price.toFixed(2), res.pct);
         setOilStatus(status);
-        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, at: Date.now(), price: res.price, pct: res.pct, source: res.source, status })); }catch(e){}
+        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, at: Date.now(), price: res.price, pct: res.pct, source: res.source, status, lang: EN ? 'en' : 'th' })); }catch(e){}
         return;
       }catch(e){ trail.push(name + ': ' + e.message); }
     }
@@ -2818,16 +2973,16 @@ window.setHeaderStamp();
       const r = await fetchWithTimeout('/.netlify/functions/oil-price', 10000);
       const j = await r.json();
       if(j.price){
-        const status = 'ราคาปิดรายวันจาก Alpha Vantage' + (j.asOf ? ' (' + thDay(j.asOf) + ')' : '');
+        const status = tr('ราคาปิดรายวันจาก Alpha Vantage', 'Daily close from Alpha Vantage') + (j.asOf ? ' (' + thDay(j.asOf) + ')' : '');
         setPrice('lpOil', '$' + j.price.toFixed(2), null);
         setOilStatus(status);
-        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, at: Date.now(), price: j.price, source: 'Alpha Vantage (server)', status })); }catch(e){}
+        try{ await storageSet('oil-price-cache', JSON.stringify({ date: today, at: Date.now(), price: j.price, source: 'Alpha Vantage (server)', status, lang: EN ? 'en' : 'th' })); }catch(e){}
         return;
       }
       trail.push('server function: ' + (j.error || 'unknown error'));
     }catch(e){ trail.push('server function: ' + e.message); }
 
-    el('lpOil').textContent = 'ดึงไม่สำเร็จ';
+    el('lpOil').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable');
     setOilStatus('');
     console.warn('[oil] every source failed:', trail.join(' · '));
   }
@@ -2874,7 +3029,7 @@ window.setHeaderStamp();
     </div>
     <div class="price-block">
       <div class="px" id="pxDisplay">— </div>
-      <div class="meta">ATH <span id="athDisplay">—</span> · <span id="ddDisplay">—</span> จาก ATH</div>
+      <div class="meta">ATH <span id="athDisplay">—</span> · <span id="ddDisplay">—</span> <span data-en="from ATH">จาก ATH</span></div>
     </div>
   </header>
 
@@ -2882,27 +3037,34 @@ window.setHeaderStamp();
 
     <!-- SCORE -->
     <div class="panel gauge-panel">
-      <h2>คะแนนความน่าซื้อ</h2>
+      <h2 data-en="Buy score">คะแนนความน่าซื้อ</h2>
       <div class="score-number" id="scoreNumber">–</div>
-      <div class="score-label">/ 10 · น่าซื้อมากสุด = 10</div>
-      <div class="verdict" id="verdict">กรอกค่าตัวชี้วัดด้านขวาเพื่อคำนวณ</div>
+      <div class="score-label" data-en="/ 10 · most attractive = 10">/ 10 · น่าซื้อมากสุด = 10</div>
+      <div class="verdict" id="verdict" data-en="Enter the metrics on the right to calculate">กรอกค่าตัวชี้วัดด้านขวาเพื่อคำนวณ</div>
 
       <div class="breakdown" id="breakdown"></div>
     </div>
 
     <!-- METRICS -->
     <div class="metrics">
-      <h2 style="padding-left:2px;">ตัวชี้วัด On-chain</h2>
+      <h2 style="padding-left:2px;" data-en="On-chain metrics">ตัวชี้วัด On-chain</h2>
 
       <details class="token-collapse dev-only">
-        <summary>ตั้งค่าเพิ่มเติม (ไม่จำเป็นต้องกดอะไรตรงนี้)</summary>
+        <summary data-en="Advanced settings (nothing to change here normally)">ตั้งค่าเพิ่มเติม (ไม่จำเป็นต้องกดอะไรตรงนี้)</summary>
         <div style="margin-top:10px;">
           <div class="metric-top" style="margin-bottom:8px;">
             <div class="metric-name" style="font-size:12px; color:var(--sub);">BGeometrics API Token</div>
-            <a class="metric-link" target="_blank" href="https://portal.bgeometrics.com/login">สมัครฟรี ↗</a>
+            <a class="metric-link" target="_blank" href="https://portal.bgeometrics.com/login" data-en="Sign up free ↗">สมัครฟรี ↗</a>
           </div>
-          <input type="text" id="bgToken" placeholder="ไม่ใส่ก็ได้ ระบบดึงอัตโนมัติให้อยู่แล้ว" style="width:100%; background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--text); font-family:var(--mono); font-size:12px; padding:8px 10px;">
-          <div class="metric-zone" style="margin-top:6px;">
+          <input type="text" id="bgToken" placeholder="ไม่ใส่ก็ได้ ระบบดึงอัตโนมัติให้อยู่แล้ว" data-en-ph="Optional, data is fetched automatically" style="width:100%; background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--text); font-family:var(--mono); font-size:12px; padding:8px 10px;">
+          <div class="metric-zone i18n-en" style="margin-top:6px;" lang="en">
+            Normally the data is fetched automatically through our server (<code>/.netlify/functions/onchain</code>), which caches values for 8 hours, is shared by everyone and has no CORS problems.
+            Only if the server fails does the page call the API directly or through a CORS proxy (allorigins.win) as a backup.<br>
+            <b>Recommended:</b> set <code>BGEOMETRICS_TOKEN</code> as an environment variable on Netlify (Site configuration → Environment variables)
+            to raise the quota from 8 calls/hour · 15 calls/day (per IP) for the whole site. You do <u>not</u> need to type a token here.
+            This field is only for running the file directly without Netlify Functions (each user then uses their own quota).
+          </div>
+          <div class="metric-zone i18n-th" style="margin-top:6px;">
             ปกติระบบดึงให้อัตโนมัติผ่านเซิร์ฟเวอร์ของเรา (<code>/.netlify/functions/onchain</code>) ซึ่งแคชค่าไว้ 8 ชม. ใช้ร่วมกันทุกคนและไม่ติดปัญหา CORS —
             ถ้าเซิร์ฟเวอร์ดึงไม่ได้จึงค่อยไล่ไปยิงตรง/ผ่าน CORS proxy (allorigins.win) เป็นตัวสำรอง<br>
             <b>แนะนำ:</b> ตั้ง <code>BGEOMETRICS_TOKEN</code> เป็น environment variable ที่ Netlify (Site configuration → Environment variables)
@@ -2913,14 +3075,14 @@ window.setHeaderStamp();
       </details>
 
       <details class="token-collapse dev-only">
-        <summary>🔍 Debug log (ดูว่าดึงข้อมูลสำเร็จ/พลาดเพราะอะไร)</summary>
-        <div id="debugLog" style="margin-top:10px; font-size:10px; line-height:1.6; max-height:200px; overflow-y:auto;">ยังไม่มีข้อมูล — กด "รีเฟรชทั้งหมด" ด้านล่างก่อน</div>
+        <summary data-en="🔍 Debug log (why each fetch worked or failed)">🔍 Debug log (ดูว่าดึงข้อมูลสำเร็จ/พลาดเพราะอะไร)</summary>
+        <div id="debugLog" style="margin-top:10px; font-size:10px; line-height:1.6; max-height:200px; overflow-y:auto;" data-en="No data yet. Press &quot;Refresh all&quot; below first.">ยังไม่มีข้อมูล — กด "รีเฟรชทั้งหมด" ด้านล่างก่อน</div>
       </details>
 
       <div class="metric-card">
         <div class="metric-top">
           <div class="metric-name">NUPL <span class="auto-badge" id="nuplAuto">–</span></div>
-          <a class="metric-link" target="_blank" href="https://www.coinglass.com/pro/i/nupl">เปิด Coinglass ↗</a>
+          <a class="metric-link" target="_blank" href="https://www.coinglass.com/pro/i/nupl" data-en="Open Coinglass ↗">เปิด Coinglass ↗</a>
         </div>
         <div class="metric-display-row">
           <div class="metric-display-value" id="nuplDisplay">–</div>
@@ -2928,7 +3090,7 @@ window.setHeaderStamp();
         </div>
         <div class="metric-zone" id="nuplZone"></div>
         <div class="metric-updated" id="nuplUpdated"></div>
-        <button type="button" class="manual-toggle-btn" id="nuplManualBtn">✏️ กรอกเองชั่วคราว</button>
+        <button type="button" class="manual-toggle-btn" id="nuplManualBtn" data-en="✏️ Enter manually">✏️ กรอกเองชั่วคราว</button>
         <div class="metric-row" id="nuplManualRow" style="display:none;">
           <input type="range" id="nuplRange" min="-0.5" max="1" step="0.01" value="0.5">
           <input type="number" id="nuplNum" min="-0.5" max="1" step="0.01" value="0.5">
@@ -2938,7 +3100,7 @@ window.setHeaderStamp();
       <div class="metric-card">
         <div class="metric-top">
           <div class="metric-name">MVRV Z-Score <span class="auto-badge" id="zAuto">–</span></div>
-          <a class="metric-link" target="_blank" href="https://www.coinglass.com/pro/i/bitcoin-mvrv-zscore">เปิด Coinglass ↗</a>
+          <a class="metric-link" target="_blank" href="https://www.coinglass.com/pro/i/bitcoin-mvrv-zscore" data-en="Open Coinglass ↗">เปิด Coinglass ↗</a>
         </div>
         <div class="metric-display-row">
           <div class="metric-display-value" id="zDisplay">–</div>
@@ -2946,7 +3108,7 @@ window.setHeaderStamp();
         </div>
         <div class="metric-zone" id="zZone"></div>
         <div class="metric-updated" id="zUpdated"></div>
-        <button type="button" class="manual-toggle-btn" id="zManualBtn">✏️ กรอกเองชั่วคราว</button>
+        <button type="button" class="manual-toggle-btn" id="zManualBtn" data-en="✏️ Enter manually">✏️ กรอกเองชั่วคราว</button>
         <div class="metric-row" id="zManualRow" style="display:none;">
           <input type="range" id="zRange" min="-2" max="9" step="0.1" value="3">
           <input type="number" id="zNum" min="-2" max="9" step="0.1" value="3">
@@ -2956,7 +3118,7 @@ window.setHeaderStamp();
       <div class="metric-card">
         <div class="metric-top">
           <div class="metric-name">MVRV Ratio <span class="auto-badge" id="mAuto">–</span></div>
-          <a class="metric-link" target="_blank" href="https://www.coinglass.com/pro/i/mvrv-ratio">เปิด Coinglass ↗</a>
+          <a class="metric-link" target="_blank" href="https://www.coinglass.com/pro/i/mvrv-ratio" data-en="Open Coinglass ↗">เปิด Coinglass ↗</a>
         </div>
         <div class="metric-display-row">
           <div class="metric-display-value" id="mDisplay">–</div>
@@ -2964,7 +3126,7 @@ window.setHeaderStamp();
         </div>
         <div class="metric-zone" id="mZone"></div>
         <div class="metric-updated" id="mUpdated"></div>
-        <button type="button" class="manual-toggle-btn" id="mManualBtn">✏️ กรอกเองชั่วคราว</button>
+        <button type="button" class="manual-toggle-btn" id="mManualBtn" data-en="✏️ Enter manually">✏️ กรอกเองชั่วคราว</button>
         <div class="metric-row" id="mManualRow" style="display:none;">
           <input type="range" id="mRange" min="0.8" max="4.5" step="0.05" value="2">
           <input type="number" id="mNum" min="0.8" max="4.5" step="0.05" value="2">
@@ -2976,12 +3138,12 @@ window.setHeaderStamp();
     <div class="panel ath-panel">
       <div class="ath-stat">
         <div class="num" id="ddBig">—</div>
-        <div class="lbl">ลงมาจาก All-Time High</div>
+        <div class="lbl" data-en="Down from all-time high">ลงมาจาก All-Time High</div>
         <div class="ath-bar"><div class="ath-bar-fill" id="ddBar" style="width:0%"></div></div>
       </div>
       <div class="ath-inputs">
         <div>
-          <label>ราคาปัจจุบัน (USD)</label>
+          <label data-en="Current price (USD)">ราคาปัจจุบัน (USD)</label>
           <input type="number" id="priceInput" placeholder="auto-fetch">
         </div>
         <div>
@@ -2990,10 +3152,14 @@ window.setHeaderStamp();
         </div>
         <div>
           <label>&nbsp;</label>
-          <button type="button" id="useLivePriceBtn" class="tabbtn" style="padding:8px 12px; font-size:12px; border-radius:6px; font-family:var(--mono);">↻ ใช้ราคาสด</button>
+          <button type="button" id="useLivePriceBtn" class="tabbtn" style="padding:8px 12px; font-size:12px; border-radius:6px; font-family:var(--mono);" data-en="↻ Use live price">↻ ใช้ราคาสด</button>
         </div>
       </div>
-      <div style="flex-basis:100%; font-size:11px; color:var(--sub); line-height:1.6;">
+      <div class="i18n-en" lang="en" style="flex-basis:100%; font-size:11px; color:var(--sub); line-height:1.6;">
+        Bonus rule: if the price is more than <span style="color:var(--text)">55%</span> below ATH you get +1.5 points,
+        more than 65% below gives +2.0, and more than 75% below gives +2.5 points (the total is capped at 10).
+      </div>
+      <div class="i18n-th" style="flex-basis:100%; font-size:11px; color:var(--sub); line-height:1.6;">
         กติกาโบนัส: ถ้าราคาลงมามากกว่า <span style="color:var(--text)">55%</span> จาก ATH จะได้ +1.5 คะแนน,
         ถ้าลงมากกว่า 65% ได้ +2.0, และถ้าลงมากกว่า 75% ได้ +2.5 คะแนน (คะแนนรวมสูงสุดไม่เกิน 10)
       </div>
@@ -3001,24 +3167,25 @@ window.setHeaderStamp();
 
     <!-- CHART -->
     <div class="panel chart-panel">
-      <h2>กราฟ BTC/USD (แท่งเทียน)</h2>
-      <div id="tv_chart_container"><div class="chart-loading">กำลังโหลดกราฟ…</div></div>
+      <h2 data-en="BTC/USD chart (candlesticks)">กราฟ BTC/USD (แท่งเทียน)</h2>
+      <div id="tv_chart_container"><div class="chart-loading" data-en="Loading chart…">กำลังโหลดกราฟ…</div></div>
       <div style="font-size:11px; color:var(--sub); line-height:1.6; margin-top:10px;">
-        💡 กด <b>Sign in</b> มุมขวาบนของกราฟด้วยบัญชี TradingView เพื่อเก็บเส้นและอินดิเคเตอร์ที่เพิ่มเองไว้
+        <span class="i18n-th">💡 กด <b>Sign in</b> มุมขวาบนของกราฟด้วยบัญชี TradingView เพื่อเก็บเส้นและอินดิเคเตอร์ที่เพิ่มเองไว้</span>
+        <span class="i18n-en" lang="en">💡 Press <b>Sign in</b> at the top right of the chart with a TradingView account to keep the lines and indicators you add.</span>
       </div>
     </div>
 
     <!-- SENTIMENT & LEVERAGE -->
     <div class="panel chart-panel">
-      <h2>Sentiment & Leverage <span style="color:var(--sub); font-weight:400; text-transform:none; letter-spacing:0;">— มุมมองสไตล์ Michael Burry: valuation ถูกอย่างเดียวไม่พอ ต้องดูด้วยว่าตลาด "เก็ง" หนักแค่ไหน</span></h2>
+      <h2>Sentiment & Leverage <span style="color:var(--sub); font-weight:400; text-transform:none; letter-spacing:0;" data-en="— Michael Burry-style view: cheap valuation is not enough, you also need to see how speculative the market is">— มุมมองสไตล์ Michael Burry: valuation ถูกอย่างเดียวไม่พอ ต้องดูด้วยว่าตลาด "เก็ง" หนักแค่ไหน</span></h2>
       <div class="sl-grid">
         <div class="sl-tile">
           <div class="sl-name">Fear & Greed Index</div>
           <div class="sl-num" id="fngNum">–</div>
-          <div class="sl-sub" id="fngLabel">กำลังโหลด…</div>
+          <div class="sl-sub" id="fngLabel" data-en="Loading…">กำลังโหลด…</div>
         </div>
         <div class="sl-tile">
-          <div class="sl-name">Funding Rate (perp, 8ชม.)</div>
+          <div class="sl-name" data-en="Funding Rate (perp, 8h)">Funding Rate (perp, 8ชม.)</div>
           <div class="sl-num" id="fundingNum">–</div>
           <div class="sl-sub" id="fundingLabel">Binance BTCUSDT</div>
         </div>
@@ -3028,7 +3195,12 @@ window.setHeaderStamp();
           <div class="sl-sub" id="oiLabel">Binance BTCUSDT futures</div>
         </div>
       </div>
-      <div style="font-size:11px; color:var(--sub); line-height:1.6; margin-top:14px;">
+      <div class="i18n-en" lang="en" style="font-size:11px; color:var(--sub); line-height:1.6; margin-top:14px;">
+        How to read: very low (&lt;20) or very high (&gt;80) Fear&amp;Greed often marks a turning point (contrarian) ·
+        a persistently high positive Funding Rate = crowded leveraged longs, ready to be liquidated en masse if price turns ·
+        Open Interest rising faster than price = heavy leverage, fragile to volatility
+      </div>
+      <div class="i18n-th" style="font-size:11px; color:var(--sub); line-height:1.6; margin-top:14px;">
         อ่านค่า: Fear&Greed ต่ำมาก (&lt;20) หรือสูงมาก (&gt;80) มักเป็นจุดกลับตัว (contrarian) ·
         Funding Rate เป็นบวกสูงต่อเนื่อง = คนแห่ leverage long พร้อมโดน liquidate ยกแผงถ้าราคาหักหัว ·
         Open Interest พุ่งเร็วกว่าราคา = ตลาดใช้เลเวอเรจสูง เปราะบางต่อความผันผวน
@@ -3040,28 +3212,30 @@ window.setHeaderStamp();
       <div>
         <h2 style="margin-bottom:0;">Bitcoin Halving Countdown</h2>
         <div class="halving-days" id="halvingDays">–</div>
-        <div class="halving-label">วันก่อนถึงรอบ Halving ถัดไป</div>
+        <div class="halving-label" data-en="days until the next halving">วันก่อนถึงรอบ Halving ถัดไป</div>
       </div>
       <div class="halving-meta">
         <div>Target block: <b style="color:var(--text);">1,050,000</b></div>
-        <div id="halvingBlockInfo">กำลังดึง block height ปัจจุบัน…</div>
-        <div style="margin-top:4px; opacity:0.7;">วันที่เป็นค่าประมาณ</div>
+        <div id="halvingBlockInfo" data-en="Fetching current block height…">กำลังดึง block height ปัจจุบัน…</div>
+        <div style="margin-top:4px; opacity:0.7;" data-en="Date is an estimate">วันที่เป็นค่าประมาณ</div>
       </div>
     </div>
 
   </div>
 
   <footer>
-    <div class="status" id="status">กำลังโหลด…</div>
+    <div class="status" id="status" data-en="Loading…">กำลังโหลด…</div>
     <div style="display:flex; gap:8px;">
-      <button id="refreshBtn">🔄 รีเฟรชทั้งหมด</button>
+      <button id="refreshBtn" data-en="🔄 Refresh all">🔄 รีเฟรชทั้งหมด</button>
     </div>
   </footer>
 
 </div>
 
 <script>
+if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data-en ของแท็บ BTC
 (function(){
+  const tr = window.tr || ((th) => th);
 
   // ---------- interpolation helper ----------
   // points: array of [value, score], sorted by value ascending. score 10 = most attractive to buy.
@@ -3084,24 +3258,24 @@ window.setHeaderStamp();
   const MVRV_POINTS  = [[0.8,10],[1,9],[1.5,7],[2,5.5],[2.5,4],[3.5,2],[4.5,1]];
 
   function nuplZoneLabel(v){
-    if(v<0) return 'Capitulation — โซนตื่นตระหนก';
-    if(v<0.25) return 'Hope / Fear — เริ่มมีความหวัง';
-    if(v<0.5) return 'Optimism / Belief — เชื่อมั่น';
-    if(v<0.75) return 'Belief / Denial — มั่นใจสูง';
-    return 'Euphoria / Greed — คลั่งไคล้ (เสี่ยง)';
+    if(v<0) return tr('Capitulation — โซนตื่นตระหนก', 'Capitulation');
+    if(v<0.25) return tr('Hope / Fear — เริ่มมีความหวัง', 'Hope / Fear');
+    if(v<0.5) return tr('Optimism / Belief — เชื่อมั่น', 'Optimism / Belief');
+    if(v<0.75) return tr('Belief / Denial — มั่นใจสูง', 'Belief / Denial');
+    return tr('Euphoria / Greed — คลั่งไคล้ (เสี่ยง)', 'Euphoria / Greed (risky)');
   }
   function zZoneLabel(v){
-    if(v<0) return 'Undervalued อย่างมาก';
-    if(v<1) return 'โซนถูก';
-    if(v<3) return 'มูลค่ากลาง (Fair)';
-    if(v<5) return 'เริ่มแพง';
+    if(v<0) return tr('Undervalued อย่างมาก', 'Deeply undervalued');
+    if(v<1) return tr('โซนถูก', 'Cheap zone');
+    if(v<3) return tr('มูลค่ากลาง (Fair)', 'Fair value');
+    if(v<5) return tr('เริ่มแพง', 'Getting expensive');
     if(v<7) return 'Overvalued';
-    return 'Extreme Euphoria (จุดสูงสุดในอดีต)';
+    return tr('Extreme Euphoria (จุดสูงสุดในอดีต)', 'Extreme euphoria (past cycle tops)');
   }
   function mZoneLabel(v){
-    if(v<1) return 'ต่ำกว่าราคาต้นทุนเฉลี่ยของตลาด';
-    if(v<1.5) return 'โซนถูก';
-    if(v<2.5) return 'มูลค่ากลาง (Fair)';
+    if(v<1) return tr('ต่ำกว่าราคาต้นทุนเฉลี่ยของตลาด', 'Below the market\'s average cost basis');
+    if(v<1.5) return tr('โซนถูก', 'Cheap zone');
+    if(v<2.5) return tr('มูลค่ากลาง (Fair)', 'Fair value');
     if(v<3.5) return 'Overvalued';
     return 'Extreme Overvalued';
   }
@@ -3163,7 +3337,7 @@ window.setHeaderStamp();
     btn.addEventListener('click', () => {
       const showing = row.style.display !== 'none';
       row.style.display = showing ? 'none' : 'flex';
-      btn.textContent = showing ? '✏️ กรอกเองชั่วคราว' : '✕ ซ่อนช่องกรอกเอง';
+      btn.textContent = showing ? tr('✏️ กรอกเองชั่วคราว', '✏️ Enter manually') : tr('✕ ซ่อนช่องกรอกเอง', '✕ Hide manual input');
     });
   }
   wireManualToggle('nuplManualBtn', 'nuplManualRow');
@@ -3190,10 +3364,10 @@ window.setHeaderStamp();
   function timeAgo(ts){
     if(!ts) return '';
     const mins = Math.round((Date.now() - ts) / 60000);
-    if(mins < 1) return 'เมื่อสักครู่';
-    if(mins < 60) return mins + ' นาทีที่แล้ว';
+    if(mins < 1) return tr('เมื่อสักครู่', 'just now');
+    if(mins < 60) return mins + tr(' นาทีที่แล้ว', ' min ago');
     const hrs = Math.round(mins / 60);
-    return hrs + ' ชม.ที่แล้ว';
+    return hrs + tr(' ชม.ที่แล้ว', 'h ago');
   }
 
   function recompute(){
@@ -3251,11 +3425,11 @@ window.setHeaderStamp();
     scoreNumber.style.color = scoreColor(final);
 
     let verdictText, verdictColor;
-    if(final>=8){ verdictText='โซนน่าซื้อมาก (Strong Buy Zone)'; verdictColor='var(--green)'; }
-    else if(final>=6.5){ verdictText='น่าสนใจทยอยซื้อ (Accumulate)'; verdictColor='var(--green)'; }
-    else if(final>=4){ verdictText='กลาง ๆ รอจังหวะ (Neutral)'; verdictColor='var(--amber)'; }
-    else if(final>=2.5){ verdictText='เริ่มแพง ระวัง (Caution)'; verdictColor='var(--red)'; }
-    else{ verdictText='โซนความโลภสูง (Euphoria — เสี่ยงสูง)'; verdictColor='var(--red)'; }
+    if(final>=8){ verdictText=tr('โซนน่าซื้อมาก (Strong Buy Zone)', 'Strong Buy Zone'); verdictColor='var(--green)'; }
+    else if(final>=6.5){ verdictText=tr('น่าสนใจทยอยซื้อ (Accumulate)', 'Accumulate'); verdictColor='var(--green)'; }
+    else if(final>=4){ verdictText=tr('กลาง ๆ รอจังหวะ (Neutral)', 'Neutral, wait for a better entry'); verdictColor='var(--amber)'; }
+    else if(final>=2.5){ verdictText=tr('เริ่มแพง ระวัง (Caution)', 'Getting expensive (Caution)'); verdictColor='var(--red)'; }
+    else{ verdictText=tr('โซนความโลภสูง (Euphoria — เสี่ยงสูง)', 'Euphoria zone (high risk)'); verdictColor='var(--red)'; }
     verdict.textContent = verdictText;
     verdict.style.borderColor = verdictColor;
     verdict.style.color = verdictColor;
@@ -3264,9 +3438,9 @@ window.setHeaderStamp();
       <div><span>NUPL score</span><span class="v">${sNupl.toFixed(1)}</span></div>
       <div><span>MVRV Z-Score score</span><span class="v">${sZ.toFixed(1)}</span></div>
       <div><span>MVRV Ratio score</span><span class="v">${sM.toFixed(1)}</span></div>
-      <div><span>ค่าเฉลี่ย 3 ตัวชี้วัด</span><span class="v">${avg.toFixed(1)}</span></div>
-      <div><span>โบนัส ATH drawdown</span><span class="v">+${bonus.toFixed(1)}</span></div>
-      <div><span>รวมสุดท้าย</span><span class="v">${final.toFixed(1)} / 10${Math.abs(rawTotal - final) > 0.05 ? ' <span class="muted">(ก่อนจำกัดเพดาน ' + rawTotal.toFixed(1) + ')</span>' : ''}</span></div>
+      <div><span>${tr('ค่าเฉลี่ย 3 ตัวชี้วัด', 'Average of 3 metrics')}</span><span class="v">${avg.toFixed(1)}</span></div>
+      <div><span>${tr('โบนัส ATH drawdown', 'ATH drawdown bonus')}</span><span class="v">+${bonus.toFixed(1)}</span></div>
+      <div><span>${tr('รวมสุดท้าย', 'Final score')}</span><span class="v">${final.toFixed(1)} / 10${Math.abs(rawTotal - final) > 0.05 ? ' <span class="muted">(' + tr('ก่อนจำกัดเพดาน ', 'before cap ') + rawTotal.toFixed(1) + ')</span>' : ''}</span></div>
     `;
   }
 
@@ -3335,10 +3509,10 @@ window.setHeaderStamp();
     useLivePriceBtn.addEventListener('click', async ()=>{
       delete priceInput.dataset.manual;
       delete athInput.dataset.manual;
-      useLivePriceBtn.textContent = '⏳ กำลังดึงราคาสด…';
+      useLivePriceBtn.textContent = tr('⏳ กำลังดึงราคาสด…', '⏳ Fetching live price…');
       const ok = await fetchPrice();
-      useLivePriceBtn.textContent = ok ? '↻ ใช้ราคาสด' : '↻ ลองใหม่';
-      if(!ok) statusEl.textContent = 'ดึงราคาสดไม่สำเร็จ — ลองกด "รีเฟรชทั้งหมด" อีกครั้ง';
+      useLivePriceBtn.textContent = ok ? tr('↻ ใช้ราคาสด', '↻ Use live price') : tr('↻ ลองใหม่', '↻ Try again');
+      if(!ok) statusEl.textContent = tr('ดึงราคาสดไม่สำเร็จ — ลองกด "รีเฟรชทั้งหมด" อีกครั้ง', 'Couldn\'t fetch the live price. Try "Refresh all" again.');
       recompute(); save();
     });
   }
@@ -3406,7 +3580,7 @@ window.setHeaderStamp();
           const json = await r.json();
           const v = extractLatestValue(json);
           if(v!=null && !isNaN(v)){ logAttempt(slug, url, 'OK (direct) → ' + v); return v; }
-          logAttempt(slug, url, 'OK แต่ parse ค่าไม่ได้ (' + JSON.stringify(json).slice(0,120) + ')');
+          logAttempt(slug, url, tr('OK แต่ parse ค่าไม่ได้ (', 'OK but could not parse a value (') + JSON.stringify(json).slice(0,120) + ')');
         }else{
           logAttempt(slug, url, 'HTTP ' + r.status + ' (direct)');
         }
@@ -3423,12 +3597,12 @@ window.setHeaderStamp();
           const json2 = await r2.json();
           const v2 = extractLatestValue(json2);
           if(v2!=null && !isNaN(v2)){ logAttempt(slug, proxyUrl, 'OK (via proxy) → ' + v2); return v2; }
-          logAttempt(slug, proxyUrl, 'OK (proxy) แต่ parse ค่าไม่ได้');
+          logAttempt(slug, proxyUrl, tr('OK (proxy) แต่ parse ค่าไม่ได้', 'OK (proxy) but could not parse a value'));
         }else{
           logAttempt(slug, proxyUrl, 'HTTP ' + r2.status + ' (proxy)');
         }
       }catch(e2){
-        logAttempt(slug, proxyUrl, 'proxy ก็ล้มเหลว: ' + e2.message);
+        logAttempt(slug, proxyUrl, tr('proxy ก็ล้มเหลว: ', 'proxy failed too: ') + e2.message);
       }
     }
     return null;
@@ -3459,10 +3633,10 @@ window.setHeaderStamp();
         const why = (j && j.error) ? j.error + (j.details && j.details.length ? ' — ' + j.details.join(' | ') : '') : 'no value in response';
         throw new Error(why);
       }
-      logAttempt(key, url, 'OK (เซิร์ฟเวอร์' + (j.cached ? ' · แคช' : '') + (j.stale ? ' · ค่าเก่า' : '') + ') → ' + v);
+      logAttempt(key, url, 'OK (' + tr('เซิร์ฟเวอร์', 'server') + (j.cached ? tr(' · แคช', ' · cached') : '') + (j.stale ? tr(' · ค่าเก่า', ' · stale') : '') + ') → ' + v);
       return v;
     }catch(e){
-      logAttempt(key, url, 'เซิร์ฟเวอร์ดึงไม่ได้: ' + e.message);
+      logAttempt(key, url, tr('เซิร์ฟเวอร์ดึงไม่ได้: ', 'server fetch failed: ') + e.message);
       return null;
     }
   }
@@ -3494,7 +3668,7 @@ window.setHeaderStamp();
       if(cached && (Date.now() - cached.ts) < CACHE_TTL_MS){
         applyFn(cached.value);
         setBadge(key + 'Auto', true, cached.ts);
-        logAttempt(key, '(cache)', 'ใช้ค่าแคช อายุ ' + Math.round((Date.now()-cached.ts)/60000) + ' นาที ไม่ยิง request ใหม่');
+        logAttempt(key, '(cache)', tr('ใช้ค่าแคช อายุ ' + Math.round((Date.now()-cached.ts)/60000) + ' นาที ไม่ยิง request ใหม่', 'using cached value, ' + Math.round((Date.now()-cached.ts)/60000) + ' min old, no new request'));
         return true;
       }
     }
@@ -3512,10 +3686,10 @@ window.setHeaderStamp();
     if(stale){
       applyFn(stale.value);
       setBadge(key + 'Auto', 'stale', stale.ts);
-      logAttempt(key, '(fallback)', 'ดึงใหม่ล้มเหลว ใช้ค่าเก่าจาก ' + new Date(stale.ts).toLocaleString());
+      logAttempt(key, '(fallback)', tr('ดึงใหม่ล้มเหลว ใช้ค่าเก่าจาก ', 'refetch failed, using stale value from ') + new Date(stale.ts).toLocaleString());
       return true;
     }
-    logAttempt(key, '(fallback)', 'ดึงใหม่ล้มเหลว และไม่มีค่าแคชเก่าเลย (ไม่เคยดึงสำเร็จมาก่อนสำหรับตัวนี้)');
+    logAttempt(key, '(fallback)', tr('ดึงใหม่ล้มเหลว และไม่มีค่าแคชเก่าเลย (ไม่เคยดึงสำเร็จมาก่อนสำหรับตัวนี้)', 'refetch failed and there is no cached value (never fetched successfully for this metric)'));
     setBadge(key + 'Auto', false);
     return false;
   }
@@ -3542,22 +3716,22 @@ window.setHeaderStamp();
     const updatedEl = el(metricKey + 'Updated');
 
     if(state === true){
-      b.textContent = 'อัตโนมัติ ✓'; b.className = 'auto-badge ok';
-      if(updatedEl) updatedEl.textContent = 'อัปเดต ' + timeAgo(ts);
+      b.textContent = tr('อัตโนมัติ ✓', 'Auto ✓'); b.className = 'auto-badge ok';
+      if(updatedEl) updatedEl.textContent = tr('อัปเดต ', 'Updated ') + timeAgo(ts);
       if(manualRow) manualRow.style.display = 'none';
-      if(manualBtn) manualBtn.textContent = '✏️ กรอกเองชั่วคราว';
+      if(manualBtn) manualBtn.textContent = tr('✏️ กรอกเองชั่วคราว', '✏️ Enter manually');
     }else if(state === 'stale'){
-      b.textContent = 'ใช้ค่าเก่า'; b.className = 'auto-badge';
-      if(updatedEl) updatedEl.textContent = 'ดึงใหม่ไม่สำเร็จ — ใช้ค่าจากเมื่อ ' + timeAgo(ts);
+      b.textContent = tr('ใช้ค่าเก่า', 'Stale'); b.className = 'auto-badge';
+      if(updatedEl) updatedEl.textContent = tr('ดึงใหม่ไม่สำเร็จ — ใช้ค่าจากเมื่อ ', 'Refresh failed, using the value from ') + timeAgo(ts);
       if(manualRow) manualRow.style.display = 'none';
     }else if(state === null){
       b.textContent = '…'; b.className = 'auto-badge';
     }else{
-      b.textContent = 'ดึงไม่สำเร็จ'; b.className = 'auto-badge fail';
+      b.textContent = tr('ดึงไม่สำเร็จ', 'Failed'); b.className = 'auto-badge fail';
       if(updatedEl) updatedEl.textContent = '';
       // auto-reveal the manual fallback so there's still a usable number for the score
       if(manualRow) manualRow.style.display = 'flex';
-      if(manualBtn) manualBtn.textContent = '✕ ซ่อนช่องกรอกเอง';
+      if(manualBtn) manualBtn.textContent = tr('✕ ซ่อนช่องกรอกเอง', '✕ Hide manual input');
     }
   }
 
@@ -3611,12 +3785,12 @@ window.setHeaderStamp();
         el('fngNum').textContent = v;
         el('fngNum').style.color = v>=75 ? 'var(--red)' : v<=25 ? 'var(--green)' : 'var(--amber)';
         el('fngLabel').textContent = cls || '';
-        el('fngLabel').title = 'อัปเดตอัตโนมัติจาก ' + src + ' · ' + new Date().toLocaleTimeString('th-TH');
+        el('fngLabel').title = tr('อัปเดตอัตโนมัติจาก ', 'Auto-updated from ') + src + ' · ' + new Date().toLocaleTimeString(window.GI_LOCALE || 'th-TH');
         fngDone = true;
         break;
       }catch(e){ /* try next source */ }
     }
-    if(!fngDone) el('fngLabel').textContent = 'ดึงไม่สำเร็จ';
+    if(!fngDone) el('fngLabel').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable');
 
     try{
       const r = await fetchWithTimeout('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT', 5000);
@@ -3624,8 +3798,8 @@ window.setHeaderStamp();
       const fr = parseFloat(j.lastFundingRate) * 100;
       el('fundingNum').textContent = (fr>=0?'+':'') + fr.toFixed(4) + '%';
       el('fundingNum').style.color = Math.abs(fr) > 0.03 ? 'var(--red)' : 'var(--green)';
-      el('fundingLabel').textContent = Math.abs(fr) > 0.03 ? 'สูงผิดปกติ — เลเวอเรจฝั่งเดียวหนาแน่น' : 'ปกติ';
-    }catch(e){ el('fundingLabel').textContent = 'ดึงไม่สำเร็จ'; }
+      el('fundingLabel').textContent = Math.abs(fr) > 0.03 ? tr('สูงผิดปกติ — เลเวอเรจฝั่งเดียวหนาแน่น', 'Unusually high: crowded one-sided leverage') : tr('ปกติ', 'Normal');
+    }catch(e){ el('fundingLabel').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable'); }
 
     // Open Interest — aggregated across ALL exchanges (not just Binance), using CoinGecko's
     // free public /derivatives endpoint (no key needed). It lists every BTC perpetual/futures
@@ -3654,8 +3828,8 @@ window.setHeaderStamp();
         : '$' + totalUsd.toLocaleString(undefined,{maximumFractionDigits:0});
 
       const top3 = Object.entries(byExchange).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([name])=>name);
-      el('oiLabel').textContent = 'รวม ' + Object.keys(byExchange).length + ' ตลาด (' + top3.join(', ') + ' ...)';
-    }catch(e){ el('oiLabel').textContent = 'ดึงไม่สำเร็จ'; }
+      el('oiLabel').textContent = tr('รวม ' + Object.keys(byExchange).length + ' ตลาด (', 'Across ' + Object.keys(byExchange).length + ' exchanges (') + top3.join(', ') + ' ...)';
+    }catch(e){ el('oiLabel').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable'); }
   }
 
   // ---------- Bitcoin Halving Countdown ----------
@@ -3672,7 +3846,7 @@ window.setHeaderStamp();
     const now = new Date();
     const days = Math.max(0, Math.ceil((HALVING_ESTIMATED_DATE - now) / 86400000));
     el('halvingDays').textContent = days.toLocaleString();
-    el('halvingBlockInfo').textContent = 'ประมาณการจากวันที่ (~17 เม.ย. 2028) · block เป้าหมาย 1,050,000';
+    el('halvingBlockInfo').textContent = tr('ประมาณการจากวันที่ (~17 เม.ย. 2028) · block เป้าหมาย 1,050,000', 'Estimated from the date (~17 Apr 2028) · target block 1,050,000');
   }
 
   async function refineHalvingFromBlockHeight(){
@@ -3683,7 +3857,7 @@ window.setHeaderStamp();
         const c = JSON.parse(raw);
         if(c.date === today){
           el('halvingDays').textContent = c.days.toLocaleString();
-          el('halvingBlockInfo').textContent = 'Block ปัจจุบัน: ' + c.height.toLocaleString() + ' · เหลืออีก ' + c.blocksRemaining.toLocaleString() + ' บล็อก';
+          el('halvingBlockInfo').textContent = tr('Block ปัจจุบัน: ', 'Current block: ') + c.height.toLocaleString() + tr(' · เหลืออีก ', ' · ') + c.blocksRemaining.toLocaleString() + tr(' บล็อก', ' blocks to go');
           return; // already refined today, no need to hit the network again
         }
       }
@@ -3697,7 +3871,7 @@ window.setHeaderStamp();
       const blocksRemaining = Math.max(0, HALVING_BLOCK - height);
       const days = Math.ceil((blocksRemaining * 600) / 86400);
       el('halvingDays').textContent = days.toLocaleString();
-      el('halvingBlockInfo').textContent = 'Block ปัจจุบัน: ' + height.toLocaleString() + ' · เหลืออีก ' + blocksRemaining.toLocaleString() + ' บล็อก';
+      el('halvingBlockInfo').textContent = tr('Block ปัจจุบัน: ', 'Current block: ') + height.toLocaleString() + tr(' · เหลืออีก ', ' · ') + blocksRemaining.toLocaleString() + tr(' บล็อก', ' blocks to go');
       await storageSet('halving-cache', JSON.stringify({ date: today, height, blocksRemaining, days }));
     }catch(e){
       // timeout or network error — silently keep the date-math estimate already shown, no error message needed
@@ -3710,20 +3884,20 @@ window.setHeaderStamp();
   }
 
   async function refreshAll(force){
-    statusEl.textContent = 'กำลังอัปเดต…';
+    statusEl.textContent = tr('กำลังอัปเดต…', 'Updating…');
     const priceOk = await fetchPrice(); // must resolve first: OI conversion below needs a live price
     const [metricsOk] = await Promise.all([fetchOnChainMetrics(force), fetchSentimentLeverage(), fetchHalvingCountdown()]);
     recompute();
     save();
     // บอกให้ชัดเมื่อค่าที่ใช้คำนวณไม่ใช่ราคาสด (ผู้ใช้พิมพ์เอง) — ไม่งั้นจะเข้าใจผิดว่าคะแนนมาจากราคาตลาด
     const manualNote = (priceInput.dataset.manual === '1' || athInput.dataset.manual === '1')
-      ? ' · ใช้ราคา/ATH ที่คุณกรอกเอง' : '';
+      ? tr(' · ใช้ราคา/ATH ที่คุณกรอกเอง', ' · using the price/ATH you entered') : '';
     if(priceOk && metricsOk){
-      statusEl.textContent = 'อัปเดต ' + new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' }) + manualNote;
+      statusEl.textContent = tr('อัปเดต ', 'Updated ') + new Date().toLocaleTimeString(window.GI_LOCALE || 'th-TH', { hour:'2-digit', minute:'2-digit' }) + manualNote;
     }else if(priceOk){
-      statusEl.textContent = 'ตัวชี้วัด on-chain ยังอัปเดตไม่ได้ — กรอกเองได้ด้านบน' + manualNote;
+      statusEl.textContent = tr('ตัวชี้วัด on-chain ยังอัปเดตไม่ได้ — กรอกเองได้ด้านบน', 'On-chain metrics couldn\'t update. You can enter them above.') + manualNote;
     }else{
-      statusEl.textContent = 'อัปเดตข้อมูลไม่ได้ในขณะนี้ — กรอกค่าเองได้ด้านบน' + manualNote;
+      statusEl.textContent = tr('อัปเดตข้อมูลไม่ได้ในขณะนี้ — กรอกค่าเองได้ด้านบน', 'Can\'t update data right now. You can enter values above.') + manualNote;
     }
   }
 
@@ -3825,7 +3999,7 @@ window.setHeaderStamp();
           timezone: 'Etc/UTC',
           theme: 'dark',
           style: '1', // candles
-          locale: 'th',
+          locale: window.GI_LANG === 'en' ? 'en' : 'th',
           toolbar_bg: '#0c1019',
           backgroundColor: '#0a0d15',   // ให้กลืนกับธีมการ์ด
           gridColor: 'rgba(255,255,255,0.04)',
@@ -3839,11 +4013,11 @@ window.setHeaderStamp();
           container_id: 'tv_chart_container'
         });
       }catch(e){
-        container.innerHTML = '<div class="chart-loading">โหลดกราฟไม่สำเร็จ — ลองรีเฟรชหน้าอีกครั้ง</div>';
+        container.innerHTML = '<div class="chart-loading">' + tr('โหลดกราฟไม่สำเร็จ — ลองรีเฟรชหน้าอีกครั้ง', 'Couldn\'t load the chart. Try reloading the page.') + '</div>';
       }
     };
     script.onerror = () => {
-      container.innerHTML = '<div class="chart-loading">โหลดกราฟไม่สำเร็จ — ลองรีเฟรชหน้าอีกครั้ง</div>';
+      container.innerHTML = '<div class="chart-loading">' + tr('โหลดกราฟไม่สำเร็จ — ลองรีเฟรชหน้าอีกครั้ง', 'Couldn\'t load the chart. Try reloading the page.') + '</div>';
     };
     document.body.appendChild(script);
   }
@@ -3923,7 +4097,7 @@ window.setHeaderStamp();
   <div class="footer-buttons">
     <button type="button" class="footer-btn" id="shareLinkBtn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-      <span id="shareLinkLabel">แชร์ลิงก์</span>
+      <span id="shareLinkLabel" data-en="Share link">แชร์ลิงก์</span>
     </button>
     <a class="footer-btn" href="https://x.com/crypto_doy" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
@@ -3931,13 +4105,15 @@ window.setHeaderStamp();
     </a>
     <a class="footer-btn" href="https://linktr.ee/crypto_doy" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-      <span>ลิงก์ทั้งหมด</span>
+      <span data-en="All links">ลิงก์ทั้งหมด</span>
     </a>
   </div>
-  <div class="disclaimer" style="margin-top:18px;">ข้อมูลเพื่อประกอบการตัดสินใจเท่านั้น ไม่ใช่คำแนะนำการลงทุน</div>
+  <div class="disclaimer" style="margin-top:18px;" data-en="For information only. Not investment advice.">ข้อมูลเพื่อประกอบการตัดสินใจเท่านั้น ไม่ใช่คำแนะนำการลงทุน</div>
 </div>
 <script>
+if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data-en ของ footer
 (function(){
+  const tr = window.tr || ((th) => th);
   const btn = document.getElementById('shareLinkBtn');
   const label = document.getElementById('shareLinkLabel');
   btn.addEventListener('click', async () => {
@@ -3948,7 +4124,7 @@ window.setHeaderStamp();
     try{
       await navigator.clipboard.writeText(url);
       const original = label.textContent;
-      label.textContent = 'คัดลอกแล้ว!';
+      label.textContent = tr('คัดลอกแล้ว!', 'Copied!');
       setTimeout(() => { label.textContent = original; }, 1800);
     }catch(e){
       label.textContent = url;
