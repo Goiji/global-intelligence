@@ -1391,6 +1391,7 @@ window.setHeaderStamp();
   // tab becomes visible again. Only the pre-load placeholders in the markup above are hardcoded.
   const FED_CACHE_KEY = 'fed-data-cache-v3';  // v3: TTL-based cache, adds nfp/coreCpi fields
   const FED_POLL_MS = 10 * 60 * 1000;         // safety-net poll; the server TTL usually decides
+  const FED_TICK_MS = 60 * 1000;              // how often we check whether refreshAfter has passed
   let fedNextFetchAt = 0;
 
   function isValidNum(v){ return typeof v === 'number' && isFinite(v); }
@@ -2410,7 +2411,13 @@ window.setHeaderStamp();
 
   // Keep the cards honest while the tab stays open, and re-check the moment the user comes back
   // to a backgrounded tab — that's usually right after a release landed.
-  setInterval(function(){ refreshFedData(); }, FED_POLL_MS);
+  // เช็กทุกนาที แต่ refreshFedData() จะยิงเน็ตจริงก็ต่อเมื่อถึง `refreshAfter` ของเซิร์ฟเวอร์ — เดิมรอบละ 10 นาที
+  // ทำให้ช่วงรอตัวเลขใหม่ (เซิร์ฟเวอร์ให้ TTL 3 นาที) หน้าเว็บเพิ่งไปเช็กอีกทีหลังผ่านไปถึง 10 นาที
+  let fedLastTickRun = Date.now();
+  setInterval(function(){
+    const t = Date.now();
+    if(t >= fedNextFetchAt || t - fedLastTickRun >= FED_POLL_MS){ fedLastTickRun = t; refreshFedData(); }
+  }, FED_TICK_MS);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) refreshFedData(); });
 
   // ช่องแก้ค่า "ที่คาด" ในหน้าเว็บ (ปุ่ม ✏️) — พร้อมใช้ทันที ไม่ต้องรอข้อมูลจากเซิร์ฟเวอร์
@@ -2800,10 +2807,38 @@ window.setHeaderStamp();
   var CAL_EVENTS = [];
   const NEXT_CAL_KEY = { cpi:'cpi', coreCpi:'cpi', ppi:'ppi', unrate:'jobs', nfp:'jobs', fed:'fomc', claims:'claims', pce:'pce' };
   function dayDiff(a, b){ return Math.round((Date.parse(a + 'T00:00:00Z') - Date.parse(b + 'T00:00:00Z')) / 86400000); }
+  // ตัวเลขรายเดือนที่ประกาศในเดือน M เป็นของเดือน M−1 (CPI/PPI/จ้างงาน/PCE) — ใช้เช็กว่าข้อมูลที่หน้าเว็บมี
+  // ตามรอบที่เพิ่งประกาศทันหรือยัง
+  const MONTHLY_REF_KEYS = { cpi:1, coreCpi:1, ppi:1, unrate:1, nfp:1, pce:1 };
+  const PENDING_GRACE_MS = 36 * 3600e3;
+  function refMonthFor(releaseDate){
+    const m = /^(\d{4})-(\d{2})/.exec(String(releaseDate || ''));
+    if(!m) return null;
+    const d = new Date(Date.UTC(+m[1], +m[2] - 2, 1));
+    return d.toISOString().slice(0, 10);
+  }
+  // รอบที่เวลาประกาศผ่านไปแล้ว (ไม่เกิน 36 ชม.) แต่ตัวเลขในการ์ดยังเป็นของเดือนก่อนหน้า = ยัง "รอตัวเลข"
+  // เดิมพอเลย 20:30 น. บรรทัดนี้ข้ามไปรอบเดือนหน้าทันที ทั้งที่ FRED ยังไม่อัปเดต การ์ดเลยดูเหมือนอัปเดตแล้ว
+  function pendingRelease(key, calKey, now){
+    if(!MONTHLY_REF_KEYS[key]) return null;
+    const field = lastFedPayload && lastFedPayload[key];
+    if(!field || !/^\d{4}-\d{2}-\d{2}$/.test(String(field.date || ''))) return null;
+    return (CAL_EVENTS || [])
+      .filter(e => e && e.key === calKey && e.at && /^\d{4}-\d{2}-\d{2}$/.test(String(e.date || '')))
+      .filter(e => { const t = Date.parse(e.at); return t <= now && t > now - PENDING_GRACE_MS; })
+      .filter(e => { const ref = refMonthFor(e.date); return ref && field.date < ref; })
+      .sort((a, b) => String(b.at).localeCompare(String(a.at)))[0] || null;
+  }
   function nextRelease(key){
     const calKey = NEXT_CAL_KEY[key];
     const now = Date.now();
     const todayUtc = new Date(now).toISOString().slice(0, 10);
+    const pend = pendingRelease(key, calKey, now);
+    if(pend){
+      let pu = LIVE_UPCOMING[key] || null;
+      if(pu && Math.abs(dayDiff(pu.releaseDate, pend.date)) > 1) pu = null;
+      return { date: pend.date, at: pend.at, pending: true, forecast: pu ? pu.forecast : null, previous: pu ? pu.previous : null };
+    }
     // เหตุการณ์ที่ยังไม่ถึงเวลา (ไม่มีเวลา = ถือว่ายังไม่ผ่านจนจบวันนั้น)
     const ev = (CAL_EVENTS || [])
       .filter(e => e && e.key === calKey && /^\d{4}-\d{2}-\d{2}$/.test(String(e.date || '')))
@@ -2844,6 +2879,11 @@ window.setHeaderStamp();
       if(core && isValidNum(core.forecast) && core.date === n.date) fc += ' (Core ' + esc(fmtForecast('coreCpi', core.forecast)) + ')';
     }
     if(opts && opts.withPrev && isValidNum(n.previous)) fc += tr(' · ครั้งก่อน ', ' · previous ') + esc(fmtForecast(key, n.previous));
+    if(n.pending){
+      // ประกาศไปแล้วแต่แหล่งข้อมูล (FRED/BLS) ยังไม่มีตัวเลขใหม่ — บอกตรงๆ แทนการโชว์รอบหน้า
+      if(!isValidNum(n.forecast)) fc = '';
+      return tr('⏳ ประกาศแล้ว ', '⏳ Released ') + esc(w.text) + tr(' · รอตัวเลขใหม่เข้าระบบ', ' · waiting for the new figure') + (fc ? ' · ' + fc : '');
+    }
     return (w.today ? tr('⏰ ประกาศ', '⏰ Release ') : tr('📅 ครั้งถัดไป ', '📅 Next ')) + esc(w.text) + ' · ' + fc;
   }
   function nextReleaseLine(key){
@@ -2858,7 +2898,7 @@ window.setHeaderStamp();
       if(!node) return;
       const h = nextReleaseHtml(key);
       node.innerHTML = h;
-      node.className = 'next' + (h.indexOf('⏰') === 0 ? ' today' : '');
+      node.className = 'next' + (h.indexOf('⏰') === 0 || h.indexOf('⏳') === 0 ? ' today' : '');
     });
   }
   fetchCalendar();
