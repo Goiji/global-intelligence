@@ -1,7 +1,7 @@
 // Netlify Function: US market snapshot + 12-month histories for the dashboard's sparklines.
 //
 //   GET /.netlify/functions/markets
-//   → { series: { sp500, nasdaq100, us10y, us2y, vix, move, sofrSpread, dollar, cpi, unrate, fedUpper }, spread2s10s, asOf, ttl }
+//   → { series: { sp500, nasdaq100, us10y, us2y, vix, move, sofrSpread, dollar, cpi, unrate, fedUpper }, asOf, ttl }
 //     each series: { label, unit, latest, date, prev, change, hist: [[isoDate, value], ...] }
 //
 // Every series comes from FRED. The public graph CSV needs no key; FRED_API_KEY (optional, the
@@ -353,7 +353,6 @@ async function buildPayload(apiKey) {
   if (tnxLive.error) errors.tnxLive = tnxLive.error;
   else if (series.us10y) series.us10y = mergeLive(series.us10y, tnxLive);
   const out = { series, asOf: new Date().toISOString() };
-  if (series.us10y && series.us2y) out.spread2s10s = Math.round((series.us10y.latest - series.us2y.latest) * 100) / 100;
   if (Object.keys(errors).length) out.errors = errors;
   return { data: out, okCount: Object.keys(series).length };
 }
