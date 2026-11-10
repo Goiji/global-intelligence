@@ -1,7 +1,7 @@
 // Netlify Function: US market snapshot + 12-month histories for the dashboard's sparklines.
 //
 //   GET /.netlify/functions/markets
-//   → { series: { sp500, nasdaq100, us10y, us2y, vix, dollar, cpi, unrate, fedUpper }, spread2s10s, asOf, ttl }
+//   → { series: { sp500, nasdaq100, us10y, us2y, vix, move, sofrSpread, dollar, cpi, unrate, fedUpper }, spread2s10s, asOf, ttl }
 //     each series: { label, unit, latest, date, prev, change, hist: [[isoDate, value], ...] }
 //
 // Every series comes from FRED. The public graph CSV needs no key; FRED_API_KEY (optional, the
@@ -16,6 +16,12 @@
 // The dollar is the ICE DXY formula applied to the ECB's daily reference rates (via Frankfurter,
 // out the same afternoon in Europe) — FRED's broad index (DTWEXBGS) is published once a week and
 // ran up to a week behind. FRED's broad index is the fallback if Frankfurter fails.
+// Funding-stress gauges (proxies for repo haircuts, which have no public daily number):
+//   • sofrSpread = SOFR − IORB in basis points, both from FRED, joined by date (IORB carried forward
+//     to each SOFR day). Positive and widening = cash is scarce and repo is tight. The payload also
+//     carries the latest sofr / iorb levels it was built from.
+//   • move = ICE BofA MOVE index (Treasury implied volatility, the "VIX of bonds"). FRED doesn't
+//     carry it, so it comes from Yahoo Finance's chart API (^MOVE, query1 then the query2 mirror).
 //
 // Caching: memory + CDN for 1 h, but only 15 min on CPI / jobs / FOMC days (same calendar as
 // fred-data.js) so the CPI / unemployment / Fed sparklines don't trail the cards for hours after a
@@ -32,6 +38,7 @@ const CBOE_VIX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_VIX.jso
 const CBOE_TNX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_TNX.json';
 const CBOE_SPX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_SPX.json';
 const CBOE_NDX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_NDX.json';
+const YAHOO_MOVE = 'https://query1.finance.yahoo.com/v8/finance/chart/%5EMOVE?interval=1d&range=13mo';
 const TREASURY_CSV = 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/all/';
 const TTL_S = 60 * 60;
 const RELEASE_TTL_S = 15 * 60;
@@ -43,6 +50,8 @@ const SERIES = {
   us10y:    { id: 'DGS10',    label: 'US 10Y', unit: '%', cadence: 'daily' },
   us2y:     { id: 'DGS2',     label: 'US 2Y', unit: '%', cadence: 'daily' },
   vix:      { id: 'VIXCLS',   label: 'VIX', unit: '', cadence: 'daily' },
+  move:     { id: '^MOVE',    label: 'MOVE', unit: '', cadence: 'daily', loader: 'yahoo' },
+  sofrSpread: { id: 'SOFR-IORB', label: 'SOFR − IORB', unit: 'bp', cadence: 'daily', loader: 'sofrSpread' },
   dollar:   { id: 'DTWEXBGS', label: 'Dollar (Broad)', unit: '', cadence: 'daily' },
   cpi:      { id: 'CPIAUCSL', label: 'CPI YoY', unit: '%', cadence: 'monthly', transformation: 'pc1' },
   unrate:   { id: 'UNRATE',   label: 'Unemployment', unit: '%', cadence: 'monthly' },
@@ -123,8 +132,8 @@ function summarize(key, obs) {
   };
 }
 
-async function loadSeries(key, apiKey) {
-  const cfg = SERIES[key];
+// Raw FRED observations (oldest first) for one series id: API with key first, then the public CSV.
+async function fetchFredObs(cfg, apiKey) {
   // monthly YoY needs 2 years of levels behind it; FRED's pc1 transform does that for us.
   const start = daysAgoIso(cfg.cadence === 'monthly' ? 800 : 420);
   const errors = [];
@@ -132,14 +141,82 @@ async function loadSeries(key, apiKey) {
     try {
       const url = `${FRED_API}?series_id=${cfg.id}&api_key=${encodeURIComponent(apiKey)}&file_type=json&observation_start=${start}`
         + (cfg.transformation ? `&units=${cfg.transformation}` : '');
-      return { ...summarize(key, parseApiJson(await fetchText(url))), source: 'fred-api' };
+      const obs = parseApiJson(await fetchText(url));
+      if (obs.length) return { obs, source: 'fred-api' };
+      errors.push('fred-api: no observations');
     } catch (e) { errors.push('fred-api: ' + e.message); }
   }
   try {
     const url = `${FRED_CSV}?id=${cfg.id}&cosd=${start}` + (cfg.transformation ? `&transformation=${cfg.transformation}` : '');
-    return { ...summarize(key, parseCsv(await fetchText(url))), source: 'fred-csv' };
+    const obs = parseCsv(await fetchText(url));
+    if (obs.length) return { obs, source: 'fred-csv' };
+    errors.push('fred-csv: no observations');
   } catch (e) { errors.push('fred-csv: ' + e.message); }
   throw new Error(errors.join(' | '));
+}
+
+async function loadSeries(key, apiKey) {
+  const { obs, source } = await fetchFredObs(SERIES[key], apiKey);
+  return { ...summarize(key, obs), source };
+}
+
+// SOFR − IORB in basis points, one point per SOFR day. IORB only changes on Fed decisions, so the
+// latest IORB on or before each SOFR date is used (a missing IORB day never drops a SOFR print).
+function joinSofrIorb(sofr, iorb) {
+  const out = [];
+  let j = -1;
+  sofr.forEach((s) => {
+    while (j + 1 < iorb.length && iorb[j + 1].date <= s.date) j++;
+    if (j >= 0) out.push({ date: s.date, value: Math.round((s.value - iorb[j].value) * 1000) / 10, sofr: s.value, iorb: iorb[j].value });
+  });
+  return out;
+}
+
+async function loadSofrSpread(apiKey) {
+  const [sofr, iorb] = await Promise.all([
+    fetchFredObs({ id: 'SOFR', cadence: 'daily' }, apiKey),
+    fetchFredObs({ id: 'IORB', cadence: 'daily' }, apiKey)
+  ]);
+  const joined = joinSofrIorb(sofr.obs, iorb.obs);
+  if (!joined.length) throw new Error('sofr/iorb: no overlapping dates');
+  const last = joined[joined.length - 1];
+  return { ...summarize('sofrSpread', joined), sofr: last.sofr, iorb: last.iorb, source: sofr.source };
+}
+
+// Yahoo chart JSON → [{date, value}] of daily closes. Bar timestamps are shifted by the exchange's
+// UTC offset first, so each close lands on the US trading day it belongs to. A live regularMarketPrice
+// newer than the last bar is appended as today's point.
+function parseYahooSeries(text) {
+  const res = (((JSON.parse(text) || {}).chart || {}).result || [])[0];
+  if (!res) throw new Error('yahoo: no result');
+  const m = res.meta || {};
+  const off = isFinite(m.gmtoffset) ? m.gmtoffset : 0;
+  const day = (t) => new Date((t + off) * 1000).toISOString().slice(0, 10);
+  const closes = ((res.indicators && res.indicators.quote && res.indicators.quote[0]) || {}).close || [];
+  const byDay = new Map();
+  (res.timestamp || []).forEach((t, i) => {
+    const v = closes[i];
+    if (v != null && isFinite(v) && v > 0) byDay.set(day(t), v);
+  });
+  const price = parseFloat(m.regularMarketPrice);
+  if (isFinite(price) && price > 0 && isFinite(m.regularMarketTime)) {
+    const d = day(m.regularMarketTime);
+    const lastDay = [...byDay.keys()].sort().pop();
+    if (!lastDay || d >= lastDay) byDay.set(d, price);
+  }
+  return [...byDay.entries()].map(([date, value]) => ({ date, value })).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+async function loadMove() {
+  const errors = [];
+  for (const url of [YAHOO_MOVE, YAHOO_MOVE.replace('//query1.', '//query2.')]) {
+    try {
+      const obs = parseYahooSeries(await fetchText(url));
+      if (obs.length) return { ...summarize('move', obs), source: 'yahoo' };
+      errors.push('yahoo: no observations');
+    } catch (e) { errors.push(e.message); }
+  }
+  throw new Error('move: ' + errors.join(' | '));
 }
 
 // Cboe delayed quote → { value, change, date, time }. last_trade_time is US Eastern wall-clock time,
@@ -246,6 +323,8 @@ async function buildPayload(apiKey) {
   const [results, vixLive, tnxLive, curve, spxLive, ndxLive] = await Promise.all([
     Promise.allSettled(keys.map((k) => (k === 'dollar'
       ? loadDxy().catch((e) => loadSeries(k, apiKey).then((s) => ({ ...s, dxyError: e.message })))
+      : SERIES[k].loader === 'yahoo' ? loadMove()
+      : SERIES[k].loader === 'sofrSpread' ? loadSofrSpread(apiKey)
       : loadSeries(k, apiKey)))),
     loadVixLive().catch((e) => ({ error: e.message })),
     loadTnxLive().catch((e) => ({ error: e.message })),
@@ -311,4 +390,4 @@ exports.handler = async function () {
   }
 };
 
-module.exports.__test = { parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, SERIES };
+module.exports.__test = { parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, SERIES };

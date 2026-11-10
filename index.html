@@ -398,6 +398,19 @@ body{margin:0}
   .mkt .num{font-size:24px}
   .mkt .delta{font-size:11px;font-weight:600;margin-left:6px}
   .mkt .zone{font-size:11px;color:var(--muted);margin-top:2px}
+  .mkt{position:relative;display:flex;flex-direction:column}
+  /* ⓘ คำอธิบาย (hover บนคอม · แตะบนมือถือ) + ปุ่มเปิดกราฟใน TradingView */
+  .tip{position:static;display:inline-block;vertical-align:middle;margin-left:4px}
+  .tip-btn{width:17px;height:17px;padding:0;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font:600 10px/15px system-ui,sans-serif;cursor:help}
+  .tip-btn:hover,.tip-btn:focus-visible,.tip.open .tip-btn{color:var(--accent-hi);border-color:var(--gold-line);outline:none}
+  .tip-pop{display:none;position:absolute;z-index:20;left:-1px;right:-1px;top:34px;padding:12px 13px;border-radius:12px;background:var(--panel);border:1px solid var(--gold-line);box-shadow:0 10px 28px rgba(0,0,0,.55);font-size:12px;line-height:1.6;color:var(--text);letter-spacing:0;text-transform:none;font-weight:400}
+  .tip-pop b{color:var(--accent-hi);font-weight:600}
+  .tip-pop p{margin:0 0 6px}.tip-pop p:last-child{margin:0}
+  .tip:hover .tip-pop,.tip.open .tip-pop{display:block}
+  .tv-btn{align-self:flex-start;margin-top:auto;padding-top:8px;font-size:11px;color:var(--accent-hi);text-decoration:none;white-space:nowrap}
+  .tv-btn span{display:inline-block;border:1px solid var(--gold-line);border-radius:999px;padding:2px 9px}
+  .tv-btn:hover span,.tv-btn:focus-visible span{background:rgba(212,178,106,.12)}
+  @media(max-width:800px){ .tip-pop{position:fixed;left:16px;right:16px;top:auto;bottom:16px;max-height:70vh;overflow:auto} }
   /* economic calendar */
   .cal-list{display:flex;flex-direction:column}
   .cal-item{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:12px 2px;border-bottom:1px solid var(--line-soft)}
@@ -514,6 +527,19 @@ body{margin:0}
   <div class="metric mkt"><div class="name">บอนด์สหรัฐ 2 ปี</div><div class="num" id="mkUs2y">–</div><div class="spark" id="spUs2y"></div></div>
   <div class="metric mkt"><div class="name">ส่วนต่าง 10 ปี − 2 ปี</div><div class="num" id="mkSpread">–</div><div class="zone" id="mkSpreadZone"></div></div>
   <div class="metric mkt"><div class="name">VIX ดัชนีความกลัว</div><div class="num" id="mkVix">–</div><div class="spark" id="spVix"></div><div class="zone" id="mkVixZone"></div></div>
+  <div class="metric mkt"><div class="name">MOVE ความผันผวนบอนด์ <div class="tip"><button type="button" class="tip-btn" aria-label="MOVE คืออะไร" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <p><b>MOVE Index</b> คือ "VIX ของตลาดบอนด์" วัดความผันผวนที่ตลาดคาดของพันธบัตรรัฐบาลสหรัฐฯ ใน 1 เดือนข้างหน้า (คำนวณจากราคา option ของบอนด์ 2, 5, 10, 30 ปี)</p>
+    <p><b>อ่านค่า:</b> 🟢 ต่ำกว่า 80 สงบ · 🟡 80–110 ปกติ · 🟠 110–140 กังวล · 🔴 140 ขึ้นไป ตึงเครียด (ช่วง SVB ล้ม มี.ค. 2023 พุ่งเกือบ 200)</p>
+    <p><b>ทำไมสำคัญ:</b> บอนด์คือหลักประกันหลักในตลาด repo พอบอนด์ผันผวนแรง ผู้ให้กู้จะขึ้น haircut (ให้กู้ได้น้อยลงต่อหลักประกันเท่าเดิม) สภาพคล่องในระบบเลยหดตัว MOVE จึงมักขยับนำ haircut และนำ VIX</p>
+  </div></div></div><div class="num" id="mkMove">–</div><div class="spark" id="spMove"></div><div class="zone" id="mkMoveZone"></div>
+    <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3AMOVE" target="_blank" rel="noopener noreferrer"><span>เปิดใน TradingView ↗</span></a></div>
+  <div class="metric mkt"><div class="name">SOFR − IORB (ตลาด repo) <div class="tip"><button type="button" class="tip-btn" aria-label="SOFR − IORB คืออะไร" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <p><b>SOFR</b> = ดอกเบี้ยกู้ข้ามคืนโดยเอาพันธบัตรสหรัฐฯ ค้ำ (ตลาด repo) คือต้นทุนเงินสดจริงในระบบ · <b>IORB</b> = ดอกเบี้ยที่ Fed จ่ายให้เงินสำรองที่ธนาคารฝากไว้</p>
+    <p><b>อ่านค่า (SOFR ลบ IORB):</b> 🟢 ติดลบ เงินสดล้นระบบ · 🟡 0 ถึง +5 bp เริ่มตึง · 🟠 +5 ถึง +15 bp repo ตึงตัว · 🔴 เกิน +15 bp ตึงหนัก</p>
+    <p><b>ค่าเป็นบวกและถ่างขึ้น</b> แปลว่าคนต้องยอมจ่ายแพงกว่าที่ Fed ให้เพื่อหาเงินสดมาถือบอนด์ ถ้าตึงมาก haircut มักโดนปรับขึ้นตาม (ก.ย. 2019 SOFR พุ่งเกิน 5% ในวันเดียวจน Fed ต้องอัดฉีดเงิน)</p>
+    <p>ช่วงสิ้นเดือน สิ้นไตรมาส หรือวันจ่ายภาษี spread กระโดดชั่วคราวได้เป็นเรื่องปกติ ให้ดูว่าค้างอยู่สูงหลายวันหรือไม่ · ข้อมูลจาก FRED ประกาศเช้าวันทำการถัดไป</p>
+  </div></div></div><div class="num" id="mkSofr">–</div><div class="spark" id="spSofr"></div><div class="zone" id="mkSofrZone"></div>
+    <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3ASOFR-FRED%3AIORB" target="_blank" rel="noopener noreferrer"><span>เปิดใน TradingView ↗</span></a></div>
   <div class="metric mkt"><div class="name" id="mkDollarName">ดัชนีดอลลาร์ (DXY)</div><div class="num" id="mkDollar">–</div><div class="spark" id="spDollar"></div></div>
 </div>
 <div class="muted" id="mktNote" style="font-size:11px; margin-top:10px;">กราฟเล็ก = ย้อนหลัง 12 เดือน</div>
@@ -2460,6 +2486,24 @@ window.setHeaderStamp();
         if(S.vix.source === 'cboe' && S.vix.time) el('mkVixZone').textContent += ' · ' + thDay(S.vix.date).replace(/ \d{4}$/, '') + ' ' + S.vix.time.slice(11, 16) + ' NY';
         setSpark('spVix', S.vix, { upIsBad:true });
       }
+      // MOVE: ความผันผวนบอนด์ (ตัวนำของ haircut ในตลาด repo)
+      if(S.move && isValidNum(S.move.latest)){
+        const m = S.move.latest;
+        el('mkMove').innerHTML = esc(m.toFixed(2)) + (isValidNum(S.move.change) ? '<span class="delta ' + (S.move.change > 0 ? 'down' : S.move.change < 0 ? 'up' : 'flat') + '">' + (S.move.change > 0 ? '+' : '') + S.move.change.toFixed(2) + '</span>' : '');
+        el('mkMoveZone').textContent = (m >= 140 ? '🔴 บอนด์ตึงเครียด' : m >= 110 ? '🟠 กังวล' : m >= 80 ? '🟡 ปกติ' : '🟢 สงบ') + ' · ปิด ' + thDay(S.move.date);
+        setSpark('spMove', S.move, { upIsBad:true, dec:0 });
+      }
+      // SOFR − IORB (bp): บวกและถ่างขึ้น = เงินสดขาด ตลาด repo ตึง
+      if(S.sofrSpread && isValidNum(S.sofrSpread.latest)){
+        const sp = S.sofrSpread.latest, r = Math.round(sp);
+        const ch = S.sofrSpread.change;
+        el('mkSofr').innerHTML = (r > 0 ? '+' : '') + esc(r) + ' bp'
+          + (isValidNum(ch) && Math.round(ch) !== 0 ? '<span class="delta ' + (ch > 0 ? 'down' : 'up') + '">' + (ch > 0 ? '+' : '') + Math.round(ch) + ' bp</span>' : '');
+        el('mkSofrZone').textContent = (sp > 15 ? '🔴 repo ตึงหนัก' : sp > 5 ? '🟠 repo ตึงตัว' : sp >= 0 ? '🟡 เริ่มตึง' : '🟢 เงินสดล้นระบบ')
+          + (isValidNum(S.sofrSpread.sofr) && isValidNum(S.sofrSpread.iorb) ? ' · SOFR ' + S.sofrSpread.sofr.toFixed(2) + '% · IORB ' + S.sofrSpread.iorb.toFixed(2) + '%' : '')
+          + ' · ' + thDay(S.sofrSpread.date);
+        setSpark('spSofr', S.sofrSpread, { upIsBad:true, dec:0 });
+      }
       if(S.dollar) el('mkDollarName').textContent = S.dollar.source === 'ecb-dxy' ? 'ดัชนีดอลลาร์ (DXY)' : 'ดัชนีดอลลาร์ (Broad)';
       if(S.dollar){ el('mkDollar').innerHTML = esc(S.dollar.latest.toFixed(2)) + (S.dollar.change != null ? '<span class="delta ' + (S.dollar.change >= 0 ? 'up' : 'down') + '">' + (S.dollar.change >= 0 ? '+' : '') + S.dollar.change.toFixed(2) + '</span>' : ''); setSpark('spDollar', S.dollar, { color:'var(--accent)' }); }
       if(S.fedUpper) setSpark('spFed', S.fedUpper, { color:'var(--accent)', dec:2 });
@@ -2471,7 +2515,7 @@ window.setHeaderStamp();
         ? name + ' จาก Cboe ' + thDay(s.date).replace(/ \d{4}$/, '') + ' ' + s.time.slice(11, 16) + ' NY (ช้า ~15 นาที)'
         : s.source === 'treasury' ? name + ' ราคาปิด ' + thDay(s.date) + ' (กระทรวงการคลังสหรัฐ)'
         : name + ' ราคาปิด ' + thDay(s.date) + ' (FRED ช้ากว่าตลาดประมาณ 1 วันทำการ)';
-      el('mktNote').textContent = [yieldNote('บอนด์ 10 ปี', S.us10y), yieldNote('2 ปี', S.us2y)].filter(Boolean).join(' · ') + ' · DXY จากอัตรา ECB ' + (S.dollar && S.dollar.date ? thDay(S.dollar.date) : '–') + ' · VIX ราคาจาก Cboe ช้า ~15 นาที · อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน';
+      el('mktNote').textContent = [yieldNote('บอนด์ 10 ปี', S.us10y), yieldNote('2 ปี', S.us2y)].filter(Boolean).join(' · ') + ' · DXY จากอัตรา ECB ' + (S.dollar && S.dollar.date ? thDay(S.dollar.date) : '–') + ' · VIX ราคาจาก Cboe ช้า ~15 นาที · MOVE ราคาปิด (ICE ผ่าน Yahoo) · SOFR/IORB จาก FRED · อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน';
     }catch(e){
       console.warn('[markets]', e);
       el('mktNote').textContent = 'ดึงข้อมูลตลาดไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ';
@@ -2484,6 +2528,25 @@ window.setHeaderStamp();
   var marketsNextAt = 0;
   fetchMarkets();
   setInterval(function(){ if(Date.now() >= marketsNextAt) fetchMarkets(); }, 60 * 1000);
+
+  // ⓘ คำอธิบายในการ์ดตลาด: บนคอมแค่ชี้ก็ขึ้น (CSS :hover) · บนมือถือแตะเพื่อเปิด/ปิด, แตะที่อื่นหรือกด Esc เพื่อปิด
+  function closeTips(except){
+    document.querySelectorAll('.tip.open').forEach(function(t){
+      if(t === except) return;
+      t.classList.remove('open');
+      const b = t.querySelector('.tip-btn'); if(b) b.setAttribute('aria-expanded', 'false');
+    });
+  }
+  document.addEventListener('click', function(ev){
+    const btn = ev.target && ev.target.closest ? ev.target.closest('.tip-btn') : null;
+    if(!btn){ if(!(ev.target && ev.target.closest && ev.target.closest('.tip-pop'))) closeTips(null); return; }
+    const tip = btn.parentNode;
+    closeTips(tip);
+    const open = !tip.classList.contains('open');
+    tip.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('keydown', function(ev){ if(ev.key === 'Escape') closeTips(null); });
 
   // ---------- ปฏิทินเศรษฐกิจ ----------
   const CAL_LABELS = {
