@@ -128,3 +128,27 @@ test('FX % change compares against the business day before the newest one', asyn
   assert.equal(p.prev, null);
   assert.equal(pickFxPair(null, null), null);
 });
+
+// Owner's rule (Nov 2026): never show a number baked into the page. Before live data arrives, and
+// when it can't be fetched and nothing was saved, the macro cards show "–", not an old figure that
+// looks current (the CPI card used to read 3.4% while the real figure was 3.7%).
+{
+  const { makeSandbox: mk, runAllScripts: run } = require('./dom-stub.js');
+  const MACRO_IDS = ['fedRange', 'fedEffr', 'cpiYoy', 'unrate', 'nfp'];
+
+  test('macro cards have no baked-in numbers in the markup', () => {
+    const { HTML: page } = require('./dom-stub.js');
+    for (const id of MACRO_IDS) {
+      const m = new RegExp(`id="${id}">([^<]*)<`).exec(page);
+      assert.ok(m, `#${id} not found`);
+      assert.equal(m[1], '–', `#${id} must start empty, not "${m[1]}"`);
+    }
+  });
+
+  test('when fred-data fails and nothing is cached, the cards stay at "–"', async () => {
+    const sb = await run(mk({ fetchImpl: async () => ({ ok: false, status: 502, json: async () => ({ error: 'down' }), text: async () => '' }) }));
+    // (the DOM stub starts elements empty, so check that nothing wrote a number into them)
+    for (const id of MACRO_IDS) assert.doesNotMatch(sb.document.getElementById(id).textContent, /\d/, `#${id}`);
+    assert.match(sb.document.getElementById('fredFetchStatus').textContent, /อัปเดตตัวเลขล่าสุดไม่ได้/);
+  });
+}
