@@ -1,7 +1,7 @@
 // Netlify Function: US market snapshot + 12-month histories for the dashboard's sparklines.
 //
 //   GET /.netlify/functions/markets
-//   → { series: { sp500, nasdaq100, us10y, us2y, vix, move, sofrSpread, dollar, cpi, unrate, fedUpper }, asOf, ttl }
+//   → { series: { sp500, nasdaq100, us10y, us2y, vix, move, sofrSpread, levShort, dollar, cpi, unrate, fedUpper }, asOf, ttl }
 //     each series: { label, unit, latest, date, prev, change, hist: [[isoDate, value], ...] }
 //
 // Every series comes from FRED. The public graph CSV needs no key; FRED_API_KEY (optional, the
@@ -22,6 +22,13 @@
 //     carries the latest sofr / iorb levels it was built from.
 //   • move = ICE BofA MOVE index (Treasury implied volatility, the "VIX of bonds"). FRED doesn't
 //     carry it, so it comes from Yahoo Finance's chart API (^MOVE, query1 then the query2 mirror).
+//   • levShort = leveraged funds' NET SHORT in US Treasury futures (2Y, 5Y, 10Y, Ultra 10Y, Bond,
+//     Ultra Bond), the usual proxy for the size of the cash-futures basis trade (long cash bonds
+//     financed in repo, short futures). From the CFTC Traders in Financial Futures report (futures
+//     only, Socrata open-data API, no key), weekly: positions as of Tuesday, published Friday.
+//     Value = (short − long) × face value per contract ($200k for the 2Y, $100k for the rest), in
+//     $ billions, positive = net short. A week is used only when all six contracts are reported.
+//     The payload also carries the record since 2016 (Ultra 10Y launched then) and its date.
 //
 // Caching: memory + CDN for 1 h, but only 15 min on CPI / jobs / FOMC days (same calendar as
 // fred-data.js) so the CPI / unemployment / Fed sparklines don't trail the cards for hours after a
@@ -39,6 +46,11 @@ const CBOE_TNX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_TNX.jso
 const CBOE_SPX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_SPX.json';
 const CBOE_NDX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_NDX.json';
 const YAHOO_MOVE = 'https://query1.finance.yahoo.com/v8/finance/chart/%5EMOVE?interval=1d&range=13mo';
+const CFTC_TFF = 'https://publicreporting.cftc.gov/resource/gpe5-46if.json';
+// CFTC contract code → face value per contract (USD)
+const UST_FUTURES = { '042601': 200000, '044601': 100000, '043602': 100000, '043607': 100000, '020601': 100000, '020604': 100000 };
+const CFTC_SINCE = '2016-03-01';
+const CFTC_TIMEOUT_MS = 9000;
 const TREASURY_CSV = 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/all/';
 const TTL_S = 60 * 60;
 const RELEASE_TTL_S = 15 * 60;
@@ -52,6 +64,7 @@ const SERIES = {
   vix:      { id: 'VIXCLS',   label: 'VIX', unit: '', cadence: 'daily' },
   move:     { id: '^MOVE',    label: 'MOVE', unit: '', cadence: 'daily', loader: 'yahoo' },
   sofrSpread: { id: 'SOFR-IORB', label: 'SOFR − IORB', unit: 'bp', cadence: 'daily', loader: 'sofrSpread' },
+  levShort: { id: 'CFTC-TFF-UST', label: 'Leveraged funds net short, UST futures', unit: '$bn', cadence: 'weekly', loader: 'cftc' },
   dollar:   { id: 'DTWEXBGS', label: 'Dollar (Broad)', unit: '', cadence: 'daily' },
   cpi:      { id: 'CPIAUCSL', label: 'CPI YoY', unit: '%', cadence: 'monthly', transformation: 'pc1' },
   unrate:   { id: 'UNRATE',   label: 'Unemployment', unit: '%', cadence: 'monthly' },
@@ -63,9 +76,9 @@ let memCache = { data: null, expiresAt: 0, lastGood: null };
 function isoDay(d) { return d.toISOString().slice(0, 10); }
 function daysAgoIso(n, from = new Date()) { return isoDay(new Date(from.getTime() - n * 86400000)); }
 
-async function fetchText(url) {
+async function fetchText(url, timeoutMs = ATTEMPT_TIMEOUT_MS) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), ATTEMPT_TIMEOUT_MS);
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const r = await fetch(url, {
       signal: ctrl.signal,
@@ -219,6 +232,43 @@ async function loadMove() {
   throw new Error('move: ' + errors.join(' | '));
 }
 
+// CFTC TFF rows → weekly [{date, value}] of leveraged funds' net short in $bn (positive = short).
+function parseCftcLevShort(text) {
+  const rows = JSON.parse(text);
+  if (!Array.isArray(rows)) throw new Error('cftc: ' + ((rows && rows.message) || 'unexpected response'));
+  const byDate = new Map();
+  rows.forEach((r) => {
+    const face = UST_FUTURES[String(r.cftc_contract_market_code || '').trim()];
+    const date = String(r.report_date_as_yyyy_mm_dd || '').slice(0, 10);
+    const long = parseFloat(r.lev_money_positions_long), short = parseFloat(r.lev_money_positions_short);
+    if (!face || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !isFinite(long) || !isFinite(short)) return;
+    const w = byDate.get(date) || { n: new Set(), usd: 0 };
+    if (w.n.has(r.cftc_contract_market_code)) return;
+    w.n.add(r.cftc_contract_market_code);
+    w.usd += (short - long) * face;
+    byDate.set(date, w);
+  });
+  const need = Object.keys(UST_FUTURES).length;
+  return [...byDate.entries()].filter(([, w]) => w.n.size === need)
+    .map(([date, w]) => ({ date, value: Math.round(w.usd / 1e8) / 10 }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+async function loadLevShort() {
+  const codes = Object.keys(UST_FUTURES).map((c) => `'${c}'`).join(',');
+  // encodeURIComponent (spaces as %20, not URLSearchParams' "+") keeps the SoQL unambiguous
+  const qs = Object.entries({
+    $select: 'report_date_as_yyyy_mm_dd,cftc_contract_market_code,lev_money_positions_long,lev_money_positions_short',
+    $where: `cftc_contract_market_code in(${codes}) AND report_date_as_yyyy_mm_dd >= '${CFTC_SINCE}T00:00:00.000'`,
+    $order: 'report_date_as_yyyy_mm_dd',
+    $limit: '20000'
+  }).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&');
+  const obs = parseCftcLevShort(await fetchText(`${CFTC_TFF}?${qs}`, CFTC_TIMEOUT_MS));
+  if (!obs.length) throw new Error('cftc: no complete weeks');
+  const rec = obs.reduce((a, b) => (b.value >= a.value ? b : a));
+  return { ...summarize('levShort', obs), record: rec.value, recordDate: rec.date, since: obs[0].date, source: 'cftc-tff' };
+}
+
 // Cboe delayed quote → { value, change, date, time }. last_trade_time is US Eastern wall-clock time,
 // so its date part is the US trading day the price belongs to (what FRED would file it under).
 function parseCboeQuote(text) {
@@ -325,6 +375,7 @@ async function buildPayload(apiKey) {
       ? loadDxy().catch((e) => loadSeries(k, apiKey).then((s) => ({ ...s, dxyError: e.message })))
       : SERIES[k].loader === 'yahoo' ? loadMove()
       : SERIES[k].loader === 'sofrSpread' ? loadSofrSpread(apiKey)
+      : SERIES[k].loader === 'cftc' ? loadLevShort()
       : loadSeries(k, apiKey)))),
     loadVixLive().catch((e) => ({ error: e.message })),
     loadTnxLive().catch((e) => ({ error: e.message })),
@@ -389,4 +440,4 @@ exports.handler = async function () {
   }
 };
 
-module.exports.__test = { parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, SERIES };
+module.exports.__test = { parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, parseCftcLevShort, SERIES, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; } };
