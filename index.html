@@ -621,6 +621,21 @@ body{margin:0}
     </div>
   </div></div></div><div class="num" id="mkSofr">–</div><div class="spark" id="spSofr"></div><div class="zone" id="mkSofrZone"></div>
     <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3ASOFR-FRED%3AIORB" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  <div class="metric mkt"><div class="name"><span data-en="Leveraged funds short UST futures (basis trade)">Short บอนด์ฟิวเจอร์สของ leveraged funds (basis trade)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ตัวเลขนี้คืออะไร" data-en-aria="What is this number?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>คืออะไร:</b> สถานะ net short ของกองทุนเลเวอเรจ (hedge fund) ในฟิวเจอร์สพันธบัตรสหรัฐฯ 6 สัญญา (2, 5, 10, Ultra 10 ปี, Bond, Ultra Bond) จากรายงาน CFTC Commitments of Traders (Traders in Financial Futures) คิดเป็นมูลค่าหน้าบอนด์ หน่วยพันล้านดอลลาร์</p>
+    <p><b>ทำไมคือ basis trade:</b> กองทุนซื้อบอนด์จริง เอาไปกู้ใน repo แล้ว short ฟิวเจอร์สคู่กันเพื่อกินส่วนต่างราคาเล็ก ๆ ด้วยเลเวอเรจ 20 ถึง 50 เท่า ขนาด short จึงบอกว่าตลาดยืมเงินมาถือบอนด์มากแค่ไหน</p>
+    <p><b>อ่านคู่กับ MOVE (ปมย้อนแย้งเรื่อง "ตัวคูณ" ใน Capital Wars):</b> ปกติบอนด์ผันผวนสูง haircut ต้องขึ้น เลเวอเรจควรหด ถ้า MOVE สูงแต่ short ยังทำสถิติใหม่ แปลว่าตัวคูณสูงทั้งที่ควรโดนตัด ระบบเปราะ · ถ้า short หดลงเร็ว (เกิน 5% ต่อสัปดาห์) คือสัญญาณเริ่มคลายเลเวอเรจ แบบ มี.ค. 2020 ที่ Fed ต้องเข้าซื้อบอนด์</p>
+    <p>ข้อมูลรายสัปดาห์: สถานะ ณ วันอังคาร ประกาศวันศุกร์ (ช้า 3 วัน) · สถิติเทียบตั้งแต่ปี 2016 · ปุ่มด้านล่างเปิดกราฟฟิวเจอร์ส 10 ปีใน TradingView ให้เพิ่ม indicator "Commitment of Traders" แล้วเลือกกลุ่ม Leveraged Funds</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>What it is:</b> leveraged funds' (hedge funds') net short across six US Treasury futures (2Y, 5Y, 10Y, Ultra 10Y, Bond, Ultra Bond), from the CFTC Commitments of Traders, Traders in Financial Futures report, as face value in $ billions.</p>
+    <p><b>Why it tracks the basis trade:</b> funds buy cash Treasuries, finance them in repo and short the matching futures to capture a tiny price gap at 20 to 50× leverage. So the size of the short shows how much borrowed money is holding bonds.</p>
+    <p><b>Read it against MOVE (the Capital Wars "multiplier" paradox):</b> when bond volatility is high, haircuts should rise and leverage should shrink. If MOVE is high and the short still hits records, the multiplier is high exactly when it should be cut: the system is fragile. A fast drop in the short (more than 5% in a week) signals deleveraging, as in March 2020 when the Fed had to buy bonds.</p>
+    <p>Weekly data: positions as of Tuesday, published Friday (3-day lag) · record measured since 2016 · the button below opens 10Y note futures in TradingView; add the "Commitment of Traders" indicator and pick Leveraged Funds.</p>
+    </div>
+  </div></div></div><div class="num" id="mkLevShort">–</div><div class="spark" id="spLevShort"></div><div class="zone" id="mkLevShortZone"></div>
+    <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=CBOT%3AZN1%21" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
   <div class="metric mkt"><div class="name" id="mkDollarName" data-en="Dollar index (DXY)">ดัชนีดอลลาร์ (DXY)</div><div class="num" id="mkDollar">–</div><div class="spark" id="spDollar"></div></div>
 </div>
 <div class="muted" id="mktNote" style="font-size:11px; margin-top:10px;" data-en="Mini charts = last 12 months">กราฟเล็ก = ย้อนหลัง 12 เดือน</div>
@@ -2615,6 +2630,21 @@ window.setHeaderStamp();
     });
   }
 
+  // โซนของ short บอนด์ฟิวเจอร์ส: หดเร็ว = คลายเลเวอเรจ · ใกล้/ทำสถิติ = ตัวคูณสูง · ถ้า MOVE สูงด้วย = ย้อนแย้ง
+  function levShortZone(L, move){
+    const v = L.latest, rec = L.record;
+    const wk = (isValidNum(L.change) && isValidNum(L.prev) && L.prev > 0) ? L.change / L.prev : 0;
+    const pct = (isValidNum(rec) && rec > 0) ? v / rec : null;
+    let z;
+    if(wk <= -0.05) z = tr('🟠 หดเร็ว ', '🟠 Shrinking fast ') + Math.round(wk * 100) + tr('% ใน 1 สัปดาห์ · เริ่มคลายเลเวอเรจ', '% in a week · deleveraging');
+    else if(pct != null && pct >= 0.999) z = tr('🔴 สถิติใหม่ (ตั้งแต่ 2016)', '🔴 Record (since 2016)');
+    else if(pct != null && pct >= 0.9) z = tr('🟠 ใกล้สถิติ (', '🟠 Near record (') + Math.round(pct * 100) + tr('% ของสถิติ)', '% of record)');
+    else z = (pct != null ? tr('🟡 ', '🟡 ') + Math.round(pct * 100) + tr('% ของสถิติ', '% of record') : tr('🟡 ปกติ', '🟡 Normal'));
+    if(move && isValidNum(move.latest) && move.latest >= 110 && pct != null && pct >= 0.9 && wk > -0.05)
+      z += tr(' · ⚠️ ย้อนแย้ง: MOVE สูงแต่ short ยังสูง', ' · ⚠️ Paradox: MOVE high, short still high');
+    return z;
+  }
+
   async function fetchMarkets(){
     try{
       const r = await fetchWithTimeout('/.netlify/functions/markets', 12000, { cache: 'no-cache' });
@@ -2663,6 +2693,15 @@ window.setHeaderStamp();
           + ' · ' + thDay(S.sofrSpread.date);
         setSpark('spSofr', S.sofrSpread, { upIsBad:true, dec:0 });
       }
+      // Leveraged funds net short UST futures ($bn, weekly CFTC): ขนาด basis trade · อ่านคู่กับ MOVE
+      if(S.levShort && isValidNum(S.levShort.latest)){
+        const L = S.levShort, v = L.latest, ch = L.change;
+        const fmtBn = (x) => '$' + Math.round(x).toLocaleString('en-US') + ' bn';
+        el('mkLevShort').innerHTML = esc(fmtBn(v))
+          + (isValidNum(ch) && Math.round(ch) !== 0 ? '<span class="delta ' + (ch > 0 ? 'down' : 'up') + '">' + (ch > 0 ? '+' : '') + Math.round(ch) + '</span>' : '');
+        el('mkLevShortZone').textContent = levShortZone(L, S.move) + tr(' · ณ ', ' · as of ') + thDay(L.date);
+        setSpark('spLevShort', L, { upIsBad:true, dec:0 });
+      }
       if(S.dollar) el('mkDollarName').textContent = S.dollar.source === 'ecb-dxy' ? tr('ดัชนีดอลลาร์ (DXY)', 'Dollar index (DXY)') : tr('ดัชนีดอลลาร์ (Broad)', 'Dollar index (Broad)');
       if(S.dollar){ el('mkDollar').innerHTML = esc(S.dollar.latest.toFixed(2)) + (S.dollar.change != null ? '<span class="delta ' + (S.dollar.change >= 0 ? 'up' : 'down') + '">' + (S.dollar.change >= 0 ? '+' : '') + S.dollar.change.toFixed(2) + '</span>' : ''); setSpark('spDollar', S.dollar, { color:'var(--accent)' }); }
       if(S.fedUpper) setSpark('spFed', S.fedUpper, { color:'var(--accent)', dec:2 });
@@ -2676,8 +2715,8 @@ window.setHeaderStamp();
         : name + tr(' ราคาปิด ', ' close ') + thDay(s.date) + tr(' (FRED ช้ากว่าตลาดประมาณ 1 วันทำการ)', ' (FRED, about 1 business day behind the market)');
       el('mktNote').textContent = [yieldNote(tr('บอนด์ 10 ปี', '10Y yield'), S.us10y), yieldNote(tr('2 ปี', '2Y'), S.us2y)].filter(Boolean).join(' · ')
         + tr(' · DXY จากอัตรา ECB ', ' · DXY from ECB rates ') + (S.dollar && S.dollar.date ? thDay(S.dollar.date) : '–')
-        + tr(' · VIX ราคาจาก Cboe ช้า ~15 นาที · MOVE ราคาปิด (ICE ผ่าน Yahoo) · SOFR/IORB จาก FRED · อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน',
-             ' · VIX from Cboe, ~15 min delay · MOVE daily close (ICE via Yahoo) · SOFR/IORB from FRED · updated hourly · mini charts = last 12 months');
+        + tr(' · VIX ราคาจาก Cboe ช้า ~15 นาที · MOVE ราคาปิด (ICE ผ่าน Yahoo) · SOFR/IORB จาก FRED · short บอนด์ฟิวเจอร์สจาก CFTC รายสัปดาห์ · อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน',
+             ' · VIX from Cboe, ~15 min delay · MOVE daily close (ICE via Yahoo) · SOFR/IORB from FRED · UST futures short from CFTC, weekly · updated hourly · mini charts = last 12 months');
     }catch(e){
       console.warn('[markets]', e);
       el('mktNote').textContent = tr('ดึงข้อมูลตลาดไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ', 'Can\'t load market data right now. Retrying automatically.');
