@@ -2925,7 +2925,9 @@ window.setHeaderStamp();
     if(!svg){ box.innerHTML = ''; return; }
     const first = series.hist[0][1], last = series.hist[series.hist.length - 1][1];
     const dec = (opts && opts.dec != null) ? opts.dec : 2;
-    box.innerHTML = svg + '<div class="spark-cap"><span>' + tr('12 เดือน', '12 months') + '</span><span>' + first.toFixed(dec) + ' → ' + last.toFixed(dec) + '</span></div>';
+    // -0.02 ปัดแล้วไม่ควรขึ้น "-0.0"
+    const fx = (v) => { const t = v.toFixed(dec); return /^-0(\.0+)?$/.test(t) ? t.slice(1) : t; };
+    box.innerHTML = svg + '<div class="spark-cap"><span>' + tr('12 เดือน', '12 months') + '</span><span>' + fx(first) + ' → ' + fx(last) + '</span></div>';
   }
 
   // ---------- ตลาดสหรัฐฯ + กราฟย้อนหลังในการ์ด Fed ----------
