@@ -547,26 +547,11 @@ async function yoyMetric(key, apiKey, deadline, opts = {}) {
   // FRED's pc1 for that month is "." — the YoY above is therefore still last month's. Expose the
   // newer month and its MoM so the page can say so, and so the release isn't treated as "awaiting"
   // a YoY number that will never arrive.
-  // SA month-over-month for the same month as the YoY (by date), so the card can show YoY and MoM
-  // side by side like the PPI card does. 4 dp: the page rounds once, to BLS's 1 dp.
-  if (levels && levels.obs.length) {
-    const m = momAt(levels.obs, final.date);
-    if (m !== null) final.mom = m;
-  }
   if (levels && levels.obs.length) {
     const nm = noYoyMonth(levels.obs, final.date);
     if (nm) final.latestNoYoy = nm;
   }
   return final;
-}
-
-// SA MoM % for `date` against the month before it (exact dates only), or null.
-function momAt(obs, date) {
-  const cur = atDate(obs, date);
-  const before = atDate(obs, monthBeforeIso(date));
-  if (!cur || !before || !cur.value || !before.value) return null;
-  const mom = ((cur.value - before.value) / before.value) * 100;
-  return inRange(mom, SANITY.pctMom) ? +mom.toFixed(4) : null;
 }
 
 // The newest level month, when it is newer than the YoY month and has no year-ago level to compare
@@ -837,7 +822,6 @@ exports.handler = async function () {
 // Exported for local unit testing (node --test / plain require). Netlify ignores extra exports.
 module.exports.__test = {
   noYoyMonth,
-  momAt,
   parseFredCsv,
   parseFredApiJson,
   parseBlsJson,

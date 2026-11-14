@@ -675,7 +675,7 @@ body{margin:0}
   <div class="metric"><div class="name">Effective Fed Funds Rate</div><div class="num" id="fedEffr">–</div></div>
   <div class="metric"><div class="name" data-en="CPI inflation (YoY)">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">–</div><div class="spark" id="spCpi"></div><div class="next" id="cpiInfo"></div><div class="next" id="nextCpi"></div></div>
   <div class="metric"><div class="name" data-en="Core PCE (YoY) · the Fed's inflation gauge">Core PCE (YoY) · เงินเฟ้อที่ Fed ใช้</div><div class="num" id="corePce">–</div><div class="next" id="corePceInfo"></div><div class="next" id="nextPce"></div></div>
-  <div class="metric"><div class="name" data-en="PPI producer prices (YoY)">PPI ราคาผู้ผลิต (YoY)</div><div class="num" id="ppiHead">–</div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div></div>
+  <div class="metric"><div class="name" data-en="PPI producer prices (MoM)">PPI ราคาผู้ผลิต (MoM)</div><div class="num" id="ppiMom">–</div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div></div>
   <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">–</div><div class="spark" id="spUnrate"></div><div class="next" id="nextUnrate"></div></div>
   <div class="metric"><div class="name" data-en="Nonfarm Payrolls (latest month)">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num" id="nfp">–</div><div class="next" id="nextNfp"></div></div>
   <div class="metric"><div class="name" data-en="Initial Jobless Claims (weekly)">Initial Jobless Claims (รายสัปดาห์)</div><div class="num" id="claims">–</div><div class="next" id="claimsInfo"></div><div class="next" id="nextClaims"></div></div>
@@ -1451,29 +1451,6 @@ window.setHeaderStamp();
 
   // เดือนที่ BLS ประกาศแต่ไม่มี YoY (ต.ค. 2026: ไม่มีข้อมูล ต.ค. 2025 เพราะรัฐบาลสหรัฐฯ ปิดชั่วคราว) —
   // ตัวเลขใหญ่บนการ์ดยังเป็น YoY ของเดือนก่อน เลยต้องบอกให้ชัดว่าเป็นของเดือนไหน และโชว์ MoM ของเดือนใหม่แทน
-  // บรรทัดย่อยแบบเดียวกันทั้งการ์ด CPI และ PPI: "เดือน X · YoY a% · MoM b%" — ตัวเลขใหญ่ยังเป็นตัวที่ตลาด/ค่าคาดใช้
-  // (CPI = YoY, PPI = MoM) แต่สองการ์ดอ่านเทียบกันได้ทันที
-  function yoyMomLine(date, yoy, mom){
-    const bits = [];
-    if(date) bits.push(tr('เดือน ', '') + thMonth(date));
-    if(isValidNum(yoy)) bits.push('YoY ' + Number(yoy).toFixed(1) + '%');
-    if(isValidNum(mom)) bits.push('MoM ' + signedPct(mom, 1) + '%');
-    return bits.join(' · ');
-  }
-  function cpiInfoHtml(cpi, coreCpi){
-    if(!cpi || !isValidNum(cpi.value)) return '';
-    let html = esc(yoyMomLine(cpi.date, cpi.value, cpi.mom));
-    const n = cpi.latestNoYoy;
-    if(n && n.date && cpi.date && n.date > cpi.date){
-      let mom = isValidNum(n.mom) ? 'MoM <b>' + esc(signedPct(n.mom, 1)) + '%</b>' : '';
-      const cn = coreCpi && coreCpi.latestNoYoy;
-      if(mom && cn && cn.date === n.date && isValidNum(cn.mom)) mom += ' (Core ' + esc(signedPct(cn.mom, 1)) + '%)';
-      html += '<br>' + tr('<b>' + esc(thMonth(n.date)) + '</b> ไม่มี YoY (ไม่มีข้อมูล ' + esc(thMonth(n.yearAgoDate)) + ')', '<b>' + esc(thMonth(n.date)) + '</b> has no YoY (no ' + esc(thMonth(n.yearAgoDate)) + ' data)')
-        + (mom ? ' · ' + mom : '');
-    }
-    return html;
-  }
-  window.yoyMomLine = yoyMomLine;   // tests
   function cpiNoYoyHtml(cpi, coreCpi){
     const n = cpi && cpi.latestNoYoy;
     if(!n || !n.date || !cpi.date || !(n.date > cpi.date)) return '';
@@ -1505,7 +1482,7 @@ window.setHeaderStamp();
         el('cpiYoy').textContent = cpi.value.toFixed(1) + '%';
         applied++;
       }
-      try{ const ci = el('cpiInfo'); if(ci) ci.innerHTML = cpiInfoHtml(cpi, coreCpi); }catch(e){ /* best-effort */ }
+      try{ const ci = el('cpiInfo'); if(ci) ci.innerHTML = cpiNoYoyHtml(cpi, coreCpi); }catch(e){ /* best-effort */ }
       // Core PCE: เป้า 2% ของ Fed วัดจากตัวนี้ (BEA ประกาศปลายเดือน ช้ากว่า CPI ~2 สัปดาห์)
       if(corePce && isValidNum(corePce.value)){
         el('corePce').textContent = corePce.value.toFixed(1) + '%';
@@ -1518,11 +1495,9 @@ window.setHeaderStamp();
         applied++;
       }
       if(ppi && isValidNum(ppi.value)){
-        // ตัวเลขใหญ่ = YoY ให้เหมือนการ์ด CPI (เจ้าของเลือก พ.ย. 2026); MoM ที่ตลาด/ค่าคาดใช้อยู่บรรทัดย่อย
-        // ถ้า YoY ยังไม่มา (ดัชนี NSA ของ FRED ตามหลังได้) โชว์ MoM แต่ติดป้ายให้ชัดว่าเป็น MoM
-        el('ppiHead').textContent = isValidNum(ppi.yoy) ? ppi.yoy.toFixed(1) + '%' : signedPct(ppi.value, 1) + '% MoM';
+        el('ppiMom').textContent = signedPct(ppi.value, 1) + '%';
         const yoyEl = el('ppiYoy');
-        if(yoyEl) yoyEl.textContent = yoyMomLine(ppi.date, ppi.yoy, ppi.value);
+        if(yoyEl) yoyEl.textContent = tr('เดือน ', '') + thMonth(ppi.date) + (isValidNum(ppi.yoy) ? ' · YoY ' + ppi.yoy.toFixed(1) + '%' : '');
         applied++;
       }
       if(unrate && isValidNum(unrate.value)){
