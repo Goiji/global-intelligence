@@ -438,6 +438,7 @@ body{margin:0}
   .mkt .delta{font-size:11px;font-weight:600;margin-left:6px}
   .mkt .zone{font-size:11px;color:var(--muted);margin-top:2px}
   .mkt{position:relative;display:flex;flex-direction:column}
+  #fedMetrics .metric{position:relative}   /* ให้ tooltip (i) ของการ์ดเศรษฐกิจกางเต็มการ์ด */
   /* ⓘ คำอธิบาย (hover บนคอม · แตะบนมือถือ) + ปุ่มเปิดกราฟใน TradingView */
   .tip{position:static;display:inline-block;vertical-align:middle;margin-left:4px}
   .tip-btn{width:17px;height:17px;padding:0;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font:600 10px/15px system-ui,sans-serif;cursor:help}
@@ -671,14 +672,88 @@ body{margin:0}
   <div id="fredFetchStatus" class="muted" style="font-size:11px;" data-en="Loading the latest numbers…">กำลังโหลดตัวเลขล่าสุด…</div>
 </div>
 <div class="metrics" id="fedMetrics">
-  <div class="metric"><div class="name">Fed Funds Target Range</div><div class="num" id="fedRange">–</div><div class="spark" id="spFed"></div><div class="next" id="nextFed"></div></div>
-  <div class="metric"><div class="name">Effective Fed Funds Rate</div><div class="num" id="fedEffr">–</div></div>
-  <div class="metric"><div class="name" data-en="CPI inflation (YoY)">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">–</div><div class="spark" id="spCpi"></div><div class="next" id="cpiInfo"></div><div class="next" id="nextCpi"></div></div>
-  <div class="metric"><div class="name" data-en="Core PCE (YoY) · the Fed's inflation gauge">Core PCE (YoY) · เงินเฟ้อที่ Fed ใช้</div><div class="num" id="corePce">–</div><div class="next" id="corePceInfo"></div><div class="next" id="nextPce"></div></div>
-  <div class="metric"><div class="name" data-en="PPI producer prices (YoY)">PPI ราคาผู้ผลิต (YoY)</div><div class="num" id="ppiHead">–</div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div></div>
-  <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">–</div><div class="spark" id="spUnrate"></div><div class="next" id="nextUnrate"></div></div>
-  <div class="metric"><div class="name" data-en="Nonfarm Payrolls (latest month)">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num" id="nfp">–</div><div class="next" id="nextNfp"></div></div>
-  <div class="metric"><div class="name" data-en="Initial Jobless Claims (weekly)">Initial Jobless Claims (รายสัปดาห์)</div><div class="num" id="claims">–</div><div class="next" id="claimsInfo"></div><div class="next" id="nextClaims"></div></div>
+  <div class="metric"><div class="name">Fed Funds Target Range <div class="tip"><button type="button" class="tip-btn" aria-label="Fed Funds Target Range คืออะไร" data-en-aria="What is Fed Funds Target Range?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>ดอกเบี้ยนโยบายของสหรัฐฯ</b> ที่ Fed (ธนาคารกลางสหรัฐฯ) กำหนดเป็นช่วง เป็นเป้าของดอกเบี้ยที่ธนาคารให้กู้ยืมเงินกันข้ามคืน และเป็นต้นทางของดอกเบี้ยเงินกู้/เงินฝากทั้งระบบ</p>
+    <p><b>อ่านค่า:</b> ขึ้นดอกเบี้ย = เบรกเศรษฐกิจเพื่อสู้เงินเฟ้อ · ลดดอกเบี้ย = กระตุ้นเศรษฐกิจ ดอกเบี้ยสูงมักทำให้ดอลลาร์แข็ง และกดดันหุ้น ทอง และคริปโต</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>The US policy rate</b>, set by the Fed as a range. It is the target for the rate banks charge each other overnight, and it feeds into loan and deposit rates across the economy.</p>
+    <p><b>How to read it:</b> a hike brakes the economy to fight inflation; a cut stimulates it. Higher rates tend to lift the dollar and weigh on stocks, gold and crypto.</p>
+    </div>
+  </div></div></div><div class="num" id="fedRange">–</div><div class="spark" id="spFed"></div><div class="next" id="nextFed"></div></div>
+  <div class="metric"><div class="name">Effective Fed Funds Rate <div class="tip"><button type="button" class="tip-btn" aria-label="Effective Fed Funds Rate คืออะไร" data-en-aria="What is Effective Fed Funds Rate?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>ดอกเบี้ยที่ธนาคารกู้ยืมกันจริง</b> (ค่าเฉลี่ยถ่วงน้ำหนักของวันทำการก่อนหน้า ประกาศโดย Fed สาขานิวยอร์ก)</p>
+    <p><b>อ่านค่า:</b> ปกติจะอยู่ในกรอบ Target Range ถ้าขยับเข้าใกล้หรือเกินขอบบน แปลว่าเงินในระบบเริ่มตึง</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>The rate banks actually paid</b> each other overnight (volume-weighted average of the previous business day, published by the New York Fed).</p>
+    <p><b>How to read it:</b> it normally sits inside the target range. Drifting toward or above the top of the range means cash in the system is getting tight.</p>
+    </div>
+  </div></div></div><div class="num" id="fedEffr">–</div></div>
+  <div class="metric"><div class="name"><span data-en="CPI inflation (YoY)">CPI เงินเฟ้อ (YoY)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="CPI คืออะไร" data-en-aria="What is CPI?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>CPI (ดัชนีราคาผู้บริโภค)</b> วัดว่าราคาของที่คนทั่วไปซื้อ เช่น อาหาร ค่าเช่าบ้าน น้ำมัน ค่ารักษาพยาบาล แพงขึ้นเท่าไร ประกาศโดย BLS ทุกเดือน</p>
+    <p><b>YoY</b> = เทียบกับเดือนเดียวกันของปีก่อน · <b>MoM</b> = เทียบกับเดือนก่อนหน้า · <b>Core</b> = ไม่รวมอาหารและพลังงานที่ราคาแกว่งแรง เลยเห็นแนวโน้มชัดกว่า</p>
+    <p><b>อ่านค่า:</b> เป้าของ Fed คือเงินเฟ้อราว 2% ถ้าออกมาสูงกว่าที่คาด Fed มีแนวโน้มคงดอกเบี้ยสูงนานขึ้นหรือขึ้นดอกเบี้ย</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>CPI (Consumer Price Index)</b> measures how much the things households buy (food, rent, gasoline, medical care…) have gone up in price. Published monthly by the BLS.</p>
+    <p><b>YoY</b> = vs the same month a year earlier · <b>MoM</b> = vs the previous month · <b>Core</b> = excluding volatile food and energy, so the trend is clearer.</p>
+    <p><b>How to read it:</b> the Fed aims for about 2% inflation. A hotter-than-expected print makes it more likely the Fed keeps rates high for longer, or hikes.</p>
+    </div>
+  </div></div></div><div class="num" id="cpiYoy">–</div><div class="spark" id="spCpi"></div><div class="next" id="cpiInfo"></div><div class="next" id="nextCpi"></div></div>
+  <div class="metric"><div class="name"><span data-en="Core PCE (YoY) · the Fed's inflation gauge">Core PCE (YoY) · เงินเฟ้อที่ Fed ใช้</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Core PCE คืออะไร" data-en-aria="What is Core PCE?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>Core PCE</b> คือดัชนีราคาการใช้จ่ายของผู้บริโภค (จัดทำโดย BEA) แบบไม่รวมอาหารและพลังงาน ครอบคลุมการใช้จ่ายกว้างกว่า CPI</p>
+    <p><b>ทำไมสำคัญ:</b> เป้าเงินเฟ้อ 2% ของ Fed วัดจากตัวนี้โดยตรง แต่ประกาศช้ากว่า CPI ราว 2 สัปดาห์ ตลาดเลยมักเดาทางจาก CPI/PPI ไว้ก่อน</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>Core PCE</b> is the price index for personal consumption expenditures (from the BEA), excluding food and energy. It covers a wider range of spending than CPI.</p>
+    <p><b>Why it matters:</b> the Fed's 2% target is defined on this measure. It comes out about two weeks after CPI, so markets usually estimate it from CPI and PPI first.</p>
+    </div>
+  </div></div></div><div class="num" id="corePce">–</div><div class="next" id="corePceInfo"></div><div class="next" id="nextPce"></div></div>
+  <div class="metric"><div class="name"><span data-en="PPI producer prices (YoY)">PPI ราคาผู้ผลิต (YoY)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="PPI คืออะไร" data-en-aria="What is PPI?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>PPI (ดัชนีราคาผู้ผลิต)</b> วัดราคาที่ผู้ผลิตและผู้ขายส่งได้รับ หรือก็คือต้นทุนก่อนสินค้าจะถึงมือผู้บริโภค ประกาศโดย BLS ทุกเดือน</p>
+    <p><b>อ่านค่า:</b> PPI มักขยับนำ CPI เพราะเมื่อต้นทุนสูงขึ้น ผู้ขายมักส่งต่อให้ผู้บริโภคในภายหลัง ตลาดและค่าคาดของ PPI ดู MoM (เทียบเดือนก่อน) เป็นหลัก</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>PPI (Producer Price Index)</b> measures the prices producers and wholesalers receive, i.e. costs before goods reach consumers. Published monthly by the BLS.</p>
+    <p><b>How to read it:</b> PPI tends to lead CPI, because higher costs are usually passed on to consumers later. Markets and the PPI forecast focus on MoM (vs the previous month).</p>
+    </div>
+  </div></div></div><div class="num" id="ppiHead">–</div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div></div>
+  <div class="metric"><div class="name">Unemployment Rate <div class="tip"><button type="button" class="tip-btn" aria-label="อัตราว่างงาน คืออะไร" data-en-aria="What is Unemployment Rate?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>อัตราว่างงาน</b> = % ของคนในกำลังแรงงานที่กำลังหางานแต่ยังไม่มีงานทำ (จากการสำรวจครัวเรือนของ BLS ประกาศพร้อม Nonfarm Payrolls)</p>
+    <p><b>อ่านค่า:</b> ตัวเลขที่ขึ้นต่อเนื่องแปลว่าตลาดแรงงานอ่อนลง ทำให้ Fed มีเหตุผลลดดอกเบี้ยมากขึ้น</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>Unemployment rate</b> = the share of the labour force looking for work but without a job (BLS household survey, released with Nonfarm Payrolls).</p>
+    <p><b>How to read it:</b> a steady rise means the job market is weakening, which gives the Fed more reason to cut rates.</p>
+    </div>
+  </div></div></div><div class="num" id="unrate">–</div><div class="spark" id="spUnrate"></div><div class="next" id="nextUnrate"></div></div>
+  <div class="metric"><div class="name"><span data-en="Nonfarm Payrolls (latest month)">Nonfarm Payrolls (เดือนล่าสุด)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Nonfarm Payrolls คืออะไร" data-en-aria="What is Nonfarm Payrolls?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>Nonfarm Payrolls</b> = จำนวนตำแหน่งงานที่เพิ่มขึ้น (หรือลดลง) ในเดือนนั้น ไม่รวมภาคเกษตร จากการสำรวจนายจ้างของ BLS ปกติประกาศวันศุกร์แรกของเดือน</p>
+    <p><b>อ่านค่า:</b> บวกมากกว่าที่คาด = เศรษฐกิจแข็งแรง (Fed ไม่รีบลดดอกเบี้ย) · ติดลบหรือต่ำกว่าคาดมาก = สัญญาณชะลอตัว เป็นหนึ่งในตัวเลขที่ตลาดตอบสนองแรงที่สุด</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>Nonfarm Payrolls</b> = jobs added (or lost) that month, excluding farm work, from the BLS employer survey. Usually released on the first Friday of the month.</p>
+    <p><b>How to read it:</b> a bigger gain than expected = a strong economy (the Fed is in no hurry to cut); a negative or much weaker print = a slowdown signal. One of the most market-moving numbers.</p>
+    </div>
+  </div></div></div><div class="num" id="nfp">–</div><div class="next" id="nextNfp"></div></div>
+  <div class="metric"><div class="name"><span data-en="Initial Jobless Claims (weekly)">Initial Jobless Claims (รายสัปดาห์)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Jobless Claims คืออะไร" data-en-aria="What is Jobless Claims?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>Initial Jobless Claims</b> = จำนวนคนที่ยื่นขอสวัสดิการว่างงานเป็นครั้งแรกในสัปดาห์นั้น (กระทรวงแรงงานสหรัฐฯ ประกาศทุกวันพฤหัสบดี)</p>
+    <p><b>อ่านค่า:</b> เป็นตัวเลขที่ออกเร็วที่สุดที่จับสัญญาณการเลิกจ้างได้ ยิ่งต่ำยิ่งดี ถ้าไต่ขึ้นต่อเนื่องหลายสัปดาห์มักเป็นสัญญาณแรกว่าตลาดแรงงานเริ่มอ่อน</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>Initial jobless claims</b> = people filing for unemployment benefits for the first time that week (US Labor Department, every Thursday).</p>
+    <p><b>How to read it:</b> the fastest read on layoffs; lower is better. A rise that persists for several weeks is often the first sign the job market is softening.</p>
+    </div>
+  </div></div></div><div class="num" id="claims">–</div><div class="next" id="claimsInfo"></div><div class="next" id="nextClaims"></div></div>
 </div>
 <div class="muted" style="margin-top:12px; font-size:11px; line-height:1.6;" id="fedAsOf"></div>
 

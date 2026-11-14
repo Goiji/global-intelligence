@@ -56,7 +56,7 @@ test('index.html: MOVE and SOFR tiles have a Thai explainer and a TradingView bu
   }
   assert.match(HTML, /tradingview\.com\/chart\/\?symbol=TVC%3AMOVE/);
   assert.match(HTML, /tradingview\.com\/chart\/\?symbol=FRED%3ASOFR-FRED%3AIORB/);
-  assert.equal((HTML.match(/class="tip-btn"/g) || []).length, 3);
+  assert.equal((HTML.match(/class="tip-btn"/g) || []).length, 11); // 3 market tiles + 8 macro cards
   assert.match(HTML, /haircut/);
 });
 
