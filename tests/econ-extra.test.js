@@ -143,6 +143,14 @@ test('markup: 8 new cards, each with an (i) explainer in Thai and English', () =
   assert.equal((m[1].match(/class="tv-btn" href="https:\/\/www\.tradingview\.com\/chart\/\?symbol=/g) || []).length, 8, 'each card links to TradingView');
 });
 
+test('every US Markets card links to TradingView', () => {
+  const m = HTML.match(/<div class="mkt-grid" id="mktGrid">([\s\S]*?)<div id="mktNote"|<div class="mkt-grid" id="mktGrid">([\s\S]*?)<\/section>/);
+  const block = m[1] || m[2];
+  const cards = block.split(/<div class="metric mkt"[^>]*>/).slice(1);
+  assert.equal(cards.length, 11);
+  cards.forEach((c, i) => assert.match(c, /class="tv-btn" href="https:\/\/www\.tradingview\.com\/chart\/\?symbol=/, 'card ' + i + ' has a TradingView link'));
+});
+
 function fredPayload() {
   return {
     upper: { value: 3.75, date: '2026-11-12', sinceDate: '2026-10-29', changePp: -0.25, meetingsSinceChange: 1 },
