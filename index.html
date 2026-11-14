@@ -1629,9 +1629,12 @@ window.setHeaderStamp();
 
   function signedPct(v, digits){
     const n = Number(v), d = (digits == null ? 1 : digits);
-    return (n >= 0 ? '+' : '−') + Math.abs(n).toFixed(d);
+    // round half away from zero like BLS; the tiny nudge stops binary floats (0.35 = 0.34999…) from rounding down
+    const f = Math.pow(10, d), r = Math.round(Math.abs(n) * f + 1e-7) / f;
+    return (n >= 0 ? '+' : '−') + r.toFixed(d);
   }
   function ppDelta(v){ return signedPct(v, 2) + 'pp'; }
+  window.signedPct = signedPct;   // tests/index-html.test.js
   function daysSince(dateStr){
     const t = Date.parse(String(dateStr || '') + (String(dateStr || '').length === 10 ? 'T00:00:00Z' : ''));
     return isFinite(t) ? Math.round((Date.now() - t) / 86400000) : null;
