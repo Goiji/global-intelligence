@@ -675,7 +675,7 @@ body{margin:0}
   <div class="metric"><div class="name">Effective Fed Funds Rate</div><div class="num" id="fedEffr">–</div></div>
   <div class="metric"><div class="name" data-en="CPI inflation (YoY)">CPI เงินเฟ้อ (YoY)</div><div class="num" id="cpiYoy">–</div><div class="spark" id="spCpi"></div><div class="next" id="cpiInfo"></div><div class="next" id="nextCpi"></div></div>
   <div class="metric"><div class="name" data-en="Core PCE (YoY) · the Fed's inflation gauge">Core PCE (YoY) · เงินเฟ้อที่ Fed ใช้</div><div class="num" id="corePce">–</div><div class="next" id="corePceInfo"></div><div class="next" id="nextPce"></div></div>
-  <div class="metric"><div class="name" data-en="PPI producer prices (MoM)">PPI ราคาผู้ผลิต (MoM)</div><div class="num" id="ppiMom">–</div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div></div>
+  <div class="metric"><div class="name" data-en="PPI producer prices (YoY)">PPI ราคาผู้ผลิต (YoY)</div><div class="num" id="ppiHead">–</div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div></div>
   <div class="metric"><div class="name">Unemployment Rate</div><div class="num" id="unrate">–</div><div class="spark" id="spUnrate"></div><div class="next" id="nextUnrate"></div></div>
   <div class="metric"><div class="name" data-en="Nonfarm Payrolls (latest month)">Nonfarm Payrolls (เดือนล่าสุด)</div><div class="num" id="nfp">–</div><div class="next" id="nextNfp"></div></div>
   <div class="metric"><div class="name" data-en="Initial Jobless Claims (weekly)">Initial Jobless Claims (รายสัปดาห์)</div><div class="num" id="claims">–</div><div class="next" id="claimsInfo"></div><div class="next" id="nextClaims"></div></div>
@@ -1518,7 +1518,9 @@ window.setHeaderStamp();
         applied++;
       }
       if(ppi && isValidNum(ppi.value)){
-        el('ppiMom').textContent = signedPct(ppi.value, 1) + '%';
+        // ตัวเลขใหญ่ = YoY ให้เหมือนการ์ด CPI (เจ้าของเลือก พ.ย. 2026); MoM ที่ตลาด/ค่าคาดใช้อยู่บรรทัดย่อย
+        // ถ้า YoY ยังไม่มา (ดัชนี NSA ของ FRED ตามหลังได้) โชว์ MoM แต่ติดป้ายให้ชัดว่าเป็น MoM
+        el('ppiHead').textContent = isValidNum(ppi.yoy) ? ppi.yoy.toFixed(1) + '%' : signedPct(ppi.value, 1) + '% MoM';
         const yoyEl = el('ppiYoy');
         if(yoyEl) yoyEl.textContent = yoyMomLine(ppi.date, ppi.yoy, ppi.value);
         applied++;

@@ -63,11 +63,17 @@ function stub({ fredPayload = fred(), cons = consensus(), cal = calendar() } = {
 
 const node = (sb, id) => sb.document.getElementById(id);
 
-test('the PPI tile shows the headline MoM print with its month and YoY', async () => {
+test('the PPI tile shows YoY as the headline, with the month and MoM below', async () => {
   const sb = await runAllScripts(makeSandbox({ fetchImpl: stub() }));
-  assert.equal(node(sb, 'ppiMom').textContent, '+0.5%');
+  assert.equal(node(sb, 'ppiHead').textContent, '2.7%');   // headline is YoY, like the CPI card
   assert.match(node(sb, 'ppiYoy').textContent, /ก\.ย\. 2026 · YoY 2\.7% · MoM \+0\.5%/);
   assert.match(node(sb, 'fedAsOf').innerHTML, /PPI ก\.ย\. 2026 \+0\.5% MoM/);
+});
+
+test('without a YoY yet, the PPI tile falls back to MoM and labels it', async () => {
+  const payload = fred({ ppi: { value: 0.5, date: '2026-09-01', source: 'fred-csv' } });
+  const sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredPayload: payload }) }));
+  assert.equal(node(sb, 'ppiHead').textContent, '+0.5% MoM');
 });
 
 test('tiles show the next release date and the forecast before the number is out', async () => {
