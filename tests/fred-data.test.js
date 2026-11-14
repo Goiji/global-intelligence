@@ -292,6 +292,13 @@ test('noYoyMonth keeps enough precision for the page to round Oct-2026 CPI MoM t
   assert.equal(r.mom.toFixed(1), '0.4');
 });
 
+test('momAt: SA MoM for an exact month, null when the month before is missing', () => {
+  const { momAt } = require('../netlify/functions/fred-data.js').__test;
+  const obs = [{ date: '2026-10-01', value: 337.476 }, { date: '2026-09-01', value: 336.298 }, { date: '2026-07-01', value: 334 }];
+  assert.equal(momAt(obs, '2026-10-01'), 0.3503);
+  assert.equal(momAt(obs, '2026-09-01'), null);
+});
+
 // October 2026: BLS printed only the monthly change (October 2025 was never collected), so the
 // YoY stays on September and the payload must carry the newer month + its MoM instead.
 test('noYoyMonth flags a newer month that has no year-ago level, with its SA MoM', () => {
@@ -354,5 +361,8 @@ test('Oct 2026 release day: FRED has the October level but no YoY → September 
   assert.equal(body.cpi.latestNoYoy.yearAgoDate, '2025-10-01');
   const i = months.indexOf('2026-10-01');
   assert.equal(body.cpi.latestNoYoy.mom, +(((level(i) - level(i - 1)) / level(i - 1)) * 100).toFixed(4));
+  // the YoY month carries its own MoM too (Sep vs Aug), so the card can show both side by side
+  const j = months.indexOf('2026-09-01');
+  assert.equal(body.cpi.mom, +(((level(j) - level(j - 1)) / level(j - 1)) * 100).toFixed(4));
   assert.ok(!(body.awaiting || []).includes('cpi'));
 });
