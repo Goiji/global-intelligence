@@ -138,6 +138,7 @@ test('markup: 8 new cards, each with an (i) explainer in Thai and English', () =
   assert.match(m[1], /เส้นแบ่งคือ 50/);
   assert.match(m[1], /TIPS/);
   assert.match(m[1], /2\.5%/);
+  assert.equal((m[1].match(/class="tv-btn" href="https:\/\/www\.tradingview\.com\/chart\/\?symbol=/g) || []).length, 8, 'each card links to TradingView');
 });
 
 function fredPayload() {
