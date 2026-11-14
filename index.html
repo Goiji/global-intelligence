@@ -450,8 +450,8 @@ body{margin:0}
   .tv-btn{align-self:flex-start;margin-top:auto;padding-top:8px;font-size:11px;color:var(--accent-hi);text-decoration:none;white-space:nowrap}
   .tv-btn span{display:inline-block;border:1px solid var(--gold-line);border-radius:999px;padding:2px 9px}
   .tv-btn:hover span,.tv-btn:focus-visible span{background:rgba(212,178,106,.12)}
-  .tv-arrow{display:inline-block;margin-left:4px;padding:1px 7px;border:1px solid var(--gold-line);border-radius:999px;font-size:10px;color:var(--accent-hi);text-decoration:none;white-space:nowrap;vertical-align:middle}
-  .tv-arrow:hover,.tv-arrow:focus-visible{background:rgba(212,178,106,.12);outline:none}
+  .tv-arrow{display:inline-block;margin-left:4px;padding:0 3px;border-radius:4px;font-size:12px;line-height:1;color:var(--accent-hi);text-decoration:none;vertical-align:middle;opacity:.8}
+  .tv-arrow:hover,.tv-arrow:focus-visible{opacity:1;background:rgba(212,178,106,.15);outline:none}   /* ↗ เล็กๆ = เปิดกราฟใน TradingView */
   #lpUsdJpyLink a{color:var(--accent-hi)}
   @media(max-width:800px){ .tip-pop{position:fixed;left:16px;right:16px;top:auto;bottom:16px;max-height:70vh;overflow:auto} }
   /* economic calendar */
@@ -583,20 +583,21 @@ body{margin:0}
     <div id="avFetchStatusVisible" class="muted" style="font-size:10px; margin-top:4px; text-align:right;"></div>
   </div>
   <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed var(--line);">
-    <span>💵 USD/THB</span><b id="lpUsdThb" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
+    <span>💵 USD/THB <a class="tv-arrow" href="https://www.tradingview.com/chart/?symbol=FX_IDC%3AUSDTHB" target="_blank" rel="noopener noreferrer" title="เปิด USD/THB ใน TradingView" data-en-title="Open USD/THB in TradingView" aria-label="เปิด USD/THB ใน TradingView" data-en-aria="Open USD/THB in TradingView">↗</a></span><b id="lpUsdThb" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
   </div>
   <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed var(--line);">
-    <span>💴 JPY/THB <span class="muted" style="font-size:10px;" data-en="(per 100 yen)">(ต่อ 100 เยน)</span></span><b id="lpJpyThb" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
+    <span>💴 JPY/THB <span class="muted" style="font-size:10px;" data-en="(per 100 yen)">(ต่อ 100 เยน)</span> <a class="tv-arrow" href="https://www.tradingview.com/chart/?symbol=FX_IDC%3AJPYTHB" target="_blank" rel="noopener noreferrer" title="เปิด JPY/THB ใน TradingView" data-en-title="Open JPY/THB in TradingView" aria-label="เปิด JPY/THB ใน TradingView" data-en-aria="Open JPY/THB in TradingView">↗</a></span><b id="lpJpyThb" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
   </div>
   <div style="padding:10px 0; border-bottom:1px dashed var(--line);">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <span>💱 USD/JPY <span class="muted" style="font-size:10px;" data-en="(yen per $1)">(เยนต่อ 1 ดอลลาร์)</span> <a class="tv-arrow" href="https://www.tradingview.com/chart/?symbol=FX%3AUSDJPY" target="_blank" rel="noopener noreferrer" title="เปิด USD/JPY ใน TradingView" data-en-title="Open USD/JPY in TradingView" aria-label="เปิด USD/JPY ใน TradingView" data-en-aria="Open USD/JPY in TradingView">TradingView ↗</a></span><b id="lpUsdJpy" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
+      <span>💱 USD/JPY <span class="muted" style="font-size:10px;" data-en="(yen per $1)">(เยนต่อ 1 ดอลลาร์)</span> <a class="tv-arrow" href="https://www.tradingview.com/chart/?symbol=FX%3AUSDJPY" target="_blank" rel="noopener noreferrer" title="เปิด USD/JPY ใน TradingView" data-en-title="Open USD/JPY in TradingView" aria-label="เปิด USD/JPY ใน TradingView" data-en-aria="Open USD/JPY in TradingView">↗</a></span><b id="lpUsdJpy" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
     </div>
-    <div id="lpUsdJpySub" class="muted" style="font-size:10px; margin-top:4px; text-align:right;"></div>
-    <div id="lpUsdJpyLink" class="muted" style="font-size:10px; margin-top:2px; text-align:right;"></div>
+    <!-- บรรทัดย่อยของ USD/JPY ซ่อนไว้ตามที่เจ้าของขอ (พ.ย. 2026) — ส่วนต่างยีลด์ดูได้ที่การ์ดของมันเองด้านล่าง -->
+    <div id="lpUsdJpySub" class="muted" style="display:none; font-size:10px; margin-top:4px; text-align:right;"></div>
+    <div id="lpUsdJpyLink" class="muted" style="display:none; font-size:10px; margin-top:2px; text-align:right;"></div>
   </div>
   <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0;">
-    <span>🇨🇳 CNY/THB <span class="muted" style="font-size:10px;" data-en="(per 1 yuan)">(ต่อ 1 หยวน)</span></span><b id="lpCnyThb" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
+    <span>🇨🇳 CNY/THB <span class="muted" style="font-size:10px;" data-en="(per 1 yuan)">(ต่อ 1 หยวน)</span> <a class="tv-arrow" href="https://www.tradingview.com/chart/?symbol=FX_IDC%3ACNYTHB" target="_blank" rel="noopener noreferrer" title="เปิด CNY/THB ใน TradingView" data-en-title="Open CNY/THB in TradingView" aria-label="เปิด CNY/THB ใน TradingView" data-en-aria="Open CNY/THB in TradingView">↗</a></span><b id="lpCnyThb" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
   </div>
 </div>
 <div id="livePricesNote" class="muted" style="font-size:10px; margin-top:10px;" data-en="Gold price tracks PAXG (a token backed by physical gold)">ราคาทองอ้างอิง PAXG (โทเคนที่หนุนด้วยทองคำจริง)</div>
