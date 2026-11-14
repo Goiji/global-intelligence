@@ -137,6 +137,8 @@ test('markup: 8 new cards, each with an (i) explainer in Thai and English', () =
   assert.match(m[1], /not adjusted for inflation/);
   assert.match(m[1], /เส้นแบ่งคือ 50/);
   assert.match(m[1], /TIPS/);
+  assert.equal((m[1].match(/<b>สีบนการ์ด:<\/b>/g) || []).length, 8, 'every card explains its colours');
+  assert.equal((m[1].match(/<b>Colours on the card:<\/b>/g) || []).length, 8);
   assert.match(m[1], /2\.5%/);
   assert.equal((m[1].match(/class="tv-btn" href="https:\/\/www\.tradingview\.com\/chart\/\?symbol=/g) || []).length, 8, 'each card links to TradingView');
 });
@@ -182,6 +184,9 @@ test('page: cards and the analysis section use the econ-extra numbers (Thai)', a
   assert.match(txt(sb, 'homeSales'), /4\.06M/);
   assert.match(txt(sb, 'mort30'), /6\.17%/);
   assert.match(txt(sb, 'mort30Info'), /ห่างบอนด์ 10 ปี/);
+  assert.match(txt(sb, 'mort30Info'), /🟡 ปานกลาง/);
+  assert.match(txt(sb, 'homeSalesInfo'), /🟢 ปกติ|🟠 ต่ำกว่าปกติ|🔴 ซบเซามาก/);
+  assert.match(txt(sb, 'retailInfo'), /🟢 แรงกว่าคาด/);
   assert.match(txt(sb, 'retailSales'), /\+0\.6%/);
   assert.match(txt(sb, 'retailInfo'), /คาด/);
   assert.match(txt(sb, 'ismMfg'), /48\.7/);
