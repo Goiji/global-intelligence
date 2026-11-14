@@ -212,7 +212,7 @@ test('ppiFromLevels: headline MoM from the SA index, matched by date', () => {
   ];
   const r = ppiFromLevels(obs, 'fred-csv');
   assert.equal(r.date, '2026-09-01');
-  assert.equal(r.value, 0.3);                  // (150.6 / 150.15 − 1) × 100 = 0.2997
+  assert.equal(r.value, 0.2997);               // (150.6 / 150.15 − 1) × 100, kept to 4 dp (page rounds once)
   assert.deepEqual(r.prev, { value: 0, date: '2026-08-01' });
   assert.equal(r.changePp, 0.3);
   // a missing month must not be diffed against the month before it
@@ -282,6 +282,16 @@ test('the day after an FOMC statement still counts as a release day', () => {
   assert.equal(isReleaseDay(new Date('2026-10-30T12:00:00Z')).fomc, false);
 });
 
+// Regression: real Oct-2026 SA CPI levels (BLS CUSR0000SA0 336.298 → 337.476 = +0.3503%). BLS printed
+// +0.4%, but rounding to 2 dp here and again to 1 dp on the page showed "+0.3".
+test('noYoyMonth keeps enough precision for the page to round Oct-2026 CPI MoM to BLS\'s +0.4%', () => {
+  const { noYoyMonth } = require('../netlify/functions/fred-data.js').__test;
+  const obs = [{ date: '2026-10-01', value: 337.476 }, { date: '2026-09-01', value: 336.298 }];
+  const r = noYoyMonth(obs, '2026-09-01');
+  assert.equal(r.mom, 0.3503);
+  assert.equal(r.mom.toFixed(1), '0.4');
+});
+
 // October 2026: BLS printed only the monthly change (October 2025 was never collected), so the
 // YoY stays on September and the payload must carry the newer month + its MoM instead.
 test('noYoyMonth flags a newer month that has no year-ago level, with its SA MoM', () => {
@@ -295,7 +305,7 @@ test('noYoyMonth flags a newer month that has no year-ago level, with its SA MoM
   const r = noYoyMonth(obs, '2026-09-01');
   assert.equal(r.date, '2026-10-01');
   assert.equal(r.yearAgoDate, '2025-10-01');
-  assert.equal(r.mom, 0.4);
+  assert.equal(r.mom, 0.4007);
   // a normal month (year-ago present) or no newer month → nothing to flag
   assert.equal(noYoyMonth(obs, '2026-10-01'), null);
   assert.equal(noYoyMonth([...obs, { date: '2025-10-01', value: 325 }], '2026-09-01'), null);
@@ -343,6 +353,6 @@ test('Oct 2026 release day: FRED has the October level but no YoY → September 
   assert.equal(body.cpi.latestNoYoy.date, '2026-10-01');
   assert.equal(body.cpi.latestNoYoy.yearAgoDate, '2025-10-01');
   const i = months.indexOf('2026-10-01');
-  assert.equal(body.cpi.latestNoYoy.mom, +(((level(i) - level(i - 1)) / level(i - 1)) * 100).toFixed(2));
+  assert.equal(body.cpi.latestNoYoy.mom, +(((level(i) - level(i - 1)) / level(i - 1)) * 100).toFixed(4));
   assert.ok(!(body.awaiting || []).includes('cpi'));
 });

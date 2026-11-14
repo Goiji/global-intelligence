@@ -152,3 +152,19 @@ test('FX % change compares against the business day before the newest one', asyn
     assert.match(sb.document.getElementById('fredFetchStatus').textContent, /อัปเดตตัวเลขล่าสุดไม่ได้/);
   });
 }
+
+// Oct-2026 CPI MoM showed "+0.3%" while BLS printed +0.4%: 0.35 in binary is 0.3499…, so toFixed(1)
+// rounded it down. signedPct must round half away from zero like BLS does.
+test('signedPct rounds halves away from zero (0.35 → +0.4, −0.35 → −0.4)', async () => {
+  const sandbox = makeSandbox();
+  SCRIPTS.forEach((src) => vm.runInNewContext(src, sandbox, { filename: 'index.html' }));
+  await new Promise((resolve) => setImmediate(resolve));
+  const { signedPct } = sandbox;
+  assert.equal(typeof signedPct, 'function');
+  assert.equal(signedPct(0.35, 1), '+0.4');
+  assert.equal(signedPct(0.3503, 1), '+0.4');
+  assert.equal(signedPct(0.2997, 1), '+0.3');
+  assert.equal(signedPct(-0.35, 1), '−0.4');
+  assert.equal(signedPct(1.005, 2), '+1.01');
+  assert.equal(signedPct(0, 1), '+0.0');
+});

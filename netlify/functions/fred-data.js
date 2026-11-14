@@ -566,7 +566,7 @@ function noYoyMonth(obs, yoyDate) {
   const before = atDate(obs, monthBeforeIso(latest.date));
   const mom = before && before.value ? ((latest.value - before.value) / before.value) * 100 : null;
   if (mom !== null && !inRange(mom, SANITY.pctMom)) return null;
-  return { date: latest.date, mom: mom === null ? null : +mom.toFixed(2), level: latest.value, yearAgoDate };
+  return { date: latest.date, mom: mom === null ? null : +mom.toFixed(4), level: latest.value, yearAgoDate };
 }
 
 // Nonfarm payrolls: monthly *change* in jobs, derived from the PAYEMS level (thousands of jobs).
@@ -609,6 +609,9 @@ function payrollsFromLevels(obs, source) {
   };
 }
 
+// MoM values are kept to 4 decimals on purpose: the page rounds them to the 1 decimal BLS publishes,
+// and rounding twice (2 dp here, then 1 dp there) turns e.g. Oct-2026 CPI +0.3503% into 0.35 → "+0.3"
+// instead of BLS's +0.4%.
 // PPI final demand: MoM % of the seasonally adjusted index (the headline print), matched by date
 // like everything else here, plus the previous month's MoM so the page can say เร่ง/ชะลอ.
 // Pure so the tests can pin it down.
@@ -620,11 +623,11 @@ function ppiFromLevels(obs, source) {
   if (!prev) throw new Error(`no previous month (${monthBeforeIso(latest.date)}) to compare with`);
   const mom = ((latest.value - prev.value) / prev.value) * 100;
   if (!inRange(mom, SANITY.pctMom)) throw new Error(`implausible PPI MoM ${mom}`);
-  const out = { value: +mom.toFixed(2), date: latest.date, level: latest.value, prevLevel: prev.value, unit: '% MoM', source, method: 'PPIFIS month-over-month (SA)' };
+  const out = { value: +mom.toFixed(4), date: latest.date, level: latest.value, prevLevel: prev.value, unit: '% MoM', source, method: 'PPIFIS month-over-month (SA)' };
   const prev2 = atDate(levels, monthBeforeIso(prev.date));
   if (prev2) {
     const prevMom = ((prev.value - prev2.value) / prev2.value) * 100;
-    out.prev = { value: +prevMom.toFixed(2), date: prev.date };
+    out.prev = { value: +prevMom.toFixed(4), date: prev.date };
     out.changePp = +(out.value - out.prev.value).toFixed(2);
   }
   return out;
