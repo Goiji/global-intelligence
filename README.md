@@ -12,6 +12,7 @@
 ├── tools/dev-server.js                 ← เซิร์ฟเวอร์ทดสอบในเครื่อง (static + Functions จริง)
 └── netlify/functions/
     ├── fred-data.js                    ← Fed Rate / EFFR / CPI(+core) / PCE(+core) / PPI / Unemployment / Payrolls / Jobless Claims
+    ├── econ-extra.js                   ← ยอดขายบ้านมือสอง / ดอกเบี้ยบ้าน 30·15 ปี / ยอดค้าปลีก / ISM ผลิต·บริการ / Breakeven 5·10 ปี
     ├── consensus.js                    ← ค่า "ที่คาด" (consensus) จาก Investing.com (แคช 3 ชม.)
     ├── consensus-override.js           ← ที่เก็บ "ค่าที่คาดที่แก้เอง" ฝั่งเซิร์ฟเวอร์ (ทุกคนเห็นค่าเดียวกัน · แก้ต้องใส่รหัส)
     ├── cmc-fear-greed.js               ← Fear & Greed (CoinMarketCap keyless → alternative.me)
@@ -127,6 +128,7 @@ Site configuration → Environment variables → Add a variable:
 |---|---|---|---|
 | `markets` | บอนด์ 10 ปี / 2 ปี, ส่วนต่าง 10Y−2Y, VIX, ดัชนีดอลลาร์ (DXY) + ประวัติ 12 เดือนสำหรับกราฟเล็ก (รวม CPI / ว่างงาน / ดอกเบี้ย Fed) | FRED (ราคาปิด ช้ากว่าตลาด ~1 วัน) · DXY คำนวณจากอัตรา ECB (Frankfurter) รายวัน · VIX ใช้ราคาจาก Cboe ช้า ~15 นาที · แคช 1 ชม. | ไม่ต้อง (มี `FRED_API_KEY` จะใช้ API ทางการก่อน) |
 | `calendar` | วันประกาศ CPI, จ้างงาน, PPI, JOLTS, FOMC, Jobless Claims รายสัปดาห์ (+ GDP, PCE) เป็นเวลาไทย | ปฏิทิน iCal ของ BLS + รายการ FOMC · Jobless Claims คำนวณจากตารางประจำของ DOL (ทุกพฤหัสฯ 8:30 ET = 19:30/20:30 น. ไทย, สัปดาห์ที่พฤหัสฯ เป็นวันหยุดเลื่อนเป็นวันพุธ — แสดง 2 รอบถัดไป) · GDP/PCE มาจาก FRED release dates | GDP/PCE จะขึ้นเฉพาะเมื่อตั้ง `FRED_API_KEY` |
+| `econ-extra` | ยอดขายบ้านมือสอง (NAR), ดอกเบี้ยบ้าน 30/15 ปี (Freddie Mac) + ส่วนต่างกับบอนด์ 10 ปี, ยอดค้าปลีก MoM (Census), ISM ภาคการผลิต/บริการ, Breakeven 5/10 ปี + กราฟ 12 เดือน + ค่าคาดของรอบล่าสุด | FRED (EXHOSLUSM495S, MORTGAGE30US/15US, DGS10, RSAFS, T5YIE, T10YIE) · ISM และค่าคาดจากข้อมูลกราฟของ Investing.com → สำรองหน้า Report On Business ของ ISM · แคช 30 นาที | ไม่ต้อง · ค่าคาดรอบถัดไปมาจาก `consensus` (เพิ่ม retail / homeSales / ismMfg / ismSvc) · วันประกาศ ISM คำนวณใน `calendar` (วันทำการที่ 1 / 3 ของเดือน 10:00 ET) |
 | `gold-th` | ทองแท่ง/รูปพรรณ 96.5% บาทละ (รับซื้อ/ขายออก) | สมาคมค้าทองคำ (goldtraders.or.th) → สำรอง api.chnwt.dev | ไม่ต้อง · ถ้าดึงไม่ได้ หน้าเว็บจะโชว์ "≈ ประมาณการ" จากราคาโลก × ค่าเงินบาท |
 
 **เช็คว่าทำงานไหม:** เปิด `/.netlify/functions/markets`, `/.netlify/functions/calendar`, `/.netlify/functions/gold-th` บนเว็บจริง

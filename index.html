@@ -470,6 +470,12 @@ body{margin:0}
   .metric .next.today{color:var(--warn)}
   .cal-fc{color:var(--accent-hi)}
   @media(max-width:800px){ #fedMetrics{grid-template-columns:repeat(2,1fr)} }
+  /* ตัวเลขเศรษฐกิจเพิ่มเติม (บ้าน · ดอกเบี้ยบ้าน · ค้าปลีก · ISM · Breakeven): 8 การ์ด → 4 ต่อแถว */
+  #extraMetrics{grid-template-columns:repeat(4,1fr);margin-top:10px}
+  #extraMetrics .metric{position:relative}
+  #extraMetrics .num .delta{font-size:11px;font-weight:600;margin-left:6px}
+  .metric .zone{font-size:11px;color:var(--muted);margin-top:2px}
+  @media(max-width:800px){ #extraMetrics{grid-template-columns:repeat(2,1fr)} }
   @media(max-width:800px){ .mkt-grid{grid-template-columns:repeat(2,1fr)} .cal-item{grid-template-columns:56px 1fr} .cal-when{grid-column:2;text-align:left} }
 
   @media(max-width:800px){
@@ -756,6 +762,94 @@ body{margin:0}
   </div></div></div><div class="num" id="claims">–</div><div class="next" id="claimsInfo"></div><div class="next" id="nextClaims"></div></div>
 </div>
 <div class="muted" style="margin-top:12px; font-size:11px; line-height:1.6;" id="fedAsOf"></div>
+<h3 style="font-size:14px; margin:18px 0 0;" data-en="🏠 Housing · shoppers · businesses · inflation expectations">🏠 บ้าน · การใช้จ่าย · ภาคธุรกิจ · เงินเฟ้อที่ตลาดคาด</h3>
+<div class="metrics" id="extraMetrics">
+  <div class="metric"><div class="name"><span data-en="Existing Home Sales (per year)">ยอดขายบ้านมือสอง (ต่อปี)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ยอดขายบ้านมือสอง คืออะไร" data-en-aria="What is Existing Home Sales?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>ยอดขายบ้านมือสอง</b> = จำนวนบ้านเก่าที่ขายได้ในเดือนนั้น แล้วคูณให้เป็น "ตัวเลขต่อปี" (ประกาศโดยสมาคมนายหน้าอสังหาฯ สหรัฐฯ NAR ทุกเดือน) เช่น 4.06M = ถ้าขายได้ระดับนี้ทั้งปีจะได้ 4.06 ล้านหลัง</p>
+    <p><b>อ่านค่า:</b> บ้านมือสองเป็นตลาดบ้านส่วนใหญ่ของสหรัฐฯ ยอดสูงขึ้น = คนกล้าซื้อบ้าน เศรษฐกิจคึกคัก · ต่ำกว่า 4 ล้านถือว่าซบเซามาก (ช่วงปกติราว 5 ล้าน) ตัวนี้ไวต่อดอกเบี้ยบ้านมาก ดอกเบี้ยบ้านลดลงมักทำให้ยอดขายฟื้น</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>Existing home sales</b> = previously owned homes sold that month, scaled up to a yearly pace (published monthly by the National Association of Realtors). 4.06M means "4.06 million homes a year at this pace".</p>
+    <p><b>How to read it:</b> resales are most of the US housing market. Higher = people are confident enough to buy. Below 4 million is very weak (a normal year is about 5 million). Very sensitive to mortgage rates: cheaper mortgages usually bring buyers back.</p>
+    </div>
+  </div></div></div><div class="num" id="homeSales">–</div><div class="spark" id="spHome"></div><div class="next" id="homeSalesInfo"></div><div class="next" id="nextHomeSales"></div></div>
+  <div class="metric"><div class="name"><span data-en="30-year mortgage rate">ดอกเบี้ยบ้าน 30 ปี</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ดอกเบี้ยบ้าน 30 ปี คืออะไร" data-en-aria="What is the 30-year mortgage rate?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>ดอกเบี้ยเงินกู้ซื้อบ้านแบบคงที่ 30 ปี</b> เฉลี่ยทั้งประเทศ จากแบบสำรวจของ Freddie Mac ประกาศทุกวันพฤหัสบดี เป็นแบบที่คนอเมริกันนิยมกู้มากที่สุด</p>
+    <p><b>อ่านค่า:</b> ดอกเบี้ยบ้านวิ่งตามบอนด์ 10 ปีเป็นหลัก ไม่ได้ตาม Fed โดยตรง · ยิ่งสูง ค่าผ่อนต่อเดือนยิ่งแพง คนซื้อบ้านน้อยลง</p>
+    <p><b>"ห่างบอนด์ 10 ปี"</b> = ดอกเบี้ยบ้านลบ yield บอนด์ 10 ปี ปกติห่างราว 1.5–2% ถ้าห่างมากกว่านั้นแปลว่าธนาคารยังคิดดอกเบี้ยบ้านแพงเกินกว่าที่บอนด์บอก</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>The average 30-year fixed mortgage rate</b> in the US, from Freddie Mac's weekly survey (every Thursday). It is the loan most Americans use to buy a home.</p>
+    <p><b>How to read it:</b> mortgage rates mostly follow the 10-year Treasury yield, not the Fed directly. Higher rates = bigger monthly payments = fewer buyers.</p>
+    <p><b>"vs 10Y"</b> = the mortgage rate minus the 10-year yield. It is normally about 1.5–2 points; a wider gap means lenders are still charging more than bond yields alone would suggest.</p>
+    </div>
+  </div></div></div><div class="num" id="mort30">–</div><div class="spark" id="spMort30"></div><div class="next" id="mort30Info"></div><div class="next" id="nextMort30"></div></div>
+  <div class="metric"><div class="name"><span data-en="15-year mortgage rate">ดอกเบี้ยบ้าน 15 ปี</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ดอกเบี้ยบ้าน 15 ปี คืออะไร" data-en-aria="What is the 15-year mortgage rate?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>ดอกเบี้ยเงินกู้ซื้อบ้านแบบคงที่ 15 ปี</b> เฉลี่ยทั้งประเทศ (Freddie Mac ทุกวันพฤหัสบดี) ผ่อนสั้นกว่าจึงได้ดอกเบี้ยต่ำกว่าแบบ 30 ปี แต่ค่าผ่อนต่อเดือนสูงกว่า นิยมใช้ตอนรีไฟแนนซ์</p>
+    <p><b>อ่านค่า:</b> ขยับไปทางเดียวกับแบบ 30 ปีและบอนด์ 10 ปี ลดลง = ภาระผ่อนบ้านเบาลง หนุนตลาดบ้าน</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>The average 15-year fixed mortgage rate</b> (Freddie Mac, every Thursday). A shorter loan gets a lower rate than the 30-year, but higher monthly payments. Popular for refinancing.</p>
+    <p><b>How to read it:</b> it moves with the 30-year rate and the 10-year yield. Falling = cheaper home loans, good for housing.</p>
+    </div>
+  </div></div></div><div class="num" id="mort15">–</div><div class="spark" id="spMort15"></div><div class="next" id="mort15Info"></div><div class="next" id="nextMort15"></div></div>
+  <div class="metric"><div class="name"><span data-en="Retail Sales (MoM)">ยอดค้าปลีก (MoM)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ยอดค้าปลีก คืออะไร" data-en-aria="What is Retail Sales?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>ยอดค้าปลีก</b> = เงินที่คนอเมริกันใช้ซื้อของตามร้านค้า ร้านอาหาร ปั๊มน้ำมัน และออนไลน์ในเดือนนั้น เทียบกับเดือนก่อน (%) ประกาศโดยสำนักงานสำมะโนประชากรสหรัฐฯ กลางเดือน การบริโภคคือราว 2 ใน 3 ของเศรษฐกิจสหรัฐฯ</p>
+    <p><b>ระวัง:</b> ตัวเลขนี้<b>ยังไม่หักเงินเฟ้อ</b> ถ้ายอดขายโต +0.4% แต่ CPI ก็ขึ้น +0.4% แปลว่าคนจ่ายแพงขึ้นแต่ได้ของเท่าเดิม ไม่ได้ซื้อมากขึ้นจริง</p>
+    <p><b>อ่านค่า:</b> ออกมาแรงกว่าคาด = คนยังใช้จ่ายเก่ง เศรษฐกิจแข็ง → Fed ลดดอกเบี้ยยากขึ้น บอนด์ยีลด์ขึ้น ดอลลาร์แข็ง · อ่อนกว่าคาด = ตรงกันข้าม</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>Retail sales</b> = what Americans spent at stores, restaurants, gas stations and online that month, as a % change from the month before (Census Bureau, mid-month). Consumer spending is about two thirds of the US economy.</p>
+    <p><b>Careful:</b> it is <b>not adjusted for inflation</b>. If sales rise +0.4% and CPI also rises +0.4%, people paid more for the same amount of stuff, so there was little real growth.</p>
+    <p><b>How to read it:</b> stronger than expected = shoppers are still spending, the economy is solid → harder for the Fed to cut, bond yields up, dollar stronger. Weaker than expected = the opposite.</p>
+    </div>
+  </div></div></div><div class="num" id="retailSales">–</div><div class="spark" id="spRetail"></div><div class="next" id="retailInfo"></div><div class="next" id="nextRetail"></div></div>
+  <div class="metric"><div class="name"><span data-en="ISM Manufacturing PMI">ISM ภาคการผลิต (PMI)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ISM ภาคการผลิต คืออะไร" data-en-aria="What is the ISM Manufacturing PMI?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>ISM ภาคการผลิต</b> = ผลสำรวจผู้จัดการฝ่ายจัดซื้อของโรงงานทั่วสหรัฐฯ ว่าเดือนนี้ยอดสั่งซื้อ การผลิต การจ้างงาน ดีขึ้นหรือแย่ลง ประกาศวันทำการแรกของเดือน เป็นตัวเลขเศรษฐกิจที่ออกเร็วที่สุดตัวหนึ่ง</p>
+    <p><b>อ่านค่า:</b> <b>เส้นแบ่งคือ 50</b> · สูงกว่า 50 = ภาคการผลิต<b>ขยายตัว</b> · ต่ำกว่า 50 = <b>หดตัว</b> · ยิ่งห่างจาก 50 ยิ่งแรง</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>ISM Manufacturing</b> = a survey of purchasing managers at US factories: are new orders, output and hiring better or worse this month? Out on the first business day of the month, one of the earliest reads on the economy.</p>
+    <p><b>How to read it:</b> <b>50 is the dividing line</b>. Above 50 = manufacturing is <b>expanding</b>; below 50 = <b>contracting</b>. The further from 50, the stronger the move.</p>
+    </div>
+  </div></div></div><div class="num" id="ismMfg">–</div><div class="spark" id="spIsmMfg"></div><div class="next" id="ismMfgInfo"></div><div class="next" id="nextIsmMfg"></div></div>
+  <div class="metric"><div class="name"><span data-en="ISM Services PMI">ISM ภาคบริการ (PMI)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ISM ภาคบริการ คืออะไร" data-en-aria="What is the ISM Services PMI?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>ISM ภาคบริการ</b> = ผลสำรวจแบบเดียวกันแต่ถามธุรกิจบริการ เช่น ค้าปลีก ร้านอาหาร การเงิน สุขภาพ ประกาศวันทำการที่ 3 ของเดือน ภาคบริการใหญ่กว่าภาคการผลิตมาก (ราว 70–80% ของเศรษฐกิจสหรัฐฯ)</p>
+    <p><b>อ่านค่า:</b> <b>เส้นแบ่งคือ 50</b> · สูงกว่า 50 = <b>ขยายตัว</b> · ต่ำกว่า 50 = <b>หดตัว</b> · ถ้าภาคบริการหลุด 50 มักเป็นสัญญาณเตือนเศรษฐกิจชะลอที่จริงจังกว่าภาคการผลิต</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>ISM Services</b> = the same survey for service businesses (retail, restaurants, finance, healthcare…), out on the third business day of the month. Services are far bigger than factories, roughly 70–80% of the US economy.</p>
+    <p><b>How to read it:</b> <b>50 is the dividing line</b>. Above 50 = <b>expanding</b>; below 50 = <b>contracting</b>. Services dropping below 50 is usually a more serious slowdown warning than manufacturing doing so.</p>
+    </div>
+  </div></div></div><div class="num" id="ismSvc">–</div><div class="spark" id="spIsmSvc"></div><div class="next" id="ismSvcInfo"></div><div class="next" id="nextIsmSvc"></div></div>
+  <div class="metric"><div class="name"><span data-en="5-year breakeven inflation">เงินเฟ้อที่ตลาดคาด 5 ปี (Breakeven)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Breakeven 5 ปี คืออะไร" data-en-aria="What is the 5-year breakeven?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>Breakeven</b> = เงินเฟ้อเฉลี่ยที่นักลงทุนในตลาดบอนด์ "เดิมพัน" ไว้สำหรับช่วงเวลานั้น คิดง่าย ๆ คือ <b>yield บอนด์รัฐบาลปกติ ลบ yield บอนด์ที่ป้องกันเงินเฟ้อ (TIPS)</b> ส่วนต่างนั้นคือเงินเฟ้อที่ตลาดคาด</p>
+    <p><b>อ่านค่า:</b> 5 ปี = ตลาดคาดเงินเฟ้อเฉลี่ยใน 5 ปีข้างหน้าเท่านี้ · ใกล้ 2% = ตลาดเชื่อว่า Fed คุมเงินเฟ้ออยู่ · ขึ้นเร็ว = ตลาดเริ่มกลัวเงินเฟ้อกลับมา (มักหนุนทอง กดดันบอนด์)</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>Breakeven</b> = the average inflation bond investors are pricing in for that period. Simply: <b>the normal Treasury yield minus the inflation-protected (TIPS) yield</b>. That gap is the inflation the market expects.</p>
+    <p><b>How to read it:</b> the 5-year = expected average inflation over the next 5 years. Near 2% = the market trusts the Fed to keep inflation in check. A fast rise = inflation worries are back (often good for gold, bad for bonds).</p>
+    </div>
+  </div></div></div><div class="num" id="be5">–</div><div class="spark" id="spBe5"></div><div class="next" id="be5Info"></div></div>
+  <div class="metric"><div class="name"><span data-en="10-year breakeven inflation">เงินเฟ้อที่ตลาดคาด 10 ปี (Breakeven)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Breakeven 10 ปี คืออะไร" data-en-aria="What is the 10-year breakeven?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>Breakeven 10 ปี</b> = yield บอนด์รัฐบาล 10 ปี ลบ yield บอนด์ป้องกันเงินเฟ้อ (TIPS) 10 ปี = เงินเฟ้อเฉลี่ยที่ตลาดคาดใน 10 ปีข้างหน้า</p>
+    <p><b>อ่านค่า:</b> ราว 2.0–2.3% ถือว่าสอดคล้องกับเป้า 2% ของ Fed (ตัวนี้อิง CPI ซึ่งปกติสูงกว่าเงินเฟ้อ PCE ที่ Fed ใช้นิดหน่อย) · ถ้า<b>ระยะยาวขึ้นไปเกิน ~2.5%</b> แปลว่าตลาด<b>เริ่มไม่เชื่อว่า Fed จะพาเงินเฟ้อกลับไป 2%</b> ได้ ซึ่ง Fed กังวลมาก</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>10-year breakeven</b> = the 10-year Treasury yield minus the 10-year inflation-protected (TIPS) yield = the average inflation the market expects over the next 10 years.</p>
+    <p><b>How to read it:</b> about 2.0–2.3% is consistent with the Fed's 2% goal (it is based on CPI, which normally runs a little above the PCE inflation the Fed targets). If this <b>long-term measure climbs above ~2.5%</b>, the market is <b>starting to doubt the Fed will get inflation back to 2%</b>, something the Fed worries about a lot.</p>
+    </div>
+  </div></div></div><div class="num" id="be10">–</div><div class="spark" id="spBe10"></div><div class="next" id="be10Info"></div></div>
+</div>
+<div class="muted" style="margin-top:10px; font-size:11px; line-height:1.6;" id="econExtraNote" data-en="Loading…">กำลังโหลด…</div>
 
 <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line);">
   <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
@@ -2206,6 +2300,14 @@ window.setHeaderStamp();
       if(c && isValidNum(c.actual) && /^\d{4}-\d{2}-\d{2}$/.test(String(c.releaseDate || ''))){
         LIVE_CLAIMS = { actual: c.actual, forecast: isValidNum(c.forecast) ? c.forecast : null, previous: isValidNum(c.previous) ? c.previous : null, releaseDate: c.releaseDate };
       }
+      // ยอดค้าปลีก · ยอดขายบ้าน · ISM — ตามจริง/ค่าคาดของรอบล่าสุด (สำรองให้ /econ-extra)
+      const lx = {};
+      ['retail', 'homeSales', 'ismMfg', 'ismSvc'].forEach(k => {
+        const e = ev[k];
+        if(e && isValidNum(e.actual) && /^\d{4}-\d{2}-\d{2}$/.test(String(e.releaseDate || ''))) lx[k] = { actual: e.actual, forecast: isValidNum(e.forecast) ? e.forecast : null, previous: isValidNum(e.previous) ? e.previous : null, releaseDate: e.releaseDate };
+      });
+      LIVE_EXTRA = lx;
+      try{ renderExtraCards(); }catch(e){ /* best-effort */ }
       try{
         renderClaims();
         renderNextReleases();
@@ -2410,6 +2512,9 @@ window.setHeaderStamp();
       body += '<br><span style="opacity:.75;">' + tr('ℹ️ ตัวเลขรายสัปดาห์ผันผวนสูง ดูค่าเฉลี่ย 4 สัปดาห์ประกอบ · แหล่ง: ', 'ℹ️ Weekly data is noisy, check the 4-week average too · source: ') + esc(cl.source === 'FRED' ? 'FRED (ICSA) / DOL' : 'Investing.com') + '</span>';
       cards.push(analysisCard(accent, 'Initial Jobless Claims — ' + verdict, body));
     }
+
+    // ── 6) ค้าปลีก · ISM · บ้าน · ดอกเบี้ยบ้าน (การ์ดชุดเพิ่มเติม) ───────────────────────────
+    try{ extraAnalysisCards().forEach(c => cards.push(c)); }catch(e){ /* best-effort */ }
 
     // ── footnote + สถานะ ────────────────────────────────────────────────────────────────────
     const when = new Date().toLocaleTimeString(LOCALE, { hour:'2-digit', minute:'2-digit' });
@@ -2835,6 +2940,253 @@ window.setHeaderStamp();
   fetchMarkets();
   setInterval(function(){ if(Date.now() >= marketsNextAt) fetchMarkets(); }, 60 * 1000);
 
+  // ---------- ตัวเลขเศรษฐกิจเพิ่มเติม: บ้าน · ดอกเบี้ยบ้าน · ค้าปลีก · ISM · Breakeven ----------
+  // ตัวเลขจริง + กราฟ 12 เดือนมาจาก /.netlify/functions/econ-extra (FRED + Investing.com + ISM)
+  // ค่าคาดของรอบล่าสุด: econ-extra (ข้อมูลกราฟของ Investing.com) ก่อน แล้วค่อย /consensus (LIVE_EXTRA)
+  // ค่าคาดของรอบถัดไป: /consensus → LIVE_UPCOMING เหมือนการ์ดอื่น
+  // var (ไม่ใช่ let): loadConsensus()/renderFedAnalysis() อาจเรียกก่อนบรรทัดนี้จะรัน
+  var EXTRA = null;        // { homeSales, mort30, mort15, retail, ismMfg, ismSvc, be5, be10 }
+  var LIVE_EXTRA = {};     // จาก /consensus: { retail: { actual, forecast, previous, releaseDate }, ... }
+  var extraNextAt = 0;
+  const EXTRA_POLL_MS = 60 * 60 * 1000;
+  // ความต่างที่ถือว่า "ตรงคาด" (ตามความละเอียดที่ประกาศจริง)
+  var EXTRA_NEAR = { retail: 0.05, homeSales: 25000, ismMfg: 0.25, ismSvc: 0.25 };
+
+  function fmtHomes(v){ return isValidNum(v) ? (v / 1e6).toFixed(2) + 'M' : '–'; }
+  function fmtExtra(key, v){
+    if(!isValidNum(v)) return '–';
+    if(key === 'retail') return signedPct(v, 1) + '%';
+    if(key === 'homeSales') return fmtHomes(v);
+    if(key === 'ismMfg' || key === 'ismSvc') return v.toFixed(1);
+    return v.toFixed(2) + '%';
+  }
+  function bpDelta(chPct){
+    if(!isValidNum(chPct)) return '';
+    const bp = Math.round(chPct * 100);
+    return '<span class="delta ' + (bp > 0 ? 'down' : bp < 0 ? 'up' : 'flat') + '">' + (bp > 0 ? '+' : bp < 0 ? '−' : '±') + Math.abs(bp) + ' bp</span>';
+  }
+
+  // ตัวเลขที่ใช้จริงของแต่ละการ์ด: econ-extra ก่อน · ถ้าไม่มี (หรือ Investing.com มีรอบที่ใหม่กว่า) ใช้ "ตามจริง" จาก /consensus
+  function extraView(key){
+    const it = (EXTRA && EXTRA[key]) || null;
+    const L = (LIVE_EXTRA || {})[key] || null;
+    const refOf = (rel) => refMonthFor(rel);
+    let v = it && isValidNum(it.value) ? { value: it.value, date: it.date, prev: it.prev && isValidNum(it.prev.value) ? it.prev.value : null, prevDate: it.prev ? it.prev.date : null,
+      forecast: isValidNum(it.forecast) ? it.forecast : null, hist: it.hist, yoy: it.yoy, source: it.source, releaseDate: it.releaseDate || null } : null;
+    if(L && isValidNum(L.actual) && L.releaseDate){
+      const ref = refOf(L.releaseDate);
+      if(!v || (ref && ref > v.date)){
+        v = { value: L.actual, date: ref, prev: isValidNum(L.previous) ? L.previous : (v ? v.value : null), prevDate: v ? v.date : null,
+              forecast: isValidNum(L.forecast) ? L.forecast : null, hist: v ? v.hist : null, source: 'investing.com', releaseDate: L.releaseDate };
+      }else if(v && ref === v.date && !isValidNum(v.forecast) && isValidNum(L.forecast)){
+        v.forecast = L.forecast;
+      }
+    }
+    return v;
+  }
+
+  function setExtraNum(id, html, cls){
+    const n = el(id);
+    if(!n) return;
+    n.innerHTML = html;
+    n.className = 'num' + (cls ? ' ' + cls : '');
+  }
+
+  function renderExtraCards(){
+    const months = (d) => esc(thMonth(d));
+    // ── ยอดขายบ้านมือสอง ──
+    const hs = extraView('homeSales');
+    if(hs){
+      setExtraNum('homeSales', esc(fmtHomes(hs.value)));
+      const bits = [tr('เดือน ', '') + months(hs.date)];
+      if(isValidNum(hs.forecast)) bits.push(tr('คาด ', 'forecast ') + '<b>' + esc(fmtHomes(hs.forecast)) + '</b>');
+      if(isValidNum(hs.prev) && hs.prev) bits.push(tr('เดือนก่อน ', 'prev ') + esc(fmtHomes(hs.prev)) + ' (' + signedPct((hs.value - hs.prev) / hs.prev * 100, 1) + '%)');
+      el('homeSalesInfo').innerHTML = bits.join(' · ');
+      if(hs.hist) setSpark('spHome', { hist: hs.hist.map(p => [p[0], p[1] / 1e6]) }, { dec:2 });
+    }
+    // ── ดอกเบี้ยบ้าน 30 / 15 ปี (รายสัปดาห์) ──
+    [['mort30', 'mort30', 'spMort30', 'mort30Info'], ['mort15', 'mort15', 'spMort15', 'mort15Info']].forEach(function(row){
+      const m = EXTRA && EXTRA[row[0]];
+      if(!m || !isValidNum(m.value)) return;
+      setExtraNum(row[1], esc(m.value.toFixed(2)) + '%' + bpDelta(m.change));
+      const bits = [tr('สัปดาห์ ', 'week of ') + esc(thDay(m.date))];
+      if(isValidNum(m.spread10y)) bits.push(tr('ห่างบอนด์ 10 ปี ', 'vs 10Y ') + '<b>' + (m.spread10y >= 0 ? '+' : '−') + Math.abs(m.spread10y).toFixed(2) + tr(' จุด', ' pts') + '</b>');
+      el(row[3]).innerHTML = bits.join(' · ');
+      setSpark(row[2], m, { upIsBad:true, dec:2 });
+    });
+    // ── ยอดค้าปลีก (MoM) ──
+    const rs = extraView('retail');
+    if(rs){
+      const dev = isValidNum(rs.forecast) ? Math.round(rs.value * 10) / 10 - rs.forecast : null;
+      setExtraNum('retailSales', esc(signedPct(rs.value, 1)) + '%', dev == null || Math.abs(dev) < EXTRA_NEAR.retail ? '' : dev > 0 ? 'up' : 'down');
+      const bits = [tr('เดือน ', '') + months(rs.date)];
+      bits.push(isValidNum(rs.forecast) ? tr('คาด ', 'forecast ') + '<b>' + esc(signedPct(rs.forecast, 1)) + '%</b>' : tr('ยังไม่มีค่าคาด', 'no forecast'));
+      if(isValidNum(rs.prev)) bits.push(tr('เดือนก่อน ', 'prev ') + esc(signedPct(rs.prev, 1)) + '%');
+      if(isValidNum(rs.yoy)) bits.push('YoY ' + esc(signedPct(rs.yoy, 1)) + '%');
+      el('retailInfo').innerHTML = bits.join(' · ');
+      if(rs.hist) setSpark('spRetail', { hist: rs.hist }, { dec:1 });
+    }
+    // ── ISM ภาคการผลิต / ภาคบริการ ──
+    [['ismMfg', 'spIsmMfg', 'ismMfgInfo'], ['ismSvc', 'spIsmSvc', 'ismSvcInfo']].forEach(function(row){
+      const v = extraView(row[0]);
+      if(!v) return;
+      setExtraNum(row[0], esc(v.value.toFixed(1)), v.value >= 50 ? 'up' : 'down');
+      const bits = [(v.value >= 50 ? tr('🟢 ขยายตัว', '🟢 Expanding') : tr('🔴 หดตัว', '🔴 Contracting')) + tr(' (เส้นแบ่ง 50)', ' (50 = dividing line)'), tr('เดือน ', '') + months(v.date)];
+      bits.push(isValidNum(v.forecast) ? tr('คาด ', 'forecast ') + '<b>' + esc(v.forecast.toFixed(1)) + '</b>' : tr('ยังไม่มีค่าคาด', 'no forecast'));
+      if(isValidNum(v.prev)) bits.push(tr('เดือนก่อน ', 'prev ') + esc(v.prev.toFixed(1)));
+      el(row[2]).innerHTML = bits.join(' · ');
+      if(v.hist && v.hist.length >= 2) setSpark(row[1], { hist: v.hist }, { dec:1 });
+    });
+    // ── Breakeven 5 / 10 ปี (รายวัน) ──
+    [['be5', 'spBe5', 'be5Info'], ['be10', 'spBe10', 'be10Info']].forEach(function(row){
+      const b = EXTRA && EXTRA[row[0]];
+      if(!b || !isValidNum(b.value)) return;
+      setExtraNum(row[0], esc(b.value.toFixed(2)) + '%' + bpDelta(b.change));
+      const v = b.value;
+      const zone = v >= 2.5 ? tr('🔴 สูง: ตลาดเริ่มไม่เชื่อว่าเงินเฟ้อจะกลับไป 2%', '🔴 High: market doubts inflation returns to 2%')
+        : v >= 2.3 ? tr('🟠 ค่อนข้างสูงกว่าเป้า', '🟠 A bit above target')
+        : v >= 1.8 ? tr('🟢 สอดคล้องกับเป้า 2% ของ Fed', '🟢 Consistent with the Fed\'s 2% goal')
+        : tr('🔵 ต่ำ: ตลาดกังวลเศรษฐกิจชะลอ', '🔵 Low: market worried about a slowdown');
+      el(row[2]).innerHTML = zone + tr(' · ปิด ', ' · close ') + esc(thDay(b.date));
+      setSpark(row[1], b, { upIsBad:true, dec:2 });
+    });
+    const note = el('econExtraNote');
+    if(note && EXTRA){
+      const errs = EXTRA.__errors ? Object.keys(EXTRA.__errors) : [];
+      note.textContent = tr('ที่มา: ยอดขายบ้าน NAR · ดอกเบี้ยบ้าน Freddie Mac · ค้าปลีก Census · Breakeven ผ่าน FRED · ISM และค่าคาดจาก Investing.com · กราฟเล็ก = ย้อนหลัง 12 เดือน',
+        'Sources: home sales NAR · mortgage rates Freddie Mac · retail sales Census · breakevens via FRED · ISM and forecasts from Investing.com · mini charts = last 12 months')
+        + (errs.length ? tr(' · ⚠️ ยังดึงไม่ได้: ', ' · ⚠️ not available right now: ') + errs.join(', ') : '');
+    }
+    try{ renderNextReleases(); }catch(e){ /* best-effort */ }
+  }
+
+  async function fetchEconExtra(){
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/econ-extra', 12000, { cache: 'no-cache' });
+      const j = await r.json();
+      if(!j || !j.items) throw new Error((j && j.error) || 'HTTP ' + r.status);
+      EXTRA = Object.assign({}, j.items, { __errors: j.errors || null });
+      const nextIn = (isValidNum(j.ttl) && j.ttl > 0) ? Math.min(j.ttl * 1000, EXTRA_POLL_MS) : EXTRA_POLL_MS;
+      extraNextAt = Date.now() + Math.max(nextIn, 60 * 1000);
+    }catch(e){
+      console.warn('[econ-extra]', e);
+      extraNextAt = Date.now() + 10 * 60 * 1000;
+      const note = el('econExtraNote');
+      if(note && !EXTRA) note.textContent = tr('ดึงข้อมูลชุดนี้ไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ', 'Can\'t load these numbers right now. Retrying automatically.');
+    }
+    try{ renderExtraCards(); }catch(e){ console.warn('[econ-extra render]', e); }
+    try{ if(lastFedPayload) renderFedAnalysis(lastFedPayload); }catch(e){ /* best-effort */ }
+  }
+  fetchEconExtra();
+  setInterval(function(){ if(Date.now() >= extraNextAt) fetchEconExtra(); }, 60 * 1000);
+
+  // การ์ดวิเคราะห์ "ดี/แย่แค่ไหน" ของชุดนี้ — เรียกจาก renderFedAnalysis()
+  function extraAnalysisCards(){
+    const out = [];
+    const GREEN = 'var(--good)', RED = 'var(--bad)', AMBER = 'var(--warn)', GREY = 'var(--muted)';
+    const NOCONS = tr('⚪ ยังไม่มีค่าคาดของรอบนี้', '⚪ No forecast for this release yet');
+    const tail = v => { const t = v.replace(/^[^\s]+\s/, ''); return EN ? t.charAt(0).toLowerCase() + t.slice(1) : t; };
+    const impact = (txt) => '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + txt;
+
+    // ── Retail Sales ──
+    const rs = extraView('retail');
+    if(rs){
+      const p = Math.round(rs.value * 10) / 10;
+      const dev = isValidNum(rs.forecast) ? p - rs.forecast : null;
+      const near = dev != null && Math.abs(dev) < EXTRA_NEAR.retail;
+      const accent = dev == null ? GREY : near ? AMBER : dev > 0 ? GREEN : RED;
+      const verdict = dev == null ? NOCONS : near ? tr('🟡 ตรงตามคาด', '🟡 In line') : dev > 0 ? tr('🟢 แรงกว่าที่คาด', '🟢 Stronger than forecast') : tr('🔴 อ่อนกว่าที่คาด', '🔴 Weaker than forecast');
+      let body = tr('ยอดค้าปลีกเดือน ' + esc(thMonth(rs.date)) + ' ', esc(thMonth(rs.date)) + ' retail sales ') + '<b>' + signedPct(p, 1) + '% MoM</b>';
+      body += dev == null ? tr(' · ยังไม่มีค่าคาดของรอบนี้ให้เทียบ', ' · no forecast for this release to compare against') : tr(' · ตลาดคาด ', ' · forecast ') + signedPct(rs.forecast, 1) + '% → ' + tail(verdict) + (near ? '' : tr(' ', ' by ') + Math.abs(dev).toFixed(1) + 'pp');
+      if(isValidNum(rs.prev)) body += tr('<br>เดือนก่อน ', '<br>previous month ') + signedPct(rs.prev, 1) + '%' + (p > rs.prev + 0.05 ? tr(' → เร่งขึ้น', ' → picked up') : p < rs.prev - 0.05 ? tr(' → ชะลอลง', ' → slowed') : tr(' → ทรงตัว', ' → steady'));
+      if(isValidNum(rs.yoy)) body += tr(' · เทียบปีก่อน ', ' · vs a year ago ') + signedPct(rs.yoy, 1) + '%';
+      // หักเงินเฟ้อคร่าว ๆ: เทียบกับ CPI MoM ของเดือนเดียวกัน (ถ้ามี)
+      const cpi = lastFedPayload && lastFedPayload.cpi;
+      if(cpi && isValidNum(cpi.mom) && cpi.date === rs.date){
+        const real = p - Math.round(cpi.mom * 10) / 10;
+        body += tr('<br>หักเงินเฟ้อคร่าว ๆ (CPI เดือนเดียวกัน ', '<br>Roughly inflation-adjusted (same-month CPI ') + signedPct(cpi.mom, 1) + '%) ≈ <b>' + signedPct(real, 1) + '%</b>'
+          + (real > 0.05 ? tr(' → คนซื้อของได้มากขึ้นจริง', ' → people really bought more') : real < -0.05 ? tr(' → ปริมาณที่ซื้อจริงลดลง', ' → real volumes fell') : tr(' → แทบไม่โตจริง ส่วนใหญ่เป็นผลจากราคา', ' → little real growth, mostly higher prices'));
+      }else{
+        body += tr('<br>ℹ️ ตัวเลขนี้ยังไม่หักเงินเฟ้อ ถ้า CPI ขึ้นพอ ๆ กัน แปลว่าปริมาณซื้อจริงแทบไม่โต', '<br>ℹ️ Not adjusted for inflation: if CPI rose about as much, real spending barely grew');
+      }
+      body += nextReleaseLine('retail');
+      if(dev != null) body += impact(near ? tr('ตรงคาด = ตลาดมักไม่ตอบสนองแรง', 'in line = markets usually don\'t react much')
+        : dev > 0 ? tr('ผู้บริโภคใช้จ่ายแรงกว่าคาด = เศรษฐกิจแข็ง → Fed ลดดอกเบี้ยยากขึ้น บอนด์ยีลด์ขึ้น ดอลลาร์แข็ง (มักกดดันทองและหุ้นกลุ่มเติบโตระยะสั้น)', 'consumers spent more than expected = solid economy → harder for the Fed to cut, bond yields up, dollar stronger (often weighs on gold and growth stocks short term)')
+        : tr('ผู้บริโภคใช้จ่ายอ่อนกว่าคาด = เศรษฐกิจเริ่มชะลอ → เพิ่มโอกาส Fed ลดดอกเบี้ย บอนด์ยีลด์ลง ดอลลาร์อ่อน', 'consumers spent less than expected = economy slowing → higher odds of Fed cuts, bond yields down, weaker dollar'));
+      out.push(analysisCard(accent, tr('ยอดค้าปลีก — ', 'Retail Sales — ') + verdict, body));
+    }
+
+    // ── ISM ภาคการผลิต / บริการ ──
+    [['ismMfg', tr('ISM ภาคการผลิต', 'ISM Manufacturing')], ['ismSvc', tr('ISM ภาคบริการ', 'ISM Services')]].forEach(function(row){
+      const key = row[0], v = extraView(key);
+      if(!v) return;
+      const dev = isValidNum(v.forecast) ? v.value - v.forecast : null;
+      const near = dev != null && Math.abs(dev) < EXTRA_NEAR[key];
+      const accent = dev == null ? (v.value >= 50 ? GREEN : RED) : near ? AMBER : dev > 0 ? GREEN : RED;
+      const verdict = dev == null ? NOCONS : near ? tr('🟡 ใกล้เคียงที่คาด', '🟡 Close to forecast') : dev > 0 ? tr('🟢 ดีกว่าที่คาด', '🟢 Better than forecast') : tr('🔴 แย่กว่าที่คาด', '🔴 Worse than forecast');
+      let body = row[1] + tr(' เดือน ' + esc(thMonth(v.date)) + ' = ', ', ' + esc(thMonth(v.date)) + ' = ') + '<b>' + v.value.toFixed(1) + '</b> (' + (v.value >= 50 ? tr('ขยายตัว', 'expanding') : tr('หดตัว', 'contracting')) + ')';
+      body += dev == null ? tr(' · ยังไม่มีค่าคาดของรอบนี้ให้เทียบ', ' · no forecast for this release to compare against') : tr(' · ตลาดคาด ', ' · forecast ') + v.forecast.toFixed(1) + ' → ' + tail(verdict) + (near ? '' : tr(' ', ' by ') + Math.abs(dev).toFixed(1) + tr(' จุด', ' pts'));
+      if(isValidNum(v.prev)){
+        const crossedUp = v.prev < 50 && v.value >= 50, crossedDown = v.prev >= 50 && v.value < 50;
+        body += tr('<br>เดือนก่อน ', '<br>previous month ') + v.prev.toFixed(1)
+          + (crossedUp ? tr(' → <b>กลับมาขยายตัว</b> (ข้ามเส้น 50 ขึ้นมา)', ' → <b>back to expansion</b> (crossed above 50)')
+            : crossedDown ? tr(' → <b>หลุดเข้าโซนหดตัว</b> (ต่ำกว่า 50)', ' → <b>slipped into contraction</b> (below 50)')
+            : v.value > v.prev + 0.05 ? tr(' → ดีขึ้น', ' → improved') : v.value < v.prev - 0.05 ? tr(' → แย่ลง', ' → worsened') : tr(' → ทรงตัว', ' → steady'));
+      }
+      body += nextReleaseLine(key);
+      if(dev != null && !near) body += impact(dev > 0
+        ? tr('ภาคธุรกิจแข็งกว่าคาด = เศรษฐกิจยังดี → Fed ไม่รีบลดดอกเบี้ย บอนด์ยีลด์และดอลลาร์มักขึ้น', 'businesses stronger than expected = economy holding up → no rush for Fed cuts; yields and the dollar tend to rise')
+        : tr('ภาคธุรกิจอ่อนกว่าคาด = สัญญาณเศรษฐกิจชะลอ → เพิ่มโอกาส Fed ลดดอกเบี้ย บอนด์ยีลด์และดอลลาร์มักลง', 'businesses weaker than expected = slowdown signal → higher odds of Fed cuts; yields and the dollar tend to fall'));
+      else if(near) body += impact(tr('ตรงคาด = ตลาดมักไม่ตอบสนองแรง', 'in line = markets usually don\'t react much'));
+      out.push(analysisCard(accent, row[1] + ' — ' + verdict, body));
+    });
+
+    // ── Existing Home Sales ──
+    const hs = extraView('homeSales');
+    if(hs){
+      const dev = isValidNum(hs.forecast) ? hs.value - hs.forecast : null;
+      const near = dev != null && Math.abs(dev) < EXTRA_NEAR.homeSales;
+      const accent = dev == null ? GREY : near ? AMBER : dev > 0 ? GREEN : RED;
+      const verdict = dev == null ? NOCONS : near ? tr('🟡 ใกล้เคียงที่คาด', '🟡 Close to forecast') : dev > 0 ? tr('🟢 ดีกว่าที่คาด', '🟢 Better than forecast') : tr('🔴 แย่กว่าที่คาด', '🔴 Worse than forecast');
+      let body = tr('ยอดขายบ้านมือสองเดือน ' + esc(thMonth(hs.date)) + ' ', esc(thMonth(hs.date)) + ' existing home sales ') + '<b>' + esc(fmtHomes(hs.value)) + tr(' หลัง/ปี', ' a year') + '</b>';
+      body += dev == null ? tr(' · ยังไม่มีค่าคาดของรอบนี้ให้เทียบ', ' · no forecast for this release to compare against') : tr(' · ตลาดคาด ', ' · forecast ') + esc(fmtHomes(hs.forecast)) + ' → ' + tail(verdict);
+      if(isValidNum(hs.prev) && hs.prev) body += tr('<br>เทียบเดือนก่อน (', '<br>vs previous month (') + esc(fmtHomes(hs.prev)) + ') ' + signedPct((hs.value - hs.prev) / hs.prev * 100, 1) + '%';
+      body += tr('<br>ระดับ: ', '<br>Level: ') + (hs.value < 4e6 ? tr('ต่ำกว่า 4 ล้าน = ตลาดบ้านซบเซามาก', 'below 4 million = a very weak housing market') : hs.value < 5e6 ? tr('ต่ำกว่าระดับปกติ (~5 ล้าน)', 'below a normal year (~5 million)') : tr('ระดับปกติถึงคึกคัก', 'normal to busy'));
+      const m30 = EXTRA && EXTRA.mort30;
+      if(m30 && isValidNum(m30.value)) body += tr(' · ดอกเบี้ยบ้าน 30 ปีตอนนี้ ', ' · 30-year mortgage now ') + m30.value.toFixed(2) + '%';
+      body += nextReleaseLine('homeSales');
+      if(dev != null) body += impact(near ? tr('ตรงคาด = เป็นกลาง', 'in line = neutral')
+        : dev > 0 ? tr('ตลาดบ้านฟื้นดีกว่าคาด = หนุนหุ้นกลุ่มอสังหาฯ/ก่อสร้าง และสะท้อนว่าผู้บริโภคยังมีกำลังซื้อ', 'housing better than expected = supports homebuilder/real-estate stocks and shows buyers still have purchasing power')
+        : tr('ตลาดบ้านแย่กว่าคาด = ดอกเบี้ยบ้านสูงยังกดดันผู้ซื้อ เป็นอีกเหตุผลให้ Fed ผ่อนคลาย', 'housing worse than expected = high mortgage rates still squeezing buyers, another reason for the Fed to ease'));
+      out.push(analysisCard(accent, tr('ยอดขายบ้านมือสอง — ', 'Existing Home Sales — ') + verdict, body));
+    }
+
+    // ── ดอกเบี้ยบ้าน 30/15 ปี (ไม่มีค่าคาด → ดูการเปลี่ยนแปลงรายสัปดาห์ + ส่วนต่างกับบอนด์ 10 ปี) ──
+    const m30 = EXTRA && EXTRA.mort30, m15 = EXTRA && EXTRA.mort15;
+    if(m30 && isValidNum(m30.value)){
+      const ch = isValidNum(m30.change) ? m30.change : null;
+      const bp = ch == null ? null : Math.round(ch * 100);
+      const accent = bp == null ? GREY : bp <= -3 ? GREEN : bp >= 3 ? RED : AMBER;
+      const verdict = bp == null ? tr('⚪ ไม่มีข้อมูลสัปดาห์ก่อน', '⚪ No previous week') : bp <= -3 ? tr('🟢 ลดลงจากสัปดาห์ก่อน', '🟢 Down from last week') : bp >= 3 ? tr('🔴 สูงขึ้นจากสัปดาห์ก่อน', '🔴 Up from last week') : tr('🟡 ทรงตัว', '🟡 About the same');
+      let body = tr('30 ปี ', '30-year ') + '<b>' + m30.value.toFixed(2) + '%</b>' + (bp == null ? '' : ' (' + (bp > 0 ? '+' : bp < 0 ? '−' : '±') + Math.abs(bp) + tr(' bp จากสัปดาห์ก่อน ', ' bp vs last week ') + m30.prev.value.toFixed(2) + '%)');
+      if(m15 && isValidNum(m15.value)) body += tr(' · 15 ปี ', ' · 15-year ') + '<b>' + m15.value.toFixed(2) + '%</b>' + (isValidNum(m15.change) ? ' (' + (m15.change > 0 ? '+' : m15.change < 0 ? '−' : '±') + Math.abs(Math.round(m15.change * 100)) + ' bp)' : '');
+      body += tr(' · สัปดาห์ ', ' · week of ') + esc(thDay(m30.date));
+      if(isValidNum(m30.spread10y)){
+        const sp = m30.spread10y;
+        body += tr('<br>ห่างจากบอนด์ 10 ปี (', '<br>Gap over the 10-year Treasury (') + (m30.us10y ? m30.us10y.value.toFixed(2) + '%' : '') + ') = <b>' + sp.toFixed(2) + tr(' จุด</b>', ' pts</b>')
+          + (isValidNum(m30.prevSpread10y) ? tr(' (สัปดาห์ก่อน ', ' (last week ') + m30.prevSpread10y.toFixed(2) + ')' : '')
+          + ' → ' + (sp > 2.3 ? tr('ห่างกว่าปกติ (ปกติ ~1.5–2) ธนาคารยังคิดดอกเบี้ยบ้านแพงเมื่อเทียบกับบอนด์', 'wider than normal (~1.5–2): lenders still charge a lot relative to bonds')
+            : sp >= 1.4 ? tr('อยู่ในช่วงปกติ ดอกเบี้ยบ้านเคลื่อนตามบอนด์ 10 ปี', 'in the normal range: mortgage rates are tracking the 10-year yield')
+            : tr('แคบกว่าปกติ', 'narrower than normal'));
+      }
+      body += tr('<br>ℹ️ ดอกเบี้ยบ้านไม่มีค่าคาดจากตลาด จึงดูการเปลี่ยนแปลงรายสัปดาห์และส่วนต่างกับบอนด์แทน', '<br>ℹ️ There is no market forecast for mortgage rates, so this looks at the weekly change and the gap over Treasuries instead');
+      body += nextReleaseLine('mort30');
+      if(bp != null && Math.abs(bp) >= 3) body += impact(bp < 0 ? tr('ค่าผ่อนบ้านถูกลง = หนุนยอดขาย/รีไฟแนนซ์ และหุ้นกลุ่มอสังหาฯ', 'cheaper mortgages = supports home sales, refinancing and housing stocks') : tr('ค่าผ่อนบ้านแพงขึ้น = กดดันตลาดบ้านและหุ้นกลุ่มอสังหาฯ', 'pricier mortgages = pressure on housing activity and housing stocks'));
+      out.push(analysisCard(accent, tr('ดอกเบี้ยบ้าน — ', 'Mortgage rates — ') + verdict, body));
+    }
+    return out;
+  }
+
   // ⓘ คำอธิบายในการ์ดตลาด: บนคอมแค่ชี้ก็ขึ้น (CSS :hover) · บนมือถือแตะเพื่อเปิด/ปิด, แตะที่อื่นหรือกด Esc เพื่อปิด
   function closeTips(except){
     document.querySelectorAll('.tip.open').forEach(function(t){
@@ -2863,7 +3215,10 @@ window.setHeaderStamp();
     claims: ['Jobless claims (weekly)', 'Initial Jobless Claims'],
     gdp:   ['US GDP', 'Gross Domestic Product'],
     pce:   ['PCE, the Fed\'s inflation gauge', 'Personal Income & Outlays'],
-    fomc:  ['FOMC meeting: rate decision', 'Fed statement + press conference']
+    fomc:  ['FOMC meeting: rate decision', 'Fed statement + press conference'],
+    retail: ['US Retail Sales', 'Advance Retail Sales (Census)'],
+    ismMfg: ['ISM Manufacturing PMI', 'above 50 = expanding'],
+    ismSvc: ['ISM Services PMI', 'above 50 = expanding']
   } : {
     cpi:   ['CPI เงินเฟ้อสหรัฐฯ', 'Consumer Price Index'],
     jobs:  ['ตัวเลขจ้างงาน (Non-farm Payrolls)', 'Employment Situation · อัตราว่างงาน'],
@@ -2872,7 +3227,10 @@ window.setHeaderStamp();
     claims: ['ผู้ขอรับสวัสดิการว่างงาน (รายสัปดาห์)', 'Initial Jobless Claims'],
     gdp:   ['GDP สหรัฐฯ', 'Gross Domestic Product'],
     pce:   ['PCE เงินเฟ้อที่ Fed ใช้', 'Personal Income & Outlays'],
-    fomc:  ['ประชุม FOMC — ประกาศดอกเบี้ย', 'Fed statement + แถลงข่าว']
+    fomc:  ['ประชุม FOMC — ประกาศดอกเบี้ย', 'Fed statement + แถลงข่าว'],
+    retail: ['ยอดค้าปลีกสหรัฐฯ', 'Retail Sales (Census)'],
+    ismMfg: ['ISM ภาคการผลิต', 'เกิน 50 = ขยายตัว'],
+    ismSvc: ['ISM ภาคบริการ', 'เกิน 50 = ขยายตัว']
   };
   const CAL_HIGH = { cpi:1, jobs:1, fomc:1, pce:1 };
   const TH_DOW = EN ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] : ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
@@ -2885,7 +3243,8 @@ window.setHeaderStamp();
     return parts;
   }
   // ค่าคาดของรอบนั้น (ถ้า Investing.com มีแล้ว) ต่อท้ายรายการในปฏิทิน — วันที่ต้องตรงกัน ±1 วัน
-  const CAL_FORECAST_KEYS = { cpi:[['cpi','CPI YoY'], ['coreCpi','Core']], ppi:[['ppi','MoM']], jobs:[['nfp','NFP'], ['unrate',tr('ว่างงาน','Unemployment')]], fomc:[['fed',tr('ดอกเบี้ย','Rate')]], claims:[['claims','Claims']] };
+  const CAL_FORECAST_KEYS = { cpi:[['cpi','CPI YoY'], ['coreCpi','Core']], ppi:[['ppi','MoM']], jobs:[['nfp','NFP'], ['unrate',tr('ว่างงาน','Unemployment')]], fomc:[['fed',tr('ดอกเบี้ย','Rate')]], claims:[['claims','Claims']],
+    retail:[['retail','MoM']], ismMfg:[['ismMfg','PMI']], ismSvc:[['ismSvc','PMI']] };
   function calForecast(e){
     try{
       const parts = (CAL_FORECAST_KEYS[e.key] || []).map(([k, label]) => {
@@ -2965,7 +3324,38 @@ window.setHeaderStamp();
   // ค่าคาดจะแสดงก็ต่อเมื่อวันที่ของสองแหล่งตรงกัน (±1 วัน) — กันเอาค่าคาดของรอบที่ประกาศไปแล้ว
   // มาแปะกับรอบถัดไป · พอตัวเลขจริงออก รายการนี้จะเลื่อนไปรอบหน้าเอง และการ์ดวิเคราะห์จะเทียบ "จริง vs คาด" ให้
   var CAL_EVENTS = [];
-  const NEXT_CAL_KEY = { cpi:'cpi', coreCpi:'cpi', ppi:'ppi', unrate:'jobs', nfp:'jobs', fed:'fomc', claims:'claims', pce:'pce' };
+  const NEXT_CAL_KEY = { cpi:'cpi', coreCpi:'cpi', ppi:'ppi', unrate:'jobs', nfp:'jobs', fed:'fomc', claims:'claims', pce:'pce',
+    retail:'retail', homeSales:'homeSales', ismMfg:'ismMfg', ismSvc:'ismSvc', mort30:'mort', mort15:'mort' };
+  // เวลาประกาศปกติ (นิวยอร์ก) — ใช้เมื่อมีแค่วันที่จาก Investing.com ไม่มีในปฏิทิน
+  const NEXT_DEFAULT_ET = { retail:[8, 30], homeSales:[10, 0], ismMfg:[10, 0], ismSvc:[10, 0], mort30:[12, 0], mort15:[12, 0] };
+  // ตัวที่ตลาดไม่มีค่าคาด → ไม่ต้องเขียน "ยังไม่มีค่าคาด"
+  const NO_FORECAST_KEYS = { mort30:1, mort15:1 };
+  // วันที่จาก Investing.com เชื่อได้กว่าวันที่ที่คำนวณจากกฎ (ISM) ถ้าสองแหล่งไม่ตรงกัน
+  const PREFER_UPCOMING_DATE = { ismMfg:1, ismSvc:1 };
+  // เวลานิวยอร์ก hh:mm ของวันที่ date → ISO UTC (EDT = UTC−4 / EST = UTC−5)
+  function nyTimeIso(date, hh, mm){
+    const p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date || ''));
+    if(!p) return null;
+    const probe = new Date(Date.UTC(+p[1], +p[2] - 1, +p[3], 12));
+    const nyHour = +new Intl.DateTimeFormat('en-US', { timeZone:'America/New_York', hour:'2-digit', hourCycle:'h23' }).format(probe);
+    const off = 12 - nyHour;   // 4 หรือ 5
+    return new Date(Date.UTC(+p[1], +p[2] - 1, +p[3], hh + off, mm)).toISOString();
+  }
+  // ดอกเบี้ยบ้าน Freddie Mac: ทุกวันพฤหัสฯ 12:00 น. นิวยอร์ก (สัปดาห์ที่พฤหัสฯ เป็นวันหยุด → วันพุธ)
+  function mortgageEvents(){
+    const out = [];
+    const now = Date.now();
+    for(let w = 0; w < 3 && out.length < 2; w++){
+      const base = new Date(now + w * 7 * 86400000);
+      const thu = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate() + (4 - base.getUTCDay())));
+      const m = thu.getUTCMonth() + 1, d = thu.getUTCDate();
+      const holiday = (m === 11 && d >= 22 && d <= 28) || (m === 1 && d === 1) || (m === 6 && d === 19) || (m === 7 && d === 4) || (m === 12 && d === 25);
+      const date = (holiday ? new Date(thu.getTime() - 86400000) : thu).toISOString().slice(0, 10);
+      const at = nyTimeIso(date, 12, 0);
+      if(at && Date.parse(at) > now && !out.some(e => e.date === date)) out.push({ key:'mort', date, at, source:'local' });
+    }
+    return out;
+  }
   function dayDiff(a, b){ return Math.round((Date.parse(a + 'T00:00:00Z') - Date.parse(b + 'T00:00:00Z')) / 86400000); }
   // ตัวเลขรายเดือนที่ประกาศในเดือน M เป็นของเดือน M−1 (CPI/PPI/จ้างงาน/PCE) — ใช้เช็กว่าข้อมูลที่หน้าเว็บมี
   // ตามรอบที่เพิ่งประกาศทันหรือยัง
@@ -3002,15 +3392,18 @@ window.setHeaderStamp();
       return { date: pend.date, at: pend.at, pending: true, forecast: pu ? pu.forecast : null, previous: pu ? pu.previous : null };
     }
     // เหตุการณ์ที่ยังไม่ถึงเวลา (ไม่มีเวลา = ถือว่ายังไม่ผ่านจนจบวันนั้น)
-    const ev = (CAL_EVENTS || [])
+    let ev = (calKey === 'mort' ? mortgageEvents() : (CAL_EVENTS || []))
       .filter(e => e && e.key === calKey && /^\d{4}-\d{2}-\d{2}$/.test(String(e.date || '')))
       .filter(e => (e.at ? Date.parse(e.at) : Date.parse(e.date + 'T23:59:59Z')) > now)
       .sort((a, b) => String(a.at || a.date).localeCompare(String(b.at || b.date)))[0] || null;
     let up = LIVE_UPCOMING[key] || null;
+    if(up && ev && Math.abs(dayDiff(up.releaseDate, ev.date)) > 1 && PREFER_UPCOMING_DATE[key] && up.releaseDate >= todayUtc) ev = null;
     if(up && ev && Math.abs(dayDiff(up.releaseDate, ev.date)) > 1) up = null;
     if(up && !ev && up.releaseDate < todayUtc) up = null;
     if(!ev && !up) return null;
-    return { date: ev ? ev.date : up.releaseDate, at: ev ? ev.at : null, forecast: up ? up.forecast : null, previous: up ? up.previous : null };
+    const dt = NEXT_DEFAULT_ET[key];
+    const at = ev ? ev.at : (dt ? nyTimeIso(up.releaseDate, dt[0], dt[1]) : null);
+    return { date: ev ? ev.date : up.releaseDate, at: at, forecast: up ? up.forecast : null, previous: up ? up.previous : null };
   }
   function fmtForecast(key, v){
     if(!isValidNum(v)) return '';
@@ -3018,6 +3411,9 @@ window.setHeaderStamp();
     if(key === 'claims') return fmtClaims(v);
     if(key === 'ppi') return signedPct(v, 1) + '%';
     if(key === 'fed') return v.toFixed(2) + '%';
+    if(key === 'retail') return signedPct(v, 1) + '%';
+    if(key === 'homeSales') return (v / 1e6).toFixed(2) + 'M';
+    if(key === 'ismMfg' || key === 'ismSvc') return v.toFixed(1);
     return v.toFixed(1) + '%';
   }
   // "พฤ. 13 พ.ย. 19:30 น." (เวลาไทย) · วันนี้/พรุ่งนี้ใช้คำแทนวันที่
@@ -3035,7 +3431,7 @@ window.setHeaderStamp();
     const n = nextRelease(key);
     if(!n) return '';
     const w = fmtReleaseWhen(n);
-    let fc = isValidNum(n.forecast) ? (key === 'fed' ? tr('ตลาดคาดดอกเบี้ย ', 'Rate forecast ') : tr('ตลาดคาด ', 'Forecast ')) + '<b>' + esc(fmtForecast(key, n.forecast)) + '</b>' : tr('ยังไม่มีค่าคาด', 'No forecast yet');
+    let fc = NO_FORECAST_KEYS[key] ? '' : isValidNum(n.forecast) ? (key === 'fed' ? tr('ตลาดคาดดอกเบี้ย ', 'Rate forecast ') : tr('ตลาดคาด ', 'Forecast ')) + '<b>' + esc(fmtForecast(key, n.forecast)) + '</b>' : tr('ยังไม่มีค่าคาด', 'No forecast yet');
     if(key === 'cpi' && isValidNum(n.forecast)){
       const core = nextRelease('coreCpi');
       if(core && isValidNum(core.forecast) && core.date === n.date) fc += ' (Core ' + esc(fmtForecast('coreCpi', core.forecast)) + ')';
@@ -3046,7 +3442,7 @@ window.setHeaderStamp();
       if(!isValidNum(n.forecast)) fc = '';
       return tr('⏳ ประกาศแล้ว ', '⏳ Released ') + esc(w.text) + tr(' · รอตัวเลขใหม่เข้าระบบ', ' · waiting for the new figure') + (fc ? ' · ' + fc : '');
     }
-    return (w.today ? tr('⏰ ประกาศ', '⏰ Release ') : tr('📅 ครั้งถัดไป ', '📅 Next ')) + esc(w.text) + ' · ' + fc;
+    return (w.today ? tr('⏰ ประกาศ', '⏰ Release ') : tr('📅 ครั้งถัดไป ', '📅 Next ')) + esc(w.text) + (fc ? ' · ' + fc : '');
   }
   function nextReleaseLine(key){
     try{
@@ -3055,7 +3451,8 @@ window.setHeaderStamp();
     }catch(e){ return ''; }
   }
   function renderNextReleases(){
-    [['nextFed','fed'], ['nextCpi','cpi'], ['nextPpi','ppi'], ['nextUnrate','unrate'], ['nextNfp','nfp'], ['nextClaims','claims'], ['nextPce','pce']].forEach(([id, key]) => {
+    [['nextFed','fed'], ['nextCpi','cpi'], ['nextPpi','ppi'], ['nextUnrate','unrate'], ['nextNfp','nfp'], ['nextClaims','claims'], ['nextPce','pce'],
+     ['nextHomeSales','homeSales'], ['nextMort30','mort30'], ['nextMort15','mort15'], ['nextRetail','retail'], ['nextIsmMfg','ismMfg'], ['nextIsmSvc','ismSvc']].forEach(([id, key]) => {
       const node = el(id);
       if(!node) return;
       const h = nextReleaseHtml(key);

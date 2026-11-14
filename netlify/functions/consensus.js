@@ -6,7 +6,7 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // The automatic "ดี/แย่แค่ไหน เทียบกับที่คาด" analysis needs a consensus number, and no free API
 // publishes one (they all come from analyst surveys behind paid terminals). Investing.com shows
-// them publicly per event, so this function reads the seven event pages we care about and returns
+// them publicly per event, so this function reads the event pages we care about and returns
 // the latest release's Actual / Forecast / Previous, server-side (no CORS, one shared cache).
 // It also returns `upcoming`: the next scheduled release's date and Forecast, read from the history
 // table at the bottom of the event page (that row has an empty Actual until the number is out), so
@@ -18,7 +18,7 @@
 //     the markup can change, so a failure here is expected sometimes and must stay harmless.
 //   • The frontend compares `events[key].actual` with the number on the card: if they disagree,
 //     the consensus belongs to a different print and the page says so instead of pretending.
-//   • robots.txt does not disallow /economic-calendar, and we make 7 requests per 3 hours per
+//   • robots.txt does not disallow /economic-calendar, and we make ~11 requests per 3 hours per
 //     instance, cached in front of the CDN, so the load on the upstream is negligible.
 //
 // Usage: /.netlify/functions/consensus
@@ -36,7 +36,14 @@ const EVENTS = {
   fed: { slug: 'interest-rate-decision-168', label: 'Fed Interest Rate Decision', kind: 'pct', range: [0, 25] },
   ppi: { slug: 'ppi-238', label: 'PPI MoM', kind: 'pct', range: [-5, 5] },
   // weekly, Thursday 8:30 ET — Investing.com prints it as "189K" / "189 พัน"
-  claims: { slug: 'initial-jobless-claims-294', label: 'Initial Jobless Claims', kind: 'claims', range: [50000, 7e6] }
+  claims: { slug: 'initial-jobless-claims-294', label: 'Initial Jobless Claims', kind: 'claims', range: [50000, 7e6] },
+  // Census, ~mid-month 8:30 ET — headline MoM (not the control group)
+  retail: { slug: 'retail-sales-256', label: 'Retail Sales MoM', kind: 'pct', range: [-25, 25] },
+  // NAR, ~3rd-4th week 10:00 ET — printed as "4.06M" / "4.06 ล้าน" (homes per year, SAAR)
+  homeSales: { slug: 'existing-home-sales-99', label: 'Existing Home Sales', kind: 'homes', range: [1e6, 1e7] },
+  // ISM, 1st / 3rd business day 10:00 ET
+  ismMfg: { slug: 'ism-manufacturing-pmi-173', label: 'ISM Manufacturing PMI', kind: 'index', range: [20, 80] },
+  ismSvc: { slug: 'ism-non-manufacturing-pmi-176', label: 'ISM Services PMI', kind: 'index', range: [20, 80] }
 };
 
 const THAI_MONTHS = {

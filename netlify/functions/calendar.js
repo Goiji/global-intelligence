@@ -12,6 +12,9 @@
 //   4. Weekly initial jobless claims (DOL, Thursday 8:30 ET; Wednesday in holiday weeks) — computed
 //      from the fixed weekly schedule, so it needs no upstream. Only the next two are listed so the
 //      weekly entries don't crowd the monthly releases out of the card.
+//   5. ISM Manufacturing / Services PMI (10:00 ET on the 1st / 3rd US business day of the month) —
+//      computed from that fixed rule (ISM is a private survey with no feed of its own). The page also
+//      cross-checks the date against Investing.com's next-release row.
 // If 1 and 2 both fail the card still shows FOMC, so it never comes back empty.
 
 const { __test: fred } = require('./fred-data.js');
@@ -30,9 +33,10 @@ const BLS_MATCH = [
   [/job openings and labor turnover/i, 'jolts']
 ];
 // FRED release ids → our key (10 CPI · 50 Employment Situation · 53 GDP · 54 Personal Income & Outlays/PCE)
-const FRED_RELEASES = { 10: 'cpi', 50: 'jobs', 53: 'gdp', 54: 'pce' };
+// 9 = Advance Monthly Sales for Retail and Food Services (Census)
+const FRED_RELEASES = { 10: 'cpi', 50: 'jobs', 53: 'gdp', 54: 'pce', 9: 'retail' };
 // Usual release time (ET) when a source gives only a date.
-const DEFAULT_ET = { cpi: '08:30', jobs: '08:30', ppi: '08:30', jolts: '10:00', gdp: '08:30', pce: '08:30', fomc: '14:00', claims: '08:30' };
+const DEFAULT_ET = { cpi: '08:30', jobs: '08:30', ppi: '08:30', jolts: '10:00', gdp: '08:30', pce: '08:30', fomc: '14:00', claims: '08:30', retail: '08:30', ismMfg: '10:00', ismSvc: '10:00' };
 
 let memCache = { data: null, expiresAt: 0, lastGood: null };
 
@@ -140,6 +144,43 @@ function claimsEvents(now = new Date()) {
   return fred.upcomingClaimsDates(2, now).map((date) => ({ key: 'claims', date, at: etToUtcIso(date, DEFAULT_ET.claims), source: 'dol-schedule' }));
 }
 
+// US federal holidays that can fall in the first days of a month (when ISM publishes): New Year's
+// Day and Independence Day (each observed on the Friday/Monday when it lands on a weekend) and Labor Day.
+function isEarlyMonthHoliday(y, m, d) {
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  const fixed = (fm, fd) => {
+    const fdow = new Date(Date.UTC(y, fm - 1, fd)).getUTCDay();
+    const observed = fdow === 6 ? fd - 1 : fdow === 0 ? fd + 1 : fd;
+    return m === fm && d === observed;
+  };
+  if (fixed(1, 1) || fixed(7, 4)) return true;
+  if (m === 9 && dow === 1 && d <= 7) return true; // Labor Day, first Monday of September
+  return false;
+}
+// The n-th US business day (Mon–Fri, not a holiday above) of month m (1-12) of year y → 'YYYY-MM-DD'.
+function nthBusinessDay(y, m, n) {
+  let count = 0;
+  for (let d = 1; d <= 15; d++) {
+    const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    if (dow === 0 || dow === 6 || isEarlyMonthHoliday(y, m, d)) continue;
+    if (++count === n) return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+  return null;
+}
+// ISM Manufacturing (1st business day) and Services (3rd business day) for this month and the next two.
+function ismEvents(now = new Date()) {
+  const out = [];
+  for (let k = 0; k < 3; k++) {
+    const t = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + k, 1));
+    const y = t.getUTCFullYear(), m = t.getUTCMonth() + 1;
+    [['ismMfg', 1], ['ismSvc', 3]].forEach(([key, n]) => {
+      const date = nthBusinessDay(y, m, n);
+      if (date) out.push({ key, date, at: etToUtcIso(date, DEFAULT_ET[key]), source: 'ism-schedule' });
+    });
+  }
+  return out;
+}
+
 // Keep upcoming events within the horizon, one per (key, date), soonest first.
 function mergeEvents(lists, now = new Date()) {
   const today = now.toISOString().slice(0, 10);
@@ -154,7 +195,7 @@ function mergeEvents(lists, now = new Date()) {
 }
 
 async function buildPayload(apiKey) {
-  const lists = [fomcEvents(), claimsEvents()], sources = ['fomc', 'dol-schedule'], errors = {};
+  const lists = [fomcEvents(), claimsEvents(), ismEvents()], sources = ['fomc', 'dol-schedule', 'ism-schedule'], errors = {};
   try { lists.push(blsEvents(await fetchText(BLS_ICS))); sources.push('bls'); }
   catch (e) { errors.bls = e.message; }
   if (apiKey) {
@@ -192,13 +233,13 @@ exports.handler = async function () {
     memCache = { data, expiresAt: now + ttl * 1000, lastGood: fetched ? data : memCache.lastGood };
     if (!fetched && memCache.lastGood) {
       // the claims dates are computed, so always take today's rather than the cached copy's
-      const kept = memCache.lastGood.events.filter((e) => e.key !== 'claims');
-      return { statusCode: 200, headers, body: JSON.stringify({ ...memCache.lastGood, events: mergeEvents([kept, claimsEvents()]), stale: true }) };
+      const kept = memCache.lastGood.events.filter((e) => e.key !== 'claims' && e.key !== 'ismMfg' && e.key !== 'ismSvc');
+      return { statusCode: 200, headers, body: JSON.stringify({ ...memCache.lastGood, events: mergeEvents([kept, claimsEvents(), ismEvents()]), stale: true }) };
     }
     return { statusCode: 200, headers, body: JSON.stringify(data) };
   } catch (e) {
-    return { statusCode: 200, headers, body: JSON.stringify({ events: mergeEvents([fomcEvents(), claimsEvents()]), sources: ['fomc', 'dol-schedule'], errors: { all: e.message } }) };
+    return { statusCode: 200, headers, body: JSON.stringify({ events: mergeEvents([fomcEvents(), claimsEvents(), ismEvents()]), sources: ['fomc', 'dol-schedule', 'ism-schedule'], errors: { all: e.message } }) };
   }
 };
 
-module.exports.__test = { parseIcs, icsStart, blsEvents, fredEvents, fomcEvents, claimsEvents, mergeEvents, etToUtcIso, nyOffsetMinutes };
+module.exports.__test = { nthBusinessDay, ismEvents, parseIcs, icsStart, blsEvents, fredEvents, fomcEvents, claimsEvents, mergeEvents, etToUtcIso, nyOffsetMinutes };
