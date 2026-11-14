@@ -103,8 +103,8 @@ test('parseEventPage is honest about pages it cannot read', () => {
   assert.equal(p.forecast, null);
 });
 
-test('the event table points at the seven pages the dashboard needs', () => {
-  assert.deepEqual(Object.keys(EVENTS).sort(), ['claims', 'coreCpi', 'cpi', 'fed', 'nfp', 'ppi', 'unrate']);
+test('the event table points at the pages the dashboard needs', () => {
+  assert.deepEqual(Object.keys(EVENTS).sort(), ['claims', 'coreCpi', 'cpi', 'fed', 'homeSales', 'ismMfg', 'ismSvc', 'nfp', 'ppi', 'retail', 'unrate']);
   for (const [key, spec] of Object.entries(EVENTS)) {
     assert.match(spec.slug, /-\d+$/, `${key} must end with the Investing.com event id`);
     assert.ok(Array.isArray(spec.range) && spec.range.length === 2, `${key} needs a sanity range`);
