@@ -30,6 +30,15 @@
 //     $ billions, positive = net short. A week is used only when all six contracts are reported.
 //     The payload also carries the record since 2016 (Ultra 10Y launched then) and its date.
 //
+// US − Japan yield spreads (usjp2y / usjp10y, percentage points) — the carry-trade gauge:
+//   US side = the same daily 2Y / 10Y series above (FRED history + Treasury / Cboe overlay for the
+//   latest day). Japan side = the Ministry of Finance's JGB constant-maturity yields (jgbcme.csv for
+//   this month, published each Tokyo business day after the close; jgbcme_all.csv for the history,
+//   ~1 MB since 1974, kept in memory for 12 h). FRED has no daily JGB series. Each US day is paired
+//   with the JGB yield of the same date (or the last Tokyo business day before it, at most 7 days).
+//   Each spread also carries chg1w / chg1m (change over 7 / 30 calendar days) — a fast narrowing is
+//   what forces yen carry trades to unwind (Aug 2024).
+//
 // Caching: memory + CDN for 1 h, but only 15 min on CPI / jobs / FOMC days (same calendar as
 // fred-data.js) so the CPI / unemployment / Fed sparklines don't trail the cards for hours after a
 // release. If every source fails we serve the last good payload marked stale instead of an error.
@@ -51,6 +60,11 @@ const CFTC_TFF = 'https://publicreporting.cftc.gov/resource/gpe5-46if.json';
 const UST_FUTURES = { '042601': 200000, '044601': 100000, '043602': 100000, '043607': 100000, '020601': 100000, '020604': 100000 };
 const CFTC_SINCE = '2016-03-01';
 const CFTC_TIMEOUT_MS = 9000;
+const MOF_CURRENT = 'https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv';
+const MOF_HISTORY = 'https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/historical/jgbcme_all.csv';
+const MOF_TIMEOUT_MS = 8000;
+const JGB_HISTORY_TTL_MS = 12 * 60 * 60 * 1000;
+const BROWSER_UA = 'Mozilla/5.0 (compatible; global-intelligence-dashboard/1.0)';
 const TREASURY_CSV = 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/all/';
 const TTL_S = 60 * 60;
 const RELEASE_TTL_S = 15 * 60;
@@ -68,21 +82,25 @@ const SERIES = {
   dollar:   { id: 'DTWEXBGS', label: 'Dollar (Broad)', unit: '', cadence: 'daily' },
   cpi:      { id: 'CPIAUCSL', label: 'CPI YoY', unit: '%', cadence: 'monthly', transformation: 'pc1' },
   unrate:   { id: 'UNRATE',   label: 'Unemployment', unit: '%', cadence: 'monthly' },
-  fedUpper: { id: 'DFEDTARU', label: 'Fed upper', unit: '%', cadence: 'daily' }
+  fedUpper: { id: 'DFEDTARU', label: 'Fed upper', unit: '%', cadence: 'daily' },
+  usjp2y:   { id: 'US2Y-JGB2Y',   label: 'US 2Y − JGB 2Y', unit: 'pp', cadence: 'daily', loader: 'usjp', us: 'us2y', jp: 'y2' },
+  usjp10y:  { id: 'US10Y-JGB10Y', label: 'US 10Y − JGB 10Y', unit: 'pp', cadence: 'daily', loader: 'usjp', us: 'us10y', jp: 'y10' }
 };
+
+let jgbHistCache = { rows: null, expiresAt: 0 };
 
 let memCache = { data: null, expiresAt: 0, lastGood: null };
 
 function isoDay(d) { return d.toISOString().slice(0, 10); }
 function daysAgoIso(n, from = new Date()) { return isoDay(new Date(from.getTime() - n * 86400000)); }
 
-async function fetchText(url, timeoutMs = ATTEMPT_TIMEOUT_MS) {
+async function fetchText(url, timeoutMs = ATTEMPT_TIMEOUT_MS, ua = 'global-intelligence-dashboard (netlify function)') {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const r = await fetch(url, {
       signal: ctrl.signal,
-      headers: { 'User-Agent': 'global-intelligence-dashboard (netlify function)', Accept: '*/*' }
+      headers: { 'User-Agent': ua, Accept: '*/*' }
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return await r.text();
@@ -168,9 +186,109 @@ async function fetchFredObs(cfg, apiKey) {
   throw new Error(errors.join(' | '));
 }
 
-async function loadSeries(key, apiKey) {
+async function loadSeries(key, apiKey, raw) {
   const { obs, source } = await fetchFredObs(SERIES[key], apiKey);
+  if (raw) raw[key] = obs;
   return { ...summarize(key, obs), source };
+}
+
+// MOF JGB CSV (English) → [{ date, y2, y10 }] oldest-first. Layout: a title line, then
+// "Date,1Y,2Y,…,10Y,…" and rows like "2026/11/12,1.653,1.857,…"; "-" = no yield that day. Rows
+// before `since` (ISO date) are skipped so the 50-year history file stays cheap to keep.
+function parseMofCsv(text, since = '') {
+  const lines = String(text).split(/\r?\n/);
+  const h = lines.findIndex((l) => /^"?Date"?,/i.test(l.trim()));
+  if (h < 0) throw new Error('mof: no Date header');
+  const head = lines[h].split(',').map((c) => c.replace(/"/g, '').trim().toUpperCase());
+  const i2 = head.indexOf('2Y'), i10 = head.indexOf('10Y');
+  if (i2 < 0 || i10 < 0) throw new Error('mof: no 2Y / 10Y columns');
+  const out = [];
+  for (const line of lines.slice(h + 1)) {
+    const c = line.split(',');
+    const m = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec((c[0] || '').replace(/"/g, '').trim());
+    if (!m) continue;
+    const date = `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+    if (date < since) continue;
+    const y2 = parseFloat(c[i2]), y10 = parseFloat(c[i10]);
+    const ok = (v) => isFinite(v) && v > -2 && v < 20;
+    if (ok(y2) || ok(y10)) out.push({ date, y2: ok(y2) ? y2 : null, y10: ok(y10) ? y10 : null });
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// Merge history + this month's file by date (the newer file wins on overlap).
+function mergeJgb(...lists) {
+  const byDate = new Map();
+  lists.forEach((l) => (l || []).forEach((r) => byDate.set(r.date, r)));
+  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+async function loadJgb(now = Date.now()) {
+  const since = daysAgoIso(430, new Date(now));
+  const history = jgbHistCache.rows && now < jgbHistCache.expiresAt
+    ? Promise.resolve(jgbHistCache.rows)
+    : fetchText(MOF_HISTORY, MOF_TIMEOUT_MS, BROWSER_UA).then((t) => {
+      const rows = parseMofCsv(t, since);
+      if (!rows.length) throw new Error('mof history: no rows');
+      jgbHistCache = { rows, expiresAt: now + JGB_HISTORY_TTL_MS };
+      return rows;
+    });
+  const [cur, hist] = await Promise.allSettled([fetchText(MOF_CURRENT, MOF_TIMEOUT_MS, BROWSER_UA).then((t) => parseMofCsv(t)), history]);
+  const rows = mergeJgb(hist.status === 'fulfilled' ? hist.value : (jgbHistCache.rows || []), cur.status === 'fulfilled' ? cur.value : []);
+  if (!rows.length) {
+    throw new Error('mof: ' + [cur, hist].map((r) => (r.status === 'rejected' ? r.reason.message : 'empty')).join(' | '));
+  }
+  return { rows, currentError: cur.status === 'rejected' ? cur.reason.message : null };
+}
+
+// US daily obs (oldest-first) with the overlaid latest point of the summarised series (Treasury /
+// Cboe), so the spread uses the same "today" the US yield tile shows.
+function withLatest(obs, s) {
+  const list = (obs || []).slice();
+  if (s && isFinite(s.latest) && s.date) {
+    while (list.length && list[list.length - 1].date >= s.date) list.pop();
+    list.push({ date: s.date, value: s.latest });
+  }
+  return list;
+}
+
+// US − JGB spread per US date, JGB carried forward at most 7 days. → [{date, value, us, jp, jpDate}]
+function joinUsJp(usObs, jgbRows, field) {
+  const jp = jgbRows.filter((r) => r[field] != null);
+  const out = [];
+  let j = -1;
+  for (const u of usObs) {
+    while (j + 1 < jp.length && jp[j + 1].date <= u.date) j++;
+    if (j < 0) continue;
+    if (Date.parse(u.date) - Date.parse(jp[j].date) > 7 * 86400000) continue;
+    out.push({ date: u.date, value: Math.round((u.value - jp[j][field]) * 1000) / 1000, us: u.value, jp: jp[j][field], jpDate: jp[j].date });
+  }
+  return out;
+}
+
+// Change of a daily series over the last `days` calendar days (latest vs the value on or before then).
+function changeOver(obs, days) {
+  const last = obs[obs.length - 1];
+  if (!last) return null;
+  const cutoff = daysAgoIso(days, new Date(last.date + 'T00:00:00Z'));
+  const base = obs.filter((o) => o.date <= cutoff).pop();
+  return base ? Math.round((last.value - base.value) * 1000) / 1000 : null;
+}
+
+function usJpSummary(key, usObs, jgbRows) {
+  const cfg = SERIES[key];
+  const joined = joinUsJp(usObs, jgbRows, cfg.jp);
+  if (!joined.length) throw new Error(`${key}: no overlapping US / JGB dates`);
+  const last = joined[joined.length - 1];
+  return {
+    ...summarize(key, joined),
+    us: last.us,
+    jp: last.jp,
+    jpDate: last.jpDate,
+    chg1w: changeOver(joined, 7),
+    chg1m: changeOver(joined, 30),
+    source: 'mof+us'
+  };
 }
 
 // SOFR − IORB in basis points, one point per SOFR day. IORB only changes on Fed decisions, so the
@@ -369,19 +487,21 @@ async function loadTreasuryCurve(now = new Date()) {
 }
 
 async function buildPayload(apiKey) {
-  const keys = Object.keys(SERIES);
-  const [results, vixLive, tnxLive, curve, spxLive, ndxLive] = await Promise.all([
+  const keys = Object.keys(SERIES).filter((k) => SERIES[k].loader !== 'usjp');
+  const raw = {};
+  const [results, vixLive, tnxLive, curve, spxLive, ndxLive, jgb] = await Promise.all([
     Promise.allSettled(keys.map((k) => (k === 'dollar'
       ? loadDxy().catch((e) => loadSeries(k, apiKey).then((s) => ({ ...s, dxyError: e.message })))
       : SERIES[k].loader === 'yahoo' ? loadMove()
       : SERIES[k].loader === 'sofrSpread' ? loadSofrSpread(apiKey)
       : SERIES[k].loader === 'cftc' ? loadLevShort()
-      : loadSeries(k, apiKey)))),
+      : loadSeries(k, apiKey, raw)))),
     loadVixLive().catch((e) => ({ error: e.message })),
     loadTnxLive().catch((e) => ({ error: e.message })),
     loadTreasuryCurve().catch((e) => ({ error: e.message })),
     loadIndexLive(CBOE_SPX).catch((e) => ({ error: e.message })),
-    loadIndexLive(CBOE_NDX).catch((e) => ({ error: e.message }))
+    loadIndexLive(CBOE_NDX).catch((e) => ({ error: e.message })),
+    loadJgb().catch((e) => ({ error: e.message }))
   ]);
   const series = {}, errors = {};
   results.forEach((r, i) => {
@@ -403,6 +523,16 @@ async function buildPayload(apiKey) {
   }
   if (tnxLive.error) errors.tnxLive = tnxLive.error;
   else if (series.us10y) series.us10y = mergeLive(series.us10y, tnxLive);
+  // US − Japan spreads, after the overlays so they end on the same day as the US yield tiles.
+  for (const k of Object.keys(SERIES).filter((x) => SERIES[x].loader === 'usjp')) {
+    const usKey = SERIES[k].us;
+    try {
+      if (jgb.error) throw new Error(jgb.error);
+      if (!raw[usKey] || !series[usKey]) throw new Error(`${usKey} unavailable`);
+      series[k] = usJpSummary(k, withLatest(raw[usKey], series[usKey]), jgb.rows);
+    } catch (e) { errors[k] = e.message; }
+  }
+  if (!jgb.error && jgb.currentError) errors.jgbCurrent = jgb.currentError;
   const out = { series, asOf: new Date().toISOString() };
   if (Object.keys(errors).length) out.errors = errors;
   return { data: out, okCount: Object.keys(series).length };
@@ -440,4 +570,4 @@ exports.handler = async function () {
   }
 };
 
-module.exports.__test = { parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, parseCftcLevShort, SERIES, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; } };
+module.exports.__test = { parseMofCsv, mergeJgb, withLatest, joinUsJp, changeOver, usJpSummary, parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, parseCftcLevShort, SERIES, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; jgbHistCache = { rows: null, expiresAt: 0 }; } };

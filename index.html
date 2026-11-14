@@ -450,6 +450,9 @@ body{margin:0}
   .tv-btn{align-self:flex-start;margin-top:auto;padding-top:8px;font-size:11px;color:var(--accent-hi);text-decoration:none;white-space:nowrap}
   .tv-btn span{display:inline-block;border:1px solid var(--gold-line);border-radius:999px;padding:2px 9px}
   .tv-btn:hover span,.tv-btn:focus-visible span{background:rgba(212,178,106,.12)}
+  .tv-arrow{display:inline-block;margin-left:4px;padding:1px 7px;border:1px solid var(--gold-line);border-radius:999px;font-size:10px;color:var(--accent-hi);text-decoration:none;white-space:nowrap;vertical-align:middle}
+  .tv-arrow:hover,.tv-arrow:focus-visible{background:rgba(212,178,106,.12);outline:none}
+  #lpUsdJpyLink a{color:var(--accent-hi)}
   @media(max-width:800px){ .tip-pop{position:fixed;left:16px;right:16px;top:auto;bottom:16px;max-height:70vh;overflow:auto} }
   /* economic calendar */
   .cal-list{display:flex;flex-direction:column}
@@ -585,6 +588,13 @@ body{margin:0}
   <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed var(--line);">
     <span>💴 JPY/THB <span class="muted" style="font-size:10px;" data-en="(per 100 yen)">(ต่อ 100 เยน)</span></span><b id="lpJpyThb" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
   </div>
+  <div style="padding:10px 0; border-bottom:1px dashed var(--line);">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span>💱 USD/JPY <span class="muted" style="font-size:10px;" data-en="(yen per $1)">(เยนต่อ 1 ดอลลาร์)</span> <a class="tv-arrow" href="https://www.tradingview.com/chart/?symbol=FX%3AUSDJPY" target="_blank" rel="noopener noreferrer" title="เปิด USD/JPY ใน TradingView" data-en-title="Open USD/JPY in TradingView" aria-label="เปิด USD/JPY ใน TradingView" data-en-aria="Open USD/JPY in TradingView">TradingView ↗</a></span><b id="lpUsdJpy" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
+    </div>
+    <div id="lpUsdJpySub" class="muted" style="font-size:10px; margin-top:4px; text-align:right;"></div>
+    <div id="lpUsdJpyLink" class="muted" style="font-size:10px; margin-top:2px; text-align:right;"></div>
+  </div>
   <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0;">
     <span>🇨🇳 CNY/THB <span class="muted" style="font-size:10px;" data-en="(per 1 yuan)">(ต่อ 1 หยวน)</span></span><b id="lpCnyThb" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
   </div>
@@ -646,6 +656,41 @@ body{margin:0}
   </div></div></div><div class="num" id="mkLevShort">–</div><div class="spark" id="spLevShort"></div><div class="zone" id="mkLevShortZone"></div>
     <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=CBOT%3AZN1%21" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
   <div class="metric mkt"><div class="name" id="mkDollarName" data-en="Dollar index (DXY)">ดัชนีดอลลาร์ (DXY)</div><div class="num" id="mkDollar">–</div><div class="spark" id="spDollar"></div></div>
+<!-- ส่วนต่างยีลด์ US − ญี่ปุ่น (carry trade) · ข้อมูลจาก /markets (usjp2y / usjp10y) -->
+  <div class="metric mkt" id="usjpCards"><div class="name"><span data-en="US − Japan 2Y yield spread">ส่วนต่างยีลด์ สหรัฐ−ญี่ปุ่น 2 ปี</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ส่วนต่างยีลด์ 2 ปีคืออะไร" data-en-aria="What is the 2Y spread?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>คืออะไร:</b> ยีลด์พันธบัตรรัฐบาลสหรัฐฯ 2 ปี ลบ ยีลด์พันธบัตรญี่ปุ่น (JGB) 2 ปี = ถือเงินดอลลาร์ได้ดอกเบี้ยมากกว่าถือเงินเยนกี่ % ต่อปี (รุ่น 2 ปีขยับตามนโยบายดอกเบี้ยของ Fed และ BOJ เร็วที่สุด จึงเป็นตัวที่ตลาด FX ใช้ดูมากที่สุด)</p>
+    <p><b>Carry trade:</b> นักลงทุนกู้เงินเยนดอกถูก แลกเป็นดอลลาร์ ไปซื้อบอนด์หรือหุ้นสหรัฐฯ กินส่วนต่างนี้ ยิ่งส่วนต่างกว้าง ยิ่งคุ้ม เงินเยนจึงมักอ่อน (USD/JPY ขึ้น)</p>
+    <p><b>ทำไมต้องจับตา:</b> ถ้าส่วนต่าง <b>แคบลงเร็ว</b> (Fed ลดดอกเบี้ย หรือ BOJ ขึ้นดอกเบี้ย) เยนจะแข็งค่า คนที่กู้เยนต้องรีบขายสินทรัพย์ดอลลาร์มาคืนหนี้ (unwind) บอนด์และหุ้นสหรัฐฯ โดนเทขายพร้อมกัน เช่น ต้น ส.ค. 2024 ที่ BOJ ขึ้นดอกเบี้ย เยนแข็งเร็ว Nikkei ร่วง 12% ในวันเดียว Nasdaq และ VIX ปั่นป่วนตาม</p>
+    <p><b>อ่านสี (การเปลี่ยนแปลงใน 1 เดือน):</b> 🟢 กว้างขึ้นเกิน 0.25 carry trade ได้เปรียบ เยนมักอ่อน · 🟡 ทรงตัว (±0.25) · 🟠 แคบลง 0.25–0.50 เริ่มเสี่ยง unwind · 🔴 แคบลงเกิน 0.50 แคบลงเร็ว เสี่ยง unwind สูง</p>
+    <p>ดูคู่กับ USD/JPY ในกล่อง "ราคาตลาด" · ยีลด์ญี่ปุ่นจากกระทรวงการคลังญี่ปุ่น (MOF) ประกาศทุกวันทำการหลังตลาดโตเกียวปิด · ยีลด์สหรัฐฯ ตัวเดียวกับการ์ดบอนด์สหรัฐ 2 ปีด้านบน</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>What it is:</b> the US 2-year Treasury yield minus Japan's 2-year government bond (JGB) yield = how much more interest a year you earn holding dollars instead of yen. (The 2-year tracks Fed and BOJ policy rates most closely, so it is the one FX traders watch most.)</p>
+    <p><b>Carry trade:</b> investors borrow cheap yen, swap it into dollars and buy US bonds or stocks to pocket this gap. The wider the gap, the better the trade pays, so the yen tends to weaken (USD/JPY up).</p>
+    <p><b>Why watch it:</b> when the gap <b>narrows fast</b> (the Fed cuts or the BOJ hikes), the yen jumps and yen borrowers rush to sell dollar assets to repay (the unwind), so US bonds and stocks get sold at the same time. Example: early Aug 2024, after a BOJ hike the yen surged, the Nikkei fell 12% in one day and the Nasdaq and VIX were rattled.</p>
+    <p><b>Colours (change over 1 month):</b> 🟢 widened more than 0.25, carry favoured, yen tends to weaken · 🟡 steady (±0.25) · 🟠 narrowed 0.25–0.50, unwind risk building · 🔴 narrowed more than 0.50, fast narrowing, high unwind risk</p>
+    <p>Read it with USD/JPY in the "Market Prices" box · Japan yields from Japan's Ministry of Finance (MOF), published each business day after the Tokyo close · the US yield is the same as the US 2-year tile above.</p>
+    </div>
+  </div></div></div><div class="num" id="mkUsJp2y">–</div><div class="spark" id="spUsJp2y"></div><div class="zone" id="mkUsJp2yZone"></div><div class="zone" id="mkUsJp2yInfo"></div>
+    <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3AUS02Y-TVC%3AJP02Y" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  <div class="metric mkt"><div class="name"><span data-en="US − Japan 10Y yield spread">ส่วนต่างยีลด์ สหรัฐ−ญี่ปุ่น 10 ปี</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ส่วนต่างยีลด์ 10 ปีคืออะไร" data-en-aria="What is the 10Y spread?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>คืออะไร:</b> ยีลด์พันธบัตรรัฐบาลสหรัฐฯ 10 ปี ลบ ยีลด์พันธบัตรญี่ปุ่น (JGB) 10 ปี = ถือเงินดอลลาร์ได้ดอกเบี้ยมากกว่าถือเงินเยนกี่ % ต่อปี (รุ่น 10 ปีสะท้อนมุมมองเศรษฐกิจระยะยาว และเป็นตัวที่สถาบันญี่ปุ่นใช้ตัดสินใจซื้อบอนด์ต่างประเทศ)</p>
+    <p><b>Carry trade:</b> นักลงทุนกู้เงินเยนดอกถูก แลกเป็นดอลลาร์ ไปซื้อบอนด์หรือหุ้นสหรัฐฯ กินส่วนต่างนี้ ยิ่งส่วนต่างกว้าง ยิ่งคุ้ม เงินเยนจึงมักอ่อน (USD/JPY ขึ้น)</p>
+    <p><b>ทำไมต้องจับตา:</b> ถ้าส่วนต่าง <b>แคบลงเร็ว</b> (Fed ลดดอกเบี้ย หรือ BOJ ขึ้นดอกเบี้ย) เยนจะแข็งค่า คนที่กู้เยนต้องรีบขายสินทรัพย์ดอลลาร์มาคืนหนี้ (unwind) บอนด์และหุ้นสหรัฐฯ โดนเทขายพร้อมกัน เช่น ต้น ส.ค. 2024 ที่ BOJ ขึ้นดอกเบี้ย เยนแข็งเร็ว Nikkei ร่วง 12% ในวันเดียว Nasdaq และ VIX ปั่นป่วนตาม</p>
+    <p><b>อ่านสี (การเปลี่ยนแปลงใน 1 เดือน):</b> 🟢 กว้างขึ้นเกิน 0.25 carry trade ได้เปรียบ เยนมักอ่อน · 🟡 ทรงตัว (±0.25) · 🟠 แคบลง 0.25–0.50 เริ่มเสี่ยง unwind · 🔴 แคบลงเกิน 0.50 แคบลงเร็ว เสี่ยง unwind สูง</p>
+    <p>ดูคู่กับ USD/JPY ในกล่อง "ราคาตลาด" · ยีลด์ญี่ปุ่นจากกระทรวงการคลังญี่ปุ่น (MOF) ประกาศทุกวันทำการหลังตลาดโตเกียวปิด · ยีลด์สหรัฐฯ ตัวเดียวกับการ์ดบอนด์สหรัฐ 10 ปีด้านบน</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>What it is:</b> the US 10-year Treasury yield minus Japan's 10-year government bond (JGB) yield = how much more interest a year you earn holding dollars instead of yen. (The 10-year reflects the long-run outlook and drives whether Japanese institutions buy foreign bonds.)</p>
+    <p><b>Carry trade:</b> investors borrow cheap yen, swap it into dollars and buy US bonds or stocks to pocket this gap. The wider the gap, the better the trade pays, so the yen tends to weaken (USD/JPY up).</p>
+    <p><b>Why watch it:</b> when the gap <b>narrows fast</b> (the Fed cuts or the BOJ hikes), the yen jumps and yen borrowers rush to sell dollar assets to repay (the unwind), so US bonds and stocks get sold at the same time. Example: early Aug 2024, after a BOJ hike the yen surged, the Nikkei fell 12% in one day and the Nasdaq and VIX were rattled.</p>
+    <p><b>Colours (change over 1 month):</b> 🟢 widened more than 0.25, carry favoured, yen tends to weaken · 🟡 steady (±0.25) · 🟠 narrowed 0.25–0.50, unwind risk building · 🔴 narrowed more than 0.50, fast narrowing, high unwind risk</p>
+    <p>Read it with USD/JPY in the "Market Prices" box · Japan yields from Japan's Ministry of Finance (MOF), published each business day after the Tokyo close · the US yield is the same as the US 10-year tile above.</p>
+    </div>
+  </div></div></div><div class="num" id="mkUsJp10y">–</div><div class="spark" id="spUsJp10y"></div><div class="zone" id="mkUsJp10yZone"></div><div class="zone" id="mkUsJp10yInfo"></div>
+    <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3AUS10Y-TVC%3AJP10Y" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
 </div>
 <div class="muted" id="mktNote" style="font-size:11px; margin-top:10px;" data-en="Mini charts = last 12 months">กราฟเล็ก = ย้อนหลัง 12 เดือน</div>
 </section>
@@ -2782,7 +2827,7 @@ window.setHeaderStamp();
       setPrice('lpUsdThb', now.usd.toFixed(2) + tr(' บาท', ' THB'), pctChange(now.usd, ref.usd));
       setPrice('lpJpyThb', now.jpy.toFixed(3) + tr(' บาท', ' THB'), pctChange(now.jpy, ref.jpy));
       setPrice('lpCnyThb', now.cny.toFixed(3) + tr(' บาท', ' THB'), pctChange(now.cny, ref.cny));
-      el('livePricesNote').textContent = LIVE_NOTE_BASE + tr(' · ค่าเงินเป็นอัตรากลาง ECB ณ ', ' · FX are ECB reference rates as of ') + thDay(pair.date)
+      el('livePricesNote').textContent = LIVE_NOTE_BASE + tr(' · ค่าเงินบาทเป็นอัตรากลาง ECB ณ ', ' · THB rates are ECB reference rates as of ') + thDay(pair.date)
         + tr(' (ออกวันละครั้งราว 21:00 น. เวลาไทย ไม่ใช่ real-time)', ' (published once a day around 21:00 Bangkok time, not real-time)') + (pair.prevDate ? tr(' · % เทียบ ', ' · % vs ') + thDay(pair.prevDate) : '');
     }catch(e){
       el('lpUsdThb').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable');
@@ -2792,6 +2837,43 @@ window.setHeaderStamp();
     }
   }
   const livePricesReady = fetchLivePrices();
+
+  // ---------- USD/JPY (สด ช้าไม่กี่นาที) ----------
+  // แถวค่าเงินอื่นเป็นอัตรากลาง ECB วันละครั้ง แต่ USD/JPY อ่านคู่กับส่วนต่างยีลด์ US − ญี่ปุ่น ซึ่งเยนขยับ 1–2%
+  // ในชั่วโมงเดียวได้ จึงดึงราคาตลาดผ่าน /.netlify/functions/usdjpy (Yahoo → CNBC → Stooq) · ล่มค่อยใช้ ECB
+  async function fetchUsdJpy(){
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/usdjpy', 8000, { cache: 'no-cache' });
+      const j = await r.json();
+      if(!r.ok || !isValidNum(j.price)) throw new Error(j.error || 'HTTP ' + r.status);
+      setPrice('lpUsdJpy', j.price.toFixed(2) + tr(' เยน', ' JPY'), j.pct);
+      const t = j.asOf ? new Date(j.asOf) : null;
+      const when = t && !isNaN(t) ? t.toLocaleString(LOCALE, { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit', timeZone:'Asia/Bangkok' }) + tr(' น.', ' (Bangkok)') : '';
+      el('lpUsdJpySub').textContent = tr('ราคาตลาด ช้าไม่กี่นาที', 'Market quote, a few minutes delayed') + (when ? ' · ' + when : '')
+        + (j.prevClose ? tr(' · % เทียบราคาปิดวันก่อน', ' · % vs previous close') : '') + (j.stale ? tr(' · (ข้อมูลค้าง)', ' · (stale)') : '');
+    }catch(e){
+      console.warn('[usdjpy]', e);
+      // สำรอง: อัตรากลาง ECB (ตัวเดียวกับแถวค่าเงินบาท)
+      try{
+        const r = await fetchWithTimeout('https://api.frankfurter.dev/v1/latest?base=USD&symbols=JPY', 6000, { cache: 'no-store' });
+        const j = await r.json();
+        if(!j || !j.rates || !isValidNum(j.rates.JPY)) throw new Error('no ECB JPY');
+        setPrice('lpUsdJpy', j.rates.JPY.toFixed(2) + tr(' เยน', ' JPY'), null);
+        el('lpUsdJpySub').textContent = tr('ราคาสดดึงไม่ได้ · ใช้อัตรากลาง ECB ณ ', 'Live quote unavailable · ECB reference rate as of ') + thDay(j.date);
+      }catch(e2){ el('lpUsdJpy').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable'); }
+    }
+  }
+  // บรรทัดเชื่อมไปการ์ดส่วนต่างยีลด์ (ตัวเลขมาจาก /markets เมื่อโหลดเสร็จ)
+  function renderUsdJpyLink(){
+    const box = el('lpUsdJpyLink'); if(!box) return;
+    const S = lastMarketSeries || {};
+    const v = (s) => (s && isValidNum(s.latest)) ? s.latest.toFixed(2) + '%' : '–';
+    box.innerHTML = '<a href="#usjpCards">' + esc(tr('ส่วนต่างยีลด์ สหรัฐ−ญี่ปุ่น', 'US − Japan yield spread')) + '</a> 2Y ' + esc(v(S.usjp2y)) + ' · 10Y ' + esc(v(S.usjp10y))
+      + esc(tr(' · ส่วนต่างแคบลงเร็ว = เยนมักแข็ง (USD/JPY ลง)', ' · a fast narrowing usually means a stronger yen (USD/JPY down)'));
+  }
+  renderUsdJpyLink();
+  fetchUsdJpy();
+  setInterval(fetchUsdJpy, 2 * 60 * 1000);
 
   // ---------- ทองไทย (สมาคมค้าทองคำ) — ถ้าดึงไม่ได้ ประมาณจากราคาโลก × ค่าเงินบาท ----------
   const fmtBaht = (v) => Math.round(v).toLocaleString('en-US');
@@ -2879,6 +2961,18 @@ window.setHeaderStamp();
     return z;
   }
 
+  // โซนสีของส่วนต่างยีลด์ US − ญี่ปุ่น จากการเปลี่ยนแปลงใน 1 เดือน (หน่วย % point)
+  function signedPp(x){ return (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x).toFixed(2); }
+  function usJpZone(chg1m){
+    if(!isValidNum(chg1m)) return '';
+    const tail = tr(' (1 เดือน ', ' (1 month ') + signedPp(chg1m) + ')';
+    if(chg1m <= -0.5) return tr('🔴 แคบลงเร็ว · เสี่ยง unwind สูง', '🔴 Narrowing fast · high unwind risk') + tail;
+    if(chg1m <= -0.25) return tr('🟠 แคบลง · เริ่มเสี่ยง unwind', '🟠 Narrowing · unwind risk building') + tail;
+    if(chg1m >= 0.25) return tr('🟢 กว้างขึ้น · carry ได้เปรียบ เยนมักอ่อน', '🟢 Widening · carry favoured, yen tends to weaken') + tail;
+    return tr('🟡 ทรงตัว', '🟡 Steady') + tail;
+  }
+  window.usJpZone = usJpZone;   // tests
+
   async function fetchMarkets(){
     try{
       const r = await fetchWithTimeout('/.netlify/functions/markets', 12000, { cache: 'no-cache' });
@@ -2938,6 +3032,18 @@ window.setHeaderStamp();
       }
       if(S.dollar) el('mkDollarName').textContent = S.dollar.source === 'ecb-dxy' ? tr('ดัชนีดอลลาร์ (DXY)', 'Dollar index (DXY)') : tr('ดัชนีดอลลาร์ (Broad)', 'Dollar index (Broad)');
       if(S.dollar){ el('mkDollar').innerHTML = esc(S.dollar.latest.toFixed(2)) + (S.dollar.change != null ? '<span class="delta ' + (S.dollar.change >= 0 ? 'up' : 'down') + '">' + (S.dollar.change >= 0 ? '+' : '') + S.dollar.change.toFixed(2) + '</span>' : ''); setSpark('spDollar', S.dollar, { color:'var(--accent)' }); }
+      // ส่วนต่างยีลด์ US − ญี่ปุ่น (carry trade): สีตามการเปลี่ยนแปลง 1 เดือน — แคบลงเร็ว = เสี่ยง unwind
+      [['usjp2y', 'UsJp2y', '2'], ['usjp10y', 'UsJp10y', '10']].forEach(function(row){
+        const s = S[row[0]];
+        if(!s || !isValidNum(s.latest)) return;
+        el('mk' + row[1]).innerHTML = esc(s.latest.toFixed(2)) + '%' + bp(s.change);
+        el('mk' + row[1] + 'Zone').textContent = usJpZone(s.chg1m);
+        el('mk' + row[1] + 'Info').textContent = 'US ' + s.us.toFixed(2) + '% − JP ' + s.jp.toFixed(2) + '%'
+          + (isValidNum(s.chg1w) ? tr(' · 1 สัปดาห์ ', ' · 1 wk ') + signedPp(s.chg1w) : '')
+          + tr(' · ณ ', ' · as of ') + thDay(s.date);
+        setSpark('sp' + row[1], s, { dec:2 });
+      });
+      renderUsdJpyLink();
       if(S.fedUpper) setSpark('spFed', S.fedUpper, { color:'var(--accent)', dec:2 });
       if(S.cpi) setSpark('spCpi', S.cpi, { upIsBad:true, dec:1 });
       if(S.unrate) setSpark('spUnrate', S.unrate, { upIsBad:true, dec:1 });
@@ -2949,8 +3055,8 @@ window.setHeaderStamp();
         : name + tr(' ราคาปิด ', ' close ') + thDay(s.date) + tr(' (FRED ช้ากว่าตลาดประมาณ 1 วันทำการ)', ' (FRED, about 1 business day behind the market)');
       el('mktNote').textContent = [yieldNote(tr('บอนด์ 10 ปี', '10Y yield'), S.us10y), yieldNote(tr('2 ปี', '2Y'), S.us2y)].filter(Boolean).join(' · ')
         + tr(' · DXY จากอัตรา ECB ', ' · DXY from ECB rates ') + (S.dollar && S.dollar.date ? thDay(S.dollar.date) : '–')
-        + tr(' · VIX ราคาจาก Cboe ช้า ~15 นาที · MOVE ราคาปิด (ICE ผ่าน Yahoo) · SOFR/IORB จาก FRED · short บอนด์ฟิวเจอร์สจาก CFTC รายสัปดาห์ · อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน',
-             ' · VIX from Cboe, ~15 min delay · MOVE daily close (ICE via Yahoo) · SOFR/IORB from FRED · UST futures short from CFTC, weekly · updated hourly · mini charts = last 12 months');
+        + tr(' · VIX ราคาจาก Cboe ช้า ~15 นาที · MOVE ราคาปิด (ICE ผ่าน Yahoo) · SOFR/IORB จาก FRED · short บอนด์ฟิวเจอร์สจาก CFTC รายสัปดาห์ · ยีลด์ญี่ปุ่นจาก MOF ญี่ปุ่น · อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน',
+             ' · VIX from Cboe, ~15 min delay · MOVE daily close (ICE via Yahoo) · SOFR/IORB from FRED · UST futures short from CFTC, weekly · JGB yields from Japan MOF · updated hourly · mini charts = last 12 months');
     }catch(e){
       console.warn('[markets]', e);
       el('mktNote').textContent = tr('ดึงข้อมูลตลาดไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ', 'Can\'t load market data right now. Retrying automatically.');
