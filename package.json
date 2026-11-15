@@ -2,7 +2,7 @@
   "name": "global-intelligence",
   "private": true,
   "version": "1.0.0",
-  "description": "Static dashboard + Netlify Functions for world-risk / macro / BTC data. This package.json exists ONLY so `npm test` works locally — the site is a plain static deploy, there is no build step and no runtime dependency.",
+  "description": "Static dashboard + Netlify Functions for world-risk / macro / BTC data. There is no build step; the only runtime dependency is @netlify/blobs, used by the visitor-counter function (Netlify installs it at deploy). `npm test` needs no install.",
   "scripts": {
     "test": "node --test",
     "dev": "node tools/dev-server.js",
@@ -10,5 +10,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@netlify/blobs": "8.2.0"
   }
 }
