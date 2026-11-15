@@ -266,12 +266,9 @@ body{margin:0}
   #btcTab .sl-grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px;}
   @media (max-width:1100px){ #btcTab .sl-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
   @media (max-width:800px){ #btcTab .sl-grid{grid-template-columns:minmax(0,1fr);} }
-  #btcTab .sl-dvol{position:relative; display:flex; flex-direction:column;}   /* tooltip (i) กางเต็มการ์ด */
+  #btcTab .sl-tile{background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:16px; position:relative;}
+  #btcTab .sl-dvol{display:flex; flex-direction:column;}
   #btcTab .sl-dvol .delta{font-size:12px; font-weight:600; margin-left:6px;}
-  #btcTab .sl-dvol .tip-btn{width:17px!important;height:17px!important;padding:0!important;border-radius:50%!important;border:1px solid var(--line)!important;color:var(--muted)!important;font:600 10px/15px system-ui,sans-serif!important;cursor:help}
-  #btcTab .sl-dvol .tip-btn:hover,#btcTab .sl-dvol .tip-btn:focus-visible,#btcTab .sl-dvol .tip.open .tip-btn{color:var(--accent-hi)!important;border-color:var(--gold-line)!important;background:transparent!important}
-  #btcTab .sl-dvol .tip-pop{text-transform:none;letter-spacing:0}
-  #btcTab .sl-tile{background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:16px;}
   #btcTab .sl-name{font-size:11px; color:var(--sub); letter-spacing:0.06em; text-transform:uppercase;}
   #btcTab .sl-num{font-family:var(--disp); font-size:26px; font-weight:700; margin-top:6px;}
   #btcTab .sl-sub{font-size:11px; color:var(--sub); margin-top:4px;}
@@ -453,6 +450,8 @@ body{margin:0}
   /* ⓘ คำอธิบาย (hover บนคอม · แตะบนมือถือ) + ปุ่มเปิดกราฟใน TradingView */
   .tip{position:static;display:inline-block;vertical-align:middle;margin-left:4px}
   .tip-btn{width:17px;height:17px;padding:0;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font:600 10px/15px system-ui,sans-serif;cursor:help}
+  #btcTab .tip-btn{width:17px;height:17px;padding:0;margin:0;border-radius:50%!important;border:1px solid var(--line)!important;color:var(--muted)!important;font:600 10px/15px system-ui,sans-serif!important;letter-spacing:0;text-transform:none}
+  #btcTab .tip-btn:hover,#btcTab .tip-btn:focus-visible,#btcTab .tip.open .tip-btn{color:var(--accent-hi)!important;border-color:var(--gold-line)!important;background:transparent!important}
   .tip-btn:hover,.tip-btn:focus-visible,.tip.open .tip-btn{color:var(--accent-hi);border-color:var(--gold-line);outline:none}
   .tip-pop{display:none;position:absolute;z-index:20;left:-1px;right:-1px;top:34px;padding:12px 13px;border-radius:12px;background:var(--panel);border:1px solid var(--gold-line);box-shadow:0 10px 28px rgba(0,0,0,.55);font-size:12px;line-height:1.6;color:var(--text);letter-spacing:0;text-transform:none;font-weight:400}
   .tip-pop b{color:var(--accent-hi);font-weight:600}
@@ -3971,9 +3970,22 @@ window.setHeaderStamp();
           <div class="sl-sub" id="fundingLabel">Binance BTCUSDT</div>
         </div>
         <div class="sl-tile">
-          <div class="sl-name">Open Interest</div>
+          <div class="sl-name">Open Interest <div class="tip"><button type="button" class="tip-btn" aria-label="Open Interest คืออะไร" data-en-aria="What is Open Interest?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+            <div class="i18n-th">
+            <p><b>คืออะไร:</b> มูลค่าสัญญาฟิวเจอร์สและ perpetual ของ BTC ที่ยังเปิดค้างอยู่ทั้งตลาด (ยังไม่ได้ปิดสถานะ) นับฝั่งเดียว เพราะทุก long มี short คู่กันเสมอ แสดงเป็นจำนวน BTC</p>
+            <p><b>อ่านคู่กับราคา:</b> 🟢 ราคาขึ้น + OI ขึ้น = เงินใหม่เข้ามาเปิด long เทรนด์แข็ง · 🟡 ราคาขึ้น + OI ลง = แรงขึ้นมาจาก short โดนบังคับปิด (short squeeze) อาจไปต่อไม่ไกล · 🟠 ราคาลง + OI ขึ้น = มีคนเปิด short ใหม่เพิ่ม แรงขายยังมา · 🔵 ราคาลง + OI ลง = long ยอมตัดขาดทุนหรือโดน liquidate ใกล้ล้างเลเวอเรจเสร็จ</p>
+            <p><b>สัญญาณเตือน:</b> OI พุ่งเร็วกว่าราคาหรือทำสถิติใหม่ คู่กับ Funding Rate บวกสูง = ตลาดเลเวอเรจหนาแน่นฝั่ง long ราคาหักนิดเดียวอาจเกิด liquidation ต่อกันเป็นทอด ๆ · OI ร่วงแรงในวันเดียว = เพิ่งล้างเลเวอเรจไป มักเป็นจุดที่ตลาดเบาตัวลง</p>
+            <p><b>ข้อมูล:</b> รวมทั้ง CEX (Binance, OKX, Bybit, CME ฯลฯ ผ่าน CoinGecko) และ DEX (Hyperliquid) ไม่นับซ้ำ · ปุ่มด้านล่างเปิดกราฟ OI ของ BTCUSDT perp บน Binance ใน TradingView</p>
+            </div>
+            <div class="i18n-en" lang="en">
+            <p><b>What it is:</b> the total value of BTC futures and perpetual contracts still open across the market (not yet closed), counted once since every long has a matching short. Shown in BTC.</p>
+            <p><b>Read it with price:</b> 🟢 price up + OI up = new money opening longs, a strong trend · 🟡 price up + OI down = the rise comes from shorts being forced out (short squeeze), may not go far · 🟠 price down + OI up = new shorts piling in, selling pressure continues · 🔵 price down + OI down = longs capitulating or being liquidated, leverage is close to flushed out</p>
+            <p><b>Warning signs:</b> OI climbing faster than price or hitting a record, together with a high positive Funding Rate = crowded leveraged longs, a small drop can trigger cascading liquidations · a sharp one-day OI drop = leverage just got flushed, often where the market calms down</p>
+            <p><b>Data:</b> combines CEXs (Binance, OKX, Bybit, CME and others via CoinGecko) and the DEX Hyperliquid, without double counting · the button below opens Binance BTCUSDT perp OI in TradingView</p>
+            </div>
+          </div></div></div>
           <div class="sl-num" id="oiNum">–</div>
-          <div class="sl-sub" id="oiLabel" data-en="All exchanges (CoinGecko)">รวมทุกตลาด (CoinGecko)</div>
+          <div class="sl-sub" id="oiLabel" data-en="All exchanges, CEX + DEX">รวมทุกตลาด CEX + DEX</div>
           <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=BINANCE%3ABTCUSDT.P_OI" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a>
         </div>
         <div class="sl-tile sl-dvol">
@@ -4539,6 +4551,31 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     }
   }
 
+  // Hyperliquid metaAndAssetCtxs → BTC perp open interest in USD (openInterest is in coins).
+  function hyperliquidBtcOiUsd(j){
+    if(!Array.isArray(j) || !j[0] || !Array.isArray(j[0].universe) || !Array.isArray(j[1])) return null;
+    const i = j[0].universe.findIndex(u => u && u.name === 'BTC');
+    const ctx = i >= 0 ? j[1][i] : null;
+    const usd = ctx ? (parseFloat(ctx.openInterest) || 0) * (parseFloat(ctx.markPx || ctx.oraclePx) || 0) : 0;
+    return usd > 0 ? usd : null;
+  }
+  // CoinGecko /derivatives list + Hyperliquid USD → one CEX + DEX total, keyed by exchange.
+  // Hyperliquid is only added when CoinGecko has no Hyperliquid BTC contract of its own.
+  function combineBtcOpenInterest(cgList, hlUsd){
+    const byExchange = {};
+    let totalUsd = 0;
+    (Array.isArray(cgList) ? cgList : []).forEach(t => {
+      if(!t || t.index_id !== 'BTC' || t.expired_at != null || !t.open_interest) return;
+      const oi = parseFloat(t.open_interest) || 0;
+      totalUsd += oi;
+      byExchange[t.market] = (byExchange[t.market] || 0) + oi;
+    });
+    const cgHasHl = Object.keys(byExchange).some(m => /hyperliquid/i.test(m));
+    if(hlUsd && !cgHasHl){ totalUsd += hlUsd; byExchange.Hyperliquid = hlUsd; }
+    return { totalUsd, byExchange };
+  }
+  if(typeof window !== 'undefined') window.__oiTest = { hyperliquidBtcOiUsd, combineBtcOpenInterest };
+
   // ---------- Sentiment & Leverage (Fear&Greed + funding rate + open interest) ----------
   // Fear & Greed: CoinMarketCap (keyless public API) เป็นแหล่งหลักตามคำขอผู้ใช้ อัปเดตอัตโนมัติ
   // ลำดับ: Netlify Function (CMC keyless) → ตรง CMC public API → alternative.me fallback
@@ -4610,18 +4647,19 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     // contract on every tracked exchange with open_interest in USD; we sum them all up and
     // convert to BTC using the live price we already fetched, plus show the top few exchanges
     // by size for context.
+    // Hyperliquid (the largest perp DEX) is added from its own public info API. If CoinGecko
+    // already lists a Hyperliquid BTC contract we keep CoinGecko's number and skip this one,
+    // so the DEX is never counted twice.
+    const hlPromise = fetchWithTimeout('https://api.hyperliquid.xyz/info', 8000, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'metaAndAssetCtxs' })
+    }).then(r => r.json()).then(hyperliquidBtcOiUsd).catch(() => null);
     try{
-      const r = await fetchWithTimeout('https://api.coingecko.com/api/v3/derivatives', 8000);
-      const list = await r.json();
-      const btcContracts = list.filter(t => t.index_id === 'BTC' && t.expired_at == null && t.open_interest);
-
-      const byExchange = {};
-      let totalUsd = 0;
-      btcContracts.forEach(t => {
-        const oi = parseFloat(t.open_interest) || 0;
-        totalUsd += oi;
-        byExchange[t.market] = (byExchange[t.market] || 0) + oi;
-      });
+      const [cg, hlUsd] = await Promise.all([
+        fetchWithTimeout('https://api.coingecko.com/api/v3/derivatives', 8000).then(r => r.json()).catch(() => null),
+        hlPromise,
+      ]);
+      const { totalUsd, byExchange } = combineBtcOpenInterest(cg, hlUsd);
+      if(!totalUsd) throw new Error('no open interest data');
 
       // ใช้ราคาตลาดล่าสุดที่ดึงได้ก่อนเสมอ แล้วค่อย fallback ไปใช้ค่าที่อยู่ในช่องกรอก
       const price = lastLivePrice || parseFloat(priceInput.value) || null;
@@ -4631,8 +4669,12 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
         ? totalBtc.toLocaleString(undefined,{maximumFractionDigits:0}) + ' BTC'
         : '$' + totalUsd.toLocaleString(undefined,{maximumFractionDigits:0});
 
+      const n = Object.keys(byExchange).length;
       const top3 = Object.entries(byExchange).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([name])=>name);
-      el('oiLabel').textContent = tr('รวม ' + Object.keys(byExchange).length + ' ตลาด (', 'Across ' + Object.keys(byExchange).length + ' exchanges (') + top3.join(', ') + ' ...)';
+      const hlKey = Object.keys(byExchange).find(m => /hyperliquid/i.test(m));
+      const hlOi = hlKey ? byExchange[hlKey] : 0;
+      const hlNote = hlOi ? (' · Hyperliquid ' + (price ? (hlOi / price).toLocaleString(undefined,{maximumFractionDigits:0}) + ' BTC' : '$' + (hlOi/1e9).toFixed(2) + 'bn')) : '';
+      el('oiLabel').textContent = tr('รวม ' + n + ' ตลาด CEX + DEX (', 'Across ' + n + ' exchanges, CEX + DEX (') + top3.join(', ') + ' ...)' + hlNote;
     }catch(e){ el('oiLabel').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable'); }
   }
 
