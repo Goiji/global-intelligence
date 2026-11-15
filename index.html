@@ -263,8 +263,14 @@ body{margin:0}
   }
 
   /* ---------- sentiment tiles ---------- */
-  #btcTab .sl-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
-  @media (max-width:800px){ #btcTab .sl-grid{grid-template-columns:1fr;} }
+  #btcTab .sl-grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px;}
+  @media (max-width:1100px){ #btcTab .sl-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+  @media (max-width:800px){ #btcTab .sl-grid{grid-template-columns:minmax(0,1fr);} }
+  #btcTab .sl-dvol{position:relative; display:flex; flex-direction:column;}   /* tooltip (i) กางเต็มการ์ด */
+  #btcTab .sl-dvol .delta{font-size:12px; font-weight:600; margin-left:6px;}
+  #btcTab .sl-dvol .tip-btn{width:17px!important;height:17px!important;padding:0!important;border-radius:50%!important;border:1px solid var(--line)!important;color:var(--muted)!important;font:600 10px/15px system-ui,sans-serif!important;cursor:help}
+  #btcTab .sl-dvol .tip-btn:hover,#btcTab .sl-dvol .tip-btn:focus-visible,#btcTab .sl-dvol .tip.open .tip-btn{color:var(--accent-hi)!important;border-color:var(--gold-line)!important;background:transparent!important}
+  #btcTab .sl-dvol .tip-pop{text-transform:none;letter-spacing:0}
   #btcTab .sl-tile{background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:16px;}
   #btcTab .sl-name{font-size:11px; color:var(--sub); letter-spacing:0.06em; text-transform:uppercase;}
   #btcTab .sl-num{font-family:var(--disp); font-size:26px; font-weight:700; margin-top:6px;}
@@ -2947,6 +2953,7 @@ window.setHeaderStamp();
     const fx = (v) => { const t = v.toFixed(dec); return /^-0(\.0+)?$/.test(t) ? t.slice(1) : t; };
     box.innerHTML = svg + '<div class="spark-cap"><span>' + tr('12 เดือน', '12 months') + '</span><span>' + fx(first) + ' → ' + fx(last) + '</span></div>';
   }
+  window.giSetSpark = setSpark;   // แท็บ BTC (สคริปต์แยก) ใช้วาดกราฟเล็กของ DVOL
 
   // ---------- ตลาดสหรัฐฯ + กราฟย้อนหลังในการ์ด Fed ----------
   // var (not let): applyFedData() runs before this point in the script and touches both.
@@ -3969,16 +3976,38 @@ window.setHeaderStamp();
           <div class="sl-sub" id="oiLabel" data-en="All exchanges (CoinGecko)">รวมทุกตลาด (CoinGecko)</div>
           <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=BINANCE%3ABTCUSDT.P_OI" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a>
         </div>
+        <div class="sl-tile sl-dvol">
+          <div class="sl-name"><span data-en="DVOL (BTC implied volatility)">DVOL ความผันผวน BTC</span> <div class="tip"><button type="button" class="tip-btn" aria-label="DVOL คืออะไร" data-en-aria="What is DVOL?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+            <div class="i18n-th">
+            <p><b>DVOL</b> (Deribit Volatility Index) คือ "VIX ของ Bitcoin" วัดความผันผวนที่ตลาดคาดของราคา BTC ใน 30 วันข้างหน้า คำนวณจากราคา option BTC บน Deribit (ตลาด option คริปโตที่ใหญ่ที่สุด) หน่วยเป็น % ต่อปี</p>
+            <p><b>แปลงเป็นรายวัน:</b> DVOL ÷ 19 ≈ ตลาดคาดว่าราคาแกว่งได้กี่ % ต่อวัน เช่น DVOL 50 ≈ ±2.6% ต่อวัน</p>
+            <p><b>อ่านค่า:</b> 🟢 ต่ำกว่า 40 เงียบมาก · 🟡 40–60 ปกติ · 🟠 60–80 กังวล · 🔴 80 ขึ้นไป ตื่นตระหนก (ช่วง LUNA/3AC มิ.ย. 2022 และ FTX ล้ม พ.ย. 2022 ขึ้นไปราว 100–120 · ช่วงเงียบสุดปลายปี 2023 ลงไปใกล้ 35)</p>
+            <p><b>ทำไมสำคัญ:</b> DVOL พุ่งพร้อมราคาร่วง = คนแห่ซื้อ put ป้องกันความเสี่ยง มักเกิดตอนตลาดใกล้ก้น (capitulation) · DVOL ต่ำนานๆ = ตลาดนิ่งจนประมาท มักตามมาด้วยการเคลื่อนไหวแรงทางใดทางหนึ่ง อ่านคู่กับ Funding Rate และ Open Interest ด้านข้าง และกับ VIX ในหน้าข่าวโลก</p>
+            </div>
+            <div class="i18n-en" lang="en">
+            <p><b>DVOL</b> (Deribit Volatility Index) is the "VIX of Bitcoin": the volatility the market expects in BTC over the next 30 days, derived from BTC option prices on Deribit (the largest crypto options exchange), in % per year.</p>
+            <p><b>Per day:</b> DVOL ÷ 19 ≈ the expected daily move in %, so DVOL 50 ≈ ±2.6% a day.</p>
+            <p><b>How to read it:</b> 🟢 below 40 very quiet · 🟡 40–60 normal · 🟠 60–80 worried · 🔴 80 and up panic (it reached about 100–120 around LUNA/3AC in June 2022 and the FTX collapse in November 2022, and fell to about 35 in the quiet of late 2023)</p>
+            <p><b>Why it matters:</b> DVOL spiking while price falls = a rush to buy puts for protection, which often happens near a bottom (capitulation). DVOL low for a long time = a complacent market, often followed by a sharp move either way. Read it with the Funding Rate and Open Interest next to it, and with VIX on the World News tab.</p>
+            </div>
+          </div></div></div>
+          <div class="sl-num" id="dvolNum">–</div>
+          <div class="sl-sub" id="dvolZone" data-en="Loading…">กำลังโหลด…</div>
+          <div class="spark" id="spDvol"></div>
+          <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=DERIBIT%3ADVOL" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a>
+        </div>
       </div>
       <div class="i18n-en" lang="en" style="font-size:11px; color:var(--sub); line-height:1.6; margin-top:14px;">
         How to read: very low (&lt;20) or very high (&gt;80) Fear&amp;Greed often marks a turning point (contrarian) ·
         a persistently high positive Funding Rate = crowded leveraged longs, ready to be liquidated en masse if price turns ·
-        Open Interest rising faster than price = heavy leverage, fragile to volatility
+        Open Interest rising faster than price = heavy leverage, fragile to volatility ·
+        DVOL = how big a move the options market expects; a spike during a sell-off often marks panic near a bottom
       </div>
       <div class="i18n-th" style="font-size:11px; color:var(--sub); line-height:1.6; margin-top:14px;">
         อ่านค่า: Fear&Greed ต่ำมาก (&lt;20) หรือสูงมาก (&gt;80) มักเป็นจุดกลับตัว (contrarian) ·
         Funding Rate เป็นบวกสูงต่อเนื่อง = คนแห่ leverage long พร้อมโดน liquidate ยกแผงถ้าราคาหักหัว ·
-        Open Interest พุ่งเร็วกว่าราคา = ตลาดใช้เลเวอเรจสูง เปราะบางต่อความผันผวน
+        Open Interest พุ่งเร็วกว่าราคา = ตลาดใช้เลเวอเรจสูง เปราะบางต่อความผันผวน ·
+        DVOL = ตลาด option คาดว่าราคาจะแกว่งแรงแค่ไหน ถ้าพุ่งตอนราคาร่วงมักเป็นจังหวะตื่นตระหนกใกล้ก้น
       </div>
     </div>
 
@@ -4607,6 +4636,49 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     }catch(e){ el('oiLabel').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable'); }
   }
 
+  // ---------- DVOL (Deribit BTC implied volatility, "VIX ของ BTC") ----------
+  // ชั้นแรก: /.netlify/functions/dvol (แคช 5 นาที) · ถ้าเซิร์ฟเวอร์ล่ม ดึงตรงจาก Deribit public API
+  // (ไม่ต้องใช้ key) แล้วแปลงแท่งเทียนรายวัน [ts, open, high, low, close] เป็นค่าปิดรายวันเอง
+  const isNum = (v) => typeof v === 'number' && isFinite(v);
+  function dvolFromCandles(j){
+    const rows = (j && j.result && j.result.data) || [];
+    const byDay = {};
+    rows.forEach(function(c){
+      const v = c && Number(c[4]);
+      if(isFinite(v) && v > 5 && v < 400) byDay[new Date(Number(c[0])).toISOString().slice(0,10)] = Math.round(v * 100) / 100;
+    });
+    const days = Object.keys(byDay).sort().slice(-366).map(function(d){ return [d, byDay[d]]; });
+    if(!days.length) throw new Error('no candles');
+    const latest = days[days.length - 1][1], prev = days.length > 1 ? days[days.length - 2][1] : null;
+    return { latest, prev, change: prev != null ? Math.round((latest - prev) * 100) / 100 : null, date: days[days.length - 1][0], hist: days, source: 'deribit (direct)' };
+  }
+  function dvolZone(v){
+    return v >= 80 ? tr('🔴 ตื่นตระหนก', '🔴 Panic') : v >= 60 ? tr('🟠 กังวล', '🟠 Worried') : v >= 40 ? tr('🟡 ปกติ', '🟡 Normal') : tr('🟢 เงียบมาก', '🟢 Very quiet');
+  }
+  async function fetchDvol(){
+    let d = null;
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/dvol', 8000);
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      d = await r.json();
+      if(!isNum(d.latest)) throw new Error('no value');
+    }catch(e){
+      try{
+        const now = Date.now();
+        const r = await fetchWithTimeout('https://www.deribit.com/api/v2/public/get_volatility_index_data?currency=BTC&resolution=1D&start_timestamp=' + (now - 380 * 86400000) + '&end_timestamp=' + now, 8000);
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        d = dvolFromCandles(await r.json());
+      }catch(e2){ d = null; }
+    }
+    if(!d){ el('dvolZone').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable'); return; }
+    const v = d.latest, ch = d.change;
+    el('dvolNum').innerHTML = v.toFixed(1) + (isNum(ch) ? '<span class="delta ' + (ch > 0 ? 'down' : ch < 0 ? 'up' : 'flat') + '">' + (ch > 0 ? '+' : '') + ch.toFixed(1) + '</span>' : '');
+    el('dvolNum').style.color = v >= 80 ? 'var(--red)' : v >= 60 ? 'var(--amber)' : '';
+    el('dvolZone').textContent = dvolZone(v) + tr(' · คาดแกว่ง ±', ' · implied ±') + (v / Math.sqrt(365)).toFixed(1) + tr('%/วัน', '%/day');
+    el('dvolZone').title = 'Deribit · ' + (d.source || '') + ' · ' + (d.date || '');
+    if(window.giSetSpark) window.giSetSpark('spDvol', d, { upIsBad:true, dec:0 });
+  }
+
   // ---------- Bitcoin Halving Countdown ----------
   // Primary: pure date arithmetic, no network call, cannot hang or fail — based on the
   // widely-cited estimate (~Apr 17, 2028, block 1,050,000) that CoinGecko/mempool.space/
@@ -4661,7 +4733,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   async function refreshAll(force){
     statusEl.textContent = tr('กำลังอัปเดต…', 'Updating…');
     const priceOk = await fetchPrice(); // must resolve first: OI conversion below needs a live price
-    const [metricsOk] = await Promise.all([fetchOnChainMetrics(force), fetchSentimentLeverage(), fetchHalvingCountdown()]);
+    const [metricsOk] = await Promise.all([fetchOnChainMetrics(force), fetchSentimentLeverage(), fetchHalvingCountdown(), fetchDvol()]);
     recompute();
     save();
     // บอกให้ชัดเมื่อค่าที่ใช้คำนวณไม่ใช่ราคาสด (ผู้ใช้พิมพ์เอง) — ไม่งั้นจะเข้าใจผิดว่าคะแนนมาจากราคาตลาด
