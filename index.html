@@ -205,7 +205,7 @@ body{margin:0}
   /* ---------- metric cards ---------- */
   #btcTab .metrics{display:flex; flex-direction:column; gap:14px;}
   #btcTab .metric-card{
-    background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:18px 20px;
+    position:relative; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:18px 20px;
   }
   #btcTab .metric-top{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;}
   #btcTab .metric-name{font-family:var(--disp); font-weight:600; font-size:15px;}
@@ -616,11 +616,68 @@ body{margin:0}
 <section class="card full">
 <h2>📈 <span data-en="US Markets">ตลาดสหรัฐฯ</span> <span class="h-en" data-en="Latest prices">US Markets · ราคาล่าสุด</span></h2>
 <div class="mkt-grid" id="mktGrid">
-  <div class="metric mkt"><div class="name" data-en="S&P 500 index">หุ้น S&amp;P 500</div><div class="num" id="mkSp500">–</div><div class="spark" id="spSp500"></div><div class="zone" id="mkSp500Zone"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=SP%3ASPX" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
-  <div class="metric mkt"><div class="name" data-en="Nasdaq 100 index">หุ้น Nasdaq 100</div><div class="num" id="mkNdx">–</div><div class="spark" id="spNdx"></div><div class="zone" id="mkNdxZone"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=NASDAQ%3ANDX" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
-  <div class="metric mkt"><div class="name" data-en="US 10-year yield">บอนด์สหรัฐ 10 ปี</div><div class="num" id="mkUs10y">–</div><div class="spark" id="spUs10y"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3AUS10Y" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
-  <div class="metric mkt"><div class="name" data-en="US 2-year yield">บอนด์สหรัฐ 2 ปี</div><div class="num" id="mkUs2y">–</div><div class="spark" id="spUs2y"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3AUS02Y" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
-  <div class="metric mkt"><div class="name" data-en="VIX fear index">VIX ดัชนีความกลัว</div><div class="num" id="mkVix">–</div><div class="spark" id="spVix"></div><div class="zone" id="mkVixZone"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=CBOE%3AVIX" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  <div class="metric mkt"><div class="name"><span data-en="S&P 500 index">หุ้น S&amp;P 500</span> <div class="tip"><button type="button" class="tip-btn" aria-label="S&amp;P 500 คืออะไร" data-en-aria="What is the S&amp;P 500?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>S&amp;P 500</b> คือดัชนีหุ้นใหญ่ 500 บริษัทของสหรัฐฯ ถ่วงน้ำหนักตามมูลค่าตลาด ครอบคลุมราว 80% ของมูลค่าตลาดหุ้นสหรัฐฯ ทั้งหมด หุ้นเทคโนโลยียักษ์ใหญ่ไม่กี่ตัวมีน้ำหนักรวมกันสูงมาก</p>
+    <p><b>อ่านค่า:</b> ตัวเลขใหญ่คือระดับดัชนี ตัวเล็กข้างๆ คือ % เปลี่ยนจากวันทำการก่อน บรรทัดใต้กราฟบอกเวลาของราคา (Cboe ช้าราว 15 นาที หรือราคาปิดจาก FRED)</p>
+    <p><b>ทำไมสำคัญ:</b> เป็นมาตรวัดความกล้าเสี่ยงของตลาดทั่วโลก หุ้นร่วงพร้อม VIX พุ่ง = ตลาดหนีความเสี่ยง (risk-off) ซึ่งมักลามไปถึงคริปโตและสินทรัพย์เสี่ยงอื่น</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>S&amp;P 500</b> tracks 500 large US companies, weighted by market value. It covers about 80% of the US stock market, and a handful of mega-cap tech stocks carry a very large share of the weight.</p>
+    <p><b>How to read it:</b> the big number is the index level, the small one next to it is the % change from the previous trading day. The line under the chart shows when the price is from (Cboe, about 15 minutes delayed, or the FRED close).</p>
+    <p><b>Why it matters:</b> it is the benchmark for global risk appetite. Stocks falling while VIX jumps = a risk-off market, which often spills over into crypto and other risky assets.</p>
+    </div>
+  </div></div></div><div class="num" id="mkSp500">–</div><div class="spark" id="spSp500"></div><div class="zone" id="mkSp500Zone"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=SP%3ASPX" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  <div class="metric mkt"><div class="name"><span data-en="Nasdaq 100 index">หุ้น Nasdaq 100</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Nasdaq 100 คืออะไร" data-en-aria="What is the Nasdaq 100?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>Nasdaq 100</b> คือดัชนีหุ้น 100 บริษัทที่ใหญ่ที่สุดในตลาด Nasdaq ไม่รวมกลุ่มการเงิน น้ำหนักส่วนใหญ่อยู่ที่หุ้นเทคโนโลยีและหุ้นเติบโต</p>
+    <p><b>อ่านค่า:</b> ตัวเลขใหญ่คือระดับดัชนี ตัวเล็กคือ % เปลี่ยนจากวันทำการก่อน มักขึ้นลงแรงกว่า S&amp;P 500</p>
+    <p><b>ทำไมสำคัญ:</b> หุ้นเติบโตไวต่อดอกเบี้ยมาก ยีลด์บอนด์ 10 ปีพุ่งมักกดดัน Nasdaq มากกว่าตลาดรวม และมักเคลื่อนไหวไปทางเดียวกับ BTC จึงใช้ดูความกล้าเสี่ยงของนักลงทุนได้ดี</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>Nasdaq 100</b> tracks the 100 largest non-financial companies listed on Nasdaq. Most of the weight is in tech and growth stocks.</p>
+    <p><b>How to read it:</b> the big number is the index level, the small one is the % change from the previous trading day. It usually swings harder than the S&amp;P 500.</p>
+    <p><b>Why it matters:</b> growth stocks are very sensitive to interest rates, so a jump in the 10-year yield tends to hit the Nasdaq harder than the broad market. It also tends to move with BTC, which makes it a good gauge of risk appetite.</p>
+    </div>
+  </div></div></div><div class="num" id="mkNdx">–</div><div class="spark" id="spNdx"></div><div class="zone" id="mkNdxZone"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=NASDAQ%3ANDX" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  <div class="metric mkt"><div class="name"><span data-en="US 10-year yield">บอนด์สหรัฐ 10 ปี</span> <div class="tip"><button type="button" class="tip-btn" aria-label="บอนด์ 10 ปีคืออะไร" data-en-aria="What is the 10-year yield?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>ยีลด์บอนด์รัฐบาลสหรัฐฯ 10 ปี</b> คือผลตอบแทนที่รัฐบาลสหรัฐฯ จ่ายเมื่อกู้เงิน 10 ปี เป็นดอกเบี้ยอ้างอิงที่สำคัญที่สุดในโลก ใช้ตั้งราคาดอกเบี้ยบ้าน หุ้นกู้ และใช้ประเมินมูลค่าหุ้น</p>
+    <p><b>อ่านค่า:</b> ตัวเลขใหญ่คือยีลด์ (%) ตัวเล็กคือการเปลี่ยนแปลงจากวันก่อนเป็น bp (1 bp = 0.01%) ราคาบอนด์กับยีลด์สวนทางกันเสมอ</p>
+    <p><b>ทำไมสำคัญ:</b> ยีลด์ขึ้น = ต้นทุนเงินทั้งระบบแพงขึ้น กดดันหุ้นเติบโต ทองคำ และคริปโต · ยีลด์ลงแรง = ตลาดกลัวเศรษฐกิจชะลอหรือคาดว่า Fed จะลดดอกเบี้ย อ่านคู่กับบอนด์ 2 ปี: ถ้า 2 ปีสูงกว่า 10 ปี (yield curve กลับหัว) ในอดีตมักเกิดก่อนเศรษฐกิจถดถอย</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>The US 10-year Treasury yield</b> is what the US government pays to borrow for 10 years. It is the most important benchmark rate in the world, used to price mortgages and corporate bonds and to value stocks.</p>
+    <p><b>How to read it:</b> the big number is the yield (%), the small one is the change from the previous day in bp (1 bp = 0.01%). Bond prices and yields always move in opposite directions.</p>
+    <p><b>Why it matters:</b> a rising yield = money gets more expensive across the system, which weighs on growth stocks, gold and crypto · a sharp drop = the market fears a slowdown or expects Fed cuts. Read it with the 2-year: when the 2-year is above the 10-year (an inverted yield curve), a recession has often followed.</p>
+    </div>
+  </div></div></div><div class="num" id="mkUs10y">–</div><div class="spark" id="spUs10y"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3AUS10Y" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  <div class="metric mkt"><div class="name"><span data-en="US 2-year yield">บอนด์สหรัฐ 2 ปี</span> <div class="tip"><button type="button" class="tip-btn" aria-label="บอนด์ 2 ปีคืออะไร" data-en-aria="What is the 2-year yield?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>ยีลด์บอนด์รัฐบาลสหรัฐฯ 2 ปี</b> คือผลตอบแทนของบอนด์อายุ 2 ปี เป็นตัวที่ไวต่อนโยบายดอกเบี้ยของ Fed มากที่สุด เพราะสะท้อนว่าตลาดคาดดอกเบี้ยนโยบายจะอยู่ระดับไหนในอีก 2 ปีข้างหน้า</p>
+    <p><b>อ่านค่า:</b> ตัวเลขใหญ่คือยีลด์ (%) ตัวเล็กคือการเปลี่ยนแปลงจากวันก่อนเป็น bp · ต่ำกว่าดอกเบี้ย Fed ชัดเจน = ตลาดคาดว่า Fed จะลดดอกเบี้ย · สูงกว่า = คาดว่าจะขึ้นหรือคงไว้นาน</p>
+    <p><b>ทำไมสำคัญ:</b> ใช้อ่านใจตลาดว่า Fed จะไปทางไหน และใช้เทียบกับบอนด์ 10 ปี ถ้า 2 ปีสูงกว่า 10 ปี (yield curve กลับหัว) ในอดีตมักเกิดก่อนเศรษฐกิจถดถอย ส่วนการที่ curve กลับมาเป็นบวกเร็วๆ เพราะ 2 ปีร่วงแรง มักเกิดตอนที่ Fed เริ่มลดดอกเบี้ยแล้ว</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>The US 2-year Treasury yield</b> is the yield on 2-year government bonds. It is the most sensitive to Fed policy, because it reflects where the market expects the policy rate to be over the next two years.</p>
+    <p><b>How to read it:</b> the big number is the yield (%), the small one is the change from the previous day in bp · clearly below the Fed rate = the market expects cuts · above it = the market expects hikes, or rates held high for longer.</p>
+    <p><b>Why it matters:</b> it shows where the market thinks the Fed is heading. Compare it with the 10-year: when the 2-year is above the 10-year (an inverted curve), a recession has often followed, and a fast return to a positive curve because the 2-year is falling usually happens once the Fed has started cutting.</p>
+    </div>
+  </div></div></div><div class="num" id="mkUs2y">–</div><div class="spark" id="spUs2y"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3AUS02Y" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  <div class="metric mkt"><div class="name"><span data-en="VIX fear index">VIX ดัชนีความกลัว</span> <div class="tip"><button type="button" class="tip-btn" aria-label="VIX คืออะไร" data-en-aria="What is VIX?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>VIX</b> (Cboe Volatility Index) หรือ "ดัชนีความกลัว" วัดความผันผวนที่ตลาดคาดของหุ้น S&amp;P 500 ใน 30 วันข้างหน้า คำนวณจากราคา option ของ S&amp;P 500 หน่วยเป็น % ต่อปี</p>
+    <p><b>แปลงเป็นรายวัน:</b> VIX ÷ 16 ≈ ตลาดคาดว่าหุ้นแกว่งได้กี่ % ต่อวัน เช่น VIX 16 ≈ ±1% ต่อวัน</p>
+    <p><b>อ่านค่า:</b> 🟢 ต่ำกว่า 15 สงบ · 🟡 15–20 ปกติ · 🟠 20–30 กังวล · 🔴 30 ขึ้นไป ตลาดตื่นตระหนก (วิกฤตการเงิน 2008 และโควิด มี.ค. 2020 ขึ้นไปราว 80 · ค่าเฉลี่ยระยะยาวราว 19–20)</p>
+    <p><b>ทำไมสำคัญ:</b> VIX มักพุ่งตอนหุ้นร่วง พอ VIX พุ่งแรงคนแห่ซื้อ put ป้องกันความเสี่ยง ซึ่งมักเกิดใกล้จุดต่ำสุดระยะสั้น · VIX ต่ำนานๆ = ตลาดนิ่งจนประมาท อ่านคู่กับ MOVE (บอนด์) OVX (น้ำมัน) และ DVOL (BTC)</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>VIX</b> (Cboe Volatility Index), the "fear index", measures the volatility the market expects in the S&amp;P 500 over the next 30 days. It is derived from S&amp;P 500 option prices, in % per year.</p>
+    <p><b>Per day:</b> VIX ÷ 16 ≈ the expected daily move in %, so VIX 16 ≈ ±1% a day.</p>
+    <p><b>How to read it:</b> 🟢 below 15 calm · 🟡 15–20 normal · 🟠 20–30 worried · 🔴 30 and up panic (it reached about 80 in the 2008 financial crisis and in the March 2020 Covid crash · the long-run average is about 19–20)</p>
+    <p><b>Why it matters:</b> VIX usually jumps when stocks fall. A sharp spike means a rush to buy puts for protection, which often happens near a short-term bottom · VIX low for a long time = a complacent market. Read it with MOVE (bonds), OVX (oil) and DVOL (BTC).</p>
+    </div>
+  </div></div></div><div class="num" id="mkVix">–</div><div class="spark" id="spVix"></div><div class="zone" id="mkVixZone"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=CBOE%3AVIX" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
   <div class="metric mkt"><div class="name"><span data-en="MOVE bond volatility">MOVE ความผันผวนบอนด์</span> <div class="tip"><button type="button" class="tip-btn" aria-label="MOVE คืออะไร" data-en-aria="What is MOVE?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
     <div class="i18n-th">
     <p><b>MOVE Index</b> คือ "VIX ของตลาดบอนด์" วัดความผันผวนที่ตลาดคาดของพันธบัตรรัฐบาลสหรัฐฯ ใน 1 เดือนข้างหน้า (คำนวณจากราคา option ของบอนด์ 2, 5, 10, 30 ปี)</p>
@@ -679,7 +736,18 @@ body{margin:0}
     </div>
   </div></div></div><div class="num" id="mkLevShort">–</div><div class="spark" id="spLevShort"></div><div class="zone" id="mkLevShortZone"></div>
     <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=CBOT%3AZN1%21" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
-  <div class="metric mkt"><div class="name" id="mkDollarName" data-en="Dollar index (DXY)">ดัชนีดอลลาร์ (DXY)</div><div class="num" id="mkDollar">–</div><div class="spark" id="spDollar"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3ADXY" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  <div class="metric mkt"><div class="name"><span id="mkDollarName" data-en="Dollar index (DXY)">ดัชนีดอลลาร์ (DXY)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ดัชนีดอลลาร์คืออะไร" data-en-aria="What is the dollar index?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>ดัชนีดอลลาร์ (DXY)</b> วัดค่าเงินดอลลาร์สหรัฐเทียบกับ 6 สกุลหลัก น้ำหนักมากสุดคือยูโร (ราว 58%) ตามด้วยเยน ปอนด์ ดอลลาร์แคนาดา โครนาสวีเดน และฟรังก์สวิส (ฐาน 100 = มี.ค. 1973)</p>
+    <p><b>ข้อมูล:</b> คำนวณด้วยสูตรเดียวกับ ICE DXY จากอัตราอ้างอิงรายวันของ ECB จึงอาจต่างจาก DXY แบบเรียลไทม์เล็กน้อย · ถ้าดึงไม่ได้จะใช้ดัชนีดอลลาร์ Broad ของ Fed (เทียบกับคู่ค้าหลายสิบประเทศ) แทน และชื่อการ์ดจะเปลี่ยนเป็น "Broad"</p>
+    <p><b>ทำไมสำคัญ:</b> ดอลลาร์แข็ง = สภาพคล่องโลกตึงขึ้น มักกดดันทองคำ หุ้นตลาดเกิดใหม่ และคริปโต · ดอลลาร์อ่อน = เงินไหลไปสินทรัพย์เสี่ยงได้ง่ายขึ้น และมักหนุนเงินบาท</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>The dollar index (DXY)</b> measures the US dollar against six major currencies. The euro carries the most weight (about 58%), followed by the yen, pound, Canadian dollar, Swedish krona and Swiss franc (base 100 = March 1973).</p>
+    <p><b>Data:</b> computed with the ICE DXY formula from the ECB's daily reference rates, so it can differ slightly from the live DXY · if that fails, the Fed's Broad dollar index (against dozens of trading partners) is used instead and the card title changes to "Broad".</p>
+    <p><b>Why it matters:</b> a strong dollar = tighter global liquidity, which tends to weigh on gold, emerging-market stocks and crypto · a weak dollar = money flows more easily into risky assets, and it usually supports the Thai baht.</p>
+    </div>
+  </div></div></div><div class="num" id="mkDollar">–</div><div class="spark" id="spDollar"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3ADXY" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
 <!-- ส่วนต่างยีลด์ US − ญี่ปุ่น (carry trade) · ข้อมูลจาก /markets (usjp2y / usjp10y) -->
   <div class="metric mkt" id="usjpCards"><div class="name"><span data-en="US − Japan 2Y yield spread">ส่วนต่างยีลด์ สหรัฐ−ญี่ปุ่น 2 ปี</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ส่วนต่างยีลด์ 2 ปีคืออะไร" data-en-aria="What is the 2Y spread?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
     <div class="i18n-th">
@@ -977,7 +1045,33 @@ body{margin:0}
   <span id="newsStatus" data-en="Loading news…">กำลังโหลดข่าว…</span> ·
   <span data-en="Not investment advice">ไม่ใช่คำแนะนำการลงทุน</span> ·
   <button id="newsRefreshBtn" style="padding:4px 10px; font-size:11px;" data-en="🔄 Refresh news">🔄 รีเฟรชข่าว</button>
+  <span id="visitorCount" hidden></span>
 </div>
+<script>
+// 👥 ตัวนับผู้มาเยือน (Netlify Function + Netlify Blobs · ไม่มีบริการภายนอก ไม่เก็บข้อมูลส่วนตัว)
+// นับ 1 ครั้งต่อเบราว์เซอร์ต่อวัน (วันตามเวลาไทย): วันแรกที่เปิดส่ง POST แล้วจำวันไว้ใน localStorage ·
+// เปิดซ้ำวันเดียวกันแค่ GET ยอดมาแสดง · ดึงไม่ได้ก็ซ่อนไว้เฉยๆ
+(function(){
+  var box = document.getElementById('visitorCount');
+  if(!box || !window.fetch) return;
+  var tr = window.tr || function(th){ return th; };
+  var today = new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
+  var seen = null;
+  try{ seen = localStorage.getItem('gi-visit-day'); }catch(e){}
+  var isNew = seen !== today;
+  fetch('/.netlify/functions/visitors', { method: isNew ? 'POST' : 'GET', cache: 'no-store' })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(j){
+      if(!j || !(j.total > 0)) return;
+      if(isNew){ try{ localStorage.setItem('gi-visit-day', today); }catch(e){} }
+      var n = function(x){ return Number(x).toLocaleString('en-US'); };
+      box.textContent = '· 👥 ' + tr('ผู้มาเยือน ', 'Visitors ') + n(j.total) + (j.today > 0 ? tr(' (วันนี้ ', ' (today ') + n(j.today) + ')' : '');
+      box.title = tr('นับ 1 ครั้งต่อเบราว์เซอร์ต่อวัน', 'Counted once per browser per day');
+      box.hidden = false;
+    })
+    .catch(function(){});
+})();
+</script>
 </div>
 <script>
 if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data-en ของแท็บข่าว (ก่อนสคริปต์ด้านล่างเริ่มเขียนทับ)
@@ -3861,7 +3955,18 @@ window.setHeaderStamp();
 
       <div class="metric-card">
         <div class="metric-top">
-          <div class="metric-name">NUPL <span class="auto-badge" id="nuplAuto">–</span></div>
+          <div class="metric-name">NUPL <div class="tip"><button type="button" class="tip-btn" aria-label="NUPL คืออะไร" data-en-aria="What is NUPL?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+            <div class="i18n-th">
+            <p><b>NUPL</b> (Net Unrealized Profit/Loss) วัดว่าโดยรวมแล้วคนที่ถือ BTC อยู่ "กำไรหรือขาดทุนบนกระดาษ" มากแค่ไหน คิดเป็นสัดส่วนของมูลค่าตลาด = (Market Cap − Realized Cap) ÷ Market Cap โดย Realized Cap คือมูลค่าของเหรียญทุกเหรียญตามราคาที่มันถูกโอนครั้งล่าสุด (ประมาณต้นทุนรวมของตลาด)</p>
+            <p><b>อ่านค่า:</b> ต่ำกว่า 0 Capitulation (ตลาดขาดทุนรวม) · 0–0.25 Hope/Fear · 0.25–0.5 Optimism · 0.5–0.75 Belief · 0.75 ขึ้นไป Euphoria (ในอดีตจุดสูงสุดของรอบมักอยู่แถวนี้)</p>
+            <p><b>คะแนน:</b> คะแนนในวงกลมขวามือ (1–10) ยิ่งสูงยิ่งน่าซื้อ และใช้คำนวณคะแนนความน่าซื้อรวมด้านบน</p>
+            </div>
+            <div class="i18n-en" lang="en">
+            <p><b>NUPL</b> (Net Unrealized Profit/Loss) measures how much paper profit or loss BTC holders have overall, as a share of market cap = (Market Cap − Realized Cap) ÷ Market Cap. Realized Cap values every coin at the price it last moved, roughly the market's total cost basis.</p>
+            <p><b>How to read it:</b> below 0 capitulation (the market is at a loss overall) · 0–0.25 hope/fear · 0.25–0.5 optimism · 0.5–0.75 belief · 0.75 and up euphoria (past cycle tops tended to land around here)</p>
+            <p><b>Score:</b> The score pill on the right (1–10): the higher, the more attractive to buy. It feeds the overall buy score above.</p>
+            </div>
+          </div></div> <span class="auto-badge" id="nuplAuto">–</span></div>
           <a class="metric-link" target="_blank" href="https://www.coinglass.com/pro/i/nupl" data-en="Open Coinglass ↗">เปิด Coinglass ↗</a>
         </div>
         <div class="metric-display-row">
@@ -3879,7 +3984,18 @@ window.setHeaderStamp();
 
       <div class="metric-card">
         <div class="metric-top">
-          <div class="metric-name">MVRV Z-Score <span class="auto-badge" id="zAuto">–</span></div>
+          <div class="metric-name">MVRV Z-Score <div class="tip"><button type="button" class="tip-btn" aria-label="MVRV Z-Score คืออะไร" data-en-aria="What is the MVRV Z-Score?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+            <div class="i18n-th">
+            <p><b>MVRV Z-Score</b> วัดว่า Market Cap ห่างจาก Realized Cap (ต้นทุนรวมของตลาด) กี่เท่าของส่วนเบี่ยงเบนมาตรฐาน = (Market Cap − Realized Cap) ÷ SD ของ Market Cap ใช้หาว่า BTC แพงหรือถูกผิดปกติเมื่อเทียบกับประวัติ</p>
+            <p><b>อ่านค่า:</b> ต่ำกว่า 0 ถูกมาก · 0–1 โซนถูก · 1–3 มูลค่ากลาง · 3–5 เริ่มแพง · 5–7 Overvalued · 7 ขึ้นไป Extreme Euphoria (จุดสูงสุดของรอบในอดีต) · ช่วงต่ำกว่า 0 ในอดีตมักเป็นแถวก้นของตลาดหมี</p>
+            <p><b>คะแนน:</b> คะแนนในวงกลมขวามือ (1–10) ยิ่งสูงยิ่งน่าซื้อ และใช้คำนวณคะแนนความน่าซื้อรวมด้านบน</p>
+            </div>
+            <div class="i18n-en" lang="en">
+            <p><b>The MVRV Z-Score</b> measures how many standard deviations Market Cap sits above Realized Cap (the market's total cost basis) = (Market Cap − Realized Cap) ÷ SD of Market Cap. It flags when BTC is unusually expensive or cheap against its own history.</p>
+            <p><b>How to read it:</b> below 0 deeply undervalued · 0–1 cheap · 1–3 fair value · 3–5 getting expensive · 5–7 overvalued · 7 and up extreme euphoria (past cycle tops) · readings below 0 have tended to mark bear-market bottoms.</p>
+            <p><b>Score:</b> The score pill on the right (1–10): the higher, the more attractive to buy. It feeds the overall buy score above.</p>
+            </div>
+          </div></div> <span class="auto-badge" id="zAuto">–</span></div>
           <a class="metric-link" target="_blank" href="https://www.coinglass.com/pro/i/bitcoin-mvrv-zscore" data-en="Open Coinglass ↗">เปิด Coinglass ↗</a>
         </div>
         <div class="metric-display-row">
@@ -3897,7 +4013,18 @@ window.setHeaderStamp();
 
       <div class="metric-card">
         <div class="metric-top">
-          <div class="metric-name">MVRV Ratio <span class="auto-badge" id="mAuto">–</span></div>
+          <div class="metric-name">MVRV Ratio <div class="tip"><button type="button" class="tip-btn" aria-label="MVRV Ratio คืออะไร" data-en-aria="What is the MVRV Ratio?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+            <div class="i18n-th">
+            <p><b>MVRV Ratio</b> = Market Cap ÷ Realized Cap คือราคาตลาดตอนนี้เทียบกับต้นทุนเฉลี่ยของคนที่ถือ BTC อยู่ เช่น 2.0 = โดยเฉลี่ยผู้ถือมีกำไร 100%</p>
+            <p><b>อ่านค่า:</b> ต่ำกว่า 1 ราคาต่ำกว่าต้นทุนเฉลี่ย (ผู้ถือขาดทุนรวม มักเป็นแถวก้นตลาดหมี) · 1–1.5 โซนถูก · 1.5–2.5 มูลค่ากลาง · 2.5–3.5 Overvalued · 3.5 ขึ้นไป Extreme Overvalued (ใกล้จุดสูงสุดของรอบในอดีต)</p>
+            <p><b>คะแนน:</b> คะแนนในวงกลมขวามือ (1–10) ยิ่งสูงยิ่งน่าซื้อ และใช้คำนวณคะแนนความน่าซื้อรวมด้านบน</p>
+            </div>
+            <div class="i18n-en" lang="en">
+            <p><b>The MVRV Ratio</b> = Market Cap ÷ Realized Cap: today's price compared with the average cost basis of BTC holders. For example 2.0 = holders are up 100% on average.</p>
+            <p><b>How to read it:</b> below 1 price is under the average cost (holders at a loss overall, often near bear-market bottoms) · 1–1.5 cheap · 1.5–2.5 fair value · 2.5–3.5 overvalued · 3.5 and up extremely overvalued (near past cycle tops)</p>
+            <p><b>Score:</b> The score pill on the right (1–10): the higher, the more attractive to buy. It feeds the overall buy score above.</p>
+            </div>
+          </div></div> <span class="auto-badge" id="mAuto">–</span></div>
           <a class="metric-link" target="_blank" href="https://www.coinglass.com/pro/i/mvrv-ratio" data-en="Open Coinglass ↗">เปิด Coinglass ↗</a>
         </div>
         <div class="metric-display-row">
@@ -3960,12 +4087,34 @@ window.setHeaderStamp();
       <h2>Sentiment & Leverage <span style="color:var(--sub); font-weight:400; text-transform:none; letter-spacing:0;" data-en="— Michael Burry-style view: cheap valuation is not enough, you also need to see how speculative the market is">— มุมมองสไตล์ Michael Burry: valuation ถูกอย่างเดียวไม่พอ ต้องดูด้วยว่าตลาด "เก็ง" หนักแค่ไหน</span></h2>
       <div class="sl-grid">
         <div class="sl-tile">
-          <div class="sl-name">Fear & Greed Index</div>
+          <div class="sl-name">Fear & Greed Index <div class="tip"><button type="button" class="tip-btn" aria-label="Fear &amp; Greed คืออะไร" data-en-aria="What is Fear &amp; Greed?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+            <div class="i18n-th">
+            <p><b>Fear &amp; Greed Index</b> ของคริปโต (0–100) วัดอารมณ์ตลาด รวมหลายปัจจัย เช่น โมเมนตัมราคา ความผันผวน วอลุ่ม และกระแสโซเชียล ดึงจาก CoinMarketCap (สำรองด้วย alternative.me)</p>
+            <p><b>อ่านค่า:</b> 0–25 กลัวสุดขีด · 25–45 กลัว · 45–55 กลางๆ · 55–75 โลภ · 75–100 โลภสุดขีด · ตัวเลขเป็นสีเขียวเมื่อ ≤ 25 และสีแดงเมื่อ ≥ 75</p>
+            <p><b>ใช้ยังไง:</b> เป็นตัวชี้วัดแบบสวนทาง "กลัวเมื่อคนอื่นโลภ โลภเมื่อคนอื่นกลัว" ช่วงกลัวสุดขีดมักเป็นจังหวะสะสมที่ดีในอดีต ส่วนโลภสุดขีดนานๆ มักใกล้จุดพักตัว แต่ไม่ใช่สัญญาณจับจังหวะที่แม่นยำ ควรดูคู่กับ Funding Rate และ on-chain</p>
+            </div>
+            <div class="i18n-en" lang="en">
+            <p><b>The crypto Fear &amp; Greed Index</b> (0–100) gauges market mood by combining factors such as price momentum, volatility, volume and social media buzz. It comes from CoinMarketCap (alternative.me as a fallback).</p>
+            <p><b>How to read it:</b> 0–25 extreme fear · 25–45 fear · 45–55 neutral · 55–75 greed · 75–100 extreme greed · the number turns green at 25 or below and red at 75 or above.</p>
+            <p><b>How to use it:</b> it is a contrarian gauge: "be fearful when others are greedy, and greedy when others are fearful". Extreme fear has often been a good time to accumulate, and long stretches of extreme greed often come near a pullback, but it is not a precise timing signal. Read it with the Funding Rate and on-chain metrics.</p>
+            </div>
+          </div></div></div>
           <div class="sl-num" id="fngNum">–</div>
           <div class="sl-sub" id="fngLabel" data-en="Loading…">กำลังโหลด…</div>
         </div>
         <div class="sl-tile">
-          <div class="sl-name" data-en="Funding Rate (perp, 8h)">Funding Rate (perp, 8ชม.)</div>
+          <div class="sl-name"><span data-en="Funding Rate (perp, 8h)">Funding Rate (perp, 8ชม.)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Funding Rate คืออะไร" data-en-aria="What is the Funding Rate?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+            <div class="i18n-th">
+            <p><b>Funding Rate</b> คือค่าธรรมเนียมที่ฝั่ง long กับ short ของสัญญา perpetual จ่ายให้กันทุก 8 ชั่วโมง เพื่อดึงราคา perp ให้อยู่ใกล้ราคา spot แสดงค่าของ BTCUSDT บน Binance</p>
+            <p><b>อ่านค่า:</b> บวก = long จ่ายให้ short (คนเปิด long ด้วยเลเวอเรจมากกว่า) · ลบ = short จ่ายให้ long · ค่าปกติของ Binance อยู่ที่ราว +0.01% ต่อ 8 ชม. · การ์ดนี้ขึ้นสีแดงเมื่อเกิน ±0.03%</p>
+            <p><b>ทำไมสำคัญ:</b> Funding บวกสูงต่อเนื่อง = long แออัด ราคาหักนิดเดียวอาจเกิด long squeeze · Funding ติดลบลึกตอนราคาร่วง = short แออัด เสี่ยงเกิด short squeeze ดีดกลับแรง อ่านคู่กับ Open Interest</p>
+            </div>
+            <div class="i18n-en" lang="en">
+            <p><b>The Funding Rate</b> is a fee that longs and shorts on perpetual contracts pay each other every 8 hours, to keep the perp price close to spot. Shown for BTCUSDT on Binance.</p>
+            <p><b>How to read it:</b> positive = longs pay shorts (more leveraged longs) · negative = shorts pay longs · Binance's baseline is about +0.01% per 8 hours · this tile turns red beyond ±0.03%.</p>
+            <p><b>Why it matters:</b> a high positive rate that persists = crowded longs, so a small drop can trigger a long squeeze · a deeply negative rate while price falls = crowded shorts, with a risk of a sharp short squeeze. Read it with Open Interest.</p>
+            </div>
+          </div></div></div>
           <div class="sl-num" id="fundingNum">–</div>
           <div class="sl-sub" id="fundingLabel">Binance BTCUSDT</div>
         </div>
@@ -3975,16 +4124,19 @@ window.setHeaderStamp();
             <p><b>คืออะไร:</b> มูลค่าสัญญาฟิวเจอร์สและ perpetual ของ BTC ที่ยังเปิดค้างอยู่ทั้งตลาด (ยังไม่ได้ปิดสถานะ) นับฝั่งเดียว เพราะทุก long มี short คู่กันเสมอ แสดงเป็นจำนวน BTC</p>
             <p><b>อ่านคู่กับราคา:</b> 🟢 ราคาขึ้น + OI ขึ้น = เงินใหม่เข้ามาเปิด long เทรนด์แข็ง · 🟡 ราคาขึ้น + OI ลง = แรงขึ้นมาจาก short โดนบังคับปิด (short squeeze) อาจไปต่อไม่ไกล · 🟠 ราคาลง + OI ขึ้น = มีคนเปิด short ใหม่เพิ่ม แรงขายยังมา · 🔵 ราคาลง + OI ลง = long ยอมตัดขาดทุนหรือโดน liquidate ใกล้ล้างเลเวอเรจเสร็จ</p>
             <p><b>สัญญาณเตือน:</b> OI พุ่งเร็วกว่าราคาหรือทำสถิติใหม่ คู่กับ Funding Rate บวกสูง = ตลาดเลเวอเรจหนาแน่นฝั่ง long ราคาหักนิดเดียวอาจเกิด liquidation ต่อกันเป็นทอด ๆ · OI ร่วงแรงในวันเดียว = เพิ่งล้างเลเวอเรจไป มักเป็นจุดที่ตลาดเบาตัวลง</p>
+            <p><b>สีบอกโซน (OI ÷ BTC ทั้งหมดที่ขุดออกมาแล้ว):</b> 🟢 ต่ำกว่า 2.5% เลเวอเรจเบา · 🟡 2.5–3.5% ปกติ · 🟠 3.5–4.5% เลเวอเรจสูง · 🔴 4.5% ขึ้นไป สูงมาก เสี่ยงล้างพอร์ตต่อเนื่อง (เกณฑ์โดยประมาณจากรอบที่ผ่านมา ใช้ดูแนวโน้มมากกว่าเป็นตัวเลขตายตัว)</p>
             <p><b>ข้อมูล:</b> รวมทั้ง CEX (Binance, OKX, Bybit, CME ฯลฯ ผ่าน CoinGecko) และ DEX (Hyperliquid) ไม่นับซ้ำ · ปุ่มด้านล่างเปิดกราฟ OI ของ BTCUSDT perp บน Binance ใน TradingView</p>
             </div>
             <div class="i18n-en" lang="en">
             <p><b>What it is:</b> the total value of BTC futures and perpetual contracts still open across the market (not yet closed), counted once since every long has a matching short. Shown in BTC.</p>
             <p><b>Read it with price:</b> 🟢 price up + OI up = new money opening longs, a strong trend · 🟡 price up + OI down = the rise comes from shorts being forced out (short squeeze), may not go far · 🟠 price down + OI up = new shorts piling in, selling pressure continues · 🔵 price down + OI down = longs capitulating or being liquidated, leverage is close to flushed out</p>
             <p><b>Warning signs:</b> OI climbing faster than price or hitting a record, together with a high positive Funding Rate = crowded leveraged longs, a small drop can trigger cascading liquidations · a sharp one-day OI drop = leverage just got flushed, often where the market calms down</p>
+            <p><b>Colour zone (OI ÷ all BTC mined so far):</b> 🟢 below 2.5% light leverage · 🟡 2.5–3.5% normal · 🟠 3.5–4.5% high leverage · 🔴 4.5% and up very high, prone to cascading liquidations (rough thresholds from past cycles; read the trend rather than the exact line)</p>
             <p><b>Data:</b> combines CEXs (Binance, OKX, Bybit, CME and others via CoinGecko) and the DEX Hyperliquid, without double counting · the button below opens Binance BTCUSDT perp OI in TradingView</p>
             </div>
           </div></div></div>
           <div class="sl-num" id="oiNum">–</div>
+          <div class="sl-sub" id="oiZone"></div>
           <div class="sl-sub" id="oiLabel" data-en="All exchanges, CEX + DEX">รวมทุกตลาด CEX + DEX</div>
           <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=BINANCE%3ABTCUSDT.P_OI" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a>
         </div>
@@ -4574,7 +4726,22 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     if(hlUsd && !cgHasHl){ totalUsd += hlUsd; byExchange.Hyperliquid = hlUsd; }
     return { totalUsd, byExchange };
   }
-  if(typeof window !== 'undefined') window.__oiTest = { hyperliquidBtcOiUsd, combineBtcOpenInterest };
+  // BTC ที่ขุดออกมาแล้วโดยประมาณ: 19,687,500 BTC ตอน halving 20 เม.ย. 2024 + ~450 BTC/วัน (3.125 × 144 บล็อก)
+  // คลาดไม่เกินราว 0.1% ซึ่งพอสำหรับคิดสัดส่วน OI ต่อเหรียญทั้งหมด (halving ครั้งหน้า ~เม.ย. 2028 เหลือ 225/วัน)
+  function btcSupplyApprox(now){
+    const days = Math.max(0, ((now || Date.now()) - Date.UTC(2024, 3, 20)) / 86400000);
+    const toHalving = Math.min(days, (Date.UTC(2028, 3, 17) - Date.UTC(2024, 3, 20)) / 86400000);
+    return Math.min(21e6, 19687500 + toHalving * 450 + Math.max(0, days - toHalving) * 225);
+  }
+  // OI (BTC) ÷ BTC ทั้งหมด = เลเวอเรจในตลาดอนุพันธ์เทียบกับขนาดตลาด (ไม่ต้องใช้ข้อมูลย้อนหลัง)
+  function oiLeverageZone(pct){
+    if(!(pct > 0)) return null;
+    return pct >= 4.5 ? { dot:'🔴', th:'เลเวอเรจสูงมาก', en:'Very high leverage', color:'var(--red)' }
+      : pct >= 3.5 ? { dot:'🟠', th:'เลเวอเรจสูง', en:'High leverage', color:'var(--amber)' }
+      : pct >= 2.5 ? { dot:'🟡', th:'ปกติ', en:'Normal', color:'' }
+      : { dot:'🟢', th:'เลเวอเรจเบา', en:'Light leverage', color:'var(--green)' };
+  }
+  if(typeof window !== 'undefined') window.__oiTest = { hyperliquidBtcOiUsd, combineBtcOpenInterest, btcSupplyApprox, oiLeverageZone };
 
   // ---------- Sentiment & Leverage (Fear&Greed + funding rate + open interest) ----------
   // Fear & Greed: CoinMarketCap (keyless public API) เป็นแหล่งหลักตามคำขอผู้ใช้ อัปเดตอัตโนมัติ
@@ -4668,6 +4835,10 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       el('oiNum').textContent = totalBtc
         ? totalBtc.toLocaleString(undefined,{maximumFractionDigits:0}) + ' BTC'
         : '$' + totalUsd.toLocaleString(undefined,{maximumFractionDigits:0});
+      const oiPct = totalBtc ? totalBtc / btcSupplyApprox() * 100 : null;
+      const oiZ = oiLeverageZone(oiPct);
+      el('oiNum').style.color = oiZ ? oiZ.color : '';
+      el('oiZone').textContent = oiZ ? oiZ.dot + ' ' + tr(oiZ.th, oiZ.en) + tr(' · ' + oiPct.toFixed(2) + '% ของ BTC ทั้งหมด', ' · ' + oiPct.toFixed(2) + '% of all BTC') : '';
 
       const n = Object.keys(byExchange).length;
       const top3 = Object.entries(byExchange).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([name])=>name);
@@ -4675,7 +4846,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       const hlOi = hlKey ? byExchange[hlKey] : 0;
       const hlNote = hlOi ? (' · Hyperliquid ' + (price ? (hlOi / price).toLocaleString(undefined,{maximumFractionDigits:0}) + ' BTC' : '$' + (hlOi/1e9).toFixed(2) + 'bn')) : '';
       el('oiLabel').textContent = tr('รวม ' + n + ' ตลาด CEX + DEX (', 'Across ' + n + ' exchanges, CEX + DEX (') + top3.join(', ') + ' ...)' + hlNote;
-    }catch(e){ el('oiLabel').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable'); }
+    }catch(e){ el('oiLabel').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable'); el('oiZone').textContent = ''; }
   }
 
   // ---------- DVOL (Deribit BTC implied volatility, "VIX ของ BTC") ----------
