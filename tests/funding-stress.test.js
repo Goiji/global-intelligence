@@ -56,7 +56,7 @@ test('index.html: MOVE and SOFR tiles have a Thai explainer and a TradingView bu
   }
   assert.match(HTML, /tradingview\.com\/chart\/\?symbol=TVC%3AMOVE/);
   assert.match(HTML, /tradingview\.com\/chart\/\?symbol=FRED%3ASOFR-FRED%3AIORB/);
-  assert.equal((HTML.match(/class="tip-btn"/g) || []).length, 21); // 5 market tiles (incl. 2 US−JP spreads) + 8 macro cards + 8 extra econ cards
+  assert.equal((HTML.match(/class="tip-btn"/g) || []).length, 22); // 6 market tiles (incl. OVX and 2 US−JP spreads) + 8 macro cards + 8 extra econ cards
   assert.match(HTML, /haircut/);
 });
 
@@ -108,4 +108,27 @@ test('index.html: leveraged-funds short tile has a Thai/English explainer tied t
   assert.match(HTML, /Capital Wars/);
   assert.match(HTML, /tradingview\.com\/chart\/\?symbol=CBOT%3AZN1%21/);
   assert.match(HTML, /function levShortZone/);
+});
+
+test('markets: OVX = FRED OVXCLS history with the Cboe _OVX delayed quote on top', async (t) => {
+  const realFetch = global.fetch;
+  const ok = (text) => ({ ok: true, status: 200, text: async () => text });
+  global.fetch = async (url) => {
+    if (url.includes('fredgraph.csv?id=OVXCLS')) return ok('observation_date,OVXCLS\n2026-11-04,31.2\n2026-11-05,33.4');
+    if (url.includes('_OVX.json')) return ok(JSON.stringify({ timestamp: '2026-11-06 15:45:00', data: { current_price: 36.1, price_change: 2.7, last_trade_time: '2026-11-06T15:45:00' } }));
+    return { ok: false, status: 503, text: async () => '' };
+  };
+  t.after(() => { global.fetch = realFetch; T._clearCache(); });
+  T._clearCache();
+  const body = JSON.parse((await markets.handler()).body);
+  assert.equal(body.series.ovx.label, 'OVX');
+  assert.equal(body.series.ovx.latest, 36.1);
+  assert.equal(body.series.ovx.date, '2026-11-06');
+  assert.equal(body.series.ovx.source, 'cboe');
+});
+
+test('index.html: OVX tile sits next to MOVE with explainer and TradingView button', () => {
+  for (const id of ['mkOvx', 'spOvx', 'mkOvxZone']) assert.match(HTML, new RegExp(`id="${id}"`), `missing #${id}`);
+  assert.match(HTML, /tradingview\.com\/chart\/\?symbol=CBOE%3AOVX/);
+  assert.ok(HTML.indexOf('id="mkMove"') < HTML.indexOf('id="mkOvx"') && HTML.indexOf('id="mkOvx"') < HTML.indexOf('id="mkSofr"'));
 });

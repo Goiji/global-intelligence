@@ -147,7 +147,7 @@ test('every US Markets card links to TradingView', () => {
   const m = HTML.match(/<div class="mkt-grid" id="mktGrid">([\s\S]*?)<div id="mktNote"|<div class="mkt-grid" id="mktGrid">([\s\S]*?)<\/section>/);
   const block = m[1] || m[2];
   const cards = block.split(/<div class="metric mkt"[^>]*>/).slice(1);
-  assert.equal(cards.length, 11);
+  assert.equal(cards.length, 12);
   cards.forEach((c, i) => assert.match(c, /class="tv-btn" href="https:\/\/www\.tradingview\.com\/chart\/\?symbol=/, 'card ' + i + ' has a TradingView link'));
 });
 

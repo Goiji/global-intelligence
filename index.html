@@ -629,6 +629,19 @@ body{margin:0}
     </div>
   </div></div></div><div class="num" id="mkMove">–</div><div class="spark" id="spMove"></div><div class="zone" id="mkMoveZone"></div>
     <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3AMOVE" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  <div class="metric mkt"><div class="name"><span data-en="OVX oil volatility">OVX ความผันผวนน้ำมัน</span> <div class="tip"><button type="button" class="tip-btn" aria-label="OVX คืออะไร" data-en-aria="What is OVX?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>OVX</b> (Cboe Crude Oil Volatility Index) คือ "VIX ของน้ำมัน" วัดความผันผวนที่ตลาดคาดของราคาน้ำมันดิบ WTI ใน 1 เดือนข้างหน้า (คำนวณจากราคา option ของกองทุน USO)</p>
+    <p><b>อ่านค่า:</b> 🟢 ต่ำกว่า 25 สงบ · 🟡 25–40 ปกติ · 🟠 40–60 กังวล · 🔴 60 ขึ้นไป ตื่นตระหนก (ช่วงโควิด เม.ย. 2020 พุ่งเกิน 300 · ช่วงรัสเซียบุกยูเครน มี.ค. 2022 ราว 75)</p>
+    <p><b>ทำไมสำคัญ:</b> น้ำมันส่งผ่านไปถึงเงินเฟ้อและต้นทุนธุรกิจโดยตรง OVX พุ่งมักมากับข่าวสงคราม/ตะวันออกกลาง การตัดกำลังผลิตของ OPEC+ หรือความกลัวเศรษฐกิจถดถอย อ่านคู่กับ VIX: ถ้า OVX ขึ้นแต่ VIX นิ่ง แปลว่าความเสี่ยงยังจำกัดอยู่ที่ฝั่งพลังงาน</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>OVX</b> (Cboe Crude Oil Volatility Index) is the "VIX of oil": the volatility the market expects in WTI crude over the next month (derived from option prices on the USO fund).</p>
+    <p><b>How to read it:</b> 🟢 below 25 calm · 🟡 25–40 normal · 🟠 40–60 worried · 🔴 60 and up panic (it went above 300 in April 2020 and hit about 75 when Russia invaded Ukraine in March 2022)</p>
+    <p><b>Why it matters:</b> oil feeds straight into inflation and business costs. OVX spikes tend to come with war or Middle East headlines, OPEC+ supply moves or recession fears. Read it against VIX: if OVX rises while VIX stays flat, the stress is still confined to energy.</p>
+    </div>
+  </div></div></div><div class="num" id="mkOvx">–</div><div class="spark" id="spOvx"></div><div class="zone" id="mkOvxZone"></div>
+    <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=CBOE%3AOVX" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
   <div class="metric mkt"><div class="name"><span data-en="SOFR − IORB (repo market)">SOFR − IORB (ตลาด repo)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="SOFR − IORB คืออะไร" data-en-aria="What is SOFR − IORB?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
     <div class="i18n-th">
     <p><b>SOFR</b> = ดอกเบี้ยกู้ข้ามคืนโดยเอาพันธบัตรสหรัฐฯ ค้ำ (ตลาด repo) คือต้นทุนเงินสดจริงในระบบ · <b>IORB</b> = ดอกเบี้ยที่ Fed จ่ายให้เงินสำรองที่ธนาคารฝากไว้</p>
@@ -3018,6 +3031,14 @@ window.setHeaderStamp();
         el('mkMoveZone').textContent = (m >= 140 ? tr('🔴 บอนด์ตึงเครียด', '🔴 Bond stress') : m >= 110 ? tr('🟠 กังวล', '🟠 Worried') : m >= 80 ? tr('🟡 ปกติ', '🟡 Normal') : tr('🟢 สงบ', '🟢 Calm')) + tr(' · ปิด ', ' · close ') + thDay(S.move.date);
         setSpark('spMove', S.move, { upIsBad:true, dec:0 });
       }
+      // OVX: ความผันผวนน้ำมัน (VIX ของน้ำมันดิบ WTI)
+      if(S.ovx && isValidNum(S.ovx.latest)){
+        const o = S.ovx.latest;
+        el('mkOvx').innerHTML = esc(o.toFixed(2)) + (isValidNum(S.ovx.change) ? '<span class="delta ' + (S.ovx.change > 0 ? 'down' : S.ovx.change < 0 ? 'up' : 'flat') + '">' + (S.ovx.change > 0 ? '+' : '') + S.ovx.change.toFixed(2) + '</span>' : '');
+        el('mkOvxZone').textContent = (o >= 60 ? tr('🔴 น้ำมันตื่นตระหนก', '🔴 Oil panic') : o >= 40 ? tr('🟠 กังวล', '🟠 Worried') : o >= 25 ? tr('🟡 ปกติ', '🟡 Normal') : tr('🟢 สงบ', '🟢 Calm'))
+          + (S.ovx.source === 'cboe' && S.ovx.time ? ' · ' + thDay(S.ovx.date).replace(/ \d{4}$/, '') + ' ' + S.ovx.time.slice(11, 16) + ' NY' : tr(' · ปิด ', ' · close ') + thDay(S.ovx.date));
+        setSpark('spOvx', S.ovx, { upIsBad:true, dec:0 });
+      }
       // SOFR − IORB (bp): บวกและถ่างขึ้น = เงินสดขาด ตลาด repo ตึง
       if(S.sofrSpread && isValidNum(S.sofrSpread.latest)){
         const sp = S.sofrSpread.latest, r = Math.round(sp);
@@ -3063,8 +3084,8 @@ window.setHeaderStamp();
         : name + tr(' ราคาปิด ', ' close ') + thDay(s.date) + tr(' (FRED ช้ากว่าตลาดประมาณ 1 วันทำการ)', ' (FRED, about 1 business day behind the market)');
       el('mktNote').textContent = [yieldNote(tr('บอนด์ 10 ปี', '10Y yield'), S.us10y), yieldNote(tr('2 ปี', '2Y'), S.us2y)].filter(Boolean).join(' · ')
         + tr(' · DXY จากอัตรา ECB ', ' · DXY from ECB rates ') + (S.dollar && S.dollar.date ? thDay(S.dollar.date) : '–')
-        + tr(' · VIX ราคาจาก Cboe ช้า ~15 นาที · MOVE ราคาปิด (ICE ผ่าน Yahoo) · SOFR/IORB จาก FRED · short บอนด์ฟิวเจอร์สจาก CFTC รายสัปดาห์ · ยีลด์ญี่ปุ่นจาก MOF ญี่ปุ่น · อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน',
-             ' · VIX from Cboe, ~15 min delay · MOVE daily close (ICE via Yahoo) · SOFR/IORB from FRED · UST futures short from CFTC, weekly · JGB yields from Japan MOF · updated hourly · mini charts = last 12 months');
+        + tr(' · VIX/OVX ราคาจาก Cboe ช้า ~15 นาที · MOVE ราคาปิด (ICE ผ่าน Yahoo) · SOFR/IORB จาก FRED · short บอนด์ฟิวเจอร์สจาก CFTC รายสัปดาห์ · ยีลด์ญี่ปุ่นจาก MOF ญี่ปุ่น · อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน',
+             ' · VIX/OVX from Cboe, ~15 min delay · MOVE daily close (ICE via Yahoo) · SOFR/IORB from FRED · UST futures short from CFTC, weekly · JGB yields from Japan MOF · updated hourly · mini charts = last 12 months');
     }catch(e){
       console.warn('[markets]', e);
       el('mktNote').textContent = tr('ดึงข้อมูลตลาดไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ', 'Can\'t load market data right now. Retrying automatically.');
