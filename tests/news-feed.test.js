@@ -135,3 +135,24 @@ test('every topic key used by the page has publisher feeds', () => {
   assert.ok(keys.length >= 5, 'found the feed list');
   for (const k of keys) assert.ok(require('../netlify/functions/news-feed.js').__test.CATEGORY_FEEDS[k], 'feeds for ' + k);
 });
+
+test('Thai publisher feeds keep only market / economy / politics stories (no PR or lifestyle filler)', async (t) => {
+  const { fromCategoryFeeds } = require('../netlify/functions/news-feed.js').__test;
+  const realFetch = global.fetch;
+  t.after(() => { global.fetch = realFetch; });
+  const item = (title, h) => `<item><title>${title}</title><link>https://x/${encodeURIComponent(title)}</link><pubDate>Mon, 16 Nov 2026 0${h}:00:00 GMT</pubDate><description></description></item>`;
+  const rss = '<rss><channel>' + [
+    item('ราคาทองวันนี้ ปรับลง 450 บาท', 9),
+    item('ส่องสนามกอล์ฟการกุศล 50 ปี', 8),
+    item('พช. จัด MUTELU MARKET ชวนช้อป OTOP', 7),
+    item('กนง. คงดอกเบี้ยนโยบาย 1.25%', 6),
+    item('จับตาชอร์ตเซลคืนชีพ สัดส่วนขายชอร์ตสูง', 5),
+  ].join('') + '</channel></rss>';
+  global.fetch = async () => ({ ok: true, status: 200, text: async () => rss });
+  const items = await fromCategoryFeeds('เศรษฐกิจไทย OR ค่าเงินบาท OR ราคาทอง', 'th', 'thai');
+  const titles = items.map((i) => i.title);
+  assert.ok(titles.includes('ราคาทองวันนี้ ปรับลง 450 บาท'));
+  assert.ok(titles.includes('กนง. คงดอกเบี้ยนโยบาย 1.25%'));
+  assert.ok(titles.includes('จับตาชอร์ตเซลคืนชีพ สัดส่วนขายชอร์ตสูง'));
+  assert.ok(!titles.some((x) => /กอล์ฟ|MUTELU/.test(x)), 'filler dropped');
+});

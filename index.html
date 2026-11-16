@@ -41,6 +41,41 @@
     }catch(e){}
   };
 })();
+// สำรองฝั่งเบราว์เซอร์: เก็บคำตอบล่าสุดที่ดีของฟังก์ชันข้อมูลไว้ใน localStorage (3 วัน) ถ้าเซิร์ฟเวอร์ตอบ error
+// หรือหมดเวลา จะคืนสำเนานั้นแทน (ติด stale:true) การ์ดจึงไม่ขึ้นขีด · ไม่ใช้กับราคาสด (usdjpy/wti/ทอง/dvol)
+// เพราะพวกนั้นมีแหล่งสำรองสดของตัวเองที่ดีกว่าราคาเก่า และไม่ใช้กับ visitors/consensus-override (เขียนข้อมูล)
+(function(){
+  if(typeof window === 'undefined' || typeof window.fetch !== 'function' || typeof Response !== 'function') return;
+  var CACHED = /^\/\.netlify\/functions\/(fred-data|markets|econ-extra|consensus|calendar|etf-flow|news-feed)\/?(\?|$)/;
+  var MAX_AGE = 3 * 86400000;
+  var orig = window.fetch.bind(window);
+  window.fetch = function(input, init){
+    var url = typeof input === 'string' ? input : (input && input.url) || '';
+    var method = String((init && init.method) || 'GET').toUpperCase();
+    if(method !== 'GET' || !CACHED.test(url)) return orig(input, init);
+    var key = 'gi-fn:' + url;
+    function fromCache(res, err){
+      try{
+        var v = JSON.parse(localStorage.getItem(key) || 'null');
+        if(v && v.body && Date.now() - v.at < MAX_AGE){
+          var body = JSON.parse(v.body);
+          if(body && typeof body === 'object'){ body.stale = true; body.fromBrowserCache = new Date(v.at).toISOString(); }
+          return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+      }catch(e){}
+      if(res) return res;
+      throw err;
+    }
+    return orig(input, init).then(function(res){
+      if(!res.ok) return fromCache(res);
+      res.clone().text().then(function(t){
+        try{ var j = JSON.parse(t); if(j && !j.error && j.status !== 'error') localStorage.setItem(key, JSON.stringify({ at: Date.now(), body: t })); }catch(e){}
+      }).catch(function(){});
+      return res;
+    }, function(err){ return fromCache(null, err); });
+  };
+  window.__giFetchCache = { CACHED: CACHED };
+})();
 </script>
 <title>Global Intelligence — World Risk, Macro &amp; BTC Dashboard</title>
 <meta name="description" content="แดชบอร์ดสรุปความเสี่ยงโลกจากพาดหัวข่าวสด ตัวเลขเศรษฐกิจสหรัฐฯ (Fed / CPI / ว่างงาน / จ้างงาน) ราคาสินทรัพย์จริง และคะแนนน่าซื้อ BTC — ฟรี ไม่มีค่าใช้จ่าย ไม่ใช่คำแนะนำการลงทุน">

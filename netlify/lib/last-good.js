@@ -5,8 +5,7 @@
 //      full TTL (memory + CDN), so everyone in that window sees the gap;
 //   2) a cold start (new instance, other region, the other host) has no in-memory last-good copy.
 // Fixes: fill missing fields from the last good copy, cache a partial answer only briefly, and keep
-// the last good copy in Cloudflare KV (binding STORE) so it survives cold starts. On Netlify there is
-// no KV here, so it is memory only there.
+// the last good copy in a persistent store (Cloudflare KV / Netlify Blobs) so it survives cold starts.
 //
 // KV free tier allows ~1000 writes/day, so writes are throttled per key per instance.
 
@@ -21,17 +20,30 @@ function partialTtl(ttlS, missingCount, stillMissingCount) {
 }
 const KV_WRITE_EVERY_MS = 30 * 60 * 1000;
 const lastWrite = new Map();
+let blobsOverride = null; // tests inject a fake @netlify/blobs (npm test runs without node_modules)
 
-function kvOf(event) {
-  return (event && event.cloudflare && event.cloudflare.kv) || null;
+// Where the last good copy lives: Cloudflare KV (binding STORE) on Cloudflare Pages, Netlify Blobs
+// (store "last-good", built into every Netlify site) on Netlify, nothing elsewhere (tests, dev server).
+function storeOf(event) {
+  const kv = event && event.cloudflare && event.cloudflare.kv;
+  if (kv) return { get: (k) => kv.get(k, 'json'), put: (k, v) => kv.put(k, JSON.stringify(v)) };
+  const env = (typeof process !== 'undefined' && process.env) || {};
+  if (!((event && event.blobs) || env.NETLIFY_BLOBS_CONTEXT)) return null;
+  try {
+    // inside try: Cloudflare's bundle never has this package (same pattern as visitors.js)
+    const blobs = blobsOverride || require('@netlify/blobs');
+    if (event && event.blobs) blobs.connectLambda(event);
+    const st = blobs.getStore('last-good');
+    return { get: (k) => st.get(k, { type: 'json' }), put: (k, v) => st.setJSON(k, v) };
+  } catch (e) { return null; }
 }
 
-// → the stored data, or null (no KV, nothing stored, too old, or a read error)
+// → the stored data, or null (no store, nothing stored, too old, or a read error)
 async function kvGetGood(event, key, maxAgeMs) {
-  const kv = kvOf(event);
-  if (!kv) return null;
+  const store = storeOf(event);
+  if (!store) return null;
   try {
-    const v = await kv.get(key, 'json');
+    const v = await store.get(key);
     if (!v || !v.data) return null;
     if (maxAgeMs && Date.now() - Number(v.at || 0) > maxAgeMs) return null;
     return v.data;
@@ -39,12 +51,12 @@ async function kvGetGood(event, key, maxAgeMs) {
 }
 
 async function kvPutGood(event, key, data, { force = false } = {}) {
-  const kv = kvOf(event);
-  if (!kv || !data) return;
+  const store = storeOf(event);
+  if (!store || !data) return;
   const now = Date.now();
   if (!force && now - (lastWrite.get(key) || 0) < KV_WRITE_EVERY_MS) return;
   lastWrite.set(key, now);
-  try { await kv.put(key, JSON.stringify({ at: now, data })); } catch (e) { /* memory only */ }
+  try { await store.put(key, { at: now, data }); } catch (e) { /* memory only */ }
 }
 
 // For every key in `errors` that `good` has a value for: copy it into `target` and drop the error.
@@ -58,4 +70,4 @@ function fillFromGood(target, good, errors) {
   return filled;
 }
 
-module.exports = { RETRY_TTL_S, FILLED_TTL_S, partialTtl, kvGetGood, kvPutGood, fillFromGood, _resetThrottle: () => lastWrite.clear() };
+module.exports = { RETRY_TTL_S, FILLED_TTL_S, partialTtl, kvGetGood, kvPutGood, fillFromGood, _resetThrottle: () => lastWrite.clear(), _setBlobs: (m) => { blobsOverride = m; } };

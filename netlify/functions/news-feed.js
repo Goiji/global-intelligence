@@ -151,7 +151,17 @@ const CATEGORY_FEEDS = {
   energy: ['https://oilprice.com/rss/main', 'https://www.cnbc.com/id/19836768/device/rss/rss.html'],
   financial: ['https://www.cnbc.com/id/10000664/device/rss/rss.html', 'https://www.cnbc.com/id/15839069/device/rss/rss.html', 'https://feeds.content.dowjones.io/public/rss/mw_topstories'],
   techAi: ['https://feeds.bbci.co.uk/news/technology/rss.xml', 'https://techcrunch.com/category/artificial-intelligence/feed/', 'https://www.theverge.com/rss/index.xml'],
-  thai: ['https://www.prachachat.net/feed', 'https://www.thansettakij.com/rss', 'https://www.bangkokpost.com/rss/data/business.xml']
+  thai: ['https://www.prachachat.net/economy/feed', 'https://www.prachachat.net/finance/feed', 'https://www.prachachat.net/feed', 'https://www.thansettakij.com/rss', 'https://www.bangkokpost.com/rss/data/business.xml']
+};
+// The Thai feeds are whole-newspaper feeds full of PR, lifestyle and charity items, so for this
+// topic only stories that match a market / economy / politics term are kept (not just ranked first).
+const STRICT_TOPICS = {
+  thai: ['เศรษฐกิจ', 'หุ้น', 'ตลาดหลักทรัพย์', 'ทอง', 'ค่าเงิน', 'เงินบาท', 'ดอลลาร์', 'ดอกเบี้ย', 'แบงก์ชาติ', 'ธปท', 'กนง',
+    'เงินเฟ้อ', 'จีดีพี', 'ส่งออก', 'นำเข้า', 'การค้า', 'ภาษี', 'งบประมาณ', 'คลัง', 'หนี้', 'รัฐบาล', 'นายกฯ', 'นายกรัฐมนตรี', 'ครม',
+    'สภา', 'เลือกตั้ง', 'น้ำมัน', 'พลังงาน', 'ลงทุน', 'ธนาคาร', 'สินเชื่อ', 'อสังหา', 'ท่องเที่ยว', 'ดัชนี', 'เฟด', 'ทรัมป์', 'กำแพงภาษี',
+    'บีโอไอ', 'ค่าแรง', 'ชอร์ตเซล', 'บิตคอยน์', 'คริปโต', 'ชายแดน', 'กัมพูชา', 'ก.ล.ต', 'ตลาดทุน', 'ราคาสินค้า', 'ผู้บริโภค', 'ภาคอุตสาหกรรม',
+    'economy', 'economic', 'baht', 'set index', 'stocks', 'gold', 'inflation', 'interest rate', 'bank of thailand', 'gdp', 'export', 'tariff',
+    'budget', 'government', 'prime minister', 'oil', 'investment', 'investor', 'fed', 'bitcoin', 'crypto']
 };
 async function fromCategoryFeeds(q, lang, cat) {
   const urls = CATEGORY_FEEDS[cat];
@@ -174,7 +184,16 @@ async function fromCategoryFeeds(q, lang, cat) {
     const text = (it.title + ' ' + it.description).toLowerCase();
     return terms.some((t, i) => (res[i] ? res[i].test(text) : text.includes(t)));
   };
-  const ranked = items.filter(hit).concat(items.filter((it) => !hit(it))).slice(0, MAX_ITEMS);
+  let ranked = items.filter(hit).concat(items.filter((it) => !hit(it)));
+  const strict = STRICT_TOPICS[cat];
+  if (strict) {
+    const relevant = (it) => {
+      const text = (it.title + ' ' + it.description).toLowerCase();
+      return hit(it) || strict.some((t) => (/^[\x00-\x7f]+$/.test(t) ? new RegExp('\\b' + t + '\\b', 'i').test(text) : text.includes(t)));
+    };
+    ranked = ranked.filter(relevant);
+  }
+  ranked = ranked.slice(0, MAX_ITEMS);
   if (!ranked.length) {
     throw new Error('publisher feeds failed: ' + settled.map((s) => (s.status === 'rejected' ? s.reason.message : 'empty')).join(', '));
   }
@@ -225,4 +244,4 @@ exports.handler = async function (event) {
 };
 
 // Exported for local unit testing (node --test / plain require). Netlify ignores extra exports.
-module.exports.__test = { parseRssItems, decodeEntities, stripTags, cleanText, unwrapBingLink, CATEGORY_FEEDS };
+module.exports.__test = { parseRssItems, decodeEntities, stripTags, cleanText, unwrapBingLink, CATEGORY_FEEDS, STRICT_TOPICS, fromCategoryFeeds };

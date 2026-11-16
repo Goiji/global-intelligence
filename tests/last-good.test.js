@@ -52,3 +52,28 @@ for (const name of ['wti', 'usdjpy', 'gold-th', 'dvol']) {
     assert.equal(none.headers['Cache-Control'], 'no-store');
   });
 }
+
+test('on Netlify the last good copy goes to Netlify Blobs (store "last-good")', async (t) => {
+  const prev = process.env.NETLIFY_BLOBS_CONTEXT;
+  t.after(() => { if (prev === undefined) delete process.env.NETLIFY_BLOBS_CONTEXT; else process.env.NETLIFY_BLOBS_CONTEXT = prev; });
+  const data = new Map();
+  lg._setBlobs({ connectLambda() {}, getStore: (name) => { assert.equal(name, 'last-good'); return { get: async (k) => data.get(k) || null, setJSON: async (k, v) => { data.set(k, v); } }; } });
+  t.after(() => lg._setBlobs(null));
+  process.env.NETLIFY_BLOBS_CONTEXT = 'x';
+  lg._resetThrottle();
+  await lg.kvPutGood({}, 'n', { v: 7 });
+  assert.deepEqual(await lg.kvGetGood({}, 'n'), { v: 7 });
+});
+
+test('page: browser keeps a 3-day copy of data-function answers, but not live prices or writes', async () => {
+  const vm = require('node:vm');
+  const { SCRIPTS, makeSandbox } = require('./dom-stub.js');
+  const sb = makeSandbox();
+  sb.Response = class { constructor(b, o) { this.body = b; this.status = o.status; this.ok = true; } };
+  sb.window.fetch = sb.window.fetch || sb.fetch;
+  vm.runInNewContext(SCRIPTS[0], sb, { filename: 'index.html#0' });
+  const api = sb.window.__giFetchCache;
+  assert.ok(api, 'fetch cache wrapper missing');
+  for (const u of ['/.netlify/functions/fred-data', '/.netlify/functions/econ-extra', '/.netlify/functions/news-feed?q=x&lang=th']) assert.ok(api.CACHED.test(u), u);
+  for (const u of ['/.netlify/functions/usdjpy', '/.netlify/functions/visitors', '/.netlify/functions/consensus-override', 'https://fapi.binance.com/x']) assert.ok(!api.CACHED.test(u), u);
+});
