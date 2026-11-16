@@ -1283,27 +1283,67 @@ window.setHeaderStamp();
   }
 
   // ---------- FREE local scoring engine (no paid API calls at all) ----------
-  // Simple keyword-weighted heuristic run entirely in the browser on the RSS
-  // headlines already fetched. Not as nuanced as an LLM read, but costs nothing
-  // and needs no key/quota beyond the free RSS feed itself.
-  // คำที่บ่งบอกความเสี่ยงสูง / ต่ำ — จับเป็น "ทั้งคำ" (เดิมจับแบบมีคำนี้อยู่ตรงไหนก็ได้ ทำให้ war ไปโดน
-  // warn/award/software และ ease ไปโดน increase/release คะแนนเลยเพี้ยน) · น้ำหนัก 2 = คำที่รุนแรงมาก
+  // Keyword rules run entirely in the browser on the RSS headlines already fetched — no key, no quota.
+  // ปรับปรุง Nov 2026 (ยังฟรีทั้งหมด):
+  //  1) จับ "วลี" ก่อนคำเดี่ยว — "missile strike" / "trade war" ได้น้ำหนักเต็ม ส่วน "war" เดี่ยว ๆ ลดเหลือ 1
+  //     และคำที่อยู่ในวลีที่จับแล้วจะไม่ถูกนับซ้ำ
+  //  2) ตัดข่าวกีฬา/บันเทิง/ประวัติศาสตร์ทิ้งทั้งพาดหัว (เช่น ข่าวฟุตบอลที่มีคำว่า "War of 1812") และลบวลีที่
+  //     ไม่ใช่ความเสี่ยงจริงออกก่อนจับคำ (heart attack, strike a deal, plane crash, price war, by default …)
+  //  3) ปฏิเสธ = ไม่นับ: "no recession", "averts shutdown", "ends war"
+  //  4) ข่าวใหม่มีน้ำหนักมากกว่า (ครึ่งหนึ่งทุก 24 ชม.) · ข่าวเดียวกันจากหลายสำนักนับครั้งเดียว
   // ลงท้ายด้วย * = จับเป็นรากคำ (escalat* → escalate/escalation/escalating)
-  const HIGH_RISK_TERMS = { war:2, invasion:2, missile:2, nuclear:2, coup:2, crash:2, collapse:2, default:1.5,
+  const HIGH_RISK_TERMS = {
+    // phrases (checked first, longest first)
+    'military strike*':2, 'air strike*':2, 'airstrike*':2, 'drone strike*':2, 'missile strike*':2, 'missile attack*':2,
+    'missile launch*':1.5, 'declares war':2, 'war with':1.5, 'trade war':1.5, 'nuclear test*':2, 'nuclear threat*':2,
+    'nuclear weapon*':2, 'troops':1.5, 'shelling':1.5, 'bombing':1.5, 'terror attack*':2, 'terrorist attack*':2,
+    'cyberattack':1, 'cyber attack*':1, 'martial law':2, 'state of emergency':1.5, 'bank run':2, 'debt default':2,
+    'market crash':2, 'stocks crash*':2, 'stock market crash':2, 'rate hike':1, 'hike rates':1, 'inflation surge':1,
+    kill:1, 'casualties':1.5,
+    // single words
+    war:1, invasion:2, invade:2, missile:1.5, nuclear:1, coup:2, crash:1.5, collapse:1.5, default:1.5,
     recession:1.5, conflict:1, crisis:1, attack:1, strike:1, sanction:1, tension:1, shutdown:1, emergency:1,
-    threat:1, bankruptcy:1, layoff:1, selloff:1, 'sell-off':1, plunge:1, tumble:1, slump:1, 'rate hike':1,
-    'hike rates':1, 'escalat*':1, unrest:1, protest:1, 'tariff':1, 'downgrade':1, 'inflation surge':1 };
-  const LOW_RISK_TERMS = { ceasefire:1.5, 'cease-fire':1.5, truce:1.5, peace:1, agreement:1, 'deal reached':1,
-    growth:1, rally:1, recovery:1, rebound:1, stability:1, 'stabiliz*':1, ease:1, easing:1, 'rate cut':1,
-    'cut rates':1, surplus:1, stimulus:1, breakthrough:1, cooperation:1, 'record high':1, 'optimis*':1, upgrade:1 };
+    threat:1, bankruptcy:1, layoff:1, selloff:1, 'sell-off':1, plunge:1, tumble:1, slump:1,
+    'escalat*':1, unrest:1, protest:1, tariff:1, downgrade:1, 'mobiliz*':1.5 };
+  const LOW_RISK_TERMS = { ceasefire:1.5, 'cease-fire':1.5, truce:1.5, 'peace deal':1.5, 'peace talks':1, peace:1,
+    agreement:1, 'deal reached':1, growth:1, rally:1, recovery:1, rebound:1, stability:1, 'stabiliz*':1, ease:1, easing:1,
+    'rate cut':1, 'cut rates':1, surplus:1, stimulus:1, breakthrough:1, cooperation:1, 'record high':1, 'optimis*':1, upgrade:1 };
+  // ข่าวที่ไม่เกี่ยวกับความเสี่ยงโลก — ไม่นำมาคิดคะแนนเลย (ข้ามไปใช้พาดหัวถัดไปแทน)
+  const OFF_TOPIC_RE = new RegExp('\\b(?:' + [
+    'nfl', 'nba', 'mlb', 'nhl', 'mls', 'ufc', 'wwe', 'f1', 'formula (?:one|1)', 'premier league', 'champions league', 'la liga',
+    'serie a', 'bundesliga', 'world cup', 'super bowl', 'world series', 'grand slam', 'wimbledon', 'olympics?', 'football',
+    'soccer', 'basketball', 'baseball', 'hockey', 'tennis', 'golf', 'cricket', 'rugby', 'boxing', 'quarterback',
+    'touchdowns?', 'playoffs?', 'halftime', 'head coach', 'coach', 'pregame', 'postgame', 'kickoff', 'season opener', '(?:win|winning|losing) streak', 'box office', 'movies?', 'films?', 'trailer', 'sitcom',
+    'tv series', 'season finale', 'episode', 'netflix series', 'album', 'concert', 'grammys?', 'oscars?', 'emmys?',
+    'celebrity', 'red carpet', 'video games?', 'recipe', 'horoscope', 'museum', 'anniversary', 'reenactment',
+    'historians?', 'on this day', 'obituary', 'dies at \\d+'
+  ].join('|') + ')\\b', 'i');
+  // วลีที่มีคำเสี่ยงแต่ไม่ใช่ความเสี่ยงจริง — ลบออกก่อนจับคำ
+  const NEUTRAL_PHRASES_RE = new RegExp('\\b(?:' + [
+    'war of \\d{4}', 'world war (?:i|ii|one|two|1|2)', 'civil war (?:era|history|battlefield)', 'cold war era', 'star wars',
+    'price wars?', 'bidding wars?', 'culture wars?', 'console wars?', 'streaming wars?', 'talent wars?', 'war chest', 'war room',
+    'heart attacks?', 'panic attacks?', 'shark attacks?', 'asthma attacks?', 'dog attacks?', 'strikes? (?:a|an) (?:deal|balance|chord|tone|pose)',
+    'strikes? deals?', 'strike(?:s|d)? out', 'lightning strikes?', 'strike gold', '(?:car|plane|bus|train|helicopter) crash(?:es)?',
+    'by default', 'default (?:settings?|option|browser|apps?|search(?: engine)?)', 'nuclear (?:power|energy|reactors?|plants?|fusion)',
+    'peace prize', '(?:campaign|political|protest|trump|harris) rall(?:y|ies)', 'fashion week', 'growth mindset'
+  ].join('|') + ')\\b', 'gi');
+  const NEGATION_RE = /\b(?:no|not|avoids?|avoided|averts?|averted|without|ends?|ended|ending|lifts?|lifted|eases?|eased)\s+(?:\w+\s+)?$/i;
   // คำแปลไทยของคำบ่งชี้ — ใช้แสดงผลอย่างเดียว (ระบบยังจับคำจากพาดหัวภาษาอังกฤษตามเดิม)
-  const RISK_TERM_TH = { war:'สงคราม', invasion:'การรุกราน', missile:'ขีปนาวุธ', nuclear:'นิวเคลียร์', coup:'รัฐประหาร',
+  const RISK_TERM_TH = { war:'สงคราม', invasion:'การรุกราน', invade:'รุกราน', missile:'ขีปนาวุธ', nuclear:'นิวเคลียร์', coup:'รัฐประหาร',
     crash:'ร่วงหนัก', collapse:'ล่มสลาย', default:'ผิดนัดชำระหนี้', recession:'เศรษฐกิจถดถอย', conflict:'ความขัดแย้ง',
     crisis:'วิกฤต', attack:'การโจมตี', strike:'โจมตี/นัดหยุดงาน', sanction:'คว่ำบาตร', tension:'ความตึงเครียด',
     shutdown:'ปิดทำการ', emergency:'ภาวะฉุกเฉิน', threat:'ภัยคุกคาม', bankruptcy:'ล้มละลาย', layoff:'ปลดพนักงาน',
     selloff:'เทขาย', 'sell-off':'เทขาย', plunge:'ดิ่งลง', tumble:'ร่วงลง', slump:'ทรุดตัว', 'rate hike':'ขึ้นดอกเบี้ย',
     'hike rates':'ขึ้นดอกเบี้ย', escalat:'ยกระดับความรุนแรง', unrest:'ความไม่สงบ', protest:'การประท้วง', tariff:'ภาษีนำเข้า',
-    downgrade:'ลดอันดับ', 'inflation surge':'เงินเฟ้อพุ่ง', ceasefire:'หยุดยิง', 'cease-fire':'หยุดยิง', truce:'สงบศึก',
+    downgrade:'ลดอันดับ', 'inflation surge':'เงินเฟ้อพุ่ง', mobiliz:'ระดมพล', 'military strike':'โจมตีทางทหาร',
+    'air strike':'โจมตีทางอากาศ', airstrike:'โจมตีทางอากาศ', 'drone strike':'โจมตีด้วยโดรน', 'missile strike':'โจมตีด้วยขีปนาวุธ',
+    'missile attack':'โจมตีด้วยขีปนาวุธ', 'missile launch':'ยิงขีปนาวุธ', 'declares war':'ประกาศสงคราม', 'war with':'ทำสงครามกับ',
+    'trade war':'สงครามการค้า', 'nuclear test':'ทดสอบนิวเคลียร์', 'nuclear threat':'ขู่ใช้นิวเคลียร์', 'nuclear weapon':'อาวุธนิวเคลียร์',
+    troops:'กำลังทหาร', shelling:'ยิงถล่ม', bombing:'ทิ้งระเบิด', 'terror attack':'ก่อการร้าย', 'terrorist attack':'ก่อการร้าย',
+    cyberattack:'โจมตีไซเบอร์', 'cyber attack':'โจมตีไซเบอร์', 'martial law':'กฎอัยการศึก', 'state of emergency':'ภาวะฉุกเฉิน',
+    'bank run':'แห่ถอนเงิน', 'debt default':'ผิดนัดชำระหนี้', 'market crash':'ตลาดร่วงหนัก', 'stocks crash':'หุ้นร่วงหนัก',
+    'stock market crash':'ตลาดหุ้นร่วงหนัก', kill:'มีผู้เสียชีวิต', casualties:'ผู้บาดเจ็บล้มตาย',
+    ceasefire:'หยุดยิง', 'cease-fire':'หยุดยิง', truce:'สงบศึก', 'peace deal':'ข้อตกลงสันติภาพ', 'peace talks':'เจรจาสันติภาพ',
     peace:'สันติภาพ', agreement:'ข้อตกลง', 'deal reached':'บรรลุข้อตกลง', growth:'การเติบโต', rally:'ปรับขึ้นแรง',
     recovery:'ฟื้นตัว', rebound:'ดีดกลับ', stability:'เสถียรภาพ', stabiliz:'มีเสถียรภาพ', ease:'ผ่อนคลาย', easing:'ผ่อนคลาย',
     'rate cut':'ลดดอกเบี้ย', 'cut rates':'ลดดอกเบี้ย', surplus:'เกินดุล', stimulus:'มาตรการกระตุ้น', breakthrough:'ความคืบหน้าสำคัญ',
@@ -1311,23 +1351,66 @@ window.setHeaderStamp();
   function termRegex(term){
     const stem = term.endsWith('*');
     const body = (stem ? term.slice(0, -1) : term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return new RegExp('\\b' + body + (stem ? '' : '(?:s|es|ed|d|ing)?\\b'), 'i');
+    return new RegExp('\\b' + body + (stem ? '\\w*' : '(?:s|es|ed|d|ing)?\\b'), 'i');
   }
+  // วลียาวก่อน → ถ้าวลีจับได้ คำย่อยข้างในจะไม่ถูกนับซ้ำ ("missile strike" ไม่นับ missile + strike เพิ่มอีก)
   const RISK_RULES = []
     .concat(Object.entries(HIGH_RISK_TERMS).map(([t, w]) => ({ term: t.replace('*', ''), re: termRegex(t), w })))
-    .concat(Object.entries(LOW_RISK_TERMS).map(([t, w]) => ({ term: t.replace('*', ''), re: termRegex(t), w: -w })));
+    .concat(Object.entries(LOW_RISK_TERMS).map(([t, w]) => ({ term: t.replace('*', ''), re: termRegex(t), w: -w })))
+    .sort((a, b) => b.term.length - a.term.length);
+  function isOffTopic(title){ return OFF_TOPIC_RE.test(title || ''); }
   function scoreHeadline(title){
-    const hits = RISK_RULES.filter(r => r.re.test(title || '')).map(r => ({ term: r.term, w: r.w }));
+    if(isOffTopic(title)) return { net: 0, hits: [], offTopic: true };
+    let text = ' ' + String(title || '').replace(NEUTRAL_PHRASES_RE, ' ~ ') + ' ';
+    const hits = [];
+    RISK_RULES.forEach(r => {
+      const m = r.re.exec(text);
+      if(!m) return;
+      text = text.slice(0, m.index) + ' ~ ' + text.slice(m.index + m[0].length);   // ไม่ให้คำย่อยถูกนับซ้ำ
+      if(r.w > 0 && NEGATION_RE.test(text.slice(0, m.index))) return;              // "no recession", "averts shutdown"
+      hits.push({ term: r.term, w: r.w });
+    });
     const net = Math.max(-3, Math.min(3, hits.reduce((a, h) => a + h.w, 0)));
     return { net, hits };
   }
-  // คะแนนหมวด = 50 ± ตามค่าเฉลี่ยความเสี่ยงต่อพาดหัว (ใช้ tanh ให้กระจายตัวแต่ไม่ชน 0/100 ง่าย)
-  function scoreCategoryDetail(titles){
-    const rows = (titles || []).map(t => ({ title: t, ...scoreHeadline(t) }));
-    const mean = rows.length ? rows.reduce((a, r) => a + r.net, 0) / rows.length : 0;
+  // ข่าวเดียวกันจากหลายสำนัก: คำสำคัญซ้อนกันเกินครึ่ง = เรื่องเดียวกัน
+  const DEDUPE_STOP = new Set(['the','and','for','with','from','that','this','after','over','into','amid','says','said','will','than','what','your','about','their','report','reports','live','updates','news']);
+  function headlineTokens(title){
+    return new Set(String(title || '').toLowerCase().replace(/\s[-–—|]\s[^-–—|]{2,40}$/, '')
+      .replace(/[^a-z0-9ก-๙]+/g, ' ').split(' ').filter(w => w.length > 2 && !DEDUPE_STOP.has(w)));
+  }
+  function sameStory(a, b){
+    if(!a.size || !b.size) return false;
+    let inter = 0; a.forEach(w => { if(b.has(w)) inter++; });
+    return inter / Math.min(a.size, b.size) >= 0.6;
+  }
+  const SCORE_HEADLINES = 5;
+  const RECENCY_HALF_LIFE_H = 24;
+  // รับได้ทั้ง array ของพาดหัว (string) หรือ array ของ item {title, pubDate} จาก news-feed
+  // คะแนนหมวด = 50 ± ตามค่าเฉลี่ยถ่วงน้ำหนักความใหม่ (ใช้ tanh ให้กระจายตัวแต่ไม่ชน 0/100 ง่าย)
+  function scoreCategoryDetail(input, now){
+    now = now || Date.now();
+    const list = (input || []).map((x, i) => (typeof x === 'string' ? { title: x, pubDate: '', i } : { title: x && x.title, pubDate: x && x.pubDate, i }))
+      .filter(x => x.title && !isOffTopic(x.title));
+    const kept = [];
+    for(const it of list){
+      const tok = headlineTokens(it.title);
+      if(kept.some(k => sameStory(k.tok, tok))) continue;
+      kept.push({ ...it, tok });
+      if(kept.length >= SCORE_HEADLINES) break;
+    }
+    const rows = kept.map((it, pos) => {
+      const ts = Date.parse(it.pubDate);
+      const ageH = isFinite(ts) ? Math.max(0, (now - ts) / 3600000) : null;
+      const weight = ageH != null ? Math.max(0.25, Math.pow(0.5, ageH / RECENCY_HALF_LIFE_H)) : 1 / (1 + 0.15 * pos);
+      return { title: it.title, weight, ...scoreHeadline(it.title) };
+    });
+    const wsum = rows.reduce((a, r) => a + r.weight, 0);
+    const mean = wsum ? rows.reduce((a, r) => a + r.net * r.weight, 0) / wsum : 0;
     const score = Math.max(0, Math.min(100, Math.round(50 + 50 * Math.tanh(mean * 0.8))));
-    const drivers = rows.filter(r => r.hits.length).sort((a, b) => Math.abs(b.net) - Math.abs(a.net)).slice(0, 3);
-    return { score, drivers };
+    const drivers = rows.filter(r => r.hits.length).sort((a, b) => Math.abs(b.net * b.weight) - Math.abs(a.net * a.weight)).slice(0, 3)
+      .map(r => ({ title: r.title, net: r.net, hits: r.hits }));
+    return { score, drivers, used: rows.length };
   }
   function scoreCategory(titles){ return scoreCategoryDetail(titles).score; }
 
@@ -1335,7 +1418,7 @@ window.setHeaderStamp();
     // หมวดที่ listOnly (ข่าวไทย) ไม่นับคะแนน — เอาไว้แสดงในรายการข่าวอย่างเดียว
     const feedResults = allFeeds.filter(f => !f.listOnly);
     const categories = {}, drivers = {};
-    feedResults.forEach(f => { const r = scoreCategoryDetail(f.titles); categories[f.key] = r.score; drivers[f.key] = r.drivers; });
+    feedResults.forEach(f => { const r = scoreCategoryDetail(f.items && f.items.length ? f.items : f.titles); categories[f.key] = r.score; drivers[f.key] = r.drivers; });
 
     const vals = Object.values(categories);
     const worldRiskScore = Math.round(vals.reduce((a,b)=>a+b,0) / vals.length);
@@ -1470,7 +1553,7 @@ window.setHeaderStamp();
       }).join('') : '<div class="muted" style="font-size:12px;">' + tr('ไม่มีคำบ่งชี้ความเสี่ยงในพาดหัวรอบนี้ (คะแนนกลาง ๆ)', 'No risk keywords in this round of headlines (neutral score)') + '</div>';
       return '<div class="why-cat"><div class="why-head"><b>' + esc(l) + '</b><span>' + esc((d.categories || {})[k] ?? '–') + '/100</span></div>' + list + '</div>';
     }).join('')
-      + '<div class="muted" style="font-size:11px; margin-top:8px;">' + tr('คะแนนคิดจาก 5 พาดหัวล่าสุดของแต่ละหมวด: คำบ่งชี้ความเสี่ยงยิ่งมาก คะแนนยิ่งสูง · 50 = กลาง ๆ', 'Each category is scored from its 5 latest headlines: the more risk keywords, the higher the score · 50 = neutral') + '</div>';
+      + '<div class="muted" style="font-size:11px; margin-top:8px;">' + tr('คะแนนคิดจาก 5 เรื่องล่าสุดของแต่ละหมวด (ข่าวซ้ำจากหลายสำนักนับครั้งเดียว ข่าวกีฬา/บันเทิงไม่นับ ข่าวใหม่มีน้ำหนักมากกว่า): คำบ่งชี้ความเสี่ยงยิ่งมาก คะแนนยิ่งสูง · 50 = กลาง ๆ', 'Each category is scored from its 5 latest distinct stories (duplicates across outlets count once, sports/entertainment are skipped, newer news weighs more): the more risk keywords, the higher the score · 50 = neutral') + '</div>';
     translateRiskWhy(d, labels);
   }
   // แปลพาดหัวในกล่อง "คะแนนมาจากข่าวไหน" (ไม่เกิน 15 ข่าว) — ใช้แคชคำแปลเดียวกับรายการข่าว จึงแปลซ้ำแค่พาดหัวใหม่
