@@ -56,7 +56,7 @@ test('index.html: MOVE and SOFR tiles have a Thai explainer and a TradingView bu
   }
   assert.match(HTML, /tradingview\.com\/chart\/\?symbol=TVC%3AMOVE/);
   assert.match(HTML, /tradingview\.com\/chart\/\?symbol=FRED%3ASOFR-FRED%3AIORB/);
-  assert.equal((HTML.match(/class="tip-btn"/g) || []).length, 36); // 12 US-market tiles (all of them) + 8 macro cards + 8 extra econ cards + 8 BTC tiles (F&G, funding, OI, DVOL, ETF flow, NUPL, MVRV Z, MVRV)
+  assert.equal((HTML.match(/class="tip-btn"/g) || []).length, 37); // 12 US-market tiles (all of them) + 8 macro cards + 8 extra econ cards + 9 BTC tiles (F&G, funding, OI, DVOL, ETF flow, NUPL, MVRV Z, MVRV, liquidation heatmap)
   assert.match(HTML, /haircut/);
 });
 

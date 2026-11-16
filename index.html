@@ -271,6 +271,22 @@ body{margin:0}
   #btcTab .sl-dvol .delta{font-size:12px; font-weight:600; margin-left:6px;}
   #btcTab .sl-etf{grid-column:1 / -1; display:flex; flex-direction:column;}
   #btcTab .etf-bars{margin-top:8px;}
+  #btcTab .liq-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  #btcTab .liq-panel{position:relative;}
+  #btcTab .liq-ranges{display:flex; gap:4px;}
+  #btcTab .liq-ranges button{font-size:11px!important; color:var(--muted)!important; border-color:var(--line)!important; padding:3px 10px; margin:0; cursor:pointer;}
+  #btcTab .liq-ranges button.on{color:var(--accent-hi)!important; border-color:var(--gold-line)!important; background:rgba(212,178,106,.18)!important;}
+  #btcTab .liq-wrap{position:relative; height:380px; border-radius:10px; overflow:hidden; background:#0a0716; touch-action:pan-y;}
+  @media (max-width:800px){ #btcTab .liq-wrap{height:300px;} }
+  #btcTab .liq-wrap canvas{display:block; width:100%; height:100%;}
+  #btcTab .liq-msg{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--sub); pointer-events:none;}
+  #btcTab .liq-msg[hidden],#btcTab .liq-hover[hidden]{display:none;}
+  #btcTab .liq-hover{position:absolute; z-index:5; pointer-events:none; padding:7px 9px; border-radius:8px; background:rgba(9,13,21,.94); border:1px solid var(--gold-line); font-size:11px; line-height:1.55; color:var(--text); white-space:nowrap;}
+  #btcTab .liq-foot{display:flex; align-items:center; justify-content:space-between; gap:8px 16px; flex-wrap:wrap; margin-top:8px;}
+  #btcTab .liq-legend{display:flex; align-items:center; gap:6px; font-size:10px; color:var(--sub);}
+  #btcTab .liq-legend i{display:inline-block; width:110px; height:7px; border-radius:4px; background:linear-gradient(90deg,#1b0b3a,#3b1d78,#2c5fb0,#1fa3a8,#4fd27a,#f4e04d);}
+  #btcTab .liq-sum{font-size:12px; color:var(--text); line-height:1.6;}
+  #btcTab .liq-sum b{font-weight:600;}
   #btcTab .etf-bars svg{display:block; width:100%; height:64px;}
   #btcTab .etf-bars .spark-cap{font-size:10px; color:var(--muted); margin-top:2px; display:flex; justify-content:space-between;}
   #btcTab .sl-name{font-size:11px; color:var(--sub); letter-spacing:0.06em; text-transform:uppercase;}
@@ -4202,6 +4218,42 @@ window.setHeaderStamp();
       </div>
     </div>
 
+    <!-- LIQUIDATION HEATMAP (estimated from public OI + candles; see fetchLiqHeatmap) -->
+    <div class="panel chart-panel liq-panel">
+      <div class="liq-head">
+        <h2 style="margin-bottom:0;"><span data-en="BTC Liquidation Heatmap (estimate)">BTC Liquidation Heatmap (ประมาณการ)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Liquidation Heatmap คืออะไร" data-en-aria="What is the liquidation heatmap?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+          <div class="i18n-th">
+          <p><b>คืออะไร:</b> แผนที่ว่าราคาไหนมีสถานะเลเวอเรจ (long/short บน perpetual) รอโดน liquidate หนาแน่น แกนนอน = เวลา แกนตั้ง = ราคา แถบยิ่งสว่าง (ม่วง → ฟ้า → เหลือง) = ยอด liquidation ที่คาดว่ากองอยู่ตรงนั้นยิ่งมาก เส้นขาวคือราคา BTC</p>
+          <p><b>อ่านยังไง:</b> แถบสว่างเหนือราคา = short ที่จะโดนบังคับปิด (ถ้าราคาขึ้นไปแตะจะเกิดแรงซื้อดันต่อ) · แถบสว่างใต้ราคา = long ที่จะโดนล้าง (ถ้าราคาลงไปแตะจะเกิดแรงขายกดต่อ) · ราคามักถูก "ดูด" ไปหากลุ่มที่หนาแน่น แถบจะหายไปเมื่อราคาวิ่งผ่าน เพราะสถานะเหล่านั้นโดนล้างไปแล้ว · กราฟแท่งด้านขวาคือยอดที่ยังค้างอยู่ตอนนี้ (แดง = long, เขียว = short)</p>
+          <p><b>⚠️ เป็นค่าประมาณ:</b> ไม่มีตลาดไหนเปิดเผยราคา liquidation ของทุกคนแบบฟรี เว็บนี้จึงคำนวณเอง: ดูว่าแต่ละชั่วโมงมีสถานะเปิดใหม่เท่าไร (Open Interest ที่เพิ่มขึ้นของ Binance BTCUSDT perp บวกส่วนหนึ่งของวอลุ่ม) ที่ราคาไหน แบ่ง long/short ตามแรงซื้อ-ขาย taker แล้วสมมติการกระจายเลเวอเรจ 5x–100x คำนวณราคา liquidation ตัดทิ้งเมื่อราคาวิ่งผ่าน และขยายสเกลตาม OI รวม Binance + OKX + Bybit + Hyperliquid · หลักการเดียวกับ Coinglass แต่ Coinglass ใช้ข้อมูลละเอียดกว่า ตัวเลข $ จึงเป็นขนาดโดยประมาณ ใช้ดูว่า "ตรงไหนหนา" มากกว่าตัวเลขเป๊ะ</p>
+          <p><b>ใช้คู่กับ:</b> Funding Rate และ Open Interest ด้านบน · กดปุ่มด้านล่างเพื่อดูแผนที่ต้นฉบับบน Coinglass</p>
+          </div>
+          <div class="i18n-en" lang="en">
+          <p><b>What it is:</b> a map of the prices where leveraged perpetual positions (longs and shorts) are waiting to be liquidated. Horizontal = time, vertical = price. The brighter the band (purple → cyan → yellow), the more liquidations are estimated to sit there. The white line is the BTC price.</p>
+          <p><b>How to read it:</b> bright bands above price = shorts that get force-closed if price rises into them (forced buying pushes it further) · bright bands below = longs that get flushed if price drops into them (forced selling) · price is often "pulled" toward dense clusters, and a band ends once price runs through it because those positions are gone · the bars on the right are what is still open now (red = longs, green = shorts).</p>
+          <p><b>⚠️ This is an estimate:</b> no exchange publishes everyone's liquidation prices for free, so this site models them: how much new leverage was opened each hour (Binance BTCUSDT perp open-interest increase plus a share of volume) and at what price, split long/short by taker buy/sell flow, spread over assumed 5x–100x leverage, removed once price crosses them, and scaled to the combined OI of Binance + OKX + Bybit + Hyperliquid. Same idea as Coinglass, which uses finer data, so the $ figures are rough sizes: read it for "where it is thick" rather than exact numbers.</p>
+          <p><b>Read with:</b> the Funding Rate and Open Interest above · the button below opens the original map on Coinglass.</p>
+          </div>
+        </div></div></h2>
+        <div class="liq-ranges" id="liqRanges" role="group" aria-label="ช่วงเวลา" data-en-aria="Time range">
+          <button type="button" data-days="3" class="on">3D</button><button type="button" data-days="7">7D</button><button type="button" data-days="14">14D</button>
+        </div>
+      </div>
+      <div class="liq-wrap" id="liqWrap">
+        <canvas id="liqCanvas" aria-label="BTC liquidation heatmap" role="img"></canvas>
+        <div class="liq-hover" id="liqHover" hidden></div>
+        <div class="liq-msg" id="liqMsg" data-en="Loading…">กำลังโหลด…</div>
+      </div>
+      <div class="liq-foot">
+        <div class="liq-legend"><span data-en="Few">น้อย</span><i></i><span data-en="Many liquidations">liquidation หนาแน่น</span></div>
+        <div class="liq-sum" id="liqSum"></div>
+      </div>
+      <div class="liq-foot">
+        <div class="sl-sub" id="liqSrc"></div>
+        <a class="tv-btn" style="margin-top:0;" href="https://www.coinglass.com/pro/futures/LiquidationHeatMap" target="_blank" rel="noopener noreferrer"><span data-en="Open on Coinglass ↗">ดูบน Coinglass ↗</span></a>
+      </div>
+    </div>
+
     <!-- HALVING COUNTDOWN -->
     <div class="panel chart-panel halving-panel">
       <div>
@@ -4876,6 +4928,366 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     }catch(e){ el('oiLabel').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable'); el('oiZone').textContent = ''; }
   }
 
+  // ---------- BTC Liquidation Heatmap (estimate) ----------
+  // No exchange publishes everyone's liquidation prices for free (Coinglass's own map needs its
+  // paid API), so this models them from public data, the same way the paid maps do:
+  //   each hour, new leverage = OI increase (Binance BTCUSDT perp) + a small share of volume,
+  //   opened across the candle's range, split long/short by taker buy share, spread over assumed
+  //   leverage tiers → liquidation prices. A level is removed once price trades through it and
+  //   fades slowly (positions close on their own). The total is scaled to combined BTC perp OI
+  //   (Binance + OKX + Bybit + Hyperliquid). Calls run from the visitor's browser (like Funding/OI)
+  //   because some of these APIs block datacenter IPs. Falls back to OKX when Binance is blocked.
+  const LIQ_LEV = [[5, 0.10], [10, 0.25], [25, 0.30], [50, 0.22], [100, 0.13]]; // [leverage, share]
+  const LIQ_MMR = 0.005;        // maintenance margin
+  const LIQ_VOL_SHARE = 0.025;  // share of hourly volume treated as fresh leverage (churn the OI delta misses)
+  const LIQ_HALF_LIFE_H = 96;   // un-liquidated positions also close by themselves over time
+  const LIQ_BINS = 180;
+  const HOUR = 3600000;
+
+  function liqPrice(entry, lev, side){
+    return side === 'long' ? entry * (1 - 1 / lev + LIQ_MMR) : entry * (1 + 1 / lev - LIQ_MMR);
+  }
+
+  // candles: [{t,h,l,c,vol,buy}] oldest first, hourly (vol/buy in USD); oiByT: Map(t → OI USD) or null.
+  function buildLiqHeatmap(candles, oiByT, opts){
+    const o = opts || {};
+    const bins = o.bins || LIQ_BINS, scale = o.scale || 1;
+    const show = Math.max(1, Math.min(o.show || candles.length, candles.length));
+    const start = candles.length - show;
+    let lo = Infinity, hi = -Infinity;
+    for(let i = start; i < candles.length; i++){ lo = Math.min(lo, candles[i].l); hi = Math.max(hi, candles[i].h); }
+    const last = candles[candles.length - 1].c;
+    const pad = (hi - lo) * 0.3 + last * 0.03;
+    lo -= pad; hi += pad;
+    const step = (hi - lo) / bins;
+    const toBin = (p) => Math.floor((p - lo) / step);
+    const decay = Math.pow(0.5, 1 / LIQ_HALF_LIFE_H);
+    const L = new Float64Array(bins), S = new Float64Array(bins);
+    const longM = new Float32Array(show * bins), shortM = new Float32Array(show * bins);
+    const spread = (arr, p0, p1, amt) => {
+      const b0 = toBin(Math.min(p0, p1)), b1 = toBin(Math.max(p0, p1));
+      if(b1 < 0 || b0 >= bins || !(amt > 0)) return;
+      const per = amt / (b1 - b0 + 1);
+      for(let b = Math.max(0, b0); b <= Math.min(bins - 1, b1); b++) arr[b] += per;
+    };
+    let prevOi = null;
+    for(let i = 0; i < candles.length; i++){
+      const k = candles[i];
+      // 1) price traded through these levels → those positions are gone
+      for(let b = Math.max(0, toBin(k.l)); b < bins; b++) L[b] = 0;
+      for(let b = Math.min(bins - 1, toBin(k.h)); b >= 0; b--) S[b] = 0;
+      // 2) slow fade
+      for(let b = 0; b < bins; b++){ L[b] *= decay; S[b] *= decay; }
+      // 3) fresh leverage opened in this candle
+      const oi = oiByT ? oiByT.get(k.t) : undefined;
+      let fresh = LIQ_VOL_SHARE * (k.vol || 0);
+      if(oi != null && prevOi != null) fresh += Math.max(0, oi - prevOi);
+      if(oi != null) prevOi = oi;
+      fresh *= scale;
+      const buyShare = k.vol > 0 && k.buy != null && isFinite(k.buy) ? Math.min(0.7, Math.max(0.3, k.buy / k.vol)) : 0.5;
+      if(fresh > 0) for(const [lev, w] of LIQ_LEV){
+        spread(L, liqPrice(k.l, lev, 'long'), liqPrice(k.h, lev, 'long'), fresh * buyShare * w);
+        spread(S, liqPrice(k.l, lev, 'short'), liqPrice(k.h, lev, 'short'), fresh * (1 - buyShare) * w);
+      }
+      // 4) snapshot this column
+      if(i >= start){
+        const off = (i - start) * bins;
+        for(let b = 0; b < bins; b++){ longM[off + b] = L[b]; shortM[off + b] = S[b]; }
+      }
+    }
+    return { cols: show, bins, lo, hi, step, longM, shortM, candles: candles.slice(start), curL: Array.from(L), curS: Array.from(S), last };
+  }
+
+  // Densest cluster above (shorts) and below (longs) the current price, within ±15%, using a 5-bin window.
+  function liqClusters(hm){
+    const center = (b) => hm.lo + (b + 0.5) * hm.step;
+    const pick = (arr, above) => {
+      let best = null;
+      for(let b = 0; b < hm.bins; b++){
+        const p = center(b);
+        if(above ? p <= hm.last : p >= hm.last) continue;
+        if(Math.abs(p / hm.last - 1) > 0.15) continue;
+        let sum = 0;
+        for(let d = -2; d <= 2; d++) sum += arr[b + d] || 0;
+        if(sum > 0 && (!best || sum > best.usd)) best = { price: p, usd: sum, pct: (p / hm.last - 1) * 100 };
+      }
+      return best;
+    };
+    return { up: pick(hm.curS, true), down: pick(hm.curL, false) };
+  }
+
+  const LIQ_STOPS = [[0, [10, 7, 22]], [0.12, [36, 13, 82]], [0.3, [58, 36, 150]], [0.5, [38, 110, 190]], [0.68, [31, 168, 166]], [0.84, [92, 214, 118]], [1, [246, 228, 80]]];
+  function liqColor(x){
+    x = Math.max(0, Math.min(1, x));
+    for(let i = 1; i < LIQ_STOPS.length; i++){
+      const [p1, c1] = LIQ_STOPS[i];
+      if(x <= p1){
+        const [p0, c0] = LIQ_STOPS[i - 1], f = (x - p0) / (p1 - p0 || 1);
+        return [0, 1, 2].map((j) => Math.round(c0[j] + (c1[j] - c0[j]) * f));
+      }
+    }
+    return LIQ_STOPS[LIQ_STOPS.length - 1][1].slice();
+  }
+
+  function fmtLiqUsd(v){
+    if(!(v > 0)) return '$0';
+    if(v >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B';
+    if(v >= 1e6) return '$' + (v / 1e6).toFixed(v >= 1e8 ? 0 : 1) + 'M';
+    if(v >= 1e3) return '$' + (v / 1e3).toFixed(0) + 'K';
+    return '$' + v.toFixed(0);
+  }
+  const fmtLiqPx = (p) => '$' + Math.round(p).toLocaleString('en-US');
+
+  function parseBinanceKlines(rows){
+    return (Array.isArray(rows) ? rows : []).map((k) => ({ t: +k[0], h: +k[2], l: +k[3], c: +k[4], vol: +k[7], buy: +k[10] }))
+      .filter((k) => k.h > 0 && k.l > 0 && k.c > 0 && isFinite(k.t));
+  }
+  // openInterestHist rows are snapshots at the END of each period → key them to the candle that ends there.
+  function parseBinanceOiHist(rows){
+    const m = new Map();
+    (Array.isArray(rows) ? rows : []).forEach((r) => {
+      const v = parseFloat(r && r.sumOpenInterestValue), ts = Number(r && r.timestamp);
+      if(v > 0 && isFinite(ts)) m.set(Math.floor(ts / HOUR) * HOUR - HOUR, v);
+    });
+    return m;
+  }
+  function parseOkxCandles(j){
+    const rows = (j && Array.isArray(j.data)) ? j.data : [];
+    return rows.map((k) => ({ t: +k[0], h: +k[2], l: +k[3], c: +k[4], vol: +k[7] || (+k[6] * +k[4]) || 0, buy: null }))
+      .filter((k) => k.h > 0 && k.l > 0 && k.c > 0 && isFinite(k.t)).sort((a, b) => a.t - b.t);
+  }
+  function parseOkxOiHist(j){
+    const m = new Map();
+    ((j && Array.isArray(j.data)) ? j.data : []).forEach((r) => {
+      const ts = Number(r[0]), v = parseFloat(r[1]);
+      if(v > 0 && isFinite(ts)) m.set(Math.floor(ts / HOUR) * HOUR - HOUR, v);
+    });
+    return m;
+  }
+
+  async function liqJson(url, ms, opts){
+    const r = await fetchWithTimeout(url, ms || 8000, opts);
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }
+
+  async function fetchLiqData(){
+    let candles = null, oi = null, src = '';
+    try{
+      const [k, h] = await Promise.all([
+        liqJson('https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=1h&limit=500'),
+        liqJson('https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=1h&limit=500').catch(() => null),
+      ]);
+      candles = parseBinanceKlines(k);
+      oi = h ? parseBinanceOiHist(h) : null;
+      src = 'Binance';
+    }catch(e){ candles = null; }
+    if(!candles || candles.length < 48){
+      const [k, h] = await Promise.all([
+        liqJson('https://www.okx.com/api/v5/market/candles?instId=BTC-USDT-SWAP&bar=1H&limit=300'),
+        liqJson('https://www.okx.com/api/v5/rubik/stat/contracts/open-interest-volume?ccy=BTC&period=1H').catch(() => null),
+      ]);
+      candles = parseOkxCandles(k);
+      oi = h ? parseOkxOiHist(h) : null;
+      src = 'OKX';
+    }
+    if(!candles || candles.length < 48) throw new Error('no candles');
+    if(oi && oi.size < 24) oi = null;
+
+    // Scale to the whole perp market: the source's own latest OI vs. the sum of the big venues now.
+    let baseOi = 0;
+    if(oi) for(const v of oi.values()) baseOi = v; // Map keeps insertion order → last = latest for Binance; OKX sorted below
+    if(oi && src === 'OKX'){ const keys = [...oi.keys()].sort((a, b) => a - b); baseOi = oi.get(keys[keys.length - 1]); }
+    const venues = await Promise.all([
+      src === 'Binance' ? Promise.resolve(baseOi || null)
+        : liqJson('https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=5m&limit=1', 6000).then((j) => parseFloat(j[0].sumOpenInterestValue) || null).catch(() => null),
+      src === 'OKX' ? Promise.resolve(null)
+        : liqJson('https://www.okx.com/api/v5/public/open-interest?instType=SWAP&instId=BTC-USDT-SWAP', 6000).then((j) => parseFloat(j.data[0].oiUsd) || null).catch(() => null),
+      liqJson('https://api.bybit.com/v5/market/tickers?category=linear&symbol=BTCUSDT', 6000).then((j) => parseFloat(j.result.list[0].openInterestValue) || null).catch(() => null),
+      liqJson('https://api.hyperliquid.xyz/info', 7000, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'metaAndAssetCtxs' }) })
+        .then((j) => hyperliquidBtcOiUsd(j)).catch(() => null),
+    ]);
+    const names = [src === 'Binance' ? 'Binance' : (venues[0] ? 'Binance' : null), 'OKX', venues[2] ? 'Bybit' : null, venues[3] ? 'Hyperliquid' : null];
+    if(src !== 'OKX' && !venues[1]) names[1] = null;
+    const totalOi = venues.reduce((s, v) => s + (v || 0), 0) + (src === 'OKX' ? (baseOi || 0) : 0);
+    const scale = baseOi > 0 && totalOi > baseOi ? Math.min(6, totalOi / baseOi) : 1;
+    return { candles, oi, src, scale, totalOi, venues: names.filter(Boolean), at: Date.now() };
+  }
+
+  const liqState = { days: 3, data: null, hm: null, loading: false, geo: null };
+
+  function liqRebuild(){
+    const d = liqState.data;
+    if(!d) return;
+    liqState.hm = buildLiqHeatmap(d.candles, d.oi, { show: liqState.days * 24, scale: d.scale });
+    const c = liqClusters(liqState.hm);
+    const pct = (x) => (x >= 0 ? '+' : '−') + Math.abs(x).toFixed(1) + '%';
+    const parts = [];
+    if(c.up) parts.push('<span style="color:var(--green)">▲ ' + tr('Short liq หนาสุดด้านบน', 'Densest short liqs above') + '</span> <b>' + fmtLiqPx(c.up.price) + '</b> (' + pct(c.up.pct) + ') ≈ ' + fmtLiqUsd(c.up.usd));
+    if(c.down) parts.push('<span style="color:var(--red)">▼ ' + tr('Long liq หนาสุดด้านล่าง', 'Densest long liqs below') + '</span> <b>' + fmtLiqPx(c.down.price) + '</b> (' + pct(c.down.pct) + ') ≈ ' + fmtLiqUsd(c.down.usd));
+    el('liqSum').innerHTML = parts.join('<br>');
+    const time = new Date(d.at).toLocaleTimeString(window.GI_LOCALE || 'th-TH', { hour: '2-digit', minute: '2-digit' });
+    el('liqSrc').textContent = tr('ประมาณจาก ', 'Modelled from ') + d.src + ' BTCUSDT perp' + (d.oi ? ' (OI + ' + tr('ราคา ราย ชม.', 'hourly price') + ')' : tr(' (ราคา/วอลุ่ม ราย ชม.)', ' (hourly price/volume)'))
+      + (d.scale > 1 && d.totalOi ? tr(' · สเกลตาม OI รวม ', ' · scaled to combined OI ') + fmtLiqUsd(d.totalOi) + ' (' + d.venues.join(', ') + ')' : '')
+      + tr(' · อัปเดต ', ' · updated ') + time;
+    renderLiq();
+  }
+
+  function renderLiq(){
+    const cv = el('liqCanvas'), wrap = el('liqWrap'), hm = liqState.hm;
+    if(!cv || !wrap || !hm || typeof cv.getContext !== 'function') return;
+    const W = wrap.clientWidth, H = wrap.clientHeight;
+    if(!W || !H) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const narrow = W < 520;
+    const axisW = narrow ? 50 : 64, profW = narrow ? 34 : 64, axisH = 22;
+    const plotW = W - axisW - profW, plotH = H - axisH;
+    const { cols, bins, lo, hi } = hm;
+    const yOf = (p) => (hi - p) / (hi - lo) * plotH;
+    liqState.geo = { plotW, plotH, cols, bins };
+
+    ctx.fillStyle = '#0a0716'; ctx.fillRect(0, 0, W, H);
+
+    // reference level = 99.5th percentile of non-zero cells, so one spike doesn't wash everything out
+    const tot = new Float32Array(cols * bins), sample = [];
+    for(let i = 0; i < tot.length; i++){ tot[i] = hm.longM[i] + hm.shortM[i]; if(tot[i] > 0 && (i % 7 === 0)) sample.push(tot[i]); }
+    sample.sort((a, b) => a - b);
+    const ref = sample.length ? sample[Math.floor(sample.length * 0.995)] : 1;
+
+    const off = document.createElement('canvas');
+    off.width = cols; off.height = bins;
+    const octx = off.getContext('2d');
+    const img = octx.createImageData(cols, bins);
+    for(let x = 0; x < cols; x++){
+      for(let row = 0; row < bins; row++){
+        const b = bins - 1 - row, v = tot[x * bins + b];
+        const [r, g, bl] = liqColor(Math.pow(Math.min(1, v / ref), 1.1));
+        const p = (row * cols + x) * 4;
+        img.data[p] = r; img.data[p + 1] = g; img.data[p + 2] = bl; img.data[p + 3] = 255;
+      }
+    }
+    octx.putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(off, 0, 0, plotW, plotH);
+
+    // price grid + right axis
+    const raw = (hi - lo) / 6, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const stepP = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) || raw;
+    ctx.font = '10px ' + (getComputedStyle(document.body).fontFamily || 'sans-serif');
+    ctx.textBaseline = 'middle';
+    for(let p = Math.ceil(lo / stepP) * stepP; p <= hi; p += stepP){
+      const y = Math.round(yOf(p)) + 0.5;
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(plotW + profW, y); ctx.stroke();
+      ctx.fillStyle = '#8d95a6'; ctx.textAlign = 'left';
+      ctx.fillText(narrow ? (p / 1000).toFixed(stepP < 1000 ? 1 : 0) + 'k' : Math.round(p).toLocaleString('en-US'), plotW + profW + 6, y);
+    }
+
+    // time axis
+    ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center'; ctx.fillStyle = '#8d95a6';
+    const nT = Math.max(2, Math.floor(plotW / (narrow ? 90 : 120)));
+    for(let i = 0; i < nT; i++){
+      const x = Math.round((i + 0.5) / nT * cols);
+      const c = hm.candles[Math.min(cols - 1, x)];
+      if(!c) continue;
+      const d = new Date(c.t);
+      const lbl = d.toLocaleDateString(window.GI_LOCALE || 'th-TH', { day: 'numeric', month: 'short' }) + ' ' + String(d.getHours()).padStart(2, '0') + ':00';
+      ctx.fillText(lbl, (x + 0.5) / cols * plotW, H - 7);
+    }
+
+    // price line
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = 3.2;
+    const path = () => { ctx.beginPath(); hm.candles.forEach((c, i) => { const x = (i + 0.5) / cols * plotW, y = yOf(c.c); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); };
+    path(); ctx.stroke();
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.4; path(); ctx.stroke();
+
+    // current-liquidation profile (right strip): red = longs, green = shorts
+    let pMax = 0;
+    for(let b = 0; b < bins; b++) pMax = Math.max(pMax, hm.curL[b], hm.curS[b]);
+    const bh = plotH / bins;
+    ctx.fillStyle = 'rgba(255,255,255,0.03)'; ctx.fillRect(plotW, 0, profW, plotH);
+    for(let b = 0; b < bins && pMax > 0; b++){
+      const y = (bins - 1 - b) * bh;
+      if(hm.curL[b] > 0){ ctx.fillStyle = 'rgba(228,106,114,0.85)'; ctx.fillRect(plotW + 2, y, Math.max(1, hm.curL[b] / pMax * (profW - 6)), Math.max(1, bh - 0.3)); }
+      if(hm.curS[b] > 0){ ctx.fillStyle = 'rgba(90,196,146,0.85)'; ctx.fillRect(plotW + 2, y, Math.max(1, hm.curS[b] / pMax * (profW - 6)), Math.max(1, bh - 0.3)); }
+    }
+
+    // current price marker
+    const yNow = Math.round(yOf(hm.last)) + 0.5;
+    ctx.setLineDash([3, 3]); ctx.strokeStyle = 'rgba(240,219,164,0.7)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(plotW - 4, yNow); ctx.lineTo(plotW + profW, yNow); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#d4b26a'; ctx.fillRect(plotW + profW + 1, yNow - 8, axisW - 2, 16);
+    ctx.fillStyle = '#06080e'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(narrow ? (hm.last / 1000).toFixed(1) + 'k' : Math.round(hm.last).toLocaleString('en-US'), plotW + profW + 5, yNow);
+    ctx.beginPath(); ctx.arc((cols - 0.5) / cols * plotW, yOf(hm.last), 3, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+  }
+
+  function liqHover(clientX, clientY){
+    const tip = el('liqHover'), wrap = el('liqWrap'), hm = liqState.hm, g = liqState.geo;
+    if(!tip || !hm || !g || !wrap.getBoundingClientRect) return;
+    const r = wrap.getBoundingClientRect(), x = clientX - r.left, y = clientY - r.top;
+    if(x < 0 || y < 0 || x > g.plotW || y > g.plotH){ tip.hidden = true; return; }
+    const col = Math.min(g.cols - 1, Math.floor(x / g.plotW * g.cols));
+    const b = Math.max(0, Math.min(g.bins - 1, g.bins - 1 - Math.floor(y / g.plotH * g.bins)));
+    const c = hm.candles[col], price = hm.lo + (b + 0.5) * hm.step;
+    // sum ±1 bin so the number is a readable band, not a sliver
+    let lq = 0, sq = 0;
+    for(let d = -1; d <= 1; d++){ const bb = b + d; if(bb < 0 || bb >= g.bins) continue; lq += hm.longM[col * g.bins + bb]; sq += hm.shortM[col * g.bins + bb]; }
+    const d = new Date(c.t);
+    tip.innerHTML = '<div style="color:var(--sub)">' + d.toLocaleString(window.GI_LOCALE || 'th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + '</div>'
+      + '<div>' + tr('ราคา', 'Price') + ' <b>' + fmtLiqPx(price) + '</b> (' + ((price / c.c - 1) * 100 >= 0 ? '+' : '') + ((price / c.c - 1) * 100).toFixed(1) + '%)</div>'
+      + (sq > lq ? '<div style="color:var(--green)">' + tr('Short liq ประมาณ ', 'Est. short liqs ') + fmtLiqUsd(sq) + '</div>' : '')
+      + (lq > 0 && lq >= sq ? '<div style="color:var(--red)">' + tr('Long liq ประมาณ ', 'Est. long liqs ') + fmtLiqUsd(lq) + '</div>' : '')
+      + (lq + sq <= 0 ? '<div style="color:var(--sub)">' + tr('แทบไม่มี', 'Almost none') + '</div>' : '');
+    tip.hidden = false;
+    const tw = tip.offsetWidth || 150, th = tip.offsetHeight || 60;
+    tip.style.left = Math.max(4, x + 14 + tw > r.width ? x - tw - 14 : x + 14) + 'px';
+    tip.style.top = Math.max(4, Math.min(r.height - th - 4, y - th / 2)) + 'px';
+  }
+
+  async function fetchLiqHeatmap(force){
+    if(liqState.loading) return;
+    if(!force && liqState.data && Date.now() - liqState.data.at < 10 * 60 * 1000){ liqRebuild(); return; }
+    liqState.loading = true;
+    try{
+      liqState.data = await fetchLiqData();
+      el('liqMsg').hidden = true;
+      liqRebuild();
+    }catch(e){
+      if(!liqState.data){ el('liqMsg').hidden = false; el('liqMsg').textContent = tr('ดึงข้อมูลไม่สำเร็จ ลองใหม่ภายหลัง หรือดูบน Coinglass', 'Could not load data. Try later, or open Coinglass'); }
+    }finally{ liqState.loading = false; }
+  }
+
+  (function wireLiq(){
+    const wrap = el('liqWrap'), ranges = el('liqRanges');
+    if(ranges) ranges.addEventListener('click', (ev) => {
+      const btn = ev.target && ev.target.closest ? ev.target.closest('button[data-days]') : null;
+      if(!btn) return;
+      liqState.days = parseInt(btn.dataset.days, 10) || 3;
+      ranges.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === btn));
+      liqRebuild();
+    });
+    if(!wrap) return;
+    wrap.addEventListener('mousemove', (ev) => liqHover(ev.clientX, ev.clientY));
+    wrap.addEventListener('mouseleave', () => { el('liqHover').hidden = true; });
+    let hideT = 0;
+    const onTouch = (ev) => { const t = ev.touches && ev.touches[0]; if(t){ liqHover(t.clientX, t.clientY); clearTimeout(hideT); hideT = setTimeout(() => { el('liqHover').hidden = true; }, 2500); } };
+    wrap.addEventListener('touchstart', onTouch, { passive: true });
+    wrap.addEventListener('touchmove', onTouch, { passive: true });
+    // the ₿ tab may be hidden when data lands (width 0) → draw again whenever the box gets a size
+    let lastW = 0;
+    if(typeof ResizeObserver === 'function'){
+      new ResizeObserver(() => { const w = wrap.clientWidth; if(w && w !== lastW){ lastW = w; renderLiq(); } }).observe(wrap);
+    }else{
+      window.addEventListener('resize', () => renderLiq());
+    }
+  })();
+  if(typeof window !== 'undefined') window.__liqTest = { liqPrice, buildLiqHeatmap, liqClusters, liqColor, fmtLiqUsd, parseBinanceKlines, parseBinanceOiHist, parseOkxCandles };
+
   // ---------- DVOL (Deribit BTC implied volatility, "VIX ของ BTC") ----------
   // ชั้นแรก: /.netlify/functions/dvol (แคช 5 นาที) · ถ้าเซิร์ฟเวอร์ล่ม ดึงตรงจาก Deribit public API
   // (ไม่ต้องใช้ key) แล้วแปลงแท่งเทียนรายวัน [ts, open, high, low, close] เป็นค่าปิดรายวันเอง
@@ -5015,6 +5427,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   async function refreshAll(force){
     statusEl.textContent = tr('กำลังอัปเดต…', 'Updating…');
     const priceOk = await fetchPrice(); // must resolve first: OI conversion below needs a live price
+    fetchLiqHeatmap(force); // not awaited: heavier, and the status line should not wait for it
     const [metricsOk] = await Promise.all([fetchOnChainMetrics(force), fetchSentimentLeverage(), fetchHalvingCountdown(), fetchDvol(), fetchEtfFlow()]);
     recompute();
     save();
@@ -5098,6 +5511,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
 
   // Fear & Greed จาก CMC อัปเดตวันละครั้ง แต่ให้โพลอัตโนมัติทุก 60 นาที + เมื่อกลับมาเปิดแท็บ BTC
   setInterval(fetchSentimentLeverage, 60*60*1000);
+  setInterval(() => fetchLiqHeatmap(true), 30*60*1000);
   document.addEventListener('visibilitychange', () => {
     if(!document.hidden && document.body.classList.contains('theme-btc')) fetchSentimentLeverage();
   });
