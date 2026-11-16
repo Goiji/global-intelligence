@@ -1,4 +1,4 @@
-// Netlify Function: headlines from Google News RSS.
+// Netlify Function: headlines from Google News RSS (Bing News RSS as the fallback).
 //
 // Usage from the frontend: /.netlify/functions/news-feed?q=<url-encoded search query>
 //
@@ -21,6 +21,7 @@
 // Nothing here is secret. RSS2JSON_API_KEY is optional and only raises the fallback's quota.
 
 const GNEWS = 'https://news.google.com/rss/search';
+const BING = 'https://www.bing.com/news/search';
 const RSS2JSON = 'https://api.rss2json.com/v1/api.json';
 const TIMEOUT_MS = 8000;
 const MAX_ITEMS = 10;
@@ -90,7 +91,7 @@ function parseRssItems(xml) {
       description,
       link,
       pubDate: cleanText(pickTag(b, 'pubDate') || pickTag(b, 'published') || pickTag(b, 'updated'), 60),
-      source: cleanText(pickTag(b, 'source'), 80) || cleanText(pickAttr(b, 'source', 'url'), 120)
+      source: cleanText(pickTag(b, 'source') || pickTag(b, 'News:Source'), 80) || cleanText(pickAttr(b, 'source', 'url'), 120)
     };
   }).filter((it) => it.title);
 }
@@ -117,6 +118,26 @@ async function fromGoogleNews(q, lang = 'en') {
   if (!r.ok) throw new Error(`Google News HTTP ${r.status}`);
   const items = parseRssItems(await r.text()).slice(0, MAX_ITEMS);
   if (!items.length) throw new Error('no <item> elements in the Google News response');
+  return items;
+}
+
+// Second source: Bing News RSS. Google News answers some datacenter ranges (Cloudflare Workers in
+// particular) with HTTP 503, so this keeps headlines flowing there. Same item shape; Bing wraps each
+// article link in an apiclick.aspx redirect, so the real URL is pulled out of its url= parameter.
+const BING_LOCALES = { en: 'setlang=en-US&cc=US', th: 'setlang=th&cc=TH' };
+function unwrapBingLink(link) {
+  try {
+    const u = new URL(link);
+    if (/bing\.com$/i.test(u.hostname) && u.searchParams.get('url')) return u.searchParams.get('url');
+  } catch (e) { /* keep as-is */ }
+  return link;
+}
+async function fromBingNews(q, lang = 'en') {
+  const url = `${BING}?q=${encodeURIComponent(q)}&format=rss&${BING_LOCALES[lang] || BING_LOCALES.en}`;
+  const r = await fetchWithTimeout(url, TIMEOUT_MS);
+  if (!r.ok) throw new Error(`Bing News HTTP ${r.status}`);
+  const items = parseRssItems(await r.text()).slice(0, MAX_ITEMS).map((it) => ({ ...it, link: unwrapBingLink(it.link) }));
+  if (!items.length) throw new Error('no <item> elements in the Bing News response');
   return items;
 }
 
@@ -148,7 +169,7 @@ exports.handler = async function (event) {
   const lang = (event && event.queryStringParameters && event.queryStringParameters.lang) === 'th' ? 'th' : 'en';
 
   const errors = [];
-  for (const [name, fn] of [['google-news', fromGoogleNews], ['rss2json', fromRss2Json]]) {
+  for (const [name, fn] of [['google-news', fromGoogleNews], ['bing-news', fromBingNews], ['rss2json', fromRss2Json]]) {
     try {
       const items = await fn(q, lang);
       return json(200, { status: 'ok', source: name, query: q, lang, count: items.length, items });
@@ -163,4 +184,4 @@ exports.handler = async function (event) {
 };
 
 // Exported for local unit testing (node --test / plain require). Netlify ignores extra exports.
-module.exports.__test = { parseRssItems, decodeEntities, stripTags, cleanText };
+module.exports.__test = { parseRssItems, decodeEntities, stripTags, cleanText, unwrapBingLink };

@@ -77,3 +77,30 @@ test('parseRssItems is tolerant of empty or broken documents', () => {
   assert.deepEqual(parseRssItems('<rss><channel></channel></rss>'), []);
   assert.deepEqual(parseRssItems(undefined), []);
 });
+
+test('Bing News fallback: used when Google answers 503, real article link unwrapped', async () => {
+  const fn = require('../netlify/functions/news-feed.js');
+  const BING_RSS = '<rss><channel><item><title>Oil rises on supply fears</title>' +
+    '<link>http://www.bing.com/news/apiclick.aspx?ref=FexRss&amp;aid=&amp;url=https%3a%2f%2fexample.com%2fstory&amp;c=1&amp;mkt=en-us</link>' +
+    '<description>Brent up 2%</description><pubDate>Sun, 16 Nov 2026 01:23:00 GMT</pubDate><News:Source>Reuters</News:Source></item></channel></rss>';
+  const orig = global.fetch;
+  const seen = [];
+  global.fetch = async (url) => {
+    seen.push(String(url));
+    if (String(url).includes('news.google.com')) return new Response('busy', { status: 503 });
+    if (String(url).includes('bing.com/news/search')) return new Response(BING_RSS, { status: 200 });
+    return new Response('{}', { status: 429 });
+  };
+  try {
+    const out = await fn.handler({ queryStringParameters: { q: 'oil' } });
+    assert.equal(out.statusCode, 200);
+    const body = JSON.parse(out.body);
+    assert.equal(body.source, 'bing-news');
+    assert.equal(body.items[0].title, 'Oil rises on supply fears');
+    assert.equal(body.items[0].link, 'https://example.com/story');
+    assert.equal(body.items[0].source, 'Reuters');
+    assert.ok(seen[1].includes('format=rss'));
+  } finally {
+    global.fetch = orig;
+  }
+});
