@@ -164,12 +164,21 @@ async function fromCategoryFeeds(q, lang, cat) {
   const seen = new Set();
   const items = settled.flatMap((s) => (s.status === 'fulfilled' ? s.value : []))
     .filter((it) => { const k = it.title.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
-    .sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0))
-    .slice(0, MAX_ITEMS);
-  if (!items.length) {
+    .sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
+  // These feeds are whole sections, not a search, so put the stories that mention one of the
+  // page's search terms ("oil price OR OPEC" → oil price, opec) first, newest first within each group.
+  const terms = String(q).toLowerCase().split(/\s+or\s+/).map((t) => t.trim()).filter(Boolean);
+  // whole words for English ("war" must not match "software"); plain substring for Thai, which has no word breaks
+  const res = terms.map((t) => (/^[\x00-\x7f]+$/.test(t) ? new RegExp('\\b' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i') : null));
+  const hit = (it) => {
+    const text = (it.title + ' ' + it.description).toLowerCase();
+    return terms.some((t, i) => (res[i] ? res[i].test(text) : text.includes(t)));
+  };
+  const ranked = items.filter(hit).concat(items.filter((it) => !hit(it))).slice(0, MAX_ITEMS);
+  if (!ranked.length) {
     throw new Error('publisher feeds failed: ' + settled.map((s) => (s.status === 'rejected' ? s.reason.message : 'empty')).join(', '));
   }
-  return items;
+  return ranked;
 }
 
 // Last-resort fallback. Kept because it already proved it can work when Google answers a given
