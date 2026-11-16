@@ -121,7 +121,8 @@ test('publisher RSS fallback: Google 503 → topic feeds merged newest-first, de
     assert.equal(out.statusCode, 200);
     const body = JSON.parse(out.body);
     assert.equal(body.source, 'publisher-rss');
-    assert.deepEqual(body.items.map((i) => i.title), ['Fresh conflict news', 'Same headline', 'Old war story']);
+    // stories mentioning a search term ("war") come first, then the rest newest-first
+    assert.deepEqual(body.items.map((i) => i.title), ['Old war story', 'Fresh conflict news', 'Same headline']);
   } finally {
     global.fetch = orig;
   }
