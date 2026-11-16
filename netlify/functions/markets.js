@@ -544,7 +544,10 @@ async function buildPayload(apiKey) {
   return { data: out, okCount: Object.keys(series).length };
 }
 
-exports.handler = async function () {
+const { RETRY_TTL_S, partialTtl, kvGetGood, kvPutGood, fillFromGood } = require('../lib/last-good.js');
+const KV_KEY = 'markets:lastGood';
+
+exports.handler = async function (event) {
   const now = Date.now();
   const { release } = isReleaseDay(new Date(now));
   const ttl = release ? RELEASE_TTL_S : TTL_S;
@@ -563,14 +566,27 @@ exports.handler = async function () {
     };
   }
   try {
-    const { data, okCount } = await buildPayload((process.env.FRED_API_KEY || '').trim());
-    if (!okCount) throw new Error('every series failed: ' + JSON.stringify(data.errors || {}));
-    data.ttl = ttl;
-    memCache = { data, expiresAt: now + ttl * 1000, lastGood: data };
-    return { statusCode: 200, headers, body: JSON.stringify(data) };
+    const { data } = await buildPayload((process.env.FRED_API_KEY || '').trim());
+    // A tile whose series failed this time (live overlays like vixLive don't count: the FRED close
+    // still shows) is filled from the last good copy, and the answer is cached only briefly.
+    const missing = Object.keys(data.errors || {}).filter((k) => k in SERIES && !data.series[k]);
+    let ttlNow = ttl;
+    if (missing.length) {
+      const good = memCache.lastGood || await kvGetGood(event, KV_KEY, 14 * 86400000);
+      const filled = fillFromGood(data.series, good && good.series, data.errors);
+      if (filled.length) data.staleSeries = filled;
+      if (data.errors && !Object.keys(data.errors).length) delete data.errors;
+      ttlNow = partialTtl(ttl, missing.length, missing.length - filled.length);
+    }
+    if (!Object.keys(data.series).length) throw new Error('every series failed: ' + JSON.stringify(data.errors || {}));
+    data.ttl = ttlNow;
+    memCache = { data, expiresAt: now + ttlNow * 1000, lastGood: data };
+    await kvPutGood(event, KV_KEY, data);
+    return { statusCode: 200, headers: { ...headers, 'Cache-Control': cacheControl(ttlNow, release) }, body: JSON.stringify(data) };
   } catch (e) {
-    if (memCache.lastGood) {
-      return { statusCode: 200, headers, body: JSON.stringify({ ...memCache.lastGood, stale: true, staleReason: e.message }) };
+    const good = memCache.lastGood || await kvGetGood(event, KV_KEY, 14 * 86400000);
+    if (good) {
+      return { statusCode: 200, headers: { ...headers, 'Cache-Control': cacheControl(RETRY_TTL_S, release) }, body: JSON.stringify({ ...good, stale: true, staleReason: e.message }) };
     }
     return { statusCode: 502, headers, body: JSON.stringify({ error: e.message }) };
   }

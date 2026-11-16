@@ -80,7 +80,10 @@ function parseChnwt(text) {
   });
 }
 
-exports.handler = async function () {
+const { kvGetGood, kvPutGood } = require('../lib/last-good.js');
+const KV_KEY = 'gold-th:lastGood';
+
+exports.handler = async function (event) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
@@ -95,13 +98,16 @@ exports.handler = async function () {
     try {
       const data = { ...s.parse(await fetchText(s.url)), source: s.name, fetchedAt: new Date().toISOString() };
       memCache = { data, expiresAt: now + TTL_S * 1000, lastGood: data };
+      await kvPutGood(event, KV_KEY, data);
       return { statusCode: 200, headers, body: JSON.stringify(data) };
     } catch (e) { errors[s.name] = e.message; }
   }
-  if (memCache.lastGood) {
-    return { statusCode: 200, headers, body: JSON.stringify({ ...memCache.lastGood, stale: true }) };
+  // memory first; after a cold start (new instance / other host) the copy kept in KV
+  const good = (memCache.lastGood && now - memCache.expiresAt < 172800000) ? memCache.lastGood : await kvGetGood(event, KV_KEY, 172800000);
+  if (good) {
+    return { statusCode: 200, headers: { ...headers, 'Cache-Control': 'public, max-age=60, s-maxage=60' }, body: JSON.stringify({ ...good, stale: true }) };
   }
-  return { statusCode: 502, headers, body: JSON.stringify({ error: 'no source answered', errors }) };
+  return { statusCode: 502, headers: { ...headers, 'Cache-Control': 'no-store' }, body: JSON.stringify({ error: 'no source answered', errors }) };
 };
 
 module.exports.__test = { parseGoldtraders, parseChnwt, num };

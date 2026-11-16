@@ -382,7 +382,7 @@ async function buildPayload(apiKey) {
 }
 
 const KV_KEY = 'econ-extra:lastGood';
-const RETRY_TTL_S = 120; // a payload with a missing card is cached briefly, so the next visitor retries
+const { partialTtl, kvGetGood, kvPutGood, fillFromGood } = require('../lib/last-good.js');
 
 exports.handler = async function (event) {
   const now = Date.now();
@@ -395,10 +395,9 @@ exports.handler = async function (event) {
     const remaining = Math.max(30, Math.round((memCache.expiresAt - now) / 1000));
     return { statusCode: 200, headers: { ...headers, 'Cache-Control': `public, max-age=${remaining}, s-maxage=${remaining}, stale-while-revalidate=3600` }, body: JSON.stringify({ ...memCache.data, cached: true, ttl: remaining }) };
   }
-  const kv = (event && event.cloudflare && event.cloudflare.kv) || null;
   let good = memCache.lastGood;
   const loadGood = async () => {
-    if (!good && kv) { try { good = await kv.get(KV_KEY, 'json'); } catch (e) { /* none */ } }
+    if (!good) good = await kvGetGood(event, KV_KEY, 14 * 86400000);
     return good;
   };
   try {
@@ -407,14 +406,10 @@ exports.handler = async function (event) {
     // fill each missing card from the last good copy, and only cache this answer briefly.
     const missing = Object.keys(errors);
     const staleItems = [];
-    if (missing.length && await loadGood()) {
-      for (const k of missing) {
-        if (good.items && good.items[k]) { items[k] = good.items[k]; staleItems.push(k); delete errors[k]; }
-      }
-    }
+    if (missing.length && await loadGood()) staleItems.push(...fillFromGood(items, good.items, errors));
     if (!Object.keys(items).length) throw new Error(`every source failed: ${JSON.stringify(errors)}`);
     const partial = missing.length > 0;
-    const ttl = partial ? RETRY_TTL_S : TTL_S;
+    const ttl = partialTtl(TTL_S, missing.length, Object.keys(errors).length);
     const data = { items, fetchedAt: new Date().toISOString(), ttl };
     if (Object.keys(errors).length) data.errors = errors;
     if (staleItems.length) data.staleItems = staleItems;
@@ -422,7 +417,7 @@ exports.handler = async function (event) {
     const merged = { ...data, items: { ...((good && good.items) || {}), ...items } };
     delete merged.errors; delete merged.staleItems;
     memCache = { data, expiresAt: Date.now() + ttl * 1000, lastGood: merged };
-    if (kv) { try { await kv.put(KV_KEY, JSON.stringify(merged)); } catch (e) { /* memory only */ } }
+    await kvPutGood(event, KV_KEY, merged);
     const h = partial ? { ...headers, 'Cache-Control': `public, max-age=${ttl}, s-maxage=${ttl}` } : headers;
     return { statusCode: 200, headers: h, body: JSON.stringify(data) };
   } catch (e) {

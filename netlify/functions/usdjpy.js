@@ -66,7 +66,10 @@ const SOURCES = [
   { name: 'stooq:usdjpy', url: STOOQ, parse: parseStooq }
 ];
 
-exports.handler = async function () {
+const { kvGetGood, kvPutGood } = require('../lib/last-good.js');
+const KV_KEY = 'usdjpy:lastGood';
+
+exports.handler = async function (event) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
@@ -81,11 +84,14 @@ exports.handler = async function () {
     try {
       const data = { ...sane(s.parse(await fetchText(s.url))), source: s.name };
       memCache = { data, expiresAt: now + TTL_S * 1000, lastGood: data };
+      await kvPutGood(event, KV_KEY, data);
       return { statusCode: 200, headers, body: JSON.stringify(data) };
     } catch (e) { errors[s.name] = e.message; }
   }
-  if (memCache.lastGood && now - memCache.expiresAt < 60 * 60 * 1000) {
-    return { statusCode: 200, headers, body: JSON.stringify({ ...memCache.lastGood, stale: true }) };
+  // memory first; after a cold start (new instance / other host) the copy kept in KV
+  const good = (memCache.lastGood && now - memCache.expiresAt < 3600000) ? memCache.lastGood : await kvGetGood(event, KV_KEY, 3600000);
+  if (good) {
+    return { statusCode: 200, headers: { ...headers, 'Cache-Control': 'public, max-age=60, s-maxage=60' }, body: JSON.stringify({ ...good, stale: true }) };
   }
   return { statusCode: 502, headers: { ...headers, 'Cache-Control': 'no-store' }, body: JSON.stringify({ error: 'no source answered', errors }) };
 };

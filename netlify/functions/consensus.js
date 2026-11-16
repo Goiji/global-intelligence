@@ -225,7 +225,10 @@ function cacheHeader(ttlS, release) {
     : `public, max-age=${Math.min(s, 1800)}, s-maxage=${s}, stale-while-revalidate=86400`;
 }
 
-exports.handler = async function () {
+const { partialTtl, kvGetGood, kvPutGood, fillFromGood } = require('../lib/last-good.js');
+const KV_KEY = 'consensus:lastGood';
+
+exports.handler = async function (event) {
   const now = new Date();
   const { release } = isReleaseDay(now);
   const ttlMs = consensusTtlMs(now);
@@ -268,6 +271,16 @@ exports.handler = async function () {
     else errors[key] = (res.reason && res.reason.message) || String(res.reason);
   });
 
+  // An event page that failed this time keeps its last good numbers; retry soon instead of in 3 h.
+  const missing = Object.keys(errors);
+  let staleEvents = [];
+  let ttlNow = ttlMs;
+  if (missing.length) {
+    const good = (memCache.lastGood) || await kvGetGood(event, KV_KEY, 14 * 86400000);
+    staleEvents = fillFromGood(events, good && good.events, errors);
+    ttlNow = partialTtl(ttlMs / 1000, missing.length, Object.keys(errors).length) * 1000;
+  }
+
   if (!Object.keys(events).length) {
     // Nothing usable: tell the caller so it can keep using its baked-in consensus.
     return {
@@ -286,12 +299,14 @@ exports.handler = async function () {
     sourceLabel: 'Investing.com',
     fetchedAt: new Date().toISOString(),
     events,
-    ttl: Math.round(ttlMs / 1000)
+    ttl: Math.round(ttlNow / 1000)
   };
   if (Object.keys(errors).length) payload.errors = errors;
+  if (staleEvents.length) payload.staleEvents = staleEvents;
 
-  memCache = { at: Date.now(), payload, ttlMs };
-  return { statusCode: 200, headers, body: JSON.stringify(payload) };
+  memCache = { at: Date.now(), payload, ttlMs: ttlNow, lastGood: payload };
+  await kvPutGood(event, KV_KEY, payload);
+  return { statusCode: 200, headers: { ...headers, 'Cache-Control': cacheHeader(ttlNow / 1000, release) }, body: JSON.stringify(payload) };
 };
 
 // Exported for local unit testing (node --test / plain require). Netlify ignores extra exports.
