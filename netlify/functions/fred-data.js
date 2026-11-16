@@ -749,7 +749,10 @@ async function buildPayload(apiKey) {
   return { data, okCount };
 }
 
-exports.handler = async function () {
+const { partialTtl, kvGetGood, kvPutGood, fillFromGood } = require('../lib/last-good.js');
+const KV_KEY = 'fred-data:lastGood';
+
+exports.handler = async function (event) {
   const now = new Date();
   const { release } = isReleaseDay(now);
   let ttl = release ? 15 * 60 : 3 * 60 * 60; // seconds
@@ -777,7 +780,21 @@ exports.handler = async function () {
   const apiKey = (process.env.FRED_API_KEY || '').trim();
 
   try {
-    const { data, okCount } = await buildPayload(apiKey);
+    const built = await buildPayload(apiKey);
+    const data = built.data;
+    // One field failing (FRED/BLS hiccup) must not blank that card for everyone: take it from the
+    // last good copy, and cache this answer only briefly so the next request retries.
+    const missing = data.errors ? Object.keys(data.errors) : [];
+    if (missing.length) {
+      const good = memCache.lastGood || await kvGetGood(event, KV_KEY, 14 * 86400000);
+      const filled = fillFromGood(data, good, data.errors);
+      if (filled.length) {
+        data.staleFields = filled;
+        data.fieldsOk += filled.length;
+        if (!Object.keys(data.errors).length) delete data.errors;
+      }
+    }
+    const okCount = data.fieldsOk;
 
     if (okCount === 0) throw new Error(`every source failed for all ${data.fieldsTotal} fields: ${JSON.stringify(data.errors || {})}`);
 
@@ -798,19 +815,30 @@ exports.handler = async function () {
       headers['Cache-Control'] = cacheControl(ttl, release);
     }
 
+    const shortTtl = partialTtl(ttl, missing.length, data.errors ? Object.keys(data.errors).length : 0);
+    if (shortTtl < ttl) {
+      ttl = shortTtl;
+      headers['Cache-Control'] = cacheControl(ttl, release);
+    }
+
     data.ttl = ttl;
     data.releaseDay = release;
     data.refreshAfter = Date.now() + ttl * 1000;
 
     memCache = { ...memCache, data, expiresAt: data.refreshAfter, lastGood: data, lastGoodAt: Date.now() };
+    await kvPutGood(event, KV_KEY, data);
     return { statusCode: 200, headers, body: JSON.stringify(data) };
   } catch (e) {
     // Degrade, don't break: serve the last payload we managed to build (marked stale) so the
     // dashboard keeps showing real numbers instead of an error banner.
+    if (!memCache.lastGood) {
+      const kvGood = await kvGetGood(event, KV_KEY, 14 * 86400000);
+      if (kvGood) memCache = { ...memCache, lastGood: kvGood, lastGoodAt: Date.parse(kvGood.fetchedAt) || Date.now() };
+    }
     if (memCache.lastGood) {
       return {
         statusCode: 200,
-        headers,
+        headers: { ...headers, 'Cache-Control': cacheControl(5 * 60, release) },
         body: JSON.stringify({
           ...memCache.lastGood,
           stale: true,

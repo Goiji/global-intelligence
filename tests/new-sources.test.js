@@ -114,13 +114,27 @@ test('markets: cache is 15 min on release days and only the remaining time is ad
   const realFetch = global.fetch;
   global.fetch = async () => ({ ok: true, status: 200, text: async () => 'observation_date,X\n2026-09-01,3.0\n2026-10-01,3.1\n' });
   t.after(() => { global.fetch = realFetch; });
+  markets._clearCache();
+  // This mock leaves MOVE, CFTC and the US-Japan spreads blank, so the answer is partial and is
+  // cached for 2 min (retry soon) instead of the release-day 15 min.
   const first = await handler();
-  assert.equal(JSON.parse(first.body).ttl, 15 * 60);
-  assert.match(first.headers['Cache-Control'], /max-age=900,/);
-  t.mock.timers.tick(10 * 60 * 1000);
+  assert.equal(JSON.parse(first.body).ttl, 2 * 60);
+  assert.match(first.headers['Cache-Control'], /max-age=120,/);
+  t.mock.timers.tick(60 * 1000);
   const second = await handler();
-  assert.equal(JSON.parse(second.body).ttl, 5 * 60);
-  assert.match(second.headers['Cache-Control'], /max-age=300,/);
+  assert.equal(JSON.parse(second.body).ttl, 60);
+  assert.match(second.headers['Cache-Control'], /max-age=60,/);
+  // once those tiles have a last good copy, a repeat failure is filled and capped at 15 min
+  t.mock.timers.tick(2 * 60 * 1000);
+  const good = JSON.parse(second.body);
+  for (const k of ['move', 'levShort', 'usjp2y', 'usjp10y']) good.series[k] = { latest: 1, hist: [] };
+  markets._clearCache();
+  const store = new Map([['markets:lastGood', JSON.stringify({ at: Date.now(), data: good })]]);
+  const kv = { get: async (k) => JSON.parse(store.get(k) || 'null'), put: async (k, v) => store.set(k, v) };
+  const third = JSON.parse((await handler({ cloudflare: { kv } })).body);
+  assert.equal(third.series.move.latest, 1);
+  assert.deepEqual(third.staleSeries.sort(), ['levShort', 'move', 'usjp10y', 'usjp2y']);
+  assert.equal(third.ttl, 15 * 60);
 });
 
 test('markets: Cboe VIX quote is laid over the FRED close', () => {
@@ -150,8 +164,9 @@ test('markets: normal days cache for 1 h and a Cboe outage keeps the FRED VIX', 
     ? ({ ok: false, status: 503, text: async () => '' })
     : ({ ok: true, status: 200, text: async () => 'observation_date,X\n2026-10-15,15.0\n2026-10-16,15.5\n' });
   t.after(() => { global.fetch = realFetch; });
+  markets._clearCache();
   const body = JSON.parse((await handler()).body);
-  assert.equal(body.ttl, 60 * 60);
+  assert.equal(body.ttl, 2 * 60, 'partial (mock leaves some tiles blank) → retry in 2 min');
   assert.equal(body.series.vix.latest, 15.5);
   assert.match(body.errors.vixLive, /503/);
 });
