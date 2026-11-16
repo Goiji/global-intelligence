@@ -381,7 +381,10 @@ async function buildPayload(apiKey) {
   return { items, errors };
 }
 
-exports.handler = async function () {
+const KV_KEY = 'econ-extra:lastGood';
+const RETRY_TTL_S = 120; // a payload with a missing card is cached briefly, so the next visitor retries
+
+exports.handler = async function (event) {
   const now = Date.now();
   const headers = {
     'Content-Type': 'application/json; charset=utf-8',
@@ -392,16 +395,39 @@ exports.handler = async function () {
     const remaining = Math.max(30, Math.round((memCache.expiresAt - now) / 1000));
     return { statusCode: 200, headers: { ...headers, 'Cache-Control': `public, max-age=${remaining}, s-maxage=${remaining}, stale-while-revalidate=3600` }, body: JSON.stringify({ ...memCache.data, cached: true, ttl: remaining }) };
   }
+  const kv = (event && event.cloudflare && event.cloudflare.kv) || null;
+  let good = memCache.lastGood;
+  const loadGood = async () => {
+    if (!good && kv) { try { good = await kv.get(KV_KEY, 'json'); } catch (e) { /* none */ } }
+    return good;
+  };
   try {
     const { items, errors } = await buildPayload((process.env.FRED_API_KEY || '').trim());
+    // A source that hiccups (FRED often does for one request) must not blank a card for everyone:
+    // fill each missing card from the last good copy, and only cache this answer briefly.
+    const missing = Object.keys(errors);
+    const staleItems = [];
+    if (missing.length && await loadGood()) {
+      for (const k of missing) {
+        if (good.items && good.items[k]) { items[k] = good.items[k]; staleItems.push(k); delete errors[k]; }
+      }
+    }
     if (!Object.keys(items).length) throw new Error(`every source failed: ${JSON.stringify(errors)}`);
-    const data = { items, fetchedAt: new Date().toISOString(), ttl: TTL_S };
+    const partial = missing.length > 0;
+    const ttl = partial ? RETRY_TTL_S : TTL_S;
+    const data = { items, fetchedAt: new Date().toISOString(), ttl };
     if (Object.keys(errors).length) data.errors = errors;
-    memCache = { data, expiresAt: Date.now() + TTL_S * 1000, lastGood: data };
-    return { statusCode: 200, headers, body: JSON.stringify(data) };
+    if (staleItems.length) data.staleItems = staleItems;
+    // lastGood keeps the newest copy of every card that has ever loaded
+    const merged = { ...data, items: { ...((good && good.items) || {}), ...items } };
+    delete merged.errors; delete merged.staleItems;
+    memCache = { data, expiresAt: Date.now() + ttl * 1000, lastGood: merged };
+    if (kv) { try { await kv.put(KV_KEY, JSON.stringify(merged)); } catch (e) { /* memory only */ } }
+    const h = partial ? { ...headers, 'Cache-Control': `public, max-age=${ttl}, s-maxage=${ttl}` } : headers;
+    return { statusCode: 200, headers: h, body: JSON.stringify(data) };
   } catch (e) {
-    if (memCache.lastGood) {
-      return { statusCode: 200, headers: { ...headers, 'Cache-Control': 'public, max-age=300, s-maxage=300' }, body: JSON.stringify({ ...memCache.lastGood, stale: true, staleReason: e.message, ttl: 300 }) };
+    if (await loadGood()) {
+      return { statusCode: 200, headers: { ...headers, 'Cache-Control': 'public, max-age=300, s-maxage=300' }, body: JSON.stringify({ ...good, stale: true, staleReason: e.message, ttl: 300 }) };
     }
     return { statusCode: 502, headers: { ...headers, 'Cache-Control': 'no-store' }, body: JSON.stringify({ error: e.message }) };
   }

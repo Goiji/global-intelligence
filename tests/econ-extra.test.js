@@ -116,6 +116,39 @@ test('handler: every source down → 502, never throws', async () => {
   }
 });
 
+test('handler: a card whose source hiccups is filled from the last good copy (KV) and cached only briefly', async () => {
+  const orig = global.fetch;
+  const csv = (id) => 'observation_date,' + id + '\n' + Array.from({ length: 60 }, (_, i) => new Date(Date.UTC(2026, 10, 12) - i * 7 * 86400000).toISOString().slice(0, 10) + ',' + (id.startsWith('MORT') ? 6.2 : id === 'DGS10' ? 4.1 : 2.3)).reverse().join('\n');
+  const store = new Map();
+  const kv = { get: async (k) => (store.has(k) ? JSON.parse(store.get(k)) : null), put: async (k, v) => { store.set(k, v); } };
+  const event = { cloudflare: { kv } };
+  let fredUp = true;
+  global.fetch = async (url) => {
+    const m = /fredgraph\.csv\?id=([A-Z0-9]+)/.exec(String(url));
+    if (m && fredUp) return { ok: true, status: 200, text: async () => csv(m[1]) };
+    throw new Error('offline');
+  };
+  try {
+    T._clearCache();
+    let body = JSON.parse((await fn.handler(event)).body);
+    assert.ok(body.items.mort30 && body.items.be10, 'FRED cards load');
+    assert.ok(store.has('econ-extra:lastGood'));
+
+    T._clearCache(); // a cold start: memory gone, FRED now failing
+    fredUp = false;
+    const res = await fn.handler(event);
+    body = JSON.parse(res.body);
+    assert.equal(res.statusCode, 200);
+    assert.equal(body.items.mort30.value, 6.2, 'mortgage card filled from KV');
+    assert.ok(body.staleItems.includes('mort30') && body.staleItems.includes('be5'));
+    assert.ok(!body.errors || !body.errors.mort30);
+    assert.match(res.headers['Cache-Control'], /max-age=120/);
+  } finally {
+    global.fetch = orig;
+    T._clearCache();
+  }
+});
+
 test('calendar: ISM on the 1st / 3rd US business day, skipping holidays', () => {
   assert.equal(cal.nthBusinessDay(2026, 12, 1), '2026-12-01');
   assert.equal(cal.nthBusinessDay(2026, 12, 3), '2026-12-03');
