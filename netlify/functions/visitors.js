@@ -8,6 +8,8 @@
 // on every other load, so `total` is roughly "browser-days" and `today` is unique browsers today.
 // Nothing about the visitor is stored: no IP, no cookie, no id — just two numbers per day.
 //
+// On Cloudflare Pages the same JSON lives in Workers KV instead (see openStore).
+//
 // Storage is Netlify Blobs (built into every Netlify site, no signup or third-party service):
 // one JSON blob { total, days: { 'YYYY-MM-DD': n } } in the "visitors" store, pruned to the last
 // 60 days. Blobs has no atomic increment, so two visits in the same instant can occasionally count
@@ -34,9 +36,17 @@ function memoryStore() {
 
 function openStore(event) {
   if (storeFactory) return storeFactory(event);
+  // Cloudflare Pages: functions/[[path]].js passes the KV namespace bound as STORE.
+  if (event && event.cloudflare) {
+    const kv = event.cloudflare.kv;
+    if (!kv) throw new Error('no KV binding');
+    return { get: (k) => kv.get(k, 'json'), setJSON: (k, v) => kv.put(k, JSON.stringify(v)) };
+  }
   const onNetlify = (event && event.blobs) || process.env.NETLIFY_BLOBS_CONTEXT;
   if (!onNetlify) return memoryStore();
-  const blobs = require('@netlify/blobs');
+  // try/catch so Cloudflare's bundler (which never installs this package) can skip it.
+  let blobs;
+  try { blobs = require('@netlify/blobs'); } catch (e) { throw new Error('@netlify/blobs missing'); }
   if (event && event.blobs) blobs.connectLambda(event);
   return blobs.getStore(STORE);
 }

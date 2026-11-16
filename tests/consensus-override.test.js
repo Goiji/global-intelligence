@@ -287,3 +287,27 @@ test('a corrupt store file is treated as empty, never as a crash', async () => {
     assert.equal(JSON.parse(out.body).value, null);
   });
 });
+
+test('cloudflare KV backend: set/read via the STORE binding; no binding → disabled', async () => {
+  const data = new Map();
+  const kv = { get: async (k) => (data.has(k) ? JSON.parse(data.get(k)) : null), put: async (k, v) => { data.set(k, v); } };
+  const origFetch = global.fetch;
+  global.fetch = async () => new Response('', { status: 404 }); // empty KV → repo-file fallback finds nothing
+  try {
+    await withEnv({ CONSENSUS_OVERRIDE_PASSWORD: 's3cret' }, async () => {
+      const cfReq = (ev) => handler({ headers: {}, isBase64Encoded: false, ...ev, cloudflare: { kv } });
+      let out = await cfReq({ httpMethod: 'GET' });
+      assert.deepEqual(JSON.parse(out.body), { enabled: true, backend: 'cfkv', value: null, updatedAt: null });
+      out = await cfReq({ httpMethod: 'POST', body: JSON.stringify({ password: 's3cret', action: 'set', patch: { cpi: 3.1 } }) });
+      assert.equal(out.statusCode, 200);
+      assert.equal(JSON.parse(data.get('consensusOverride')).value.cpi, 3.1);
+      T._resetState();
+      out = await cfReq({ httpMethod: 'GET' });
+      assert.equal(JSON.parse(out.body).value.cpi, 3.1);
+      out = await handler({ httpMethod: 'GET', headers: {}, cloudflare: { kv: null } });
+      assert.equal(JSON.parse(out.body).enabled, false, 'Cloudflare without KV must not fall back to a local file');
+    });
+  } finally {
+    global.fetch = origFetch;
+  }
+});

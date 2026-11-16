@@ -21,7 +21,10 @@
 //                             GitHub-connected sites — no extra setup). Reads go through
 //                             raw.githubusercontent.com (CDN) and every save is a small
 //                             commit to the default branch.
-//   3. local dev            → the same file next to this repo (tools/dev-server.js, no token)
+//   3. Cloudflare Pages     → the KV namespace bound as STORE (functions/[[path]].js passes it in
+//                             as event.cloudflare.kv); while KV is still empty, reads fall back
+//                             to the committed repo file so values carry over from Netlify
+//   4. local dev            → the same file next to this repo (tools/dev-server.js, no token)
 //
 // WHY A PASSWORD ON WRITE ONLY: the values are already public information (they are shown on
 // the page), so reading needs no auth — but only the site owner should be able to change what
@@ -163,6 +166,8 @@ function strOrNull(v) { return typeof v === 'string' && v ? v : null; }
 
 // ── storage backends ────────────────────────────────────────────────────────────────────────
 
+let cf = null; // { kv } when running on Cloudflare Pages (set per request by the handler)
+
 function onNetlify() {
   return !!(process.env.SITE_ID || process.env.DEPLOY_ID || process.env.NETLIFY_URL);
 }
@@ -171,6 +176,7 @@ function pickBackend() {
   // GITHUB_TOKEN in the dev machine's environment can't hijack the local store.
   if (process.env.OVERRIDE_STORE_FILE) return 'file';
   if (process.env.NETLIFY_DATABASE_URL) return 'kv';
+  if (cf) return cf.kv ? 'cfkv' : null; // Cloudflare: KV, never the (non-persistent) local file
   if (process.env.GITHUB_TOKEN) return 'github';
   if (!onNetlify()) return 'file';   // tools/dev-server.js and node --test
   return null;                       // deployed, but nothing persistent is configured
@@ -285,11 +291,18 @@ function fileWrite(env) {
   return run;
 }
 
+async function cfKvRead() {
+  const v = await cf.kv.get(KV_KEY, 'json');
+  if (v != null) return v;
+  try { return await ghRead(); } catch (e) { return null; } // first run after moving from Netlify
+}
+
 async function readEnvelope(backend) {
   if (backend !== 'file' && readCache.backend === backend && Date.now() - readCache.at < READ_CACHE_MS) {
     return readCache.env;
   }
-  const raw = backend === 'file' ? await fileRead() : backend === 'kv' ? await kvRead() : await ghRead();
+  const raw = backend === 'file' ? await fileRead() : backend === 'kv' ? await kvRead()
+    : backend === 'cfkv' ? await cfKvRead() : await ghRead();
   const env = sanitizeEnvelope(raw);
   if (backend !== 'file') readCache = { at: Date.now(), backend, env };
   return env;
@@ -297,6 +310,7 @@ async function readEnvelope(backend) {
 async function writeEnvelope(backend, env) {
   if (backend === 'file') await fileWrite(env);
   else if (backend === 'kv') await kvWrite(env);
+  else if (backend === 'cfkv') await cf.kv.put(KV_KEY, JSON.stringify(env));
   else await ghWrite(env);
   readCache = { at: 0, backend: null, env: null };
 }
@@ -313,6 +327,7 @@ const CORS = {
 exports.handler = async function (event) {
   const method = String((event && event.httpMethod) || 'GET').toUpperCase();
   const ip = clientIp(event);
+  cf = (event && event.cloudflare) || null;
 
   if (method === 'OPTIONS') {
     return { statusCode: 204, headers: CORS, body: '' };
@@ -325,7 +340,7 @@ exports.handler = async function (event) {
       return json(200, CORS, {
         enabled: false,
         value: null,
-        hint: 'this deployment has no shared store (set GITHUB_TOKEN or NETLIFY_DATABASE_URL, or run locally via tools/dev-server.js)'
+        hint: 'this deployment has no shared store (set GITHUB_TOKEN or NETLIFY_DATABASE_URL, bind a KV namespace as STORE on Cloudflare, or run locally via tools/dev-server.js)'
       });
     }
     try {

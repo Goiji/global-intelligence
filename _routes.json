@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "include": [
+    "/.netlify/functions/*",
+    "/netlify/*", "/functions/*", "/tools/*", "/tests/*",
+    "/package.json", "/package-lock.json", "/netlify.toml", "/README.md", "/REVIEW-2026-09.md"
+  ],
+  "exclude": []
+}
