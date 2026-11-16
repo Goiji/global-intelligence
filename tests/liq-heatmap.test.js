@@ -66,3 +66,29 @@ test('index.html: heatmap panel says it is an estimate and links to Coinglass', 
   assert.match(HTML, /coinglass\.com\/pro\/futures\/LiquidationHeatMap/);
   assert.match(HTML, /เป็นค่าประมาณ/);
 });
+
+test('minute tick merges only the newest candles into the loaded history', async () => {
+  const H2 = 3600000, now = Math.floor(Date.now() / H2) * H2;
+  const row = (t, c) => [t, String(c), String(c * 1.001), String(c * 0.999), String(c), '0', t + H2 - 1, '1e8', 0, '0', '5e7'];
+  const hist = Array.from({ length: 100 }, (_, i) => row(now - (99 - i) * H2, 90000));
+  const calls = [];
+  const sandbox = makeSandbox({ fetchImpl: async (url) => {
+    calls.push(String(url));
+    const u = String(url);
+    const body = u.includes('klines') ? (u.includes('limit=3') ? [row(now - H2, 90000), row(now, 95000), row(now + H2, 96000)] : hist)
+      : u.includes('openInterestHist') ? [] : {};
+    return { ok: true, status: 200, json: async () => body, text: async () => JSON.stringify(body) };
+  } });
+  SCRIPTS.forEach((src) => vm.runInNewContext(src, sandbox, { filename: 'index.html' }));
+  await new Promise((r) => setImmediate(r));
+  const api = sandbox.window.__liqTest;
+  if (!api.liqState.data) { await api.liqTick(); await new Promise((r) => setImmediate(r)); } // page load normally did the full load
+  assert.equal(api.liqState.data.candles.length, 100);
+  calls.length = 0;
+  await api.liqTick();
+  assert.ok(calls.every((u) => u.includes('limit=3')), 'tick should only ask for the newest rows');
+  const cs = api.liqState.data.candles;
+  assert.equal(cs.length, 101);
+  assert.equal(cs[cs.length - 2].c, 95000);
+  assert.equal(cs[cs.length - 1].c, 96000);
+});

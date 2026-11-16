@@ -5126,7 +5126,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     if(c.up) parts.push('<span style="color:var(--green)">▲ ' + tr('Short liq หนาสุดด้านบน', 'Densest short liqs above') + '</span> <b>' + fmtLiqPx(c.up.price) + '</b> (' + pct(c.up.pct) + ') ≈ ' + fmtLiqUsd(c.up.usd));
     if(c.down) parts.push('<span style="color:var(--red)">▼ ' + tr('Long liq หนาสุดด้านล่าง', 'Densest long liqs below') + '</span> <b>' + fmtLiqPx(c.down.price) + '</b> (' + pct(c.down.pct) + ') ≈ ' + fmtLiqUsd(c.down.usd));
     el('liqSum').innerHTML = parts.join('<br>');
-    const time = new Date(d.at).toLocaleTimeString(window.GI_LOCALE || 'th-TH', { hour: '2-digit', minute: '2-digit' });
+    const time = new Date(d.tickAt || d.at).toLocaleTimeString(window.GI_LOCALE || 'th-TH', { hour: '2-digit', minute: '2-digit' });
     el('liqSrc').textContent = tr('ประมาณจาก ', 'Modelled from ') + d.src + ' BTCUSDT perp' + (d.oi ? ' (OI + ' + tr('ราคา ราย ชม.', 'hourly price') + ')' : tr(' (ราคา/วอลุ่ม ราย ชม.)', ' (hourly price/volume)'))
       + (d.scale > 1 && d.totalOi ? tr(' · สเกลตาม OI รวม ', ' · scaled to combined OI ') + fmtLiqUsd(d.totalOi) + ' (' + d.venues.join(', ') + ')' : '')
       + tr(' · อัปเดต ', ' · updated ') + time;
@@ -5249,6 +5249,29 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     tip.style.top = Math.max(4, Math.min(r.height - th - 4, y - th / 2)) + 'px';
   }
 
+  // Light refresh every minute while the ₿ tab is open: only the newest 3 candles + OI rows
+  // (a few hundred bytes, Binance weight ~2), merged into the loaded history. Full reload every 30 min.
+  async function liqTick(){
+    const d = liqState.data;
+    if(liqState.loading) return;
+    if(!d || d.src !== 'Binance' || Date.now() - d.at > 30 * 60 * 1000) return fetchLiqHeatmap(true);
+    try{
+      const [k, h] = await Promise.all([
+        liqJson('https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=1h&limit=3', 6000),
+        liqJson('https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=1h&limit=3', 6000).catch(() => null),
+      ]);
+      const fresh = parseBinanceKlines(k);
+      if(!fresh.length) return;
+      const idx = new Map(d.candles.map((c, i) => [c.t, i]));
+      for(const c of fresh){ if(idx.has(c.t)) d.candles[idx.get(c.t)] = c; else d.candles.push(c); }
+      d.candles.sort((a, b) => a.t - b.t);
+      if(d.candles.length > 520) d.candles.splice(0, d.candles.length - 500);
+      if(h && d.oi) for(const [t, v] of parseBinanceOiHist(h)) d.oi.set(t, v);
+      d.tickAt = Date.now();
+      liqRebuild();
+    }catch(e){ /* keep the last good map; the next tick tries again */ }
+  }
+
   async function fetchLiqHeatmap(force){
     if(liqState.loading) return;
     if(!force && liqState.data && Date.now() - liqState.data.at < 10 * 60 * 1000){ liqRebuild(); return; }
@@ -5286,7 +5309,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       window.addEventListener('resize', () => renderLiq());
     }
   })();
-  if(typeof window !== 'undefined') window.__liqTest = { liqPrice, buildLiqHeatmap, liqClusters, liqColor, fmtLiqUsd, parseBinanceKlines, parseBinanceOiHist, parseOkxCandles };
+  if(typeof window !== 'undefined') window.__liqTest = { liqPrice, buildLiqHeatmap, liqClusters, liqColor, fmtLiqUsd, liqTick, liqState, parseBinanceKlines, parseBinanceOiHist, parseOkxCandles };
 
   // ---------- DVOL (Deribit BTC implied volatility, "VIX ของ BTC") ----------
   // ชั้นแรก: /.netlify/functions/dvol (แคช 5 นาที) · ถ้าเซิร์ฟเวอร์ล่ม ดึงตรงจาก Deribit public API
@@ -5511,9 +5534,9 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
 
   // Fear & Greed จาก CMC อัปเดตวันละครั้ง แต่ให้โพลอัตโนมัติทุก 60 นาที + เมื่อกลับมาเปิดแท็บ BTC
   setInterval(fetchSentimentLeverage, 60*60*1000);
-  setInterval(() => fetchLiqHeatmap(true), 30*60*1000);
+  setInterval(() => { if(document.body.classList.contains('theme-btc') && !document.hidden) liqTick(); }, 60*1000);
   document.addEventListener('visibilitychange', () => {
-    if(!document.hidden && document.body.classList.contains('theme-btc')) fetchSentimentLeverage();
+    if(!document.hidden && document.body.classList.contains('theme-btc')){ fetchSentimentLeverage(); liqTick(); }
   });
 
 
