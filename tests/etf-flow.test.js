@@ -89,10 +89,10 @@ test('handler: Farside first, allorigins next, SoSoValue only with a key, KV las
   assert.equal(body.net, 200);
 });
 
-test('index.html: ETF flow tile on the BTC tab with explainer, bars and TradingView', () => {
+test('index.html: ETF flow tile on the BTC tab with explainer, bars and a Farside link', () => {
   for (const id of ['etfNum', 'etfZone', 'etfSums', 'etfBars']) assert.match(HTML, new RegExp(`id="${id}"`), `missing #${id}`);
   assert.match(HTML, /aria-label="ETF Flow คืออะไร" data-en-aria="What is ETF flow\?"/);
-  assert.match(HTML, /tradingview\.com\/chart\/\?symbol=NASDAQ%3AIBIT/);
+  assert.match(HTML, /href="https:\/\/farside\.co\.uk\/btc\/"/);
   assert.ok(HTML.indexOf('id="dvolNum"') < HTML.indexOf('id="etfNum"') && HTML.indexOf('id="etfNum"') < HTML.indexOf('id="halvingDays"'));
   assert.match(HTML, /fetchDvol\(\), fetchEtfFlow\(\)\]/);
   assert.match(HTML, /\/\.netlify\/functions\/etf-flow/);
