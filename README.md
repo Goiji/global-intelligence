@@ -6,6 +6,7 @@
 ├── index.html                          ← หน้าเว็บหลัก (2 แท็บ: ข่าวโลก&AI · BTC Buy Score)
 ├── netlify.toml                        ← ตั้งค่า Netlify (publish ".", NODE_VERSION, security headers)
 ├── _redirects                          ← บล็อกไม่ให้ไฟล์ซอร์ส/เอกสารถูกเสิร์ฟเป็นไฟล์สาธารณะ (404)
+├── functions/[[path]].js · _routes.json · _headers ← สำหรับ Cloudflare Pages (ดูหัวข้อ "ย้ายไป Cloudflare Pages")
 ├── package.json                        ← มีไว้ให้ `npm test` / `npm run dev` ทำงาน (ไม่มี dependency)
 ├── README.md
 ├── REVIEW-2026-09.md                   ← รายงานตรวจโค้ดรอบ ก.ย. 2026 (แก้แล้วอะไร / เหลืออะไร)
@@ -73,6 +74,32 @@ Site configuration → Environment variables → Add a variable:
 >โดยตั้งใจ — เอาไว้ใช้ตอนดึงอัตโนมัติไม่ได้ และค่าที่กรอกจะถูกเก็บไว้ในเบราว์เซอร์ของผู้ใช้คนนั้นเท่านั้น
 >ไม่กระทบคนอื่น ส่วนช่อง BGeometrics token ในหน้าเว็บไม่จำเป็นต้องใช้แล้ว (แนะนำให้ตั้ง
 >`BGEOMETRICS_TOKEN` เป็น env var ที่ Netlify แทน) และตัวเลขเศรษฐกิจทั้งหมดดึงสดอัตโนมัติ
+
+## ย้ายไป Cloudflare Pages (ทำได้โดยไม่ต้องปิด Netlify)
+
+โค้ดชุดเดียวกันรันได้ทั้ง 2 ที่: `functions/[[path]].js` แปลงคำขอ `/.netlify/functions/<ชื่อ>` บน Cloudflare
+ไปเรียก function เดิมใน `netlify/functions/` (หน้าเว็บไม่ต้องแก้) · ตัวนับผู้มาเยือนและ "ค่าที่คาดที่แก้เอง"
+เก็บใน Workers KV ที่ผูกชื่อ `STORE` · `_routes.json` = ให้ function ทำงานเฉพาะพาธ API + พาธที่บล็อก ·
+`_headers` = security headers ชุดเดียวกับ `netlify.toml`
+
+1. **สร้าง KV**: dash.cloudflare.com → Storage & databases → KV → Create → ตั้งชื่อ `global-intelligence-store`
+2. **สร้างโปรเจกต์**: Workers & Pages → Create → แท็บ **Pages** → Import an existing Git repository →
+   เลือก repo นี้ · branch `main` · Framework preset `None` · Build command `exit 0` · Build output directory `.`
+   · กาง Environment variables ใส่ค่าเดียวกับใน Netlify (`FRED_API_KEY`, `CONSENSUS_OVERRIDE_PASSWORD`,
+   `BGEOMETRICS_TOKEN`, `RSS2JSON_API_KEY`, `ALPHAVANTAGE_API_KEY` — มีตัวไหนใน Netlify ก็ใส่ตัวนั้น) → Save and Deploy
+3. **ตั้งค่าหลัง deploy ครั้งแรก** (โปรเจกต์ → Settings):
+   - Runtime → Compatibility flags → ใส่ `nodejs_compat` (ทั้ง Production และ Preview)
+   - Bindings → Add → KV namespace → Variable name `STORE` → เลือก `global-intelligence-store`
+   - แล้วไปที่ Deployments → ⋯ ของอันล่าสุด → Retry deployment (ค่าใหม่มีผลกับ deploy ครั้งถัดไปเท่านั้น)
+4. **เช็ค**: เปิด `https://<ชื่อโปรเจกต์>.pages.dev/.netlify/functions/visitors` ต้องได้ `{"total":…}`
+   (ถ้าได้ `storage-unavailable` = ยังไม่ได้ผูก `STORE`) · `/.netlify/functions/fred-data` ต้องมีตัวเลข
+5. **ยกยอดผู้มาเยือนจาก Netlify** (ไม่บังคับ): เปิด `https://<เว็บ netlify>/.netlify/functions/visitors` ดูค่า `total`
+   → KV `global-intelligence-store` → KV Pairs → key `counts` · value `{"total":<ตัวเลข>,"days":{}}` → Add
+6. **โดเมน**: โปรเจกต์ → Custom domains → Set up a custom domain (ถ้ามีโดเมนของตัวเอง)
+7. ใช้ Cloudflare ได้ดีแล้วค่อยปิดเว็บบน Netlify — ระหว่างนี้ทั้ง 2 ที่ทำงานคู่กันได้
+
+"ค่าที่คาดที่แก้เอง" บน Cloudflare: ตอน KV ยังว่าง จะอ่านค่าเดิมจาก `data/consensus-override.json` ใน repo ให้ก่อน
+ส่วนที่บันทึกใหม่จะเก็บใน KV (ไม่ต้องใช้ `GITHUB_TOKEN`)
 
 ## ค่า "ที่คาด" ที่แก้ในหน้าเว็บ — ให้ทุกคนเห็นค่าเดียวกัน
 

@@ -68,3 +68,16 @@ test('open interest: colour zone from OI ÷ BTC supply', async () => {
   assert.equal(api.oiLeverageZone(null), null);
   assert.match(HTML, /id="oiZone"/);
 });
+
+test('visitors: on Cloudflare the count lives in the STORE KV binding', async () => {
+  const data = new Map();
+  const kv = { get: async (k) => (data.has(k) ? JSON.parse(data.get(k)) : null), put: async (k, v) => { data.set(k, v); } };
+  T.setStoreFactory(null);
+  let out = await fn.handler({ httpMethod: 'POST', cloudflare: { kv } });
+  assert.equal(JSON.parse(out.body).total, 1);
+  out = await fn.handler({ httpMethod: 'GET', cloudflare: { kv } });
+  assert.equal(JSON.parse(out.body).total, 1);
+  assert.equal(JSON.parse(data.get('counts')).total, 1);
+  out = await fn.handler({ httpMethod: 'GET', cloudflare: { kv: null } });
+  assert.equal(out.statusCode, 503);
+});

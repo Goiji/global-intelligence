@@ -15,3 +15,7 @@
 /netlify.toml         /  404
 /README.md            /  404
 /REVIEW-2026-09.md    /  404
+# ไฟล์ของ Cloudflare Pages (functions/ = ตัวแปลง, _routes.json/_headers = ตั้งค่า) — ไม่ต้องเปิดบน Netlify
+/functions/*          /  404
+/_routes.json         /  404
+/_headers             /  404
