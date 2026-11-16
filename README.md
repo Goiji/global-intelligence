@@ -58,6 +58,7 @@ Site configuration → Environment variables → Add a variable:
 |---|---|---|
 | `CONSENSUS_OVERRIDE_PASSWORD` | **แนะนำ** | รหัสสำหรับแก้ค่า "ที่คาด" ที่แชร์กับทุกคน (function `consensus-override`) — ไม่ตั้ง = ปุ่ม ✏️ ยังใช้ได้ดี แต่ค่าที่แก้จะเห็นในเครื่องเดียว (fallback localStorage แบบเดิม) |
 | `FRED_API_KEY` | ไม่ | ให้ `fred-data.js` ใช้ FRED API ทางการก่อน (มีโควต้าสูงกว่า CSV สาธารณะ) |
+| `SOSOVALUE_API_KEY` | ไม่ | ตัวสำรองของการ์ด BTC Spot ETF Flow (`etf-flow.js`) ถ้า Farside บล็อกเซิร์ฟเวอร์ · ขอ key ฟรีได้ที่ SoSoValue developer dashboard |
 | `BGEOMETRICS_TOKEN` | **แนะนำ** | ให้ `onchain.js` ใช้โควต้าตัวแทน 8 ครั้ง/ชม. · 15 ครั้ง/วัน/IP — ตั้งครั้งเดียวทั้งเว็บใช้ร่วมกัน (ไม่ตั้ง = ยังทำงานได้ แต่แชร์โควต้าสาธารณะ) |
 | `ALPHAVANTAGE_API_KEY` | ไม่ | เฉพาะ Fallback น้ำมันชั้นสุดท้าย (ปกติใช้ Binance/OKX/Hyperliquid ที่ไม่ต้องมี key อยู่แล้ว) |
 | `RSS2JSON_API_KEY` | ไม่ | ไม่ต้องใส่แล้ว — `news-feed.js` อ่าน Google News RSS เอง ตัวนี้เป็นแค่ fallback ถ้า Google ตอบหน้าผิด |

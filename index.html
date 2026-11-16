@@ -269,6 +269,10 @@ body{margin:0}
   #btcTab .sl-tile{background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:16px; position:relative;}
   #btcTab .sl-dvol{display:flex; flex-direction:column;}
   #btcTab .sl-dvol .delta{font-size:12px; font-weight:600; margin-left:6px;}
+  #btcTab .sl-etf{grid-column:1 / -1; display:flex; flex-direction:column;}
+  #btcTab .etf-bars{margin-top:8px;}
+  #btcTab .etf-bars svg{display:block; width:100%; height:64px;}
+  #btcTab .etf-bars .spark-cap{font-size:10px; color:var(--muted); margin-top:2px; display:flex; justify-content:space-between;}
   #btcTab .sl-name{font-size:11px; color:var(--sub); letter-spacing:0.06em; text-transform:uppercase;}
   #btcTab .sl-num{font-family:var(--disp); font-size:26px; font-weight:700; margin-top:6px;}
   #btcTab .sl-sub{font-size:11px; color:var(--sub); margin-top:4px;}
@@ -4162,6 +4166,27 @@ window.setHeaderStamp();
           <div class="spark" id="spDvol"></div>
           <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=DERIBIT%3ADVOL" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a>
         </div>
+        <div class="sl-tile sl-etf">
+          <div class="sl-name"><span data-en="BTC Spot ETF Flow (US, daily)">BTC Spot ETF Flow (สหรัฐฯ รายวัน)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ETF Flow คืออะไร" data-en-aria="What is ETF flow?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+            <div class="i18n-th">
+            <p><b>คืออะไร:</b> เงินสุทธิที่ไหลเข้า (+) หรือออก (−) จากกองทุน Spot Bitcoin ETF ในสหรัฐฯ ทั้งหมด (IBIT, FBTC, GBTC, ARKB, BITB ฯลฯ) ในแต่ละวัน หน่วยล้านดอลลาร์ (US$m) เงินไหลเข้า = กองทุนต้องออกหน่วยใหม่และซื้อ BTC จริงมาเก็บ · ไหลออก = ไถ่ถอนแล้วขาย BTC ออก</p>
+            <p><b>อ่านค่า:</b> 🟢 +500 ขึ้นไป ไหลเข้าแรง · 🟢 +100 ถึง +500 ไหลเข้า · 🟡 −100 ถึง +100 ทรงตัว · 🟠 −100 ถึง −500 ไหลออก · 🔴 −500 ลงไป ไหลออกแรง · กราฟแท่งคือ 30 วันทำการล่าสุด (เขียว = เข้า แดง = ออก)</p>
+            <p><b>ทำไมสำคัญ:</b> เป็นตัวแทนแรงซื้อของสถาบันและนักลงทุนทั่วไปในสหรัฐฯ ไหลเข้าต่อเนื่องหลายวัน = แรงซื้อจริงช่วยหนุนราคา · ไหลออกติดกันหลายวัน = สถาบันลดพอร์ต ดูยอดรวม 5 วันประกอบ เพราะรายวันแกว่งได้มาก อ่านคู่กับ Funding Rate (แรงเก็งกำไร) และ Open Interest</p>
+            <p><b>หมายเหตุ:</b> ข้อมูลรายวัน ไม่ใช่ real-time ออกหลังตลาดสหรัฐฯ ปิด (ราวเช้าตามเวลาไทย) บางกองทุนรายงานช้า ตัวเลขวันล่าสุดอาจถูกปรับภายหลัง · ข้อมูลจาก Farside Investors · ปุ่มด้านล่างเปิดกราฟ IBIT (ETF ใหญ่สุด) ใน TradingView</p>
+            </div>
+            <div class="i18n-en" lang="en">
+            <p><b>What it is:</b> the net money flowing into (+) or out of (−) all US spot Bitcoin ETFs (IBIT, FBTC, GBTC, ARKB, BITB and others) each day, in US$ millions. An inflow means the funds issue new shares and buy real BTC to hold · an outflow means redemptions and BTC being sold.</p>
+            <p><b>How to read it:</b> 🟢 +500 and up strong inflow · 🟢 +100 to +500 inflow · 🟡 −100 to +100 flat · 🟠 −100 to −500 outflow · 🔴 −500 and below strong outflow · the bars show the last 30 trading days (green = in, red = out).</p>
+            <p><b>Why it matters:</b> it is a proxy for US institutional and retail spot demand. Several days of inflows = real buying that supports price · a run of outflows = institutions cutting exposure. Watch the 5-day sum, since single days are noisy. Read it with the Funding Rate (speculation) and Open Interest.</p>
+            <p><b>Note:</b> daily data, not real-time: published after the US close, and some issuers report late, so the latest day can be revised · data from Farside Investors · the button below opens IBIT (the largest ETF) in TradingView.</p>
+            </div>
+          </div></div></div>
+          <div class="sl-num" id="etfNum">–</div>
+          <div class="sl-sub" id="etfZone" data-en="Loading…">กำลังโหลด…</div>
+          <div class="sl-sub" id="etfSums"></div>
+          <div class="etf-bars" id="etfBars"></div>
+          <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=NASDAQ%3AIBIT" target="_blank" rel="noopener noreferrer"><span data-en="Open IBIT in TradingView ↗">เปิด IBIT ใน TradingView ↗</span></a>
+        </div>
       </div>
       <div class="i18n-en" lang="en" style="font-size:11px; color:var(--sub); line-height:1.6; margin-top:14px;">
         How to read: very low (&lt;20) or very high (&gt;80) Fear&amp;Greed often marks a turning point (contrarian) ·
@@ -4894,6 +4919,48 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     if(window.giSetSpark) window.giSetSpark('spDvol', d, { upIsBad:true, dec:0 });
   }
 
+  // ---------- BTC Spot ETF Flow (สหรัฐฯ รายวัน, US$ ล้าน) ----------
+  // มาจาก /.netlify/functions/etf-flow เท่านั้น (Farside ไม่มี CORS และกันบอท ต้องดึงฝั่งเซิร์ฟเวอร์)
+  // ข้อมูลออกวันละครั้งหลังตลาดสหรัฐฯ ปิด ไม่ใช่ real-time
+  function etfZone(v){
+    return v >= 500 ? [tr('🟢 ไหลเข้าแรง', '🟢 Strong inflow'), 'var(--green)']
+      : v >= 100 ? [tr('🟢 ไหลเข้า', '🟢 Inflow'), 'var(--green)']
+      : v > -100 ? [tr('🟡 ทรงตัว', '🟡 Flat'), '']
+      : v > -500 ? [tr('🟠 ไหลออก', '🟠 Outflow'), 'var(--amber)']
+      : [tr('🔴 ไหลออกแรง', '🔴 Strong outflow'), 'var(--red)'];
+  }
+  function fmtFlow(v){ return (v > 0 ? '+' : v < 0 ? '−' : '') + '$' + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: Math.abs(v) >= 100 ? 0 : 1 }) + 'M'; }
+  function etfBarsSvg(hist){
+    const pts = (hist || []).filter(p => isNum(p[1]));
+    if(pts.length < 2) return '';
+    const W = 300, H = 64, max = Math.max.apply(null, pts.map(p => Math.abs(p[1]))) || 1, mid = H / 2, bw = W / pts.length;
+    const bars = pts.map(function(p, i){
+      const h = Math.max(1, Math.abs(p[1]) / max * (mid - 2));
+      return '<rect x="' + (i * bw + bw * 0.15).toFixed(1) + '" y="' + (p[1] >= 0 ? mid - h : mid).toFixed(1) + '" width="' + (bw * 0.7).toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + (p[1] >= 0 ? 'var(--green)' : 'var(--red)') + '"><title>' + p[0] + ' ' + fmtFlow(p[1]) + '</title></rect>';
+    }).join('');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' + tr('กระแสเงิน ETF 30 วัน', 'ETF flow, 30 days') + '">'
+      + '<line x1="0" x2="' + W + '" y1="' + mid + '" y2="' + mid + '" stroke="var(--line)" stroke-width="1" vector-effect="non-scaling-stroke"/>' + bars + '</svg>'
+      + '<div class="spark-cap"><span>' + pts[0][0] + '</span><span>' + tr(pts.length + ' วันทำการ', pts.length + ' trading days') + '</span><span>' + pts[pts.length - 1][0] + '</span></div>';
+  }
+  async function fetchEtfFlow(){
+    let d = null;
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/etf-flow', 12000);
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      d = await r.json();
+      if(!isNum(d.net)) throw new Error('no value');
+    }catch(e){ d = null; }
+    if(!d){ el('etfZone').textContent = tr('ดึงไม่สำเร็จ (ข้อมูลรายวัน ลองใหม่ภายหลัง)', 'Unavailable (daily data, try later)'); return; }
+    const z = etfZone(d.net);
+    el('etfNum').textContent = fmtFlow(d.net);
+    el('etfNum').style.color = z[1];
+    el('etfZone').textContent = z[0] + tr(' · วันที่ ', ' · ') + d.date + (d.stale ? tr(' (ข้อมูลเก่า)', ' (stale)') : '');
+    el('etfZone').title = (d.source || '') + ' · ' + (d.fetchedAt || '');
+    const funds = (d.funds || []).map(f => f[0] + ' ' + fmtFlow(f[1])).join(' · ');
+    el('etfSums').textContent = tr('รวม 5 วัน ', '5-day ') + fmtFlow(d.sum5) + tr(' · 30 วัน ', ' · 30-day ') + fmtFlow(d.sum30) + (funds ? ' · ' + funds : '');
+    el('etfBars').innerHTML = etfBarsSvg(d.hist);
+  }
+
   // ---------- Bitcoin Halving Countdown ----------
   // Primary: pure date arithmetic, no network call, cannot hang or fail — based on the
   // widely-cited estimate (~Apr 17, 2028, block 1,050,000) that CoinGecko/mempool.space/
@@ -4948,7 +5015,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   async function refreshAll(force){
     statusEl.textContent = tr('กำลังอัปเดต…', 'Updating…');
     const priceOk = await fetchPrice(); // must resolve first: OI conversion below needs a live price
-    const [metricsOk] = await Promise.all([fetchOnChainMetrics(force), fetchSentimentLeverage(), fetchHalvingCountdown(), fetchDvol()]);
+    const [metricsOk] = await Promise.all([fetchOnChainMetrics(force), fetchSentimentLeverage(), fetchHalvingCountdown(), fetchDvol(), fetchEtfFlow()]);
     recompute();
     save();
     // บอกให้ชัดเมื่อค่าที่ใช้คำนวณไม่ใช่ราคาสด (ผู้ใช้พิมพ์เอง) — ไม่งั้นจะเข้าใจผิดว่าคะแนนมาจากราคาตลาด

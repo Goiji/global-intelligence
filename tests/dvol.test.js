@@ -52,6 +52,6 @@ test('index.html: DVOL tile in the BTC Sentiment panel with explainer, spark and
   assert.match(HTML, /aria-label="DVOL คืออะไร" data-en-aria="What is DVOL\?"/);
   const btc = HTML.indexOf('id="btcTab"');
   assert.ok(btc > 0 && HTML.indexOf('id="oiNum"') < HTML.indexOf('id="dvolNum"') && HTML.indexOf('id="dvolNum"') < HTML.indexOf('id="halvingDays"'));
-  assert.match(HTML, /fetchHalvingCountdown\(\), fetchDvol\(\)\]/);
+  assert.match(HTML, /fetchHalvingCountdown\(\), fetchDvol\(\)/);
   assert.match(HTML, /\/\.netlify\/functions\/dvol/);
 });
