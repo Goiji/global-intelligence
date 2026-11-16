@@ -104,3 +104,33 @@ test('Bing News fallback: used when Google answers 503, real article link unwrap
     global.fetch = orig;
   }
 });
+
+test('publisher RSS fallback: Google 503 → topic feeds merged newest-first, deduped', async () => {
+  const fn = require('../netlify/functions/news-feed.js');
+  const feed = (items) => '<rss><channel>' + items.map(([t, d]) => `<item><title>${t}</title><link>https://x/${encodeURIComponent(t)}</link><pubDate>${d}</pubDate></item>`).join('') + '</channel></rss>';
+  const orig = global.fetch;
+  global.fetch = async (url) => {
+    const u = String(url);
+    if (u.includes('news.google.com')) return new Response('busy', { status: 503 });
+    if (u.includes('bbci.co.uk')) return new Response(feed([['Old war story', 'Sat, 15 Nov 2026 01:00:00 GMT'], ['Same headline', 'Sun, 16 Nov 2026 01:00:00 GMT']]), { status: 200 });
+    if (u.includes('aljazeera')) return new Response(feed([['Fresh conflict news', 'Sun, 16 Nov 2026 02:00:00 GMT'], ['Same headline', 'Sun, 16 Nov 2026 01:00:00 GMT']]), { status: 200 });
+    return new Response('nope', { status: 500 });
+  };
+  try {
+    const out = await fn.handler({ queryStringParameters: { q: 'geopolitics OR war', cat: 'geopolitical' } });
+    assert.equal(out.statusCode, 200);
+    const body = JSON.parse(out.body);
+    assert.equal(body.source, 'publisher-rss');
+    assert.deepEqual(body.items.map((i) => i.title), ['Fresh conflict news', 'Same headline', 'Old war story']);
+  } finally {
+    global.fetch = orig;
+  }
+});
+
+test('every topic key used by the page has publisher feeds', () => {
+  const fs = require('node:fs');
+  const html = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
+  const keys = [...html.matchAll(/\{ key:'(\w+)',\s+label:tr\([^)]*\),\s+q:/g)].map((m) => m[1]);
+  assert.ok(keys.length >= 5, 'found the feed list');
+  for (const k of keys) assert.ok(require('../netlify/functions/news-feed.js').__test.CATEGORY_FEEDS[k], 'feeds for ' + k);
+});

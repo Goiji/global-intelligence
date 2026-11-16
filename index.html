@@ -1148,7 +1148,9 @@ window.setHeaderStamp();
     // Goes through our own Netlify Function, which now reads Google News RSS server-side and
     // parses it there. rss2json is only a fallback inside that function, so there is no key to
     // configure here any more and no anonymous quota to run into.
-    const url = '/.netlify/functions/news-feed?q=' + encodeURIComponent(feed.q) + (feed.lang ? '&lang=' + feed.lang : '');
+    // cat = the feed's key, so the server can fall back to that topic's publisher RSS feeds when
+    // Google News refuses its datacenter (Cloudflare gets HTTP 503 there).
+    const url = '/.netlify/functions/news-feed?q=' + encodeURIComponent(feed.q) + (feed.lang ? '&lang=' + feed.lang : '') + '&cat=' + encodeURIComponent(feed.key);
     try{
       const r = await fetchWithTimeout(url, 10000);
       const j = await r.json();
