@@ -17,6 +17,7 @@ import consensusOverride from '../netlify/functions/consensus-override.js';
 import consensus from '../netlify/functions/consensus.js';
 import dvol from '../netlify/functions/dvol.js';
 import econExtra from '../netlify/functions/econ-extra.js';
+import etfFlow from '../netlify/functions/etf-flow.js';
 import fredData from '../netlify/functions/fred-data.js';
 import goldTh from '../netlify/functions/gold-th.js';
 import markets from '../netlify/functions/markets.js';
@@ -29,7 +30,7 @@ import wti from '../netlify/functions/wti.js';
 
 const HANDLERS = {
   calendar, 'cmc-fear-greed': cmcFearGreed, 'consensus-override': consensusOverride, consensus,
-  dvol, 'econ-extra': econExtra, 'fred-data': fredData, 'gold-th': goldTh, markets,
+  dvol, 'econ-extra': econExtra, 'etf-flow': etfFlow, 'fred-data': fredData, 'gold-th': goldTh, markets,
   'news-feed': newsFeed, 'oil-price': oilPrice, onchain, usdjpy, visitors, wti,
 };
 
