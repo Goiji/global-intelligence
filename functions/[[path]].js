@@ -5,7 +5,7 @@
 // { statusCode, headers, body } back into a Response. So one codebase deploys to both hosts.
 //
 // Needs (Cloudflare dashboard → the Pages project → Settings):
-//   - compatibility flag `nodejs_compat` (the functions use require/Buffer/node:crypto)
+//   - (optional) compatibility flag `nodejs_compat` — not required: nothing here needs Node built-ins
 //   - KV namespace bound as `STORE` (visitor counter + shared consensus override)
 //   - the same environment variables the Netlify site has (FRED_API_KEY, … see README)
 // _routes.json limits this to /.netlify/functions/* and the paths blocked below, so static
@@ -46,7 +46,10 @@ export async function onRequest({ request, env }) {
   if (!mod || typeof mod.handler !== 'function') return notFound();
 
   // The functions read process.env; on Cloudflare, env vars arrive as bindings instead.
-  for (const [k, v] of Object.entries(env || {})) if (typeof v === 'string') process.env[k] = v;
+  // (Works with or without the nodejs_compat flag: without it there is no global `process`.)
+  if (typeof globalThis.process === 'undefined') globalThis.process = { env: {} };
+  if (!globalThis.process.env) globalThis.process.env = {};
+  for (const [k, v] of Object.entries(env || {})) if (typeof v === 'string') globalThis.process.env[k] = v;
 
   const headers = {};
   request.headers.forEach((v, k) => { headers[k] = v; });

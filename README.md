@@ -88,7 +88,6 @@ Site configuration → Environment variables → Add a variable:
    · กาง Environment variables ใส่ค่าเดียวกับใน Netlify (`FRED_API_KEY`, `CONSENSUS_OVERRIDE_PASSWORD`,
    `BGEOMETRICS_TOKEN`, `RSS2JSON_API_KEY`, `ALPHAVANTAGE_API_KEY` — มีตัวไหนใน Netlify ก็ใส่ตัวนั้น) → Save and Deploy
 3. **ตั้งค่าหลัง deploy ครั้งแรก** (โปรเจกต์ → Settings):
-   - Runtime → Compatibility flags → ใส่ `nodejs_compat` (ทั้ง Production และ Preview)
    - Bindings → Add → KV namespace → Variable name `STORE` → เลือก `global-intelligence-store`
    - แล้วไปที่ Deployments → ⋯ ของอันล่าสุด → Retry deployment (ค่าใหม่มีผลกับ deploy ครั้งถัดไปเท่านั้น)
 4. **เช็ค**: เปิด `https://<ชื่อโปรเจกต์>.pages.dev/.netlify/functions/visitors` ต้องได้ `{"total":…}`

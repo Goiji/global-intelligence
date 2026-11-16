@@ -37,9 +37,17 @@
 //   key absent                 → keep what is stored (the client only sends what changed)
 // 'clear' wipes the whole value back to the automatic numbers.
 
-const crypto = require('node:crypto');
-const fs = require('node:fs/promises');
-const path = require('node:path');
+// No top-level node:* requires: Cloudflare Pages loads this file too, and a CommonJS require of a
+// Node built-in fails there at startup. fs/path are only needed by the local-file backend, so they
+// are required lazily inside it; base64 and the password compare use plain JS / Web APIs.
+const nodeFs = () => require('node:fs/promises');
+const nodePath = () => require('node:path');
+const b64decode = (s) => new TextDecoder().decode(Uint8Array.from(atob(String(s).replace(/\s+/g, '')), (c) => c.charCodeAt(0)));
+const b64encode = (s) => {
+  let bin = '';
+  for (const byte of new TextEncoder().encode(s)) bin += String.fromCharCode(byte);
+  return btoa(bin);
+};
 
 const TIMEOUT_MS = 8000;
 const READ_CACHE_MS = 30 * 1000;      // don't hit the store for every page load
@@ -79,15 +87,14 @@ function json(statusCode, headers, obj) {
   return { statusCode, headers: Object.assign({ 'Content-Type': 'application/json; charset=utf-8' }, headers), body: JSON.stringify(obj) };
 }
 
-// Constant-time string compare (length-independent via digests) — no early-exit timing leak.
+// Constant-time string compare: always walks the longer string, no early exit on a mismatch.
 function timingSafeEqualStr(a, b) {
-  try {
-    const ha = crypto.createHash('sha256').update(String(a)).digest();
-    const hb = crypto.createHash('sha256').update(String(b)).digest();
-    return crypto.timingSafeEqual(ha, hb);
-  } catch (e) {
-    return false;
-  }
+  a = String(a);
+  b = String(b);
+  let diff = a.length ^ b.length;
+  const n = Math.max(a.length, b.length);
+  for (let i = 0; i < n; i++) diff |= (a.charCodeAt(i) | 0) ^ (b.charCodeAt(i) | 0);
+  return diff === 0;
 }
 
 function clientIp(event) {
@@ -232,7 +239,7 @@ async function ghRead() {
   if (r2.status === 404) return null;
   if (!r2.ok) throw new Error('api read HTTP ' + r2.status);
   const j = await r2.json();
-  const text = Buffer.from(j && j.content ? j.content : '', 'base64').toString('utf8');
+  const text = b64decode(j && j.content ? j.content : '');
   return text ? JSON.parse(text) : null;
 }
 async function ghWrite(env) {
@@ -249,7 +256,7 @@ async function ghWrite(env) {
   }
   const body = {
     message: 'chore(data): update shared consensus override (from the dashboard)',
-    content: Buffer.from(content, 'utf8').toString('base64'),
+    content: b64encode(content),
     branch: branch()
   };
   if (sha) body.sha = sha;
@@ -266,11 +273,11 @@ async function ghWrite(env) {
 
 function fileStorePath() {
   return process.env.OVERRIDE_STORE_FILE ||
-    path.join(__dirname, '..', '..', 'data', 'consensus-override.json');
+    nodePath().join(__dirname, '..', '..', 'data', 'consensus-override.json');
 }
 async function fileRead() {
   try {
-    const text = await fs.readFile(fileStorePath(), 'utf8');
+    const text = await nodeFs().readFile(fileStorePath(), 'utf8');
     return text ? JSON.parse(text) : null;
   } catch (e) {
     if (e && e.code === 'ENOENT') return null;
@@ -282,7 +289,8 @@ let fileChain = Promise.resolve();
 function fileWrite(env) {
   const run = fileChain.then(async () => {
     const p = fileStorePath();
-    await fs.mkdir(path.dirname(p), { recursive: true });
+    const fs = nodeFs();
+    await fs.mkdir(nodePath().dirname(p), { recursive: true });
     const tmp = p + '.tmp';
     await fs.writeFile(tmp, JSON.stringify(env, null, 2));
     await fs.rename(tmp, p);
@@ -370,7 +378,7 @@ exports.handler = async function (event) {
   }
 
   let bodyRaw = (event && typeof event.body === 'string') ? event.body : '';
-  if (event && event.isBase64Encoded && bodyRaw) bodyRaw = Buffer.from(bodyRaw, 'base64').toString('utf8');
+  if (event && event.isBase64Encoded && bodyRaw) bodyRaw = b64decode(bodyRaw);
   if (bodyRaw.length > MAX_BODY) return json(413, CORS, { error: 'body-too-large' });
   let body;
   try { body = JSON.parse(bodyRaw || '{}'); } catch (e) { return json(400, CORS, { error: 'invalid-json' }); }
