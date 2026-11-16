@@ -136,8 +136,39 @@ async function fromBingNews(q, lang = 'en') {
   const url = `${BING}?q=${encodeURIComponent(q)}&format=rss&${BING_LOCALES[lang] || BING_LOCALES.en}`;
   const r = await fetchWithTimeout(url, TIMEOUT_MS);
   if (!r.ok) throw new Error(`Bing News HTTP ${r.status}`);
-  const items = parseRssItems(await r.text()).slice(0, MAX_ITEMS).map((it) => ({ ...it, link: unwrapBingLink(it.link) }));
-  if (!items.length) throw new Error('no <item> elements in the Bing News response');
+  const text = await r.text();
+  const items = parseRssItems(text).slice(0, MAX_ITEMS).map((it) => ({ ...it, link: unwrapBingLink(it.link) }));
+  if (!items.length) throw new Error('no <item> elements in the Bing News response (' + text.replace(/\s+/g, ' ').slice(0, 60) + ')');
+  return items;
+}
+
+// Publisher RSS feeds per topic (the page sends its feed key as ?cat=). These are plain public RSS
+// endpoints meant for machine readers, so they answer datacenter IPs that Google/Bing News refuse.
+// Several feeds per topic are merged newest-first, so one feed being down only thins the list.
+const CATEGORY_FEEDS = {
+  geopolitical: ['https://feeds.bbci.co.uk/news/world/rss.xml', 'https://www.aljazeera.com/xml/rss/all.xml', 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml'],
+  economic: ['https://www.cnbc.com/id/20910258/device/rss/rss.html', 'https://feeds.bbci.co.uk/news/business/rss.xml', 'https://rss.nytimes.com/services/xml/rss/nyt/Economy.xml'],
+  energy: ['https://oilprice.com/rss/main', 'https://www.cnbc.com/id/19836768/device/rss/rss.html'],
+  financial: ['https://www.cnbc.com/id/10000664/device/rss/rss.html', 'https://www.cnbc.com/id/15839069/device/rss/rss.html', 'https://feeds.content.dowjones.io/public/rss/mw_topstories'],
+  techAi: ['https://feeds.bbci.co.uk/news/technology/rss.xml', 'https://techcrunch.com/category/artificial-intelligence/feed/', 'https://www.theverge.com/rss/index.xml'],
+  thai: ['https://www.prachachat.net/feed', 'https://www.thansettakij.com/rss', 'https://www.bangkokpost.com/rss/data/business.xml']
+};
+async function fromCategoryFeeds(q, lang, cat) {
+  const urls = CATEGORY_FEEDS[cat];
+  if (!urls) throw new Error('no publisher feeds for this topic');
+  const settled = await Promise.allSettled(urls.map(async (u) => {
+    const r = await fetchWithTimeout(u, TIMEOUT_MS);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return parseRssItems(await r.text()).slice(0, MAX_ITEMS);
+  }));
+  const seen = new Set();
+  const items = settled.flatMap((s) => (s.status === 'fulfilled' ? s.value : []))
+    .filter((it) => { const k = it.title.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
+    .sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0))
+    .slice(0, MAX_ITEMS);
+  if (!items.length) {
+    throw new Error('publisher feeds failed: ' + settled.map((s) => (s.status === 'rejected' ? s.reason.message : 'empty')).join(', '));
+  }
   return items;
 }
 
@@ -167,11 +198,12 @@ exports.handler = async function (event) {
   const q = String(rawQ).replace(/[\r\n\t]+/g, ' ').trim().slice(0, MAX_Q);
   if (!q) return json(400, { status: 'error', error: 'missing q parameter' });
   const lang = (event && event.queryStringParameters && event.queryStringParameters.lang) === 'th' ? 'th' : 'en';
+  const cat = String((event && event.queryStringParameters && event.queryStringParameters.cat) || '');
 
   const errors = [];
-  for (const [name, fn] of [['google-news', fromGoogleNews], ['bing-news', fromBingNews], ['rss2json', fromRss2Json]]) {
+  for (const [name, fn] of [['google-news', fromGoogleNews], ['publisher-rss', fromCategoryFeeds], ['bing-news', fromBingNews], ['rss2json', fromRss2Json]]) {
     try {
-      const items = await fn(q, lang);
+      const items = await fn(q, lang, cat);
       return json(200, { status: 'ok', source: name, query: q, lang, count: items.length, items });
     } catch (e) {
       errors.push(`${name}: ${e.message}`);
@@ -184,4 +216,4 @@ exports.handler = async function (event) {
 };
 
 // Exported for local unit testing (node --test / plain require). Netlify ignores extra exports.
-module.exports.__test = { parseRssItems, decodeEntities, stripTags, cleanText, unwrapBingLink };
+module.exports.__test = { parseRssItems, decodeEntities, stripTags, cleanText, unwrapBingLink, CATEGORY_FEEDS };
