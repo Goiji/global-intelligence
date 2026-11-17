@@ -95,7 +95,7 @@ test('English mode: the Fed analysis and macro cards have no Thai left', async (
 
 test('English mode: status lines written by the scripts are English', async () => {
   const sb = await load({ lang: 'en' });
-  for (const id of ['lpGold', 'lpUsdThb', 'lpGoldTh', 'lpOil', 'mktNote', 'newsStatus', 'status', 'halvingBlockInfo', 'verdict', 'breakdown', 'fngLabel', 'fundingLabel', 'oiLabel', 'consensusEditPanel', 'consensusEditBtn']) {
+  for (const id of ['lpGold', 'lpUsdThb', 'lpGoldTh', 'lpOil', 'mktNote', 'newsStatus', 'status', 'halvingBlockInfo', 'verdict', 'breakdown', 'fngLabel', 'fundingLabel', 'oiLabel']) {
     const t = text(sb, id);
     assert.ok(!THAI.test(t), `#${id} still has Thai in English mode: ${t.slice(0, 200)}`);
   }

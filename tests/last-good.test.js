@@ -75,7 +75,7 @@ test('page: browser keeps a 3-day copy of data-function answers, but not live pr
   const api = sb.window.__giFetchCache;
   assert.ok(api, 'fetch cache wrapper missing');
   for (const u of ['/.netlify/functions/fred-data', '/.netlify/functions/econ-extra', '/.netlify/functions/news-feed?q=x&lang=th']) assert.ok(api.CACHED.test(u), u);
-  for (const u of ['/.netlify/functions/usdjpy', '/.netlify/functions/visitors', '/.netlify/functions/consensus-override', 'https://fapi.binance.com/x']) assert.ok(!api.CACHED.test(u), u);
+  for (const u of ['/.netlify/functions/usdjpy', '/.netlify/functions/visitors', 'https://fapi.binance.com/x']) assert.ok(!api.CACHED.test(u), u);
 });
 
 test('KV writes are throttled across isolates: a fresh isolate does not rewrite a recent copy', async () => {

@@ -19,12 +19,6 @@ const ROOT = path.join(__dirname, '..');
 const FUNCTIONS_DIR = path.join(ROOT, 'netlify', 'functions');
 const PORT = Number(process.env.PORT || 8080);
 
-// The shared consensus-override store always lives in a local file under this dev server, even
-// if the machine's environment happens to contain a GITHUB_TOKEN (which would otherwise make
-// the function try to commit to the real repo from a laptop).
-process.env.OVERRIDE_STORE_FILE = process.env.OVERRIDE_STORE_FILE ||
-  path.join(ROOT, 'data', 'consensus-override.json');
-
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -79,7 +73,7 @@ async function serveFunction(name, url, res, { method = 'GET', body = '', header
     return send(res, 500, { 'Content-Type': 'application/json' }, JSON.stringify({ error: 'function has no exports.handler' }));
   }
   // Forward method/headers/body like Netlify does, so functions with POST endpoints
-  // (e.g. consensus-override) behave the same locally as in production.
+  // (e.g. visitors) behave the same locally as in production.
   const event = {
     httpMethod: method,
     path: url.pathname,

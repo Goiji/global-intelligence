@@ -15,7 +15,6 @@
     ├── fred-data.js                    ← Fed Rate / EFFR / CPI(+core) / PCE(+core) / PPI / Unemployment / Payrolls / Jobless Claims
     ├── econ-extra.js                   ← ยอดขายบ้านมือสอง / ดอกเบี้ยบ้าน 30·15 ปี / ยอดค้าปลีก / ISM ผลิต·บริการ / Breakeven 5·10 ปี
     ├── consensus.js                    ← ค่า "ที่คาด" (consensus) จาก Investing.com (แคช 3 ชม.)
-    ├── consensus-override.js           ← ที่เก็บ "ค่าที่คาดที่แก้เอง" ฝั่งเซิร์ฟเวอร์ (ทุกคนเห็นค่าเดียวกัน · แก้ต้องใส่รหัส)
     ├── cmc-fear-greed.js               ← Fear & Greed (CoinMarketCap keyless → alternative.me)
     ├── news-feed.js                    ← พาดหัวข่าว: อ่าน Google News RSS ฝั่งเซิร์ฟเวอร์เอง
     ├── onchain.js                      ← NUPL / MVRV Z-Score / MVRV Ratio (BGeometrics, แคช 8 ชม.)
@@ -56,7 +55,6 @@ Site configuration → Environment variables → Add a variable:
 
 | ตัวแปร | จำเป็นไหม | ใช้ทำอะไร |
 |---|---|---|
-| `CONSENSUS_OVERRIDE_PASSWORD` | **แนะนำ** | รหัสสำหรับแก้ค่า "ที่คาด" ที่แชร์กับทุกคน (function `consensus-override`) — ไม่ตั้ง = ปุ่ม ✏️ ยังใช้ได้ดี แต่ค่าที่แก้จะเห็นในเครื่องเดียว (fallback localStorage แบบเดิม) |
 | `FRED_API_KEY` | ไม่ | ให้ `fred-data.js` ใช้ FRED API ทางการก่อน (มีโควต้าสูงกว่า CSV สาธารณะ) |
 | `SOSOVALUE_API_KEY` | ไม่ | ตัวสำรองของการ์ด BTC Spot ETF Flow (`etf-flow.js`) ถ้า Farside บล็อกเซิร์ฟเวอร์ · ขอ key ฟรีได้ที่ SoSoValue developer dashboard |
 | `BGEOMETRICS_TOKEN` | **แนะนำ** | ให้ `onchain.js` ใช้โควต้าตัวแทน 8 ครั้ง/ชม. · 15 ครั้ง/วัน/IP — ตั้งครั้งเดียวทั้งเว็บใช้ร่วมกัน (ไม่ตั้ง = ยังทำงานได้ แต่แชร์โควต้าสาธารณะ) |
@@ -86,7 +84,7 @@ Site configuration → Environment variables → Add a variable:
 1. **สร้าง KV**: dash.cloudflare.com → Storage & databases → KV → Create → ตั้งชื่อ `global-intelligence-store`
 2. **สร้างโปรเจกต์**: Workers & Pages → Create → แท็บ **Pages** → Import an existing Git repository →
    เลือก repo นี้ · branch `main` · Framework preset `None` · Build command `exit 0` · Build output directory `.`
-   · กาง Environment variables ใส่ค่าเดียวกับใน Netlify (`FRED_API_KEY`, `CONSENSUS_OVERRIDE_PASSWORD`,
+   · กาง Environment variables ใส่ค่าเดียวกับใน Netlify (`FRED_API_KEY`,
    `BGEOMETRICS_TOKEN`, `RSS2JSON_API_KEY`, `ALPHAVANTAGE_API_KEY` — มีตัวไหนใน Netlify ก็ใส่ตัวนั้น) → Save and Deploy
 3. **ตั้งค่าหลัง deploy ครั้งแรก** (โปรเจกต์ → Settings):
    - Bindings → Add → KV namespace → Variable name `STORE` → เลือก `global-intelligence-store`
@@ -97,28 +95,6 @@ Site configuration → Environment variables → Add a variable:
    → KV `global-intelligence-store` → KV Pairs → key `counts` · value `{"total":<ตัวเลข>,"days":{}}` → Add
 6. **โดเมน**: โปรเจกต์ → Custom domains → Set up a custom domain (ถ้ามีโดเมนของตัวเอง)
 7. ใช้ Cloudflare ได้ดีแล้วค่อยปิดเว็บบน Netlify — ระหว่างนี้ทั้ง 2 ที่ทำงานคู่กันได้
-
-"ค่าที่คาดที่แก้เอง" บน Cloudflare: ตอน KV ยังว่าง จะอ่านค่าเดิมจาก `data/consensus-override.json` ใน repo ให้ก่อน
-ส่วนที่บันทึกใหม่จะเก็บใน KV (ไม่ต้องใช้ `GITHUB_TOKEN`)
-
-## ค่า "ที่คาด" ที่แก้ในหน้าเว็บ — ให้ทุกคนเห็นค่าเดียวกัน
-
-ปุ่ม **✏️ แก้ค่า "ที่คาด" เอง** ใต้หัวข้อบทวิเคราะห์ (แท็บข่าวโลก) แก้ตัวเลข consensus ได้โดยไม่แตะโค้ด:
-
-- **ค่าที่ถูกแก้จะถูกบันทึกฝั่งเซิร์ฟเวอร์** (function `consensus-override`) — ทุกเครื่อง/ทุกคนที่เข้าเว็บ
-  จะเห็นค่าชุดเดียวกัน หมายเหตุท้ายการ์ดจะบอกเสมอว่าค่ามาจากไหน (☁️ แชร์ / ✏️ เครื่องนี้ / อัตโนมัติ)
-- **แก้/ลบต้องใส่รหัส** — กันคนเปิดเว็บบังเอิญไปแก้ค่าที่คนอื่นเห็น: ตั้งค่าครั้งเดียว
-  Site configuration → Environment variables → `CONSENSUS_OVERRIDE_PASSWORD` = รหัสที่ต้องการ
-  → **Trigger deploy** (รหัสไม่อยู่ในไฟล์โค้ดเพราะ repo นี้เป็น public) รหัสค้างอยู่ใน session นั้นๆ
-  เท่านั้น (ไม่เขียนลง localStorage ของเบราว์เซอร์)
-- **ที่เก็บ = ไฟล์ `data/consensus-override.json` ใน repo นี้** — Netlify ฝาก `GITHUB_TOKEN` มาให้อัตโนมัติ
-  จึงไม่ต้องตั้งค่าเพิ่ม · การบันทึกแต่ละครั้ง = commit เล็กๆ บน branch หลัก (ชื่อ commit ขึ้นต้นด้วย
-  `chore(data):`) · การอ่านใช้ raw.githubusercontent.com (CDN) ค่าเลยไม่ช้า
-  · ถ้าบันทึกแล้วขึ้น "store-write-failed" (token ไม่มีสิทธิ์เขียน) ให้ตั้ง env `GITHUB_TOKEN`
-  เป็น PAT (fine-grained, สิทธิ์ Contents: read/write เฉพาะ repo นี้) ทับอัตโนมัติของ Netlify
-- **fallback:** ถ้าเซิร์ฟเวอร์/ฟังก์ชันไม่พร้อม (เช่น เปิด index.html จากดิสก์) ค่าที่แก้จะเก็บใน
-  localStorage ของเครื่องนั้นเหมือนเดิม และแผงแก้ค่าจะขึ้นเตือนว่า "ที่เก็บค่ากลางยังไม่พร้อม"
-- ลำดับความสำคัญ (ทีละช่อง): ค่าที่ตั้งเองในเครื่อง > ค่าที่แชร์ (เซิร์ฟเวอร์) > ค่าสดจาก Investing.com > ค่าที่ฝังในไฟล์
 
 ## ข้อมูลเศรษฐกิจสหรัฐ (Fed / CPI / PPI / ว่างงาน / จ้างงาน) อัปเดตเองยังไง
 
