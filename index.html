@@ -2617,11 +2617,20 @@ window.setHeaderStamp();
     // fallback, and try both param styles (v1 "base/symbols" and legacy "from/to").
     // cache:'no-store' — the "latest" URL never changes, so the browser's HTTP cache could hand
     // back an older day's rates while the dated range call below (its URL changes daily) was fresh.
+    // frankfurter.dev (ECB) ล่มทั้งโดเมนได้ (พ.ย. 2026 ตอบ error ทุก URL → 3 แถวค่าเงินบาท + ทองไทยแบบประมาณ
+    // ว่างพร้อมกัน) จึงมีแหล่งสำรองที่ไม่ต้องใช้ key และเปิด CORS: currency-api (jsDelivr + mirror) → open.er-api.com
+    const FX_ALT = [
+      { name: 'currency-api', url: 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json',
+        parse: (j) => j && j.usd && { date: j.date, rates: { THB: j.usd.thb, JPY: j.usd.jpy, CNY: j.usd.cny } } },
+      { name: 'currency-api', url: 'https://latest.currency-api.pages.dev/v1/currencies/usd.json',
+        parse: (j) => j && j.usd && { date: j.date, rates: { THB: j.usd.thb, JPY: j.usd.jpy, CNY: j.usd.cny } } },
+      { name: 'open.er-api.com', url: 'https://open.er-api.com/v6/latest/USD',
+        parse: (j) => j && j.result === 'success' && j.rates && { date: new Date((j.time_last_update_unix || 0) * 1000).toISOString().slice(0, 10), rates: { THB: j.rates.THB, JPY: j.rates.JPY, CNY: j.rates.CNY } } }
+    ];
     async function getFxRates(){
       const urls = [
         'https://api.frankfurter.dev/v1/latest?base=USD&symbols=THB,JPY,CNY',
-        'https://api.frankfurter.app/latest?from=USD&to=THB,JPY,CNY',
-        'https://api.frankfurter.app/latest?base=USD&symbols=THB,JPY,CNY'
+        'https://api.frankfurter.app/latest?from=USD&to=THB,JPY,CNY'
       ];
       let lastErr = 'unknown error';
       for(const url of urls){
@@ -2629,12 +2638,22 @@ window.setHeaderStamp();
           const r = await fetchWithTimeout(url, 6000, { cache: 'no-store' });
           if(!r.ok){ lastErr = url + ': HTTP ' + r.status; continue; }
           const j = await r.json();
-          if(j.rates && j.rates.THB && j.rates.JPY && j.rates.CNY) return { date: j.date, rates: j.rates };
+          if(j.rates && j.rates.THB && j.rates.JPY && j.rates.CNY) return { date: j.date, rates: j.rates, source: 'ecb' };
           lastErr = url + ': response missing THB/JPY/CNY — ' + JSON.stringify(j).slice(0,150);
         }catch(e){ lastErr = url + ': ' + e.message; }
       }
+      for(const alt of FX_ALT){
+        try{
+          const r = await fetchWithTimeout(alt.url, 6000, { cache: 'no-store' });
+          if(!r.ok){ lastErr = alt.url + ': HTTP ' + r.status; continue; }
+          const out = alt.parse(await r.json());
+          if(out && isValidNum(out.rates.THB) && isValidNum(out.rates.JPY) && isValidNum(out.rates.CNY)) return Object.assign(out, { source: alt.name });
+          lastErr = alt.url + ': response missing THB/JPY/CNY';
+        }catch(e){ lastErr = alt.url + ': ' + e.message; }
+      }
       throw new Error(lastErr);
     }
+    window.getFxRates = getFxRates;   // tests
     // อัตรา 10 วันล่าสุด (ไว้คิด % เปลี่ยนแปลงเทียบวันทำการก่อนหน้า) — ไม่สำเร็จก็ไม่เป็นไร แค่ไม่โชว์ %
     async function getFxSeries(){
       try{
@@ -2650,6 +2669,7 @@ window.setHeaderStamp();
       const pair = pickFxPair(latestRes.status === 'fulfilled' ? latestRes.value : null,
                               seriesRes.status === 'fulfilled' ? seriesRes.value : null);
       if(!pair) throw (latestRes.reason || new Error('no FX data'));
+      const fxSource = latestRes.status === 'fulfilled' && pair.now === latestRes.value.rates ? latestRes.value.source : 'ecb';
       const fx = (x) => ({ usd: x.THB, jpy: (x.THB / x.JPY) * 100, cny: x.THB / x.CNY });
       const now = fx(pair.now);
       livePx.usdThb = pair.now.THB;
@@ -2657,8 +2677,11 @@ window.setHeaderStamp();
       setPrice('lpUsdThb', now.usd.toFixed(2) + tr(' บาท', ' THB'), pctChange(now.usd, ref.usd));
       setPrice('lpJpyThb', now.jpy.toFixed(3) + tr(' บาท', ' THB'), pctChange(now.jpy, ref.jpy));
       setPrice('lpCnyThb', now.cny.toFixed(3) + tr(' บาท', ' THB'), pctChange(now.cny, ref.cny));
-      el('livePricesNote').textContent = LIVE_NOTE_BASE + tr(' · ค่าเงินบาทเป็นอัตรากลาง ECB ณ ', ' · THB rates are ECB reference rates as of ') + thDay(pair.date)
-        + tr(' (ออกวันละครั้งราว 21:00 น. เวลาไทย ไม่ใช่ real-time)', ' (published once a day around 21:00 Bangkok time, not real-time)') + (pair.prevDate ? tr(' · % เทียบ ', ' · % vs ') + thDay(pair.prevDate) : '');
+      el('livePricesNote').textContent = LIVE_NOTE_BASE + (fxSource === 'ecb'
+        ? tr(' · ค่าเงินบาทเป็นอัตรากลาง ECB ณ ', ' · THB rates are ECB reference rates as of ') + thDay(pair.date)
+          + tr(' (ออกวันละครั้งราว 21:00 น. เวลาไทย ไม่ใช่ real-time)', ' (published once a day around 21:00 Bangkok time, not real-time)')
+        : tr(' · ค่าเงินบาทจาก ', ' · THB rates from ') + fxSource + tr(' ณ ', ' as of ') + thDay(pair.date) + tr(' (แหล่งสำรอง อัปเดตวันละครั้ง)', ' (backup source, updated daily)'))
+        + (pair.prevDate ? tr(' · % เทียบ ', ' · % vs ') + thDay(pair.prevDate) : '');
     }catch(e){
       el('lpUsdThb').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable');
       el('lpJpyThb').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable');
