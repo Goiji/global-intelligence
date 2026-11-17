@@ -3233,6 +3233,17 @@ window.setHeaderStamp();
     return tr('🟡 ทรงตัว', '🟡 Steady') + tail;
   }
   window.usJpZone = usJpZone;   // tests
+  // ถ้าเซิร์ฟเวอร์ไม่ได้ส่ง chg1m มา คิดเองจากกราฟ (จุดล่าสุด เทียบจุดที่เก่ากว่า 30 วัน) — ไม่ให้แถบสีหายเงียบๆ
+  function usJpChg1m(s){
+    if(isValidNum(s.chg1m)) return s.chg1m;
+    const h = (s.hist || []).filter(function(p){ return isValidNum(p[1]); });
+    if(h.length < 2) return null;
+    const last = h[h.length - 1];
+    const cutoff = new Date(Date.parse(last[0] + 'T00:00:00Z') - 30 * 86400000).toISOString().slice(0, 10);
+    const base = h.filter(function(p){ return p[0] <= cutoff; }).pop();
+    return base ? Math.round((last[1] - base[1]) * 1000) / 1000 : null;
+  }
+  window.usJpChg1m = usJpChg1m;   // tests
 
   async function fetchMarkets(){
     try{
@@ -3306,7 +3317,7 @@ window.setHeaderStamp();
         const s = S[row[0]];
         if(!s || !isValidNum(s.latest)) return;
         el('mk' + row[1]).innerHTML = esc(s.latest.toFixed(2)) + '%' + bp(s.change);
-        el('mk' + row[1] + 'Zone').textContent = usJpZone(s.chg1m);
+        el('mk' + row[1] + 'Zone').textContent = usJpZone(usJpChg1m(s)) || tr('⚪ ยังไม่มีข้อมูลย้อนหลังครบ 1 เดือน · จะลองดึงใหม่อัตโนมัติ', '⚪ Less than a month of history so far · retrying automatically');
         el('mk' + row[1] + 'Info').textContent = 'US ' + s.us.toFixed(2) + '% − JP ' + s.jp.toFixed(2) + '%'
           + (isValidNum(s.chg1w) ? tr(' · 1 สัปดาห์ ', ' · 1 wk ') + signedPp(s.chg1w) : '')
           + tr(' · ณ ', ' · as of ') + thDay(s.date);

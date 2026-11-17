@@ -126,3 +126,35 @@ test('index.html: spread tiles + USD/JPY row, each with a TradingView link and e
   assert.match(sb.usJpZone(0.3), /🟢/);
   assert.equal(sb.usJpZone(null), '');
 });
+
+test('JGB history: byte-range tail without a header parses; failure is reported, not silent', async (t) => {
+  // a tail slice starts mid-row and has no header
+  const tail = '1.6,1.7,1.8\n2026/10/30,1.5,1.62,1.7,1.8,1.9,2,2.1,2.2,2.3,2.55,3,3.5,3.8,3.9,4\n2026/10/31,1.5,1.63,1.7,1.8,1.9,2,2.1,2.2,2.3,2.56,3,3.5,3.8,3.9,4\n';
+  assert.deepEqual(T.parseMofCsv(tail, '', { tail: true }).map((r) => [r.date, r.y2, r.y10]), [['2026-10-30', 1.62, 2.55], ['2026-10-31', 1.63, 2.56]]);
+  assert.throws(() => T.parseMofCsv(tail), /no Date header/);
+
+  T._clearCache();
+  const realFetch = global.fetch;
+  let rangeAsked = null;
+  global.fetch = async (url, opts) => {
+    if (url.includes('jgbcme_all.csv')) { rangeAsked = opts && opts.headers && opts.headers.Range; return { ok: false, status: 503, text: async () => '' }; }
+    if (url.includes('jgbcme.csv')) return { ok: true, status: 200, text: async () => MOF_CURRENT };
+    if (url.includes('fredgraph.csv?id=DGS2')) return { ok: true, status: 200, text: async () => 'observation_date,DGS2\n2026-11-12,4.9\n2026-11-13,4.84' };
+    return { ok: false, status: 503, text: async () => '' };
+  };
+  t.after(() => { global.fetch = realFetch; T._clearCache(); });
+  const res = await markets.handler();
+  const body = JSON.parse(res.body);
+  assert.match(String(rangeAsked), /^bytes=-\d+$/);
+  assert.match(body.errors.jgbHistory, /503/);
+  assert.ok(body.ttl <= 120, 'a spread without history must not be cached for an hour');
+});
+
+test('page: 1-month change falls back to the sparkline, and a blank zone says why', async () => {
+  const sb = makeSandbox();
+  await runAllScripts(sb);
+  assert.equal(sb.usJpChg1m({ chg1m: -0.3, hist: [] }), -0.3);
+  assert.equal(sb.usJpChg1m({ hist: [['2026-10-09', 2.889], ['2026-10-16', 2.822], ['2026-11-13', 2.998], ['2026-11-16', 2.952]] }), 0.13);
+  assert.equal(sb.usJpChg1m({ hist: [['2026-11-06', 2.778], ['2026-11-16', 2.952]] }), null);
+  assert.match(HTML, /ยังไม่มีข้อมูลย้อนหลังครบ 1 เดือน/);
+});
