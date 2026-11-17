@@ -20,7 +20,10 @@ const STORE = 'visitors';
 const KEY = 'counts';
 const KEEP_DAYS = 60;
 
+const GET_CACHE_MS = 60 * 1000; // plain page loads reuse a count read in the last minute (KV reads are metered)
+
 let storeFactory = null; // tests inject a fake store
+let lastRead = { at: 0, v: null, date: null };
 let memStore = null;
 
 function memoryStore() {
@@ -88,20 +91,28 @@ exports.handler = async function (event) {
   if (method !== 'GET' && method !== 'POST') return json(405, { error: 'method-not-allowed' });
   const date = bangkokDate();
   try {
-    const store = openStore(event);
-    let v = normalize(await store.get(KEY, { type: 'json' }));
-    if (method === 'POST') {
-      v = addVisit(v, date);
-      await store.setJSON(KEY, v);
+    let v;
+    if (method === 'GET' && lastRead.date === date && Date.now() - lastRead.at < GET_CACHE_MS) {
+      v = lastRead.v;
+    } else {
+      const store = openStore(event);
+      v = normalize(await store.get(KEY, { type: 'json' }));
+      if (method === 'POST') {
+        v = addVisit(v, date);
+        await store.setJSON(KEY, v);
+      }
+      lastRead = { at: Date.now(), v, date };
     }
     return json(200, { total: v.total, today: v.days[date] || 0, date });
   } catch (e) {
+    // store unreachable (e.g. the daily KV quota is used up) → the last count this instance saw, if any
+    if (lastRead.v && lastRead.date === date) return json(200, { total: lastRead.v.total, today: lastRead.v.days[date] || 0, date });
     return json(503, { error: 'storage-unavailable' });
   }
 };
 
 module.exports.__test = {
   bangkokDate, normalize, addVisit,
-  setStoreFactory: (f) => { storeFactory = f; },
-  resetMemory: () => { memStore = null; },
+  setStoreFactory: (f) => { storeFactory = f; lastRead = { at: 0, v: null, date: null }; },
+  resetMemory: () => { memStore = null; lastRead = { at: 0, v: null, date: null }; },
 };

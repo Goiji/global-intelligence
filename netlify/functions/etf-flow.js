@@ -16,6 +16,7 @@ const TIMEOUT_MS = 8000;
 const TTL_S = 1800;
 const STALE_MS = 3 * 86400000;
 const KV_KEY = 'etf-flow:lastGood';
+const { kvGetGood, kvPutGood } = require('../lib/last-good.js'); // throttled: KV writes are metered
 const FARSIDE = 'https://farside.co.uk/btc/';
 const ALLORIGINS = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(FARSIDE);
 const SOSO = 'https://openapi.sosovalue.com/openapi/v1/etfs/summary-history?symbol=BTC&country_code=US&limit=60';
@@ -106,10 +107,6 @@ function build(rows) {
   };
 }
 
-function kvOf(event) {
-  return (event && event.cloudflare && event.cloudflare.kv) || null;
-}
-
 exports.handler = async function (event) {
   const headers = {
     'Content-Type': 'application/json',
@@ -127,18 +124,17 @@ exports.handler = async function (event) {
   const key = process.env.SOSOVALUE_API_KEY;
   if (key) sources.push({ name: 'sosovalue', url: SOSO, headers: { Accept: 'application/json', 'x-soso-api-key': key }, parse: parseSoso });
 
-  const kv = kvOf(event);
   const errors = {};
   for (const s of sources) {
     try {
       const data = { ...s.parse(await fetchText(s.url, s.headers)), source: s.name, fetchedAt: new Date(now).toISOString() };
       memCache = { data, expiresAt: now + TTL_S * 1000, lastGood: data };
-      if (kv) { try { await kv.put(KV_KEY, JSON.stringify(data)); } catch (e) { /* cache only */ } }
+      await kvPutGood(event, KV_KEY, data);
       return { statusCode: 200, headers, body: JSON.stringify(data) };
     } catch (e) { errors[s.name] = e.message; }
   }
   let good = memCache.lastGood;
-  if (!good && kv) { try { good = await kv.get(KV_KEY, 'json'); } catch (e) { /* none */ } }
+  if (!good) good = await kvGetGood(event, KV_KEY, STALE_MS);
   if (good && now - Date.parse(good.fetchedAt) < STALE_MS) {
     return { statusCode: 200, headers: { ...headers, 'Cache-Control': 'public, max-age=600' }, body: JSON.stringify({ ...good, stale: true, errors }) };
   }
