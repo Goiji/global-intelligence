@@ -73,7 +73,8 @@ test('handler: Farside first, allorigins next, SoSoValue only with a key, KV las
   global.fetch = async (url, opt) => { if (url.includes('sosovalue')) { sentKey = opt.headers['x-soso-api-key']; return ok(JSON.stringify([{ date: '2026-11-13', total_net_inflow: 2e8 }])); } return { ok: false, status: 403 }; };
   T._clearCache();
   const kvData = new Map();
-  const kv = { put: async (k, v) => kvData.set(k, v), get: async (k) => JSON.parse(kvData.get(k)) };
+  const kv = { put: async (k, v) => kvData.set(k, v), get: async (k) => JSON.parse(kvData.get(k) || 'null') };
+  require('../netlify/lib/last-good.js')._resetThrottle();
   body = JSON.parse((await etf.handler({ cloudflare: { kv } })).body);
   assert.equal(body.source, 'sosovalue');
   assert.equal(body.net, 200);

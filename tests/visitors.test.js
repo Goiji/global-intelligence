@@ -78,6 +78,22 @@ test('visitors: on Cloudflare the count lives in the STORE KV binding', async ()
   out = await fn.handler({ httpMethod: 'GET', cloudflare: { kv } });
   assert.equal(JSON.parse(out.body).total, 1);
   assert.equal(JSON.parse(data.get('counts')).total, 1);
+  T.setStoreFactory(null); // forget the count read above
   out = await fn.handler({ httpMethod: 'GET', cloudflare: { kv: null } });
   assert.equal(out.statusCode, 503);
+});
+
+test('visitors: plain loads reuse a recent count; a failing store still shows the last count', async () => {
+  let reads = 0, fail = false;
+  const data = new Map();
+  T.setStoreFactory(() => ({ get: async (k) => { reads++; if (fail) throw new Error('429'); return data.get(k) || null; }, setJSON: async (k, v) => { if (fail) throw new Error('429'); data.set(k, v); } }));
+  await fn.handler({ httpMethod: 'POST' });
+  const r0 = reads;
+  for (let i = 0; i < 5; i++) await fn.handler({ httpMethod: 'GET' });
+  assert.equal(reads, r0, 'GETs within a minute hit memory, not KV');
+  fail = true;
+  const r = await fn.handler({ httpMethod: 'POST' });
+  assert.equal(r.statusCode, 200);
+  assert.equal(JSON.parse(r.body).total, 1);
+  T.setStoreFactory(null);
 });

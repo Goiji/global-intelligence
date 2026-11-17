@@ -77,3 +77,32 @@ test('page: browser keeps a 3-day copy of data-function answers, but not live pr
   for (const u of ['/.netlify/functions/fred-data', '/.netlify/functions/econ-extra', '/.netlify/functions/news-feed?q=x&lang=th']) assert.ok(api.CACHED.test(u), u);
   for (const u of ['/.netlify/functions/usdjpy', '/.netlify/functions/visitors', '/.netlify/functions/consensus-override', 'https://fapi.binance.com/x']) assert.ok(!api.CACHED.test(u), u);
 });
+
+test('KV writes are throttled across isolates: a fresh isolate does not rewrite a recent copy', async () => {
+  const { kv, store } = makeKv();
+  let puts = 0;
+  const counting = { get: kv.get, put: async (k, v) => { puts++; return kv.put(k, v); } };
+  const ev = { cloudflare: { kv: counting } };
+  lg._resetThrottle();
+  await lg.kvPutGood(ev, 'x', { v: 1 });
+  assert.equal(puts, 1, 'nothing stored yet → write');
+  for (let i = 0; i < 5; i++) { lg._resetThrottle(); await lg.kvPutGood(ev, 'x', { v: 2 + i }); } // 5 new isolates
+  assert.equal(puts, 1, 'copy is fresh → no isolate writes again');
+  store.set('x', JSON.stringify({ at: Date.now() - lg.KV_WRITE_EVERY_MS - 1000, data: { v: 1 } }));
+  lg._resetThrottle();
+  await lg.kvPutGood(ev, 'x', { v: 9 });
+  assert.equal(puts, 2, 'copy older than the interval → refreshed');
+  assert.deepEqual(await lg.kvGetGood(ev, 'x'), { v: 9 });
+});
+
+test('KV over quota: reads/writes fail quietly and the store is left alone for a while', async () => {
+  let calls = 0;
+  const kv = { get: async () => { calls++; throw new Error('429 KV limit'); }, put: async () => { calls++; throw new Error('429'); } };
+  const ev = { cloudflare: { kv } };
+  lg._resetThrottle();
+  assert.equal(await lg.kvGetGood(ev, 'q'), null);
+  await lg.kvPutGood(ev, 'q', { v: 1 });
+  assert.equal(await lg.kvGetGood(ev, 'q'), null);
+  assert.equal(calls, 1, 'after one failure the store is skipped');
+  lg._resetThrottle();
+});

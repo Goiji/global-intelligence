@@ -50,7 +50,7 @@ const b64encode = (s) => {
 };
 
 const TIMEOUT_MS = 8000;
-const READ_CACHE_MS = 30 * 1000;      // don't hit the store for every page load
+const READ_CACHE_MS = 2 * 60 * 1000;  // don't hit the store (KV reads are metered) for every page load
 const MAX_BODY = 4096;
 const KV_KEY = 'consensusOverride';
 const FILE_PATH = 'data/consensus-override.json';

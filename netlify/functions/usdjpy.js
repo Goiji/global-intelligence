@@ -89,7 +89,7 @@ exports.handler = async function (event) {
     } catch (e) { errors[s.name] = e.message; }
   }
   // memory first; after a cold start (new instance / other host) the copy kept in KV
-  const good = (memCache.lastGood && now - memCache.expiresAt < 3600000) ? memCache.lastGood : await kvGetGood(event, KV_KEY, 3600000);
+  const good = (memCache.lastGood && now - memCache.expiresAt < 6 * 3600000) ? memCache.lastGood : await kvGetGood(event, KV_KEY, 6 * 3600000);
   if (good) {
     return { statusCode: 200, headers: { ...headers, 'Cache-Control': 'public, max-age=60, s-maxage=60' }, body: JSON.stringify({ ...good, stale: true }) };
   }
