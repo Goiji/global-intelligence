@@ -5,6 +5,8 @@
 //   → { barBuy, barSell, ornamentBuy, ornamentSell, updated, source }
 //
 // Sources, in order:
+//   0. goldtraders.or.th JSON API (/api/GoldPrices/Latest) — the site's new front end (Nov 2026)
+//      loads prices with JavaScript, so the HTML spans below came back empty and this function 502'd.
 //   1. goldtraders.or.th — the association's own page (server-rendered ASP.NET; the prices sit in
 //      spans whose ids end in lblBLBuy / lblBLSell / lblOMBuy / lblOMSell).
 //   2. api.chnwt.dev thai-gold-api — a community JSON mirror of the same announcement.
@@ -12,6 +14,7 @@
 // here only means "no official number right now", never a blank card.
 
 const SOURCES = [
+  { name: 'goldtraders:api', url: 'https://www.goldtraders.or.th/api/GoldPrices/Latest', parse: parseGoldtradersApi },
   { name: 'goldtraders', url: 'https://www.goldtraders.or.th/', parse: parseGoldtraders },
   { name: 'chnwt', url: 'https://api.chnwt.dev/thai-gold-api/latest', parse: parseChnwt }
 ];
@@ -65,6 +68,26 @@ function parseGoldtraders(html) {
   });
 }
 
+// asTime is Bangkok wall-clock time without a zone, e.g. "2026-11-16T17:03:00" → "16/11/2569 เวลา 17:03"
+function thaiStamp(asTime) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(asTime || ''));
+  return m ? `${Number(m[3])}/${m[2]}/${Number(m[1]) + 543} เวลา ${m[4]}:${m[5]}` : null;
+}
+
+function parseGoldtradersApi(text) {
+  const j = JSON.parse(text);
+  if (!j || typeof j !== 'object') throw new Error('no JSON object');
+  const out = validate({
+    barBuy: num(j.bL_BuyPrice),
+    barSell: num(j.bL_SellPrice),
+    ornamentBuy: num(j.oM965_BuyPrice),
+    ornamentSell: num(j.oM965_SellPrice),
+    updated: thaiStamp(j.asTime)
+  });
+  if (Number.isFinite(j.priceChangeFromPrevDayLast)) out.changeFromPrevDay = j.priceChangeFromPrevDayLast;
+  return out;
+}
+
 function parseChnwt(text) {
   const j = JSON.parse(text);
   const r = (j && (j.response || j.data)) || {};
@@ -110,4 +133,4 @@ exports.handler = async function (event) {
   return { statusCode: 502, headers: { ...headers, 'Cache-Control': 'no-store' }, body: JSON.stringify({ error: 'no source answered', errors }) };
 };
 
-module.exports.__test = { parseGoldtraders, parseChnwt, num };
+module.exports.__test = { parseGoldtradersApi, parseGoldtraders, parseChnwt, thaiStamp, num, SOURCES };

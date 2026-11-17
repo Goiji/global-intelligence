@@ -258,3 +258,31 @@ test('wti: NYMEX sources are tried in order, with a second Yahoo host', () => {
   assert.deepEqual(wti.SOURCES.map((s) => s.name), ['yahoo:CL=F', 'yahoo2:CL=F', 'cnbc:@CL.1', 'stooq:cl.f']);
   assert.match(wti.SOURCES[1].url, /^https:\/\/query2\.finance\.yahoo\.com\//);
 });
+
+test('gold-th: goldtraders.or.th JSON API (new site) is parsed and tried first', () => {
+  const g = gold.parseGoldtradersApi(JSON.stringify({ asTime: '2026-11-16T17:03:00', bL_BuyPrice: 61850.0, bL_SellPrice: 62050.0, oM965_BuyPrice: 60609.68, oM965_SellPrice: 62850.0, priceChangeFromPrevDayLast: -400 }));
+  assert.deepEqual([g.barBuy, g.barSell, g.ornamentBuy, g.ornamentSell], [61850, 62050, 60609.68, 62850]);
+  assert.equal(g.updated, '16/11/2569 เวลา 17:03');
+  assert.equal(g.changeFromPrevDay, -400);
+  assert.equal(gold.SOURCES[0].name, 'goldtraders:api');
+  assert.throws(() => gold.parseGoldtradersApi('{}'));
+});
+
+test('page: THB rates fall back to currency-api / open.er-api when frankfurter is down', async () => {
+  const vm = require('node:vm');
+  const { SCRIPTS, makeSandbox } = require('./dom-stub.js');
+  const seen = [];
+  const fetchImpl = async (url) => {
+    const u = String(url); seen.push(u);
+    if (u.includes('frankfurter')) return { ok: false, status: 500, json: async () => ({}), text: async () => '' };
+    if (u.includes('currency-api')) return { ok: true, status: 200, json: async () => ({ date: '2026-11-16', usd: { thb: 33.86, jpy: 159.43, cny: 6.67 } }), text: async () => '' };
+    return { ok: false, status: 503, json: async () => ({}), text: async () => '' };
+  };
+  const sb = makeSandbox({ fetchImpl });
+  SCRIPTS.forEach((src) => vm.runInNewContext(src, sb, { filename: 'index.html' }));
+  for (let i = 0; i < 20 && typeof sb.window.getFxRates !== 'function'; i++) await new Promise((r) => setImmediate(r));
+  const fx = await sb.window.getFxRates();
+  assert.equal(fx.source, 'currency-api');
+  assert.equal(fx.rates.THB, 33.86);
+  assert.ok(seen.some((u) => u.includes('frankfurter')), 'frankfurter is still tried first');
+});
