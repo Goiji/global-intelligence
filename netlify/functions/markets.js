@@ -96,13 +96,13 @@ let memCache = { data: null, expiresAt: 0, lastGood: null };
 function isoDay(d) { return d.toISOString().slice(0, 10); }
 function daysAgoIso(n, from = new Date()) { return isoDay(new Date(from.getTime() - n * 86400000)); }
 
-async function fetchText(url, timeoutMs = ATTEMPT_TIMEOUT_MS, ua = 'global-intelligence-dashboard (netlify function)') {
+async function fetchText(url, timeoutMs = ATTEMPT_TIMEOUT_MS, ua = 'global-intelligence-dashboard (netlify function)', extraHeaders = {}) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const r = await fetch(url, {
       signal: ctrl.signal,
-      headers: { 'User-Agent': ua, Accept: '*/*' }
+      headers: { 'User-Agent': ua, Accept: '*/*', ...extraHeaders }
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return await r.text();
@@ -197,15 +197,22 @@ async function loadSeries(key, apiKey, raw) {
 // MOF JGB CSV (English) → [{ date, y2, y10 }] oldest-first. Layout: a title line, then
 // "Date,1Y,2Y,…,10Y,…" and rows like "2026/11/12,1.653,1.857,…"; "-" = no yield that day. Rows
 // before `since` (ISO date) are skipped so the 50-year history file stays cheap to keep.
-function parseMofCsv(text, since = '') {
+// `tail: true` = a byte-range slice from the end of the file: no header (MOF's fixed column order
+// Date,1Y,2Y,…,10Y is assumed) and the first line may be cut mid-row, so it is dropped.
+function parseMofCsv(text, since = '', { tail = false } = {}) {
   const lines = String(text).split(/\r?\n/);
   const h = lines.findIndex((l) => /^"?Date"?,/i.test(l.trim()));
-  if (h < 0) throw new Error('mof: no Date header');
-  const head = lines[h].split(',').map((c) => c.replace(/"/g, '').trim().toUpperCase());
-  const i2 = head.indexOf('2Y'), i10 = head.indexOf('10Y');
-  if (i2 < 0 || i10 < 0) throw new Error('mof: no 2Y / 10Y columns');
+  let i2 = 2, i10 = 10, body;
+  if (h >= 0) {
+    const head = lines[h].split(',').map((c) => c.replace(/"/g, '').trim().toUpperCase());
+    i2 = head.indexOf('2Y'); i10 = head.indexOf('10Y');
+    if (i2 < 0 || i10 < 0) throw new Error('mof: no 2Y / 10Y columns');
+    body = lines.slice(h + 1);
+  } else if (tail) {
+    body = lines.slice(1);
+  } else throw new Error('mof: no Date header');
   const out = [];
-  for (const line of lines.slice(h + 1)) {
+  for (const line of body) {
     const c = line.split(',');
     const m = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec((c[0] || '').replace(/"/g, '').trim());
     if (!m) continue;
@@ -225,22 +232,42 @@ function mergeJgb(...lists) {
   return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-async function loadJgb(now = Date.now()) {
+// The history file is ~1 MB since 1974 and only the last ~14 months are needed, so ask for the tail
+// only (HTTP Range). On Cloudflare the whole file was too slow / heavy and the spreads came out with
+// just this month's points (no 1-month change, so no colour zone). A server that ignores Range just
+// sends the whole file, which still parses. The rows are also kept in the persistent last-good store
+// so a failed fetch on a cold instance doesn't shorten the chart either.
+const MOF_TAIL_BYTES = 64 * 1024;   // ~700 rows ≈ 2.7 years
+const JGB_KV_KEY = 'markets:jgbHistory';
+
+async function fetchJgbHistory(since) {
+  const t = await fetchText(MOF_HISTORY, MOF_TIMEOUT_MS, BROWSER_UA, { Range: `bytes=-${MOF_TAIL_BYTES}` });
+  const rows = parseMofCsv(t, since, { tail: true });
+  if (!rows.length) throw new Error('mof history: no rows');
+  return rows;
+}
+
+async function loadJgb(now = Date.now(), event = null) {
   const since = daysAgoIso(430, new Date(now));
-  const history = jgbHistCache.rows && now < jgbHistCache.expiresAt
-    ? Promise.resolve(jgbHistCache.rows)
-    : fetchText(MOF_HISTORY, MOF_TIMEOUT_MS, BROWSER_UA).then((t) => {
-      const rows = parseMofCsv(t, since);
-      if (!rows.length) throw new Error('mof history: no rows');
-      jgbHistCache = { rows, expiresAt: now + JGB_HISTORY_TTL_MS };
-      return rows;
-    });
+  const fresh = jgbHistCache.rows && now < jgbHistCache.expiresAt;
+  const history = fresh ? Promise.resolve(jgbHistCache.rows) : fetchJgbHistory(since).then((rows) => {
+    jgbHistCache = { rows, expiresAt: now + JGB_HISTORY_TTL_MS };
+    kvPutGood(event, JGB_KV_KEY, rows).catch(() => {});
+    return rows;
+  });
   const [cur, hist] = await Promise.allSettled([fetchText(MOF_CURRENT, MOF_TIMEOUT_MS, BROWSER_UA).then((t) => parseMofCsv(t)), history]);
-  const rows = mergeJgb(hist.status === 'fulfilled' ? hist.value : (jgbHistCache.rows || []), cur.status === 'fulfilled' ? cur.value : []);
+  let histRows = hist.status === 'fulfilled' ? hist.value : jgbHistCache.rows;
+  let historyError = null;
+  if (!histRows || !histRows.length) {
+    const stored = await kvGetGood(event, JGB_KV_KEY, 45 * 86400000);
+    if (Array.isArray(stored) && stored.length) histRows = stored;
+    else historyError = hist.status === 'rejected' ? hist.reason.message : 'no history rows';
+  }
+  const rows = mergeJgb(histRows || [], cur.status === 'fulfilled' ? cur.value : []);
   if (!rows.length) {
     throw new Error('mof: ' + [cur, hist].map((r) => (r.status === 'rejected' ? r.reason.message : 'empty')).join(' | '));
   }
-  return { rows, currentError: cur.status === 'rejected' ? cur.reason.message : null };
+  return { rows, currentError: cur.status === 'rejected' ? cur.reason.message : null, historyError };
 }
 
 // US daily obs (oldest-first) with the overlaid latest point of the summarised series (Treasury /
@@ -488,7 +515,7 @@ async function loadTreasuryCurve(now = new Date()) {
   }
 }
 
-async function buildPayload(apiKey) {
+async function buildPayload(apiKey, event = null) {
   const keys = Object.keys(SERIES).filter((k) => SERIES[k].loader !== 'usjp');
   const raw = {};
   const [results, vixLive, tnxLive, curve, spxLive, ndxLive, jgb, ovxLive] = await Promise.all([
@@ -503,7 +530,7 @@ async function buildPayload(apiKey) {
     loadTreasuryCurve().catch((e) => ({ error: e.message })),
     loadIndexLive(CBOE_SPX).catch((e) => ({ error: e.message })),
     loadIndexLive(CBOE_NDX).catch((e) => ({ error: e.message })),
-    loadJgb().catch((e) => ({ error: e.message })),
+    loadJgb(Date.now(), event).catch((e) => ({ error: e.message })),
     loadIndexLive(CBOE_OVX).catch((e) => ({ error: e.message }))
   ]);
   const series = {}, errors = {};
@@ -539,6 +566,7 @@ async function buildPayload(apiKey) {
     } catch (e) { errors[k] = e.message; }
   }
   if (!jgb.error && jgb.currentError) errors.jgbCurrent = jgb.currentError;
+  if (!jgb.error && jgb.historyError) errors.jgbHistory = jgb.historyError;
   const out = { series, asOf: new Date().toISOString() };
   if (Object.keys(errors).length) out.errors = errors;
   return { data: out, okCount: Object.keys(series).length };
@@ -566,7 +594,7 @@ exports.handler = async function (event) {
     };
   }
   try {
-    const { data } = await buildPayload((process.env.FRED_API_KEY || '').trim());
+    const { data } = await buildPayload((process.env.FRED_API_KEY || '').trim(), event);
     // A tile whose series failed this time (live overlays like vixLive don't count: the FRED close
     // still shows) is filled from the last good copy, and the answer is cached only briefly.
     const missing = Object.keys(data.errors || {}).filter((k) => k in SERIES && !data.series[k]);
@@ -577,6 +605,19 @@ exports.handler = async function (event) {
       if (filled.length) data.staleSeries = filled;
       if (data.errors && !Object.keys(data.errors).length) delete data.errors;
       ttlNow = partialTtl(ttl, missing.length, missing.length - filled.length);
+    }
+    // JGB history missing → the spreads only cover this month (no 1-month change / colour zone):
+    // show the last good spreads if they had a full year, and try again soon.
+    if (data.errors && data.errors.jgbHistory) {
+      const good = memCache.lastGood || await kvGetGood(event, KV_KEY, 14 * 86400000);
+      for (const k of Object.keys(SERIES).filter((x) => SERIES[x].loader === 'usjp')) {
+        const g = good && good.series && good.series[k], cur = data.series[k];
+        if (g && g.hist && (!cur || !cur.hist || g.hist.length > cur.hist.length)) {
+          data.series[k] = g;
+          data.staleSeries = (data.staleSeries || []).concat([k]);
+        }
+      }
+      ttlNow = Math.min(ttlNow, RETRY_TTL_S);
     }
     if (!Object.keys(data.series).length) throw new Error('every series failed: ' + JSON.stringify(data.errors || {}));
     data.ttl = ttlNow;
