@@ -90,7 +90,6 @@ function stub({ fredClaims, claimsEv, calendar = { events: [] } }) {
     const u = String(url);
     const ok = (body) => ({ ok: true, status: 200, json: async () => body, text: async () => '' });
     const no = { ok: false, status: 502, json: async () => ({}), text: async () => '' };
-    if (u.includes('/.netlify/functions/consensus-override')) return { ok: false, status: 404, json: async () => ({}), text: async () => '' };
     if (u.includes('/.netlify/functions/consensus')) return claimsEv ? ok({ source: 'investing.com', sourceLabel: 'Investing.com', ttl: 600, events: { claims: claimsEv } }) : no;
     if (u.includes('/.netlify/functions/fred-data')) {
       return ok({ fetchedAt: new Date(NOW).toISOString(), unrate: { value: 4.2, date: '2026-09-01', source: 'fred-csv' }, claims: fredClaims, fieldsOk: 2, fieldsTotal: 9 });

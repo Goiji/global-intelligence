@@ -53,7 +53,6 @@ function stub({ fredPayload = fred(), cons = consensus(), cal = calendar() } = {
   return async (url) => {
     const u = String(url);
     const ok = (body) => ({ ok: true, status: 200, json: async () => body, text: async () => '' });
-    if (u.includes('/.netlify/functions/consensus-override')) return { ok: false, status: 404, json: async () => ({}), text: async () => '' };
     if (u.includes('/.netlify/functions/consensus')) return cons ? ok(cons) : { ok: false, status: 502, json: async () => ({}), text: async () => '' };
     if (u.includes('/.netlify/functions/fred-data')) return ok(fredPayload);
     if (u.includes('/.netlify/functions/calendar')) return cal ? ok(cal) : { ok: false, status: 502, json: async () => ({}), text: async () => '' };

@@ -43,7 +43,7 @@
 })();
 // สำรองฝั่งเบราว์เซอร์: เก็บคำตอบล่าสุดที่ดีของฟังก์ชันข้อมูลไว้ใน localStorage (3 วัน) ถ้าเซิร์ฟเวอร์ตอบ error
 // หรือหมดเวลา จะคืนสำเนานั้นแทน (ติด stale:true) การ์ดจึงไม่ขึ้นขีด · ไม่ใช้กับราคาสด (usdjpy/wti/ทอง/dvol)
-// เพราะพวกนั้นมีแหล่งสำรองสดของตัวเองที่ดีกว่าราคาเก่า และไม่ใช้กับ visitors/consensus-override (เขียนข้อมูล)
+// เพราะพวกนั้นมีแหล่งสำรองสดของตัวเองที่ดีกว่าราคาเก่า และไม่ใช้กับ visitors (เขียนข้อมูล)
 (function(){
   if(typeof window === 'undefined' || typeof window.fetch !== 'function' || typeof Response !== 'function') return;
   var CACHED = /^\/\.netlify\/functions\/(fred-data|markets|econ-extra|consensus|calendar|etf-flow|news-feed)\/?(\?|$)/;
@@ -450,8 +450,8 @@ body{margin:0}
   .news-item .nt{font-weight:500;font-size:15px;color:#efe9dc;transition:color .2s}
   .news-item:hover .nt{color:var(--accent-hi)}
   .news-item .tag{color:var(--accent);font-weight:600;letter-spacing:.04em}
-  .news-more,#newsRefreshBtn,.footer button,#btcTab button,#consensusEditBtn{background:transparent!important;border:1px solid var(--gold-line)!important;color:var(--accent-hi)!important;font-family:var(--sans)!important;font-weight:500;border-radius:999px!important;transition:background .2s}
-  .news-more:hover,#newsRefreshBtn:hover,#btcTab button:hover,#consensusEditBtn:hover{background:rgba(212,178,106,.10)!important}
+  .news-more,#newsRefreshBtn,.footer button,#btcTab button{background:transparent!important;border:1px solid var(--gold-line)!important;color:var(--accent-hi)!important;font-family:var(--sans)!important;font-weight:500;border-radius:999px!important;transition:background .2s}
+  .news-more:hover,#newsRefreshBtn:hover,#btcTab button:hover{background:rgba(212,178,106,.10)!important}
   .footer{color:var(--muted)}
 
   /* ---------- BTC tab: same system ---------- */
@@ -1070,11 +1070,7 @@ body{margin:0}
 <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line);">
   <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
     <h3 style="font-size:14px; margin-bottom:6px;" data-en="🔍 Analysis: how good or bad the numbers are vs. forecasts">🔍 วิเคราะห์: ตัวเลขออกมาดี/แย่แค่ไหน เทียบกับที่คาด</h3>
-    <span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-      <button id="consensusEditBtn" type="button" class="tabbtn" style="padding:3px 10px; font-size:11px; border-radius:8px; line-height:1.5;" data-en="✏️ Edit forecasts">✏️ แก้ค่า "ที่คาด" เอง</button>
-    </span>
   </div>
-  <div id="consensusEditPanel" style="display:none; margin:0 0 12px; padding:12px; background:var(--panel2); border:1px solid var(--line); border-radius:10px;"></div>
   <div id="fedAnalysis" style="display:flex; flex-direction:column; gap:12px;">
     <div class="muted" style="font-size:11.5px;" data-en="⏳ Fetching the latest numbers to analyse…">⏳ กำลังดึงตัวเลขจริงเพื่อวิเคราะห์…</div>
   </div>
@@ -2082,10 +2078,7 @@ window.setHeaderStamp();
   //    - หน้าเว็บจะลองดึงค่าสดจาก /.netlify/functions/consensus ก่อน (อ่าน Investing.com เหมือนกัน
   //      แคชไว้ 3 ชม.) ถ้าดึงไม่ได้ (เช่น Netlify โดน Cloudflare บล็อก) จึงใช้ค่าที่ฝังไว้ตรงนี้
   //      — หมายเหตุท้ายการ์ดจะบอกเสมอว่ากำลังใช้ชุดไหน ณ วันที่เท่าไร
-  //    - อยากแก้ตัวเลขเอง **ไม่ต้องแตะไฟล์นี้**: กดปุ่ม "✏️ แก้ค่า ที่คาด เอง" ใต้หัวข้อวิเคราะห์
-  //      — ค่าจะถูกบันทึกฝั่งเซิร์ฟเวอร์ (function consensus-override) ให้ "ทุกคนที่เปิดเว็บเห็นค่าเดียวกัน"
-  //        (แก้/ลบต้องใส่รหัสจาก env CONSENSUS_OVERRIDE_PASSWORD) · ถ้าเซิร์ฟเวอร์ไม่พร้อม จะเก็บใน
-  //        localStorage ของเครื่องนั้นแทน (คนละเครื่องไม่เห็นค่ากัน) · จะแก้ในไฟล์ตรงนี้ก็ได้
+  //    - อยากแก้ตัวเลขเอง: แก้ค่าที่ฝังไว้ในไฟล์ตรงนี้ (ปุ่มแก้ค่าในหน้าเว็บถูกถอดออกแล้ว พ.ย. 2026)
   // ---------- Initial Jobless Claims (ผู้ขอรับสวัสดิการว่างงานครั้งแรก รายสัปดาห์) ----------
   // ตัวเลขจริงมาจาก FRED (ICSA, ปรับฤดูกาล, สัปดาห์สิ้นสุดวันเสาร์) ผ่าน /fred-data · ค่าคาด/ครั้งก่อนมาจาก
   // Investing.com ผ่าน /consensus (events.claims) · ถ้า FRED ยังไม่อัปเดตรอบที่เพิ่งประกาศ (หรือล่ม)
@@ -2175,436 +2168,33 @@ window.setHeaderStamp();
   let LIVE_UPCOMING = {};   // ค่าคาดของรอบที่ยังไม่ประกาศ จาก /consensus → { cpi: { releaseDate, forecast, previous }, ... }
   const CONSENSUS_TTL_MS = 3 * 60 * 60 * 1000;
 
-  // ── ค่ากลางฝั่งเซิร์ฟเวอร์ (ทุกคนที่เปิดเว็บเห็นค่าชุดเดียวกัน) ─────────────────────────────
-  let SHARED = null;                      // { enabled, backend, value, updatedAt } หรือ { enabled:false }
-
-  // รวมค่าที่จะใช้จริง — ทีละฟิลด์ (ค่าที่ตั้งเองในเครื่อง  >  ค่าที่แชร์  >  ค่าสด  >  ค่าที่ฝังไว้)
+  // รวมค่าที่จะใช้จริง — ทีละฟิลด์ (ค่าสด  >  ค่าที่ฝังไว้)
   function activeConsensus(){
     const live = LIVE_CONSENSUS || {};
-    const ov = CONSENSUS_OVERRIDE || {};
-    const sh = (SHARED && SHARED.value) || {};
     const num = (v, fb) => (isValidNum(v) ? v : fb);
     const liveFedHi = live.fed && isValidNum(live.fed.hi) ? live.fed.hi : null;
     const liveFedLo = live.fed && isValidNum(live.fed.lo) ? live.fed.lo : null;
-    const overridden = CONSENSUS_FIELDS.map(f => f.key).filter(k => isValidNum(ov[k]));
-    const sharedOverridden = CONSENSUS_FIELDS.map(f => f.key).filter(k => isValidNum(sh[k]));
     return {
       live: !!LIVE_CONSENSUS,
-      // ค่าที่ผู้ใช้แก้เองในหน้าเว็บ (ถ้ามี) ชนะทั้งค่าสดและค่าที่ฝังไว้ — ทีละช่อง ไม่ใช่ทั้งชุด
-      override: overridden.length > 0,
-      overridden: overridden,
-      savedAt: ov.savedAt || null,
-      // ค่าที่บันทึกฝั่งเซิร์ฟเวอร์ — ทุกเครื่องที่เข้าเว็บจะได้ชุดเดียวกัน
-      shared: sharedOverridden.length > 0,
-      sharedOverridden: sharedOverridden,
-      sharedSavedAt: sh.savedAt || null,
       source: live.source || CONSENSUS.source,
-      asOf: ov.asOf || sh.asOf || live.asOf || CONSENSUS.asOf,
-      cpi: num(ov.cpi, num(sh.cpi, num(live.cpi, CONSENSUS.cpi))),
-      coreCpi: num(ov.coreCpi, num(sh.coreCpi, num(live.coreCpi, CONSENSUS.coreCpi))),
-      ppi: num(ov.ppi, num(sh.ppi, num(live.ppi, CONSENSUS.ppi))),
-      unrate: num(ov.unrate, num(sh.unrate, num(live.unrate, CONSENSUS.unrate))),
-      nfp: num(ov.nfp, num(sh.nfp, num(live.nfp, CONSENSUS.nfp))),
-      fedHi: num(ov.fedHi, num(sh.fedHi, num(liveFedHi, CONSENSUS.fed.hi))),
-      fedLo: num(ov.fedLo, num(sh.fedLo, num(liveFedLo, CONSENSUS.fed.lo))),
+      asOf: live.asOf || CONSENSUS.asOf,
+      cpi: num(live.cpi, CONSENSUS.cpi),
+      coreCpi: num(live.coreCpi, CONSENSUS.coreCpi),
+      ppi: num(live.ppi, CONSENSUS.ppi),
+      unrate: num(live.unrate, CONSENSUS.unrate),
+      nfp: num(live.nfp, CONSENSUS.nfp),
+      fedHi: num(liveFedHi, CONSENSUS.fed.hi),
+      fedLo: num(liveFedLo, CONSENSUS.fed.lo),
       // ค่า "ตามจริง" ของรอบล่าสุดจาก Investing.com — ใช้ตรวจว่า consensus ตรงรอบกับตัวเลขบนการ์ด
       actuals: live.actuals || null,
       // แต่ละช่องมาจากไหน — 'baked' = ค่าสำรองที่ฝังไว้ (เป็นของรอบประกาศ ณ CONSENSUS.asOf เท่านั้น)
       from: ['cpi','coreCpi','ppi','unrate','nfp'].reduce((o, k) => {
-        o[k] = isValidNum(ov[k]) ? 'override' : isValidNum(sh[k]) ? 'shared' : isValidNum(live[k]) ? 'live' : 'baked';
+        o[k] = isValidNum(live[k]) ? 'live' : 'baked';
         return o;
-      }, { fed: isValidNum(ov.fedHi) ? 'override' : isValidNum(sh.fedHi) ? 'shared' : isValidNum(liveFedHi) ? 'live' : 'baked' })
+      }, { fed: isValidNum(liveFedHi) ? 'live' : 'baked' })
     };
   }
-
-  // ── แก้ค่า "ที่คาด" ได้จากในหน้าเว็บเลย (ไม่ต้องแตะโค้ด ไม่ต้องมี GitHub) ─────────────────────
-  // ลำดับความสำคัญทีละช่อง:
-  //   ค่าที่ตั้งเองในเครื่องนี้  >  ค่าที่แชร์จากเซิร์ฟเวอร์ (ทุกคนเห็น)  >  ค่าสดจาก Investing.com  >  ค่าที่ฝังในไฟล์
-  // ค่าที่แก้จะถูกส่งไปบันทึกฝั่งเซิร์ฟเวอร์ (/.netlify/functions/consensus-override) ทีละช่อง
-  // (ช่องที่แก้/ช่องที่ล้างเท่านั้น ไม่กระทบช่องอื่น) · ถ้าเซิร์ฟเวอร์ไม่พร้อมหรือยังไม่ได้ยืนยันรหัส
-  // ก็ยังเก็บใน localStorage ของเครื่องนี้อยู่ (fallback เดิม: คนละเครื่องไม่เห็นค่ากัน)
-  // ค่าจะถูกใช้ต่อไปจนกว่าจะกด "คืนค่าเริ่มต้น" (ระบบไม่ลบทิ้งให้เอง)
-  const OVERRIDE_KEY = 'giConsensusOverride.v1';
-  const CONSENSUS_FIELDS = [
-    // min/max คือหน่วยที่ *พิมพ์* (ไม่ใช่หน่วยที่เก็บ) — nfp พิมพ์เป็น "พันตำแหน่ง" แล้วคูณ scale ตอนเก็บ
-    { key:'cpi',     label:'CPI YoY',                unit:'%',  step:0.1,  min:0,     max:30,    scale:1 },
-    { key:'coreCpi', label:'Core CPI YoY',           unit:'%',  step:0.1,  min:0,     max:30,    scale:1 },
-    { key:'ppi',     label:'PPI MoM',                unit:'%',  step:0.1,  min:-5,    max:5,     scale:1 },
-    { key:'unrate',  label:tr('ว่างงาน', 'Unemployment'),        unit:'%',  step:0.1,  min:0,     max:30,    scale:1 },
-    { key:'nfp',     label:tr('จ้างงานใหม่', 'New jobs'),          unit:tr('พัน', 'K'), step:1,    min:-2000, max:2000,  scale:1000 },
-    { key:'fedLo',   label:tr('Fed ขอบล่าง', 'Fed lower bound'),   unit:'%',  step:0.25, min:0,     max:25,    scale:1 },
-    { key:'fedHi',   label:tr('Fed ขอบบน', 'Fed upper bound'),     unit:'%',  step:0.25, min:0,     max:25,    scale:1 }
-  ];
   const OVERRIDE_LABELS = { cpi:'CPI', coreCpi:'Core CPI', ppi:'PPI', unrate:tr('ว่างงาน', 'Unemployment'), nfp:'NFP', fedLo:tr('Fed ขอบล่าง', 'Fed lower'), fedHi:tr('Fed ขอบบน', 'Fed upper') };
-  function consensusField(key){ return CONSENSUS_FIELDS.filter(f => f.key === key)[0] || null; }
-
-  function readConsensusOverride(){
-    try{
-      const raw = localStorage.getItem(OVERRIDE_KEY);
-      if(!raw) return null;
-      const o = JSON.parse(raw);
-      if(!o || typeof o !== 'object') return null;
-      const out = {};
-      CONSENSUS_FIELDS.forEach(f => {
-        const v = Number(o[f.key]);
-        if(!isValidNum(v)) return;
-        const disp = v / f.scale;
-        if(disp < f.min || disp > f.max) return;   // ค่าเพี้ยน/ถูกแก้จากภายนอก = ทิ้ง
-        out[f.key] = v;
-      });
-      if(typeof o.asOf === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(o.asOf)) out.asOf = o.asOf;
-      if(!CONSENSUS_FIELDS.some(f => isValidNum(out[f.key])) && !out.asOf) return null;
-      out.savedAt = (typeof o.savedAt === 'string') ? o.savedAt : null;
-      return out;
-    }catch(e){ return null; }
-  }
-  function getConsensusOverride(){
-    if(!CONSENSUS_OVERRIDE) return null;
-    const copy = {};
-    Object.keys(CONSENSUS_OVERRIDE).forEach(k => { copy[k] = CONSENSUS_OVERRIDE[k]; });
-    return copy;
-  }
-  // patch = { cpi: 3.5, fedHi: 4, asOf: '2026-09-12' } · ส่ง null/'' เพื่อล้างช่องนั้นกลับไปใช้ค่าเดิม
-  function setConsensusOverride(patch){
-    if(!patch || typeof patch !== 'object') return getConsensusOverride();
-    const o = Object.assign({}, CONSENSUS_OVERRIDE || {});
-    const applied = {};                                // สิ่งที่เปลี่ยนจริง — ส่งขึ้นเซิร์ฟเวอร์ทีละช่อง
-    let touched = false;
-    CONSENSUS_FIELDS.forEach(f => {
-      if(!(f.key in patch)) return;
-      const raw = patch[f.key];
-      if(raw === null || raw === undefined || raw === ''){
-        if(f.key in o) delete o[f.key];
-        applied[f.key] = null;
-        touched = true;
-        return;
-      }
-      const disp = Number(raw);
-      if(!isValidNum(disp) || disp < f.min || disp > f.max) return;   // ค่าที่เป็นไปไม่ได้ = ไม่บันทึก
-      o[f.key] = disp * f.scale;
-      applied[f.key] = disp * f.scale;
-      touched = true;
-    });
-    if('asOf' in patch){
-      if(patch.asOf){ o.asOf = String(patch.asOf).slice(0, 10); applied.asOf = o.asOf; }
-      else { delete o.asOf; applied.asOf = null; }
-      touched = true;
-    }
-    if(!touched) return getConsensusOverride();
-    if(!CONSENSUS_FIELDS.some(f => isValidNum(o[f.key])) && !o.asOf){
-      CONSENSUS_OVERRIDE = null;                       // ไม่เหลือค่าที่ตั้งเองแล้ว → กลับไปใช้ค่าอัตโนมัติ
-      try{ localStorage.removeItem(OVERRIDE_KEY); }catch(e){}
-    }else{
-      o.savedAt = new Date().toISOString().slice(0, 10);
-      CONSENSUS_OVERRIDE = o;
-      try{ localStorage.setItem(OVERRIDE_KEY, JSON.stringify(o)); }catch(e){}
-    }
-    afterConsensusChange(false);
-    requestSharedPush('set', applied);                 // ให้ทุกคนเห็นด้วย (ถ้าเซิร์ฟเวอร์พร้อม)
-    return getConsensusOverride();
-  }
-  function clearConsensusOverride(){
-    CONSENSUS_OVERRIDE = null;
-    try{ localStorage.removeItem(OVERRIDE_KEY); }catch(e){}
-    afterConsensusChange(true);
-    requestSharedPush('clear');                        // ล้างค่ากลางด้วย (ต้องยืนยันรหัสอีกที)
-  }
-  function afterConsensusChange(retryLive){
-    try{ if(lastFedPayload) renderFedAnalysis(lastFedPayload); }catch(e){ /* best-effort */ }
-    try{ refreshConsensusEditorState(); }catch(e){ /* best-effort */ }
-    if(retryLive){ try{ loadConsensus(); }catch(e){} }   // ล้างค่าเองแล้วให้ลองดึงค่าสดใหม่อีกครั้ง
-  }
-  let CONSENSUS_OVERRIDE = readConsensusOverride();
-
-  // ── ที่เก็บค่ากลางฝั่งเซิร์ฟเวอร์: ทุกคนที่เปิดเว็บเห็นค่าเดียวกัน ────────────────────────────────
-  // /.netlify/functions/consensus-override = function "อ่าน/เขียนค่าที่คาด":
-  //   • อ่าน (GET) =สาธารณะ  ·  เขียน (POST) = ต้องใส่รหัส (กันคนเปิดเว็บแก้ค่าที่คนอื่นเห็น)
-  //   • ที่เก็บจริง = ไฟล์ data/consensus-override.json ใน repo (Netlify ฝาก GITHUB_TOKEN มาให้อัตโนมัติ)
-  //     หรือ Netlify Database ถ้าเปิดไว้ · ฝั่ง dev-server (เครื่องนี้) ใช้ไฟล์ในเครื่อง
-  //   • ส่งขึ้นเซิร์ฟเวอร์ทีละ "ช่องที่แก้เท่านั้น" (patch) ไม่เคยทับช่องอื่นที่เก็บอยู่
-  //   • ถ้าเซิร์ฟเวอร์ไม่พร้อม/ยังไม่ได้ยืนยันรหัส → ค่า fallback ใน localStorage ของเครื่องนี้อยู่
-  const SHARED_URL = '/.netlify/functions/consensus-override';
-  const SHARED_TTL_MS = 60 * 1000;        // เช็คค่ากลางทุก ~1 นาที (กันใครตั้งใหม่จากเครื่องอื่น)
-  let sharedFetchedAt = 0;
-  let sharedStatusState = 'idle';         // idle|off|ready|pending|needs-password|bad-password|ok|error
-  let sessionPassword = null;             // รหัสที่ยืนยันใน session นี้ (ไม่เก็บลง localStorage)
-  let sharedBusy = false;
-  let sharedAction = null;                // 'set' | 'clear' — ชนิดของการเปลี่ยนแปลงที่รอส่ง
-  let pendingPatch = null;                // ช่องที่แก้/ล้างแล้วยังไปไม่ถึงเซิร์ฟเวอร์
-  let pendingClearFirst = false;          // กด "คืนค่าเริ่มต้น" ไว้แต่ยังส่งไม่สำเร็จ
-  let sharedPushTimer = 0;
-
-  function sharedEnabled(){ return !!(SHARED && SHARED.enabled); }
-  function sharedValue(){ return (SHARED && SHARED.value) || {}; }
-
-  async function loadSharedConsensus(force){
-    if(!force && sharedFetchedAt && Date.now() - sharedFetchedAt < SHARED_TTL_MS) return;
-    sharedFetchedAt = Date.now();
-    try{
-      const r = await fetchWithTimeout(SHARED_URL, 6000);
-      const j = await r.json().catch(() => null);
-      SHARED = (r.ok && j && j.enabled === true)
-        ? { enabled: true, backend: j.backend || '', value: (j.value && typeof j.value === 'object') ? j.value : null, updatedAt: j.updatedAt || null }
-        : { enabled: false, backend: (j && j.backend) || '', value: null, updatedAt: null, hint: (j && j.hint) || '' };
-    }catch(e){
-      SHARED = { enabled: false, backend: '', value: null, updatedAt: null };
-    }
-    if(sharedStatusState === 'idle'){
-      sharedStatusState = SHARED.enabled ? (SHARED.value ? 'ok' : 'ready') : 'off';
-    }else if((sharedStatusState === 'ok' || sharedStatusState === 'ready') && sharedHasPendingDiff()){
-      sharedStatusState = 'needs-password';    // มีค่าที่แก้ค้างอยู่ก่อนหน้า load ครั้งนี้
-    }
-    try{ if(lastFedPayload) renderFedAnalysis(lastFedPayload); }catch(e){ /* best-effort */ }
-    try{ refreshConsensusEditorState(); }catch(e){ /* best-effort */ }
-  }
-
-  function sharedHasPendingDiff(){
-    if(!sharedEnabled()) return false;
-    const sh = sharedValue();
-    const hasPatch = (pendingPatch && Object.keys(pendingPatch).length) || pendingClearFirst;
-    if(!hasPatch) return false;
-    if(pendingClearFirst) return true;
-    return Object.keys(pendingPatch).some(k => pendingPatch[k] !== (k in sh ? sh[k] : undefined));
-  }
-
-  // ดีเลย์สั้นๆ 1.2 วิ ตอนแก้รวดเดียว → ส่งเป็น 1 ชุดเดียว (เซิร์ฟเวอร์ = commit เดียว ไม่ใช่ 6 commit)
-  function requestSharedPush(action, applied){
-    if(!sharedEnabled()) return;
-    if(action === 'clear'){ pendingPatch = null; pendingClearFirst = true; sharedAction = 'clear'; }
-    else { if(applied) pendingPatch = Object.assign({}, pendingPatch, applied); sharedAction = 'set'; }
-    if(sharedBusy) return;
-    clearTimeout(sharedPushTimer);
-    sharedPushTimer = setTimeout(runSharedPush, 1200);
-  }
-
-  async function runSharedPush(){
-    if(!sharedEnabled()){ pendingPatch = null; pendingClearFirst = false; sharedAction = null; return; }
-    sharedBusy = true;
-    sharedStatusState = 'pending';
-    let attempted = false;   // ส่งคำขอขึ้นเซิร์ฟเวอร์จริงหรือยัง (กัน re-request ซ้ำตอนรอรหัส)
-    try{
-      const action = sharedAction || 'set';
-      const hasWork = (action === 'clear') || pendingClearFirst || (pendingPatch && Object.keys(pendingPatch).length);
-      if(!hasWork){ sharedAction = null; sharedStatusState = SHARED.value ? 'ok' : 'ready'; return; }
-      if(!sessionPassword){
-        // ยังไม่ได้ยืนยันรหัสใน session นี้ — รอผู้ใช้กดปุ่ม 🔑 (ไม่เด้ง prompt ระหว่างพิมพ์)
-        // sharedAction ยังค้างอยู่ → กด 🔑 แล้วจะส่งชนิดเดิม (set/clear) ถูกต้อง
-        sharedStatusState = 'needs-password';
-        return;
-      }
-      sharedAction = null;
-      const body = (action === 'clear')
-        ? { password: sessionPassword, action: 'clear' }
-        : { password: sessionPassword, action: 'set', clearFirst: !!pendingClearFirst, patch: pendingPatch || {} };
-      attempted = true;
-      const r = await fetchWithTimeout(SHARED_URL, 10000, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const j = await r.json().catch(() => ({}));
-      if(r.ok && j && j.ok){
-        SHARED = { enabled: true, backend: j.backend || SHARED.backend, value: (j.value && typeof j.value === 'object') ? j.value : null, updatedAt: j.updatedAt || new Date().toISOString() };
-        pendingPatch = null;
-        pendingClearFirst = false;
-        sharedStatusState = 'ok';
-        try{ afterConsensusChange(false); }catch(e){ /* best-effort */ }
-      }else if(r.status === 401){
-        sessionPassword = null;
-        sharedStatusState = (j && j.error === 'password-required') ? 'needs-password' : 'bad-password';
-      }else{
-        sharedStatusState = 'error';        // patch ยังค้างอยู่ → กด 🔐/ลองใหม่ได้
-      }
-    }catch(e){
-      sharedStatusState = 'error';
-    }finally{
-      sharedBusy = false;
-      try{ refreshConsensusEditorState(); }catch(e){ /* best-effort */ }
-      // แก้เพิ่ม "ระหว่างส่ง" → ส่งต่อ; (ถ้ายังไม่ได้ส่งเพราะรอรหัส sharedAction ค้างไว้อยู่แล้ว —
-      // ให้ผู้ใช้กด 🔑 เอง ไม่ self-loop)
-      if(attempted && sharedAction && sharedEnabled()) requestSharedPush(sharedAction);
-    }
-  }
-
-  // ปุ่ม 🔑 ในแผงแก้ค่า: ยืนยันรหัส (ค้างใน session นี้เท่านั้น) แล้วค่อยบันทึกให้ทุกคนเห็น
-  function useSharedPassword(){
-    if(!sharedEnabled()) return;
-    if(typeof window.prompt !== 'function') return;
-    const pwd = window.prompt(tr('รหัสสำหรับแก้ค่าที่แชร์ (ทุกคนที่เข้าเว็บจะเห็นค่าชุดเดียวกัน)', 'Password for editing the shared values (everyone who visits sees the same set)'));
-    if(pwd == null) return;                            // ยกเลิก
-    if(!String(pwd).length){ sharedStatusState = 'bad-password'; refreshConsensusEditorState(); return; }
-    sessionPassword = String(pwd);
-    requestSharedPush(sharedAction || 'set');
-  }
-
-  function sharedStatusLine(){
-    const S = 'id="consensusSharedStatus" class="muted" style="font-size:10px; margin-top:9px; line-height:1.55;"';
-    if(!SHARED) return '<div ' + S + '>' + tr('⏳ กำลังตรวจสอบที่เก็บค่ากลาง…', '⏳ Checking the shared store…') + '</div>';
-    if(!SHARED.enabled) return '<div ' + S + ' style="color:var(--warn);">' + tr('⚠️ ที่เก็บค่ากลาง (เซิร์ฟเวอร์) ยังไม่พร้อม — ค่าที่แก้ตอนนี้จะเห็นในเครื่องนี้เท่านั้น', '⚠️ The shared (server) store isn\'t available. Edits are only visible on this device.') + '</div>';
-    let when = '';
-    if(SHARED.updatedAt){
-      try{ when = tr(' (อัปเดตล่าสุด ', ' (last updated ') + new Date(SHARED.updatedAt).toLocaleString(LOCALE, { dateStyle: 'medium', timeStyle: 'short' }) + ')'; }
-      catch(e){ when = tr(' (อัปเดตล่าสุด ', ' (last updated ') + esc(SHARED.updatedAt) + ')'; }
-    }
-    const btn = ' <button type="button" id="consensusPasswordBtn" class="tabbtn" style="padding:2px 9px; font-size:10px;">🔑 ' + (sessionPassword ? tr('ลองบันทึกใหม่', 'Try saving again') : tr('ใส่รหัสแล้วแชร์', 'Enter password to share')) + '</button>';
-    switch(sharedStatusState){
-      case 'pending':
-        return '<div ' + S + '>' + tr('⏳ กำลังบันทึกต่อเซิร์ฟเวอร์…', '⏳ Saving to the server…') + '</div>';
-      case 'needs-password':
-      case 'bad-password':
-        return '<div ' + S + '>' + (sharedStatusState === 'bad-password' ? tr('❌ รหัสไม่ถูกต้อง · ', '❌ Wrong password · ') : '')
-          + '🔑 ' + (pendingClearFirst
-            ? tr('การล้างค่ากลางยังไม่ได้บันทึก — ยืนยันรหัสแล้วทุกคนจะกลับไปเห็นค่าอัตโนมัติ', 'Clearing the shared values isn\'t saved yet. Confirm the password and everyone goes back to automatic values.')
-            : tr('ค่าที่แก้ยังอยู่เฉพาะเครื่องนี้ — ยืนยันรหัสแล้วทุกคนจะเห็นค่าชุดเดียวกัน', 'Your edits are only on this device. Confirm the password and everyone sees the same values.')) + btn + '</div>';
-      case 'error':
-        return '<div ' + S + ' style="color:var(--warn);">' + tr('⚠️ บันทึกเซิร์ฟเวอร์ไม่สำเร็จ — ค่าล่าสุดอาจเห็นแค่เครื่องนี้', '⚠️ Saving to the server failed. The latest values may only be on this device.') + btn + '</div>';
-      case 'ok':
-        return '<div ' + S + '>' + (SHARED.value
-          ? tr('☁️ บันทึกฝั่งเซิร์ฟเวอร์แล้ว — ทุกคนที่เปิดเว็บเห็นค่าชุดนี้', '☁️ Saved on the server. Everyone who opens the site sees these values') + when
-          : tr('☁️ ล้างค่ากลางแล้ว — ทุกคนกลับไปเห็นค่าอัตโนมัติ', '☁️ Shared values cleared. Everyone is back on automatic values') + when) + '</div>';
-      default:
-        return '<div ' + S + '>' + tr('☁️ ที่เก็บค่ากลางพร้อมใช้งาน — ยังไม่มีค่าที่ตั้งเอง (ทุกคนเห็นค่าอัตโนมัติ)', '☁️ Shared store ready. No custom values yet (everyone sees automatic values)') + '</div>';
-    }
-  }
-
-  // ── หน้าตาของช่องแก้ค่า ─────────────────────────────────────────────────────────────────────
-  let consensusEditorOpen = false;
-
-  function fmtConsensusNum(key, v){
-    if(!isValidNum(v)) return '—';
-    if(key === 'nfp') return fmtJobs(v) + tr(' ตำแหน่ง', ' jobs');
-    if(key === 'ppi') return signedPct(v, 1) + '%';   // MoM ติดลบได้ — ใส่เครื่องหมายเสมอ
-    // ทศนิยม 1 ตำแหน่งตามที่ Investing.com รายงาน (3.75 = กรอบ Fed ให้แสดง 2 ตำแหน่ง)
-    const r = Number(v.toFixed(2));
-    return r.toFixed(Math.round(r * 10) / 10 === r ? 1 : 2) + '%';
-  }
-  function consensusSummaryLine(){
-    const C = activeConsensus();
-    const mark = k => (C.overridden.indexOf(k) >= 0 ? '✏️ ' : (C.sharedOverridden.indexOf(k) >= 0 ? '☁️ ' : ''));
-    return tr('ตอนนี้ใช้: ', 'In use: ') + mark('cpi') + 'CPI ' + fmtConsensusNum('cpi', C.cpi)
-      + ' · ' + mark('coreCpi') + 'Core ' + fmtConsensusNum('coreCpi', C.coreCpi)
-      + ' · ' + mark('ppi') + 'PPI ' + fmtConsensusNum('ppi', C.ppi)
-      + ' · ' + mark('unrate') + tr('ว่างงาน ', 'Unemployment ') + fmtConsensusNum('unrate', C.unrate)
-      + ' · ' + mark('nfp') + 'NFP ' + fmtConsensusNum('nfp', C.nfp)
-      + ' · ' + mark('fedLo') + mark('fedHi') + 'Fed ' + fmtConsensusNum('fedLo', C.fedLo) + '–' + fmtConsensusNum('fedHi', C.fedHi);
-  }
-  const EDIT_INPUT_STYLE = 'width:100%; box-sizing:border-box; background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--text); font-family:var(--mono); font-size:12px; padding:5px 7px;';
-  const EDIT_BTN_STYLE = 'padding:3px 10px; font-size:11px; border-radius:8px; line-height:1.5;';
-
-  function renderConsensusEditor(){
-    const panel = el('consensusEditPanel');
-    if(!panel) return;
-    const C = activeConsensus();
-    const ov = CONSENSUS_OVERRIDE || {};
-    const focused = (typeof document !== 'undefined' && document.activeElement && document.activeElement.dataset)
-      ? document.activeElement.dataset.ckey : null;
-    const sh = sharedValue();
-    const input = f => {
-      const mine = isValidNum(ov[f.key]);
-      const shared = isValidNum(sh[f.key]);
-      const show = mine ? (ov[f.key] / f.scale) : (shared ? (sh[f.key] / f.scale) : '');
-      const auto = isValidNum(C[f.key]) ? (C[f.key] / f.scale) : '';
-      return '<label class="muted" style="display:flex; flex-direction:column; gap:3px; font-size:10px;">'
-        + f.label + ' (' + f.unit + ')'
-        + '<input type="number" inputmode="decimal" step="' + f.step + '" data-ckey="' + f.key + '"'
-        + ' value="' + (show === '' ? '' : show) + '" placeholder="' + auto + '"'
-        + ' title="' + (mine ? tr('ใช้ค่าที่คุณตั้งเอง (เครื่องนี้)', 'Using your own value (this device)') : shared ? tr('ใช้ค่าที่แชร์จากเซิร์ฟเวอร์ (ทุกคนเห็น)', 'Using the shared server value (everyone sees it)') : tr('ว่าง = ใช้ค่าอัตโนมัติ', 'Empty = automatic value')) + '"'
-        + ' style="' + EDIT_INPUT_STYLE + (mine ? ' border-color:var(--amber);' : (shared ? ' border-color:var(--accent);' : '')) + '"></label>';
-    };
-    panel.innerHTML =
-      '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap;">'
-      + '<b style="font-size:12px;">' + tr('✏️ แก้ค่า "ที่คาด" ที่ใช้ตัดสินว่าดี/แย่กว่าคาด', '✏️ Edit the forecasts used to judge better/worse than expected') + '</b>'
-      + '<span class="muted" style="font-size:10px;">' + tr('บันทึกทันทีที่แก้ · ไม่ต้องกดบันทึก', 'Saved as you type · no save button needed') + '</span>'
-      + '</div>'
-      + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(118px,1fr)); gap:8px; margin-top:10px;">'
-      + CONSENSUS_FIELDS.map(input).join('')
-      + '</div>'
-      + '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;">'
-      + '<label class="muted" style="font-size:10px;">' + tr('วันที่อ้างอิง', 'Reference date') + '<input type="date" data-ckey="asOf" value="' + esc(ov.asOf || sh.asOf || '') + '" style="' + EDIT_INPUT_STYLE + '"></label>'
-      + '<button type="button" id="consensusResetBtn" class="tabbtn" style="' + EDIT_BTN_STYLE + '">' + tr('↺ คืนค่าเริ่มต้น (ใช้ค่าจาก Investing.com)', '↺ Reset (use Investing.com values)') + '</button>'
-      + '<button type="button" id="consensusCloseBtn" class="tabbtn" style="' + EDIT_BTN_STYLE + '">' + tr('✕ ปิด', '✕ Close') + '</button>'
-      + '</div>'
-      + '<div class="muted" style="font-size:10.5px; margin-top:9px; line-height:1.6;">' + esc(consensusSummaryLine()) + '</div>'
-      + sharedStatusLine()
-      + '<div class="muted" style="font-size:10px; margin-top:6px; line-height:1.6; opacity:.85;">'
-      + tr('ช่องที่เว้นว่าง = ใช้ค่าอัตโนมัติ · ช่องที่ใส่ค่า = ใช้ค่านี้แทน (✏️ = เครื่องนี้ · ☁️ = ที่แชร์) · เลขในวงเล็บคือหน่วย '
-      + '(การจ้างงานกรอกเป็น "พันตำแหน่ง" เช่น 55 = 55,000 ตำแหน่ง)<br>'
-      + 'ค่าที่แก้จะถูกบันทึกฝั่งเซิร์ฟเวอร์ — ทุกคนที่เปิดเว็บเห็นค่าเดียวกัน (แก้/ลบต้องใส่รหัส) · ถ้าเซิร์ฟเวอร์ไม่พร้อม จะเก็บในเครื่องนี้แทน',
-        'Empty field = automatic value · filled field = use this value instead (✏️ = this device · ☁️ = shared) · the unit is in brackets '
-      + '(enter payrolls in thousands, e.g. 55 = 55,000 jobs)<br>'
-      + 'Edits are saved on the server so everyone sees the same values (editing/clearing needs the password) · if the server is unavailable they stay on this device')
-      + '</div>';
-
-    const inputs = panel.querySelectorAll ? panel.querySelectorAll('input[data-ckey]') : [];
-    Array.prototype.forEach.call(inputs, function(inp){
-      inp.addEventListener('change', function(){
-        const key = inp.dataset.ckey;
-        const raw = String(inp.value == null ? '' : inp.value).trim();
-        if(key === 'asOf'){ setConsensusOverride({ asOf: raw || null }); return; }
-        const f = consensusField(key);
-        if(!f) return;
-        const patch = {};
-        // ส่งหน่วยที่ *พิมพ์* เข้าไป — setConsensusOverride จะเช็คขอบเขตแล้วคูณ scale เอง
-        // (ถ้าคูณตรงนี้ด้วย NFP จะถูกคูณสองและถูกตีว่า "ค่าเพี้ยน" ไม่ถูกบันทึก)
-        patch[key] = (raw === '') ? null : Number(raw);
-        setConsensusOverride(patch);
-      });
-    });
-    const resetBtn = panel.querySelector ? panel.querySelector('#consensusResetBtn') : null;
-    if(resetBtn) resetBtn.addEventListener('click', function(){ clearConsensusOverride(); });
-    const pwdBtn = panel.querySelector ? panel.querySelector('#consensusPasswordBtn') : null;
-    if(pwdBtn) pwdBtn.addEventListener('click', useSharedPassword);
-    const closeBtn = panel.querySelector ? panel.querySelector('#consensusCloseBtn') : null;
-    if(closeBtn) closeBtn.addEventListener('click', function(){ setConsensusEditorOpen(false); });
-    if(focused){
-      const again = panel.querySelector ? panel.querySelector('[data-ckey="' + focused + '"]') : null;
-      if(again && again.focus) again.focus();
-    }
-  }
-
-  function updateConsensusEditBtn(){
-    const btn = el('consensusEditBtn');
-    if(!btn) return;
-    const hasShared = !!(SHARED && SHARED.value);
-    btn.textContent = consensusEditorOpen
-      ? tr('✕ ปิดช่องแก้ค่า "ที่คาด"', '✕ Close forecast editor')
-      : (CONSENSUS_OVERRIDE ? tr('✏️ แก้ค่า "ที่คาด" (ตั้งเองอยู่)', '✏️ Edit forecasts (custom)') : (hasShared ? tr('☁️ แก้ค่า "ที่คาด" (แชร์อยู่)', '☁️ Edit forecasts (shared)') : tr('✏️ แก้ค่า "ที่คาด" เอง', '✏️ Edit forecasts')));
-    btn.style.color = CONSENSUS_OVERRIDE ? 'var(--amber)' : (hasShared ? 'var(--accent)' : '');
-    btn.style.borderColor = CONSENSUS_OVERRIDE ? 'var(--amber)' : (hasShared ? 'var(--accent)' : '');
-  }
-  function refreshConsensusEditorState(){
-    if(consensusEditorOpen) renderConsensusEditor();
-    updateConsensusEditBtn();
-  }
-  function setConsensusEditorOpen(open){
-    consensusEditorOpen = !!open;
-    const panel = el('consensusEditPanel');
-    if(panel) panel.style.display = consensusEditorOpen ? 'block' : 'none';
-    if(consensusEditorOpen) renderConsensusEditor();
-    updateConsensusEditBtn();
-  }
-  function initConsensusEditor(){
-    const btn = el('consensusEditBtn');
-    if(btn) btn.addEventListener('click', function(){ setConsensusEditorOpen(!consensusEditorOpen); });
-    renderConsensusEditor();          // สร้างเนื้อหาไว้ล่วงหน้า (ซ่อนอยู่) กดแล้วเห็นทันที
-    setConsensusEditorOpen(false);
-  }
-
-  // ให้เทสต์ (และคอนโซลของเบราว์เซอร์) เรียกใช้ได้โดยตรง
-  // เช่น consensusOverride.set({ cpi: 3.5 }) แล้วบทวิเคราะห์จะถูกสร้างใหม่ทันที
-  window.consensusOverride = {
-    key: OVERRIDE_KEY,
-    fields: CONSENSUS_FIELDS.map(f => f.key),
-    get: getConsensusOverride,
-    set: setConsensusOverride,
-    clear: clearConsensusOverride,
-    // ค่ากลางฝั่งเซิร์ฟเวอร์ (ทุกเครื่องเห็นชุดเดียวกัน) — null = ยังไม่ได้โหลด
-    shared: function(){ return SHARED ? { enabled: !!SHARED.enabled, backend: SHARED.backend || '', value: SHARED.value || null, updatedAt: SHARED.updatedAt || null } : null; },
-    status: function(){ return sharedStatusState; },
-    authorize: useSharedPassword,
-    open: function(){ setConsensusEditorOpen(true); },
-    close: function(){ setConsensusEditorOpen(false); }
-  };
 
   async function loadConsensus(){
     if(LIVE_CONSENSUS && (Date.now() - consensusFetchedAt) < (consensusTtlMs || CONSENSUS_TTL_MS)) return;
@@ -2866,17 +2456,7 @@ window.setHeaderStamp();
     const autoLine = C.live
       ? esc(C.source) + tr(' (ดึงสด · ', ' (live · ') + esc(thDay(C.asOf)) + ')'
       : esc(C.source) + tr(' (ค่าที่ฝังไว้ ณ ', ' (built-in values as of ') + esc(thDay(C.asOf)) + ')';
-    // แสดงที่มาของค่าที่คาดต่อช่อง: ☁️ = ที่แชร์จากเซิร์ฟเวอร์ (ทุกคนเห็น) · ✏️ = ที่ตั้งเองในเครื่อง
-    const ovParts = [];
-    if(C.shared) ovParts.push(tr('☁️ ที่แชร์จากเซิร์ฟเวอร์ (', '☁️ shared from server (') + C.sharedOverridden.map(k => OVERRIDE_LABELS[k] || k).join(', ') + ')'
-      + (C.sharedSavedAt ? tr(' เมื่อ ', ' on ') + esc(C.sharedSavedAt) : ''));
-    if(C.override) ovParts.push(tr('✏️ ค่าที่คุณตั้งเอง (', '✏️ your own values (') + C.overridden.map(k => OVERRIDE_LABELS[k] || k).join(', ') + ')'
-      + (C.savedAt ? tr(' เมื่อ ', ' on ') + esc(C.savedAt) : ''));
-    const srcLine = ovParts.length
-      ? tr('ที่คาด: ', 'Forecasts: ') + ovParts.join(' · ')
-        + tr(' — อัตโนมัติ: ', ' — automatic: ') + autoLine
-        + ' · <a href="#" id="consensusResetInline" style="color:var(--accent); border-bottom:1px dotted var(--accent); text-decoration:none;">' + tr('↺ คืนค่าเริ่มต้น', '↺ Reset') + '</a>'
-      : tr('ที่คาด: ', 'Forecasts: ') + autoLine;
+    const srcLine = tr('ที่คาด: ', 'Forecasts: ') + autoLine;
     const linkLine = tr('ดูต้นทาง: ', 'Sources: ') + [
       link(CONSENSUS.links.cpi, 'CPI'), link(CONSENSUS.links.coreCpi, 'Core CPI'), link(CONSENSUS.links.ppi, 'PPI'),
       link(CONSENSUS.links.nfp, tr('การจ้างงาน', 'Payrolls')), link(CONSENSUS.links.unrate, tr('ว่างงาน', 'Unemployment')),
@@ -2897,10 +2477,6 @@ window.setHeaderStamp();
 
     box.innerHTML = cards.join('') + '<div class="muted" style="font-size:10px; line-height:1.6; opacity:.8;">' + foot + '</div>';
 
-    // ลิงก์ "คืนค่าเริ่มต้น" ในบรรทัดท้ายการ์ด (สร้างใหม่ทุกครั้งที่ render จึงต้องผูกใหม่ทุกครั้ง)
-    const inlineReset = el('consensusResetInline');
-    if(inlineReset) inlineReset.addEventListener('click', function(ev){ if(ev && ev.preventDefault) ev.preventDefault(); clearConsensusOverride(); });
-
     // แจ้งเตือนในหน้าเฉพาะเมื่อตัวเลขขยับจากการ์ดครั้งก่อน (ผู้ใช้ที่เปิดหน้านานๆ จะรู้ว่าเลขใหม่มา)
     if(lastFedSignature && lastFedSignature !== fedSignature(d)){
       const statusEl2 = el('fredFetchStatus');
@@ -2919,7 +2495,6 @@ window.setHeaderStamp();
     const force = !!(opts && opts.force);
     const statusEl = el('fredFetchStatus');
     const now = Date.now();
-    loadSharedConsensus();   // เช็คค่ากลางทุก ~1 นาที (TTL กันเอง) แม้รอบนี้ Fed จะใช้แคช
     // ค่าคาดสดต้องโหลดทุกครั้ง (TTL กันเองใน loadConsensus) — เดิมเรียกหลังเช็คแคช Fed เลยไม่เคยโหลด
     // ตอนที่ตัวเลข Fed ยังอยู่ในแคช (ได้ถึง 3 ชม.) หน้าเว็บจึงค้างที่ค่าคาดที่ฝังไว้
     loadConsensus();
@@ -2988,9 +2563,6 @@ window.setHeaderStamp();
   }, FED_TICK_MS);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) refreshFedData(); });
 
-  // ช่องแก้ค่า "ที่คาด" ในหน้าเว็บ (ปุ่ม ✏️) — พร้อมใช้ทันที ไม่ต้องรอข้อมูลจากเซิร์ฟเวอร์
-  initConsensusEditor();
-  loadSharedConsensus();   // อ่านค่ากลางฝั่งเซิร์ฟเวอร์ (ทุกคนเห็นค่าเดียวกัน) — เงียบถ้าไม่พร้อม
 
   el('newsRefreshBtn').addEventListener('click', refreshNews);
 

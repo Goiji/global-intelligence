@@ -6,14 +6,13 @@
 //
 // Needs (Cloudflare dashboard → the Pages project → Settings):
 //   - (optional) compatibility flag `nodejs_compat` — not required: nothing here needs Node built-ins
-//   - KV namespace bound as `STORE` (visitor counter + shared consensus override)
+//   - KV namespace bound as `STORE` (visitor counter + last-good data copies)
 //   - the same environment variables the Netlify site has (FRED_API_KEY, … see README)
 // _routes.json limits this to /.netlify/functions/* and the paths blocked below, so static
 // files are served straight from the CDN without invoking a function.
 
 import calendar from '../netlify/functions/calendar.js';
 import cmcFearGreed from '../netlify/functions/cmc-fear-greed.js';
-import consensusOverride from '../netlify/functions/consensus-override.js';
 import consensus from '../netlify/functions/consensus.js';
 import dvol from '../netlify/functions/dvol.js';
 import econExtra from '../netlify/functions/econ-extra.js';
@@ -29,7 +28,7 @@ import visitors from '../netlify/functions/visitors.js';
 import wti from '../netlify/functions/wti.js';
 
 const HANDLERS = {
-  calendar, 'cmc-fear-greed': cmcFearGreed, 'consensus-override': consensusOverride, consensus,
+  calendar, 'cmc-fear-greed': cmcFearGreed, consensus,
   dvol, 'econ-extra': econExtra, 'etf-flow': etfFlow, 'fred-data': fredData, 'gold-th': goldTh, markets,
   'news-feed': newsFeed, 'oil-price': oilPrice, onchain, usdjpy, visitors, wti,
 };
