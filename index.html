@@ -305,7 +305,11 @@ body{margin:0}
   #btcTab .sl-dvol{display:flex; flex-direction:column;}
   #btcTab .sl-dvol .delta{font-size:12px; font-weight:600; margin-left:6px;}
   #btcTab .sl-etf{grid-column:1 / -1; display:flex; flex-direction:column;}
-  #btcTab .etf-bars{margin-top:8px;}
+  #btcTab .etf-bars{margin-top:8px; position:relative; touch-action:pan-y;}
+  #btcTab .etf-bars svg{cursor:crosshair;}
+  #btcTab .etf-tip{position:absolute; top:-6px; transform:translate(-50%,-100%); background:var(--panel-2,#1b2233); border:1px solid var(--line); border-radius:6px; padding:3px 8px; font-size:11px; white-space:nowrap; pointer-events:none; z-index:2;}
+  #btcTab .etf-tip[hidden]{display:none;}
+  #btcTab .etf-bars rect.hl{opacity:.65;}
   #btcTab .liq-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
   #btcTab .liq-panel{position:relative;}
   #btcTab .liq-ranges{display:flex; gap:4px;}
@@ -5095,11 +5099,33 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     const W = 300, H = 64, max = Math.max.apply(null, pts.map(p => Math.abs(p[1]))) || 1, mid = H / 2, bw = W / pts.length;
     const bars = pts.map(function(p, i){
       const h = Math.max(1, Math.abs(p[1]) / max * (mid - 2));
-      return '<rect x="' + (i * bw + bw * 0.15).toFixed(1) + '" y="' + (p[1] >= 0 ? mid - h : mid).toFixed(1) + '" width="' + (bw * 0.7).toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + (p[1] >= 0 ? 'var(--green)' : 'var(--red)') + '"><title>' + p[0] + ' ' + fmtFlow(p[1]) + '</title></rect>';
+      return '<rect x="' + (i * bw + bw * 0.15).toFixed(1) + '" y="' + (p[1] >= 0 ? mid - h : mid).toFixed(1) + '" width="' + (bw * 0.7).toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + (p[1] >= 0 ? 'var(--green)' : 'var(--red)') + '"/>';
     }).join('');
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' + tr('กระแสเงิน ETF 30 วัน', 'ETF flow, 30 days') + '">'
       + '<line x1="0" x2="' + W + '" y1="' + mid + '" y2="' + mid + '" stroke="var(--line)" stroke-width="1" vector-effect="non-scaling-stroke"/>' + bars + '</svg>'
       + '<div class="spark-cap"><span>' + pts[0][0] + '</span><span>' + tr(pts.length + ' วันทำการ', pts.length + ' trading days') + '</span><span>' + pts[pts.length - 1][0] + '</span></div>';
+  }
+  // ชี้เมาส์ / แตะแท่ง → บอกวันที่และยอด +/− ของวันนั้น
+  function bindEtfTip(box, pts){
+    const svg = box.querySelector('svg'), tip = box.querySelector('.etf-tip');
+    if(!svg || !tip || !pts.length) return;
+    const rects = svg.querySelectorAll('rect');
+    function show(ev){
+      const r = svg.getBoundingClientRect();
+      if(!r.width) return;
+      const i = Math.max(0, Math.min(pts.length - 1, Math.floor((ev.clientX - r.left) / r.width * pts.length)));
+      const v = pts[i][1];
+      tip.innerHTML = pts[i][0] + ' · <b style="color:' + (v >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmtFlow(v) + '</b>';
+      const x = (i + 0.5) / pts.length * r.width + (r.left - box.getBoundingClientRect().left);
+      tip.style.left = Math.max(60, Math.min(box.clientWidth - 60, x)) + 'px';
+      tip.hidden = false;
+      rects.forEach((el2, k) => el2.classList.toggle('hl', k === i));
+    }
+    function hide(){ tip.hidden = true; rects.forEach(el2 => el2.classList.remove('hl')); }
+    svg.addEventListener('pointermove', show);
+    svg.addEventListener('pointerdown', show);
+    svg.addEventListener('pointerleave', function(ev){ if(ev.pointerType === 'mouse') hide(); });
+    document.addEventListener('pointerdown', function(ev){ if(!svg.contains(ev.target)) hide(); });
   }
   async function fetchEtfFlow(){
     let d = null;
@@ -5117,7 +5143,8 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     el('etfZone').title = (d.source || '') + ' · ' + (d.fetchedAt || '');
     const funds = (d.funds || []).map(f => f[0] + ' ' + fmtFlow(f[1])).join(' · ');
     el('etfSums').textContent = tr('รวม 5 วัน ', '5-day ') + fmtFlow(d.sum5) + tr(' · 30 วัน ', ' · 30-day ') + fmtFlow(d.sum30) + (funds ? ' · ' + funds : '');
-    el('etfBars').innerHTML = etfBarsSvg(d.hist);
+    el('etfBars').innerHTML = etfBarsSvg(d.hist) + '<div class="etf-tip" hidden></div>';
+    bindEtfTip(el('etfBars'), (d.hist || []).filter(p => isNum(p[1])));
   }
 
   // ---------- Bitcoin Halving Countdown ----------
