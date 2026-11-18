@@ -96,5 +96,7 @@ test('index.html: ETF flow tile on the BTC tab with explainer, bars and a Farsid
   assert.match(HTML, /href="https:\/\/farside\.co\.uk\/btc\/"/);
   assert.ok(HTML.indexOf('id="dvolNum"') < HTML.indexOf('id="etfNum"') && HTML.indexOf('id="etfNum"') < HTML.indexOf('id="halvingDays"'));
   assert.match(HTML, /fetchDvol\(\), fetchEtfFlow\(\)\]/);
+  assert.match(HTML, /bindEtfTip\(el\('etfBars'\)/, 'hover/tap tooltip on the bars');
+  assert.match(HTML, /class="etf-tip" hidden/);
   assert.match(HTML, /\/\.netlify\/functions\/etf-flow/);
 });
