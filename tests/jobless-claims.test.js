@@ -142,3 +142,20 @@ test('the calendar falls back to a computed Thursday when the server has no clai
   assert.match(node(sb, 'calList').innerHTML, /ผู้ขอรับสวัสดิการว่างงาน \(รายสัปดาห์\)/);
   assert.match(node(sb, 'nextClaims').innerHTML, /(ครั้งถัดไป|ประกาศ)/);
 });
+
+test('FRED already has this week but Investing.com still lists it as upcoming: the card uses that forecast', async () => {
+  // Investing.com's cached page: last released row is last week, this week's row is still "upcoming"
+  const lastWeek = { actual: 194000, forecast: 195000, previous: 196000, releaseDate: iso(NOW - 7 * DAY), upcoming: { releaseDate: RELEASE, forecast: 196000, previous: 194000 } };
+  const sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredClaims: FRED_CLAIMS, claimsEv: lastWeek }) }));
+  assert.equal(node(sb, 'claims').textContent, '189K');
+  assert.match(node(sb, 'claimsInfo').innerHTML, /คาด <b>196K<\/b>/);
+  const h = node(sb, 'fedAnalysis').innerHTML;
+  assert.match(h, /Initial Jobless Claims — 🟢 ต่ำกว่าคาด \(ดี\)/);
+  assert.match(h, /ตลาดคาด 196K/);
+});
+
+test('an upcoming forecast for a later week is not attached to the FRED print', async () => {
+  const ev = { actual: 189000, forecast: null, previous: 194000, releaseDate: iso(NOW - 14 * DAY), upcoming: { releaseDate: iso(NOW + 7 * DAY), forecast: 191000, previous: 189000 } };
+  const sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredClaims: FRED_CLAIMS, claimsEv: ev }) }));
+  assert.match(node(sb, 'claimsInfo').innerHTML, /ยังไม่มีค่าคาด/);
+});

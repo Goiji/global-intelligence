@@ -2104,9 +2104,15 @@ window.setHeaderStamp();
     }
     if(!fredOk) return null;
     const sameRound = liveOk && Math.abs(dayDiff(L.releaseDate, fredRelease)) <= 2;
-    return { value: f.value, prev: f.prev && isValidNum(f.prev.value) ? f.prev.value : (sameRound && isValidNum(L.previous) ? L.previous : null),
+    // FRED มักอัปเดตก่อน Investing.com (แคช) — ช่วงนั้นรอบนี้ยังอยู่ในแถว "ยังไม่ประกาศ" (upcoming)
+    // ถ้าวันที่ตรงกับรอบของตัวเลข FRED ก็ใช้ค่าคาดจากแถวนั้น ให้การ์ดตรงกับปฏิทิน
+    const U = (!sameRound && LIVE_UPCOMING && LIVE_UPCOMING.claims) || null;
+    const upRound = !!(U && isValidNum(U.forecast) && /^\d{4}-\d{2}-\d{2}$/.test(String(U.releaseDate || '')) && Math.abs(dayDiff(U.releaseDate, fredRelease)) <= 2);
+    const fc = sameRound ? (isValidNum(L.forecast) ? L.forecast : null) : upRound ? U.forecast : null;
+    const pv = sameRound ? (isValidNum(L.previous) ? L.previous : null) : upRound && isValidNum(U.previous) ? U.previous : null;
+    return { value: f.value, prev: f.prev && isValidNum(f.prev.value) ? f.prev.value : pv,
              weekEnd: f.date, releaseDate: fredRelease, avg4: f.avg4, prevAvg4: f.prevAvg4,
-             forecast: sameRound && isValidNum(L.forecast) ? L.forecast : null,
+             forecast: fc,
              mismatch: sameRound && Math.abs(L.actual - f.value) > 1500 ? L.actual : null, source: 'FRED' };
   }
   function renderClaims(){
