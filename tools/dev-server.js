@@ -11,6 +11,7 @@
 // graceful-failure JSON, which is exactly what you want to see locally.
 
 const http = require('node:http');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { URL } = require('node:url');
@@ -124,7 +125,11 @@ const server = http.createServer(async (req, res) => {
     if (!path.resolve(file).startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       return send(res, 404, { 'Content-Type': 'text/plain; charset=utf-8' }, 'not found');
     }
-    send(res, 200, { 'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream' }, fs.readFileSync(file));
+    // ETag like Netlify / Cloudflare Pages send, so the page's "new version available" check
+    // (inline script at the end of index.html) can be tried locally: edit index.html and wait.
+    const content = fs.readFileSync(file);
+    const etag = '"' + crypto.createHash('sha1').update(content).digest('hex') + '"';
+    send(res, 200, { 'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream', ETag: etag }, content);
   });
   req.on('error', () => { try { res.destroy(); } catch (e) { /* already gone */ } });
 });

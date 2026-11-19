@@ -570,6 +570,15 @@ body{margin:0}
   /* คำภาษาอังกฤษตัดคำกลางคำไม่ได้เหมือนภาษาไทย — กันการ์ดตลาดบนมือถือดันจอกว้างเกิน */
   @media(max-width:800px){ .grid{grid-template-columns:minmax(0,1fr)} .mkt-grid{grid-template-columns:repeat(2,minmax(0,1fr))} .mkt .name,.tv-btn{overflow-wrap:anywhere} }
 
+  /* แถบ "มีเวอร์ชันใหม่" — ขึ้นเมื่อ deploy ใหม่ระหว่างที่หน้านี้เปิดค้างอยู่ (สคริปต์ท้ายไฟล์) */
+  .gi-update{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:3000;display:flex;align-items:center;gap:10px;width:max-content;max-width:calc(100vw - 32px);padding:10px 10px 10px 16px;background:#121a2d;color:#eef3ff;border:1px solid var(--gold-line,rgba(212,178,106,.30));border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.45);font-family:var(--sans,system-ui,sans-serif);font-size:13px;line-height:1.45}
+  .gi-update-msg{flex:1 1 auto;min-width:0}
+  .gi-update-btn{flex:0 0 auto;border:0;border-radius:10px;padding:8px 14px;background:var(--accent,#d4b26a);color:#0b1020;font:inherit;font-weight:700;cursor:pointer}
+  .gi-update-btn:hover{background:var(--accent-hi,#f0dba4)}
+  .gi-update-x{flex:0 0 auto;border:0;background:transparent;color:#8e9bb5;font-size:18px;line-height:1;padding:6px 8px;border-radius:8px;cursor:pointer}
+  .gi-update-x:hover{color:#eef3ff}
+  @media(max-width:480px){ .gi-update{bottom:12px;font-size:12.5px;padding:9px 8px 9px 12px} }
+
 </style>
 </head>
 <body>
@@ -5453,6 +5462,82 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       label.textContent = url;
     }
   });
+})();
+</script>
+<script>
+// แจ้งเตือน "มีเวอร์ชันใหม่ — รีเฟรช" ให้คนที่เปิดหน้าเว็บค้างไว้ตอนมี deploy ใหม่
+// ไม่มี build step และไม่ใช้ KV/Functions: ยิง HEAD ไปที่หน้านี้เอง (ไฟล์ static บน CDN — ฟรี ไม่นับโควต้า Functions)
+// แล้วเทียบ ETag (หรือ Last-Modified) กับค่าตอนเปิดหน้า · ETag เปลี่ยนก็ต่อเมื่อ index.html เปลี่ยนจริง
+// เช็กทุก 5 นาทีเฉพาะตอนแท็บเปิดอยู่ และเช็กทันทีเมื่อกลับมาที่แท็บ (เว้นอย่างน้อย 1 นาที)
+(function(){
+  if(typeof window === 'undefined' || typeof window.fetch !== 'function') return;
+  var tr = window.tr || function(th){ return th; };
+  var POLL_MS = 5 * 60 * 1000, MIN_GAP_MS = 60 * 1000;
+  var base = null, lastAt = 0, busy = false, shown = false, method = 'HEAD';
+  function pageUrl(){
+    try{ return (window.location && window.location.pathname) || '/'; }catch(e){ return '/'; }
+  }
+  // Cloudflare/Netlify อาจใส่ W/ หรือ -ssl/-df ต่อท้ายตามการบีบอัด — ตัดออกให้เทียบกันได้
+  function norm(v){ return v ? String(v).replace(/^W\//, '').replace(/"/g, '').replace(/(-ssl)?(-df)?$/, '').trim() : null; }
+  function fingerprint(res){
+    if(!res || !res.ok || !res.headers || typeof res.headers.get !== 'function') return null;
+    return norm(res.headers.get('etag')) || norm(res.headers.get('last-modified'));
+  }
+  function show(next){
+    if(shown) return;
+    var d = window.document;
+    if(!d || !d.createElement || !d.body) return;
+    shown = true;
+    var bar = d.createElement('div');
+    bar.className = 'gi-update';
+    bar.setAttribute('role', 'status');
+    bar.setAttribute('aria-live', 'polite');
+    var msg = d.createElement('span');
+    msg.className = 'gi-update-msg';
+    msg.textContent = tr('มีเวอร์ชันใหม่ของหน้านี้แล้ว รีเฟรชเพื่อดูข้อมูลและฟีเจอร์ล่าสุด', 'A new version of this page is available. Refresh to get the latest.');
+    var btn = d.createElement('button');
+    btn.type = 'button';
+    btn.className = 'gi-update-btn';
+    btn.textContent = tr('รีเฟรช', 'Refresh');
+    btn.addEventListener('click', function(){ try{ window.location.reload(); }catch(e){} });
+    var x = d.createElement('button');
+    x.type = 'button';
+    x.className = 'gi-update-x';
+    x.setAttribute('aria-label', tr('ปิด', 'Dismiss'));
+    x.textContent = '\u00d7';
+    // ปิดแล้ว = ไม่กวนอีกสำหรับเวอร์ชันนี้ แต่ถ้ามี deploy ถัดไปจะเตือนใหม่
+    x.addEventListener('click', function(){
+      base = next; shown = false;
+      try{ bar.parentNode && bar.parentNode.removeChild(bar); }catch(e){}
+    });
+    bar.appendChild(msg); bar.appendChild(btn); bar.appendChild(x);
+    d.body.appendChild(bar);
+  }
+  function check(){
+    if(busy || shown) return Promise.resolve(false);
+    busy = true; lastAt = Date.now();
+    return window.fetch(pageUrl(), { method: method, cache: 'no-store', credentials: 'same-origin' })
+      .then(function(res){
+        if(res && res.status === 405 && method === 'HEAD'){ method = 'GET'; return false; }
+        var fp = fingerprint(res);
+        if(!fp) return false;
+        if(base === null){ base = fp; return false; }
+        if(fp !== base){ show(fp); return true; }
+        return false;
+      })
+      .catch(function(){ return false; })
+      .then(function(r){ busy = false; return r; });
+  }
+  function visible(){ var d = window.document; return !d || d.visibilityState !== 'hidden'; }
+  function maybeCheck(){ if(visible() && Date.now() - lastAt >= MIN_GAP_MS) check(); }
+  window.giCheckUpdate = check;
+  check();   // ค่าตั้งต้น (ทำทันทีเพื่อให้ช่วงที่อาจพลาด deploy สั้นที่สุด)
+  setInterval(function(){ if(visible()) check(); }, POLL_MS);
+  try{
+    window.document.addEventListener('visibilitychange', maybeCheck);
+    window.addEventListener('focus', maybeCheck);
+    window.addEventListener('online', maybeCheck);
+  }catch(e){}
 })();
 </script>
 
