@@ -108,7 +108,7 @@ const LIVE = { actual: 189000, forecast: 196000, previous: 194000, releaseDate: 
 test('the claims tile shows actual, forecast and previous', async () => {
   const sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredClaims: FRED_CLAIMS, claimsEv: LIVE }) }));
   assert.equal(node(sb, 'claims').textContent, '189K');
-  assert.match(node(sb, 'claims').className, /\bup\b/, 'below forecast = better than expected');
+  assert.match(node(sb, 'claims').className, /\btone-good\b/, 'below forecast = better than expected (same green as the analysis box)');
   const info = node(sb, 'claimsInfo').innerHTML;
   assert.match(info, /สัปดาห์สิ้นสุด/);
   assert.match(info, /คาด <b>196K<\/b>/);
@@ -158,4 +158,15 @@ test('an upcoming forecast for a later week is not attached to the FRED print', 
   const ev = { actual: 189000, forecast: null, previous: 194000, releaseDate: iso(NOW - 14 * DAY), upcoming: { releaseDate: iso(NOW + 7 * DAY), forecast: 191000, previous: 189000 } };
   const sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredClaims: FRED_CLAIMS, claimsEv: ev }) }));
   assert.match(node(sb, 'claimsInfo').innerHTML, /ยังไม่มีค่าคาด/);
+});
+
+test('card number colours follow the analysis box: above forecast = red, close = amber, no forecast = plain', async () => {
+  const above = { ...LIVE, forecast: 182000 };   // 189K vs 182K → 7K above
+  let sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredClaims: FRED_CLAIMS, claimsEv: above }) }));
+  assert.match(node(sb, 'claims').className, /\btone-bad\b/);
+  assert.match(node(sb, 'fedAnalysis').innerHTML, /var\(--bad\).*Initial Jobless Claims — 🔴/);
+  sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredClaims: FRED_CLAIMS, claimsEv: { ...LIVE, forecast: 188000 } }) }));
+  assert.match(node(sb, 'claims').className, /\btone-warn\b/);
+  sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredClaims: FRED_CLAIMS, claimsEv: { ...LIVE, releaseDate: iso(NOW - 14 * DAY) } }) }));
+  assert.doesNotMatch(node(sb, 'claims').className, /tone-/);
 });
