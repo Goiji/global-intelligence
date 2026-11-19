@@ -74,6 +74,12 @@ Site configuration → Environment variables → Add a variable:
 >ไม่กระทบคนอื่น ส่วนช่อง BGeometrics token ในหน้าเว็บไม่จำเป็นต้องใช้แล้ว (แนะนำให้ตั้ง
 >`BGEOMETRICS_TOKEN` เป็น env var ที่ Netlify แทน) และตัวเลขเศรษฐกิจทั้งหมดดึงสดอัตโนมัติ
 
+## แจ้งเตือน "มีเวอร์ชันใหม่" ให้คนที่เปิดหน้าค้างไว้
+สคริปต์ท้าย `index.html` ยิง `HEAD` ไปที่หน้าเว็บเองทุก 5 นาที (เฉพาะตอนแท็บเปิดอยู่) และทันทีเมื่อกลับมาที่แท็บ
+แล้วเทียบ `ETag` กับค่าตอนเปิดหน้า ถ้า index.html ถูก deploy ใหม่ จะขึ้นแถบล่างจอ "มีเวอร์ชันใหม่ … [รีเฟรช]" (ไทย/Eng ตามปุ่มภาษา)
+ไม่ต้องมี build step ไม่ใช้ KV และไม่เรียก Functions — เป็นคำขอไฟล์ static บน CDN ทั้ง Netlify และ Cloudflare Pages
+(ถ้าแก้แค่ไฟล์ใน `netlify/functions/` จะไม่เตือน เพราะหน้าเว็บไม่ได้เปลี่ยน)
+
 ## ย้ายไป Cloudflare Pages (ทำได้โดยไม่ต้องปิด Netlify)
 
 โค้ดชุดเดียวกันรันได้ทั้ง 2 ที่: `functions/[[path]].js` แปลงคำขอ `/.netlify/functions/<ชื่อ>` บน Cloudflare

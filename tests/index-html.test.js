@@ -168,3 +168,46 @@ test('signedPct rounds halves away from zero (0.35 → +0.4, −0.35 → −0.4)
   assert.equal(signedPct(1.005, 2), '+1.01');
   assert.equal(signedPct(0, 1), '+0.0');
 });
+
+test('"new version available" banner: shows when the page ETag changes, not before', async () => {
+  const src = SCRIPTS.find((s) => s.includes('window.giCheckUpdate'));
+  assert.ok(src, 'update-check script is missing');
+  let etag = 'W/"abc-ssl-df"';
+  const calls = [];
+  const sandbox = makeSandbox({
+    fetchImpl: async (url, init) => {
+      calls.push({ url, method: init && init.method });
+      return { ok: true, status: 200, headers: { get: (h) => (h.toLowerCase() === 'etag' ? etag : null) } };
+    }
+  });
+  sandbox.location.pathname = '/';
+  const appended = [];
+  sandbox.document.body.appendChild = (n) => appended.push(n);
+  sandbox.tr = (th, en) => en;   // English UI
+  vm.runInNewContext(src, sandbox, { filename: 'index.html#update' });
+  await new Promise((resolve) => setImmediate(resolve));   // baseline request settles
+  assert.equal(calls[0].method, 'HEAD');
+  assert.equal(calls[0].url, '/');
+
+  assert.equal(await sandbox.giCheckUpdate(), false, 'same ETag must not show the banner');
+  etag = '"abc"';   // same content, header just lost its weak/compression decoration
+  assert.equal(await sandbox.giCheckUpdate(), false, 'W/ and -ssl-df suffixes must be ignored');
+  assert.equal(appended.length, 0);
+
+  etag = '"def"';   // new deploy
+  assert.equal(await sandbox.giCheckUpdate(), true);
+  assert.equal(appended.length, 1, 'banner appended once');
+  assert.equal(appended[0].className, 'gi-update');
+  assert.equal(await sandbox.giCheckUpdate(), false, 'no second banner while one is showing');
+});
+
+test('"new version available" check stays silent when the host sends no ETag/Last-Modified', async () => {
+  const src = SCRIPTS.find((s) => s.includes('window.giCheckUpdate'));
+  const sandbox = makeSandbox({ fetchImpl: async () => ({ ok: true, status: 200, headers: { get: () => null } }) });
+  const appended = [];
+  sandbox.document.body.appendChild = (n) => appended.push(n);
+  vm.runInNewContext(src, sandbox, { filename: 'index.html#update' });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(await sandbox.giCheckUpdate(), false);
+  assert.equal(appended.length, 0);
+});
