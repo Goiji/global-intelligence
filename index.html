@@ -426,6 +426,8 @@ body{margin:0}
   .metric:hover,.event:hover,.watch div:hover,#btcTab .metric-card:hover,#btcTab .sl-tile:hover{border-color:var(--gold-line);background:rgba(212,178,106,.035)}
   .metric .name,#btcTab .sl-name{font-size:11px;font-weight:500;letter-spacing:.06em;color:var(--muted);text-transform:none}
   .metric .num{font-family:var(--sans);font-weight:600;font-size:26px;color:#f6f1e6}
+  /* สีตัวเลขบนการ์ด = สีเดียวกับกล่องวิเคราะห์ด้านล่าง (ตั้งโดย toneNum() ใน renderFedAnalysis) */
+  .metric .num.tone-good{color:var(--good)}.metric .num.tone-bad{color:var(--bad)}.metric .num.tone-warn{color:var(--warn)}
   .event .rank{color:var(--accent);font-weight:600;letter-spacing:.14em;font-size:10px;text-transform:uppercase}
   .event h3{font-family:var(--sans);font-weight:600;font-size:15px;line-height:1.5;color:#f3eee3}
   .impact{color:var(--accent-hi);font-weight:500;font-size:12px}
@@ -2037,8 +2039,7 @@ window.setHeaderStamp();
       if(nfp && isValidNum(nfp.value)){
         const node = el('nfp');
         node.textContent = fmtJobs(nfp.value);
-        node.className = 'num ' + (nfp.value >= 0 ? 'up' : 'down');
-        node.style.color = '';   // let the up/down class decide instead of a hardcoded colour
+        node.style.color = '';   // สีมาจาก toneNum() ใน renderFedAnalysis (เทียบกับค่าคาด เหมือนกล่องวิเคราะห์)
         applied++;
       }
 
@@ -2130,8 +2131,6 @@ window.setHeaderStamp();
     if(!num || !v) return;
     num.textContent = fmtClaims(v.value);
     // ต่ำกว่าคาด = ตลาดแรงงานดีกว่าคาด (เขียว) · สูงกว่าคาด = แย่กว่าคาด (แดง)
-    const dev = isValidNum(v.forecast) ? v.value - v.forecast : null;
-    num.className = 'num' + (dev == null || Math.abs(dev) < 3000 ? '' : dev < 0 ? ' up' : ' down');
     if(info){
       const bits = [];
       bits.push(v.weekEnd ? tr('สัปดาห์สิ้นสุด ', 'Week ending ') + esc(thDay(v.weekEnd)) : tr('ประกาศ ', 'Released ') + esc(thDay(v.releaseDate)));
@@ -2172,6 +2171,16 @@ window.setHeaderStamp();
     const t = Date.parse(String(dateStr || '') + (String(dateStr || '').length === 10 ? 'T00:00:00Z' : ''));
     return isFinite(t) ? Math.round((Date.now() - t) / 86400000) : null;
   }
+  // ระบายสีตัวเลขบนการ์ดด้วยสีเดียวกับกล่องวิเคราะห์ (เขียว = ดีกว่าคาด · แดง = แย่กว่าคาด · เหลือง = ใกล้เคียง · ไม่มีค่าคาด = สีปกติ)
+  const TONE_CLASS = { 'var(--good)': 'tone-good', 'var(--bad)': 'tone-bad', 'var(--warn)': 'tone-warn' };
+  function toneNum(id, accent){
+    const n = el(id);
+    if(!n) return;
+    const base = String(n.className || '').split(/\s+/).filter(c => c && !/^tone-/.test(c));
+    if(TONE_CLASS[accent]) base.push(TONE_CLASS[accent]);
+    n.className = base.join(' ');
+  }
+  window.toneNum = toneNum;
   function analysisCard(accent, title, body){
     return '<div style="padding:10px 12px; background:var(--panel2); border-radius:8px; border-left:3px solid ' + accent + ';">'
       + '<b style="font-size:12.5px;">' + title + '</b>'
@@ -2355,6 +2364,7 @@ window.setHeaderStamp();
       try{ const nh = cpiNoYoyHtml(d.cpi, d.coreCpi); if(nh) body += '<br>⚠️ ' + nh; }catch(e){ /* best-effort */ }
       body += nextReleaseLine('cpi');
       if(dev != null) body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (dev > 0.1 ? tr('เงินเฟ้อสูงกว่าคาด = กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)', 'hotter inflation = pressure on stocks/bonds (slower Fed cuts)') : dev < -0.1 ? tr('เงินเฟ้อต่ำกว่าคาด = หนุนหุ้น (Fed มีทางลดดอกเบี้ยเร็วขึ้น)', 'cooler inflation = supports stocks (room for faster Fed cuts)') : tr('ตรงคาด = ตลาดมักไม่ตอบสนองรุนแรงเพราะไม่มีเซอร์ไพรส์', 'in line = markets usually don\'t react much, no surprise'));
+      toneNum('cpiYoy', accent);
       cards.push(analysisCard(accent, tr('CPI เงินเฟ้อ — ', 'CPI inflation — ') + verdict, body));
     }
 
@@ -2379,6 +2389,7 @@ window.setHeaderStamp();
       }
       body += nextReleaseLine('ppi');
       if(dev != null) body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (dev >= 0.05 ? tr('ต้นทุนผู้ผลิตสูงกว่าคาด = มักส่งต่อไปที่ CPI ในเดือนถัด ๆ ไป → กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)', 'producer costs above forecast = often pass through to CPI in the following months → pressure on stocks/bonds (slower Fed cuts)') : dev <= -0.05 ? tr('ต้นทุนผู้ผลิตต่ำกว่าคาด = แรงกดดันเงินเฟ้อข้างหน้าเบาลง → หนุนหุ้น', 'producer costs below forecast = less inflation pressure ahead → supports stocks') : tr('ตรงคาด = ตลาดมักไม่ตอบสนองแรง', 'in line = markets usually don\'t react much'));
+      toneNum('ppiHead', accent);
       cards.push(analysisCard(accent, tr('PPI ราคาผู้ผลิต — ', 'PPI producer prices — ') + verdict, body));
     }
 
@@ -2400,6 +2411,7 @@ window.setHeaderStamp();
       body += tr('<br><b>ข้อควรระวัง:</b> ตัวเลขว่างงานต่ำลงอาจมาจาก "คนออกจากตลาดแรงงาน" ไม่ใช่มีคนได้งานเพิ่ม (ดู participation rate ประกอบ) และตัวเลขนี้เป็นรายเดือน อาจถูก revise ได้',
                  '<br><b>Caveat:</b> a lower unemployment rate can come from people leaving the labour force rather than more people finding jobs (check the participation rate too), and this monthly figure can be revised');
       if(dev != null) body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (dev < -0.1 ? tr('ดีกว่าคาด = หนุนความเชื่อมั่น แต่ลดโอกาสที่ Fed จะรีบลดดอกเบี้ย', 'better than forecast = supports confidence, but lowers the odds of quick Fed cuts') : dev > 0.1 ? tr('แย่กว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย (bad news is good news ระยะสั้น) แต่น่ากังวลเรื่องเศรษฐกิจถดถอย', 'worse than forecast = raises the odds of Fed cuts (bad news is good news short term) but adds recession worries') : tr('ตรงคาด = เป็นกลาง', 'in line = neutral'));
+      toneNum('unrate', accent);
       cards.push(analysisCard(accent, 'Unemployment Rate — ' + verdict, body));
     }
 
@@ -2423,6 +2435,7 @@ window.setHeaderStamp();
       body += nextReleaseLine('nfp');
       if(dev != null || n < 0) body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (n < 0 ? tr('ตัวเลขติดลบ = ข่าวร้ายของเศรษฐกิจ แต่ระยะสั้นตลาดอาจตีความว่า Fed จะรีบลดดอกเบี้ย (bad news is good news) — ถ้าติดลบต่อเนื่องหลายเดือนจะกลายเป็นสัญญาณถดถอยจริงจัง', 'a negative print = bad news for the economy, but short term markets may read it as the Fed cutting sooner (bad news is good news). Several negative months in a row would be a serious recession signal') : dev < -30000 ? tr('อ่อนกว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย แต่กดดันความเชื่อมั่นเศรษฐกิจ', 'weaker than forecast = higher odds of Fed cuts, but weighs on economic confidence') : dev > 30000 ? tr('แข็งกว่าคาด = เศรษฐกิจยังดี แต่ลดโอกาส Fed ลดดอกเบี้ยเร็ว ๆ นี้', 'stronger than forecast = the economy is still solid, but lowers the odds of a Fed cut soon') : tr('ใกล้เคียงคาด = เป็นกลาง', 'close to forecast = neutral'));
       body += '<br><span style="opacity:.75;">' + tr('ℹ️ รวมการปรับปรุงตัวเลขย้อนหลังแล้ว จึงอาจต่างจากที่ข่าวรายงานครั้งแรกเล็กน้อย', 'ℹ️ Includes revisions to earlier months, so it can differ slightly from the first reported headline') + '</span>';
+      toneNum('nfp', accent);
       cards.push(analysisCard(accent, 'Nonfarm Payrolls — ' + verdict, body));
     }
 
@@ -2446,6 +2459,7 @@ window.setHeaderStamp();
         ? tr('ตลาดแรงงานแข็งกว่าคาด = ลดแรงกดดันให้ Fed ต้องรีบลดดอกเบี้ย (มักหนุนดอลลาร์/บอนด์ยีลด์ และกดทองคำระยะสั้น)', 'labour market stronger than forecast = less pressure on the Fed to cut quickly (tends to lift the dollar/bond yields and weigh on gold short term)')
         : tr('คนตกงานใหม่มากกว่าคาด = ตลาดแรงงานเริ่มอ่อน เพิ่มโอกาส Fed ลดดอกเบี้ย (มักกดดอลลาร์/บอนด์ยีลด์)', 'more new jobless claims than forecast = labour market softening, higher odds of Fed cuts (tends to weigh on the dollar/bond yields)'));
       body += '<br><span style="opacity:.75;">' + tr('ℹ️ ตัวเลขรายสัปดาห์ผันผวนสูง ดูค่าเฉลี่ย 4 สัปดาห์ประกอบ · แหล่ง: ', 'ℹ️ Weekly data is noisy, check the 4-week average too · source: ') + esc(cl.source === 'FRED' ? 'FRED (ICSA) / DOL' : 'Investing.com') + '</span>';
+      toneNum('claims', accent);
       cards.push(analysisCard(accent, 'Initial Jobless Claims — ' + verdict, body));
     }
 
@@ -3153,6 +3167,7 @@ window.setHeaderStamp();
       if(dev != null) body += impact(near ? tr('ตรงคาด = ตลาดมักไม่ตอบสนองแรง', 'in line = markets usually don\'t react much')
         : dev > 0 ? tr('ผู้บริโภคใช้จ่ายแรงกว่าคาด = เศรษฐกิจแข็ง → Fed ลดดอกเบี้ยยากขึ้น บอนด์ยีลด์ขึ้น ดอลลาร์แข็ง (มักกดดันทองและหุ้นกลุ่มเติบโตระยะสั้น)', 'consumers spent more than expected = solid economy → harder for the Fed to cut, bond yields up, dollar stronger (often weighs on gold and growth stocks short term)')
         : tr('ผู้บริโภคใช้จ่ายอ่อนกว่าคาด = เศรษฐกิจเริ่มชะลอ → เพิ่มโอกาส Fed ลดดอกเบี้ย บอนด์ยีลด์ลง ดอลลาร์อ่อน', 'consumers spent less than expected = economy slowing → higher odds of Fed cuts, bond yields down, weaker dollar'));
+      toneNum('retailSales', accent);
       out.push(analysisCard(accent, tr('ยอดค้าปลีก — ', 'Retail Sales — ') + verdict, body));
     }
 
@@ -3178,6 +3193,7 @@ window.setHeaderStamp();
         ? tr('ภาคธุรกิจแข็งกว่าคาด = เศรษฐกิจยังดี → Fed ไม่รีบลดดอกเบี้ย บอนด์ยีลด์และดอลลาร์มักขึ้น', 'businesses stronger than expected = economy holding up → no rush for Fed cuts; yields and the dollar tend to rise')
         : tr('ภาคธุรกิจอ่อนกว่าคาด = สัญญาณเศรษฐกิจชะลอ → เพิ่มโอกาส Fed ลดดอกเบี้ย บอนด์ยีลด์และดอลลาร์มักลง', 'businesses weaker than expected = slowdown signal → higher odds of Fed cuts; yields and the dollar tend to fall'));
       else if(near) body += impact(tr('ตรงคาด = ตลาดมักไม่ตอบสนองแรง', 'in line = markets usually don\'t react much'));
+      toneNum(key, accent);
       out.push(analysisCard(accent, row[1] + ' — ' + verdict, body));
     });
 
@@ -3198,6 +3214,7 @@ window.setHeaderStamp();
       if(dev != null) body += impact(near ? tr('ตรงคาด = เป็นกลาง', 'in line = neutral')
         : dev > 0 ? tr('ตลาดบ้านฟื้นดีกว่าคาด = หนุนหุ้นกลุ่มอสังหาฯ/ก่อสร้าง และสะท้อนว่าผู้บริโภคยังมีกำลังซื้อ', 'housing better than expected = supports homebuilder/real-estate stocks and shows buyers still have purchasing power')
         : tr('ตลาดบ้านแย่กว่าคาด = ดอกเบี้ยบ้านสูงยังกดดันผู้ซื้อ เป็นอีกเหตุผลให้ Fed ผ่อนคลาย', 'housing worse than expected = high mortgage rates still squeezing buyers, another reason for the Fed to ease'));
+      toneNum('homeSales', accent);
       out.push(analysisCard(accent, tr('ยอดขายบ้านมือสอง — ', 'Existing Home Sales — ') + verdict, body));
     }
 
