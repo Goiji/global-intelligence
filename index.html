@@ -305,9 +305,8 @@ body{margin:0}
   #btcTab .sl-dvol{display:flex; flex-direction:column;}
   #btcTab .sl-dvol .delta{font-size:12px; font-weight:600; margin-left:6px;}
   #btcTab .sl-etf{grid-column:1 / -1; display:flex; flex-direction:column;}
-  #btcTab .sl-stable{grid-column:1 / -1; display:flex; flex-direction:column;}
+  #btcTab .sl-stable{display:flex; flex-direction:column;}
   #btcTab .sl-stable .delta{font-size:12px; font-weight:600; margin-left:6px;}
-  #btcTab .stable-read{font-size:12px; line-height:1.55; margin-top:6px; padding:8px 10px; background:var(--panel2); border-radius:8px; border-left:3px solid var(--line);}
   #btcTab .etf-bars{margin-top:8px; position:relative; touch-action:pan-y;}
   #btcTab .etf-bars svg{cursor:crosshair;}
   #btcTab .etf-tip{position:absolute; top:-6px; transform:translate(-50%,-100%); background:var(--panel-2,#1b2233); border:1px solid var(--line); border-radius:6px; padding:3px 8px; font-size:11px; white-space:nowrap; pointer-events:none; z-index:2;}
@@ -4040,16 +4039,16 @@ window.setHeaderStamp();
           <a class="tv-btn" href="https://farside.co.uk/btc/" target="_blank" rel="noopener noreferrer"><span data-en="All funds on Farside ↗">ดูทุกกองบน Farside ↗</span></a>
         </div>
         <div class="sl-tile sl-stable">
-          <div class="sl-name"><span data-en="Stablecoin Market Cap (all stablecoins)">Stablecoin Market Cap (มูลค่ารวม stablecoin)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Stablecoin Market Cap คืออะไร" data-en-aria="What is the stablecoin market cap?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+          <div class="sl-name"><span data-en="Stablecoin Market Cap">Stablecoin Market Cap</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Stablecoin Market Cap คืออะไร" data-en-aria="What is the stablecoin market cap?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
             <div class="i18n-th">
             <p><b>คืออะไร:</b> มูลค่ารวมของ stablecoin ทุกตัวที่หมุนเวียนอยู่ (USDT, USDC, USDe, DAI ฯลฯ) หน่วยพันล้านดอลลาร์ (B) เทียบได้กับ STABLE.C บน TradingView เปรียบเหมือน "เงินสดที่รออยู่ในโลกคริปโต" พร้อมเข้าซื้อ BTC และเหรียญอื่น</p>
-            <p><b>อ่านค่า (ดูการเปลี่ยนแปลง 7 และ 30 วัน):</b> 🟢 เงินไหลเข้า: 30 วัน +1.5% ขึ้นไป หรือ 7 วัน +1% ขึ้นไป (และ 7 วันไม่ติดลบเกิน −0.25%) · 🟡 ทรงตัว: อยู่ระหว่างนั้น · 🔴 เงินไหลออก: 7 วัน −1% ลงไป หรือ 30 วัน −1.5% ลงไป · สีตัวเลขกับบทวิเคราะห์ใต้ตัวเลขใช้เกณฑ์เดียวกัน</p>
+            <p><b>อ่านค่า (ดูการเปลี่ยนแปลง 7 และ 30 วัน):</b> 🟢 เงินไหลเข้า: 30 วัน +1.5% ขึ้นไป หรือ 7 วัน +1% ขึ้นไป (และ 7 วันไม่ติดลบเกิน −0.25%) · 🟡 ทรงตัว: อยู่ระหว่างนั้น · 🔴 เงินไหลออก: 7 วัน −1% ลงไป หรือ 30 วัน −1.5% ลงไป · สีตัวเลข เส้นกราฟ และคำอ่านใต้ตัวเลขใช้เกณฑ์เดียวกัน</p>
             <p><b>ทำไมสำคัญ:</b> stablecoin เพิ่ม = มีเงินใหม่เข้ามาในระบบ เป็นกำลังซื้อที่หนุนราคาในระยะกลาง · stablecoin ลด = คนถอนเงินออกจากคริปโต สภาพคล่องหด มักเป็นสัญญาณลบ ดูแนวโน้มหลายสัปดาห์มากกว่ารายวัน อ่านคู่กับ ETF Flow (เงินสถาบันในสหรัฐฯ) และ Open Interest (เลเวอเรจ)</p>
             <p><b>ข้อมูล:</b> DefiLlama (ฟรี อัปเดตวันละครั้ง) ตัวเลขอาจต่างจาก STABLE.C เล็กน้อยเพราะนับเหรียญคนละชุด · ปุ่มด้านล่างเปิดกราฟ CRYPTOCAP:STABLE.C บน TradingView</p>
             </div>
             <div class="i18n-en" lang="en">
             <p><b>What it is:</b> the combined value of every stablecoin in circulation (USDT, USDC, USDe, DAI and others), in US$ billions, comparable to STABLE.C on TradingView. Think of it as "cash waiting inside crypto", ready to buy BTC and other coins.</p>
-            <p><b>How to read it (7- and 30-day change):</b> 🟢 inflow: 30 days +1.5% or more, or 7 days +1% or more (with 7 days no worse than −0.25%) · 🟡 flat: in between · 🔴 outflow: 7 days −1% or worse, or 30 days −1.5% or worse · the number's colour and the reading below it use the same rule.</p>
+            <p><b>How to read it (7- and 30-day change):</b> 🟢 inflow: 30 days +1.5% or more, or 7 days +1% or more (with 7 days no worse than −0.25%) · 🟡 flat: in between · 🔴 outflow: 7 days −1% or worse, or 30 days −1.5% or worse · the number, the sparkline and the label below it use the same rule.</p>
             <p><b>Why it matters:</b> growing stablecoin supply = new money entering, buying power that supports prices over the medium term · shrinking supply = money leaving crypto and liquidity drying up, usually a negative sign. Watch the trend over weeks, not single days. Read it with ETF Flow (US institutional money) and Open Interest (leverage).</p>
             <p><b>Data:</b> DefiLlama (free, updated daily); it can differ slightly from STABLE.C because the coin lists differ · the button below opens CRYPTOCAP:STABLE.C in TradingView.</p>
             </div>
@@ -4057,7 +4056,6 @@ window.setHeaderStamp();
           <div class="sl-num" id="stableNum">–</div>
           <div class="sl-sub" id="stableZone" data-en="Loading…">กำลังโหลด…</div>
           <div class="sl-sub" id="stableChanges"></div>
-          <div class="stable-read" id="stableRead" hidden></div>
           <div class="spark" id="spStable"></div>
           <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=CRYPTOCAP%3ASTABLE.C" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a>
         </div>
@@ -5343,15 +5341,10 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     el('stableNum').style.color = v.color;
     el('stableNum').dataset.verdict = v.key;
     el('stableZone').textContent = v.label + tr(' · ข้อมูลวันที่ ', ' · as of ') + d.date + (d.stale ? tr(' (ข้อมูลเก่า)', ' (stale)') : '');
-    el('stableZone').title = 'DefiLlama · ' + (d.source || '');
-    el('stableChanges').textContent = tr('7 วัน ', '7-day ') + fmtStableCh(d.ch7, d.ch7Pct) + tr(' · 30 วัน ', ' · 30-day ') + fmtStableCh(d.ch30, d.ch30Pct);
-    const read = el('stableRead');
-    if(v.read){
-      read.innerHTML = '<b style="color:' + (v.color || 'inherit') + '">' + v.label + '</b> — ' + v.read;
-      read.style.borderLeftColor = v.color || '';
-      read.dataset.verdict = v.key;
-      read.hidden = false;
-    }else read.hidden = true;
+    el('stableChanges').textContent = tr('7 วัน ', '7d ') + fmtStableCh(null, d.ch7Pct) + tr(' · 30 วัน ', ' · 30d ') + fmtStableCh(null, d.ch30Pct);
+    el('stableChanges').title = tr('7 วัน ', '7d ') + fmtStableCh(d.ch7, d.ch7Pct) + ' · ' + tr('30 วัน ', '30d ') + fmtStableCh(d.ch30, d.ch30Pct);
+    el('stableZone').dataset.verdict = v.key;
+    el('stableZone').title = v.read + ' · DefiLlama · ' + (d.source || '');
     if(window.giSetSpark) window.giSetSpark('spStable', d, v.color ? { dec:0, color:v.color } : { dec:0 });   // เส้นกราฟสีเดียวกับคำตัดสิน
   }
   if(typeof window !== 'undefined') window.__stableTest = { stableVerdict, stableFromLlama, fmtStableBn, fmtStableCh };

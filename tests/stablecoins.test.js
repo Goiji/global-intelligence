@@ -95,7 +95,7 @@ test('stableVerdict: green inflow, amber flat, red outflow', async () => {
   assert.equal(V(-1.1, 2).color, 'var(--red)');
 });
 
-test('tile: number colour and the reading below it come from the same verdict', async () => {
+test('tile: number colour and the label below it come from the same verdict', async () => {
   const cases = [
     [{ ch7: 3, ch7Pct: 1.02, ch30: 9, ch30Pct: 3.1 }, 'in', 'var(--green)', /เงินไหลเข้า/],
     [{ ch7: 0.3, ch7Pct: 0.1, ch30: 1, ch30Pct: 0.3 }, 'flat', 'var(--amber)', /ทรงตัว/],
@@ -103,14 +103,12 @@ test('tile: number colour and the reading below it come from the same verdict', 
   ];
   for (const [ch, key, color, re] of cases) {
     const sb = await pageWith({ latest: 294.75, date: '2026-11-19', hist: [['2026-11-18', 300], ['2026-11-19', 294.75]], source: 'defillama', ...ch });
-    const num = sb.document.getElementById('stableNum'), read = sb.document.getElementById('stableRead');
+    const num = sb.document.getElementById('stableNum'), zone = sb.document.getElementById('stableZone');
     assert.match(num.innerHTML, /^\$294\.75B/);
     assert.equal(num.style.color, color);
     assert.equal(num.dataset.verdict, key);
-    assert.equal(read.dataset.verdict, key, 'reading uses the same verdict as the number');
-    assert.equal(read.hidden, false);
-    assert.match(read.innerHTML, re);
-    assert.match(sb.document.getElementById('stableZone').textContent, re);
+    assert.equal(zone.dataset.verdict, key, 'label uses the same verdict as the number');
+    assert.match(zone.textContent, re);
     assert.match(sb.document.getElementById('stableChanges').textContent, /7 วัน .*30 วัน /);
   }
 });
@@ -122,12 +120,13 @@ test('stableFromLlama (direct fallback) matches the function', async () => {
 });
 
 test('index.html: stablecoin tile in the BTC Sentiment panel with explainer, spark and TradingView STABLE.C', () => {
-  for (const id of ['stableNum', 'stableZone', 'stableChanges', 'stableRead', 'spStable']) assert.match(HTML, new RegExp(`id="${id}"`), `missing #${id}`);
+  for (const id of ['stableNum', 'stableZone', 'stableChanges', 'spStable']) assert.match(HTML, new RegExp(`id="${id}"`), `missing #${id}`);
   assert.match(HTML, /tradingview\.com\/chart\/\?symbol=CRYPTOCAP%3ASTABLE\.C/);
   assert.match(HTML, /aria-label="Stablecoin Market Cap คืออะไร" data-en-aria="What is the stablecoin market cap\?"/);
   assert.ok(HTML.indexOf('id="etfNum"') < HTML.indexOf('id="stableNum"') && HTML.indexOf('id="stableNum"') < HTML.indexOf('id="halvingDays"'));
   assert.match(HTML, /fetchEtfFlow\(\), fetchStablecoins\(\)/);
   assert.match(HTML, /etf-flow\|stablecoins\|news-feed/, 'browser keeps a last good copy');
+  assert.match(HTML, /#btcTab \.sl-stable\{display:flex; flex-direction:column;\}/, 'small tile like DVOL, not full width');
 });
 
 test('Cloudflare adapter routes /.netlify/functions/stablecoins', () => {
