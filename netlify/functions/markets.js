@@ -40,7 +40,9 @@
 //   what forces yen carry trades to unwind (Aug 2024).
 //
 // Market breadth (spxew): S&P 500 Equal Weight (^SPXEW, every stock 0.2%) from Yahoo's chart API
-// (query1 then query2), joined by date with the S&P 500 series above (FRED + Cboe overlay). Raw
+// (query1 then query2), joined by date with Yahoo's ^GSPC (same feed, same trading days; FRED + Cboe
+// S&P 500 only if ^GSPC fails). ^SPXEW is checked against RSP (the ETF that tracks it): if its last
+// few daily moves are off RSP's by more than 0.75 pp the index feed is treated as bad and RSP is used. Raw
 // points aren't comparable (different base dates), so the payload carries % changes: ew1m / spx1m
 // (1 month = 30 calendar days), rel1m = ew1m − spx1m in percentage points (positive = the average
 // stock beats the cap-weighted index = broad market), the same over 3 months, and relHist = the
@@ -66,6 +68,13 @@ const CBOE_NDX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_NDX.jso
 const YAHOO_CHART = 'https://query1.finance.yahoo.com/v8/finance/chart/';
 const YAHOO_MOVE = YAHOO_CHART + '%5EMOVE?interval=1d&range=13mo';
 const YAHOO_SPXEW = YAHOO_CHART + '%5ESPXEW?interval=1d&range=13mo';
+const YAHOO_GSPC = YAHOO_CHART + '%5EGSPC?interval=1d&range=13mo';
+const YAHOO_RSP = YAHOO_CHART + 'RSP?interval=1d&range=13mo';
+// ^SPXEW is an index Yahoo carries with no volume / day range; RSP (the Invesco ETF that tracks it)
+// is a liquid listed fund. If the index's recent daily moves disagree with RSP's by more than this,
+// the index feed is treated as bad and breadth is measured with RSP instead.
+const EW_CHECK_DAYS = 5;
+const EW_CHECK_MAX_PP = 0.75;
 const CFTC_TFF = 'https://publicreporting.cftc.gov/resource/gpe5-46if.json';
 // CFTC contract code → face value per contract (USD)
 const UST_FUTURES = { '042601': 200000, '044601': 100000, '043602': 100000, '043607': 100000, '020601': 100000, '020604': 100000 };
@@ -395,6 +404,50 @@ async function loadYahoo(key, url, raw) {
 
 function loadMove() { return loadYahoo('move', YAHOO_MOVE); }
 
+async function fetchYahooObs(url) {
+  const errors = [];
+  for (const u of [url, url.replace('//query1.', '//query2.')]) {
+    try {
+      const obs = parseYahooSeries(await fetchText(u));
+      if (obs.length) return obs;
+      errors.push('yahoo: no observations');
+    } catch (e) { errors.push(e.message); }
+  }
+  throw new Error(errors.join(' | '));
+}
+
+// Daily % moves of two series on their shared dates, last `n` of them → largest gap in pp (null = too few).
+function maxDailyGap(aObs, bObs, n = EW_CHECK_DAYS) {
+  const b = new Map((bObs || []).map((o) => [o.date, o.value]));
+  const rows = (aObs || []).filter((o) => b.has(o.date)).map((o) => [o.value, b.get(o.date)]);
+  if (rows.length < 3) return null;
+  let gap = 0;
+  for (let i = Math.max(1, rows.length - n); i < rows.length; i++) {
+    const da = (rows[i][0] / rows[i - 1][0] - 1) * 100, db = (rows[i][1] / rows[i - 1][1] - 1) * 100;
+    gap = Math.max(gap, Math.abs(da - db));
+  }
+  return Math.round(gap * 100) / 100;
+}
+
+// SPXEW tile: index level from ^SPXEW, breadth measured against ^GSPC from the same Yahoo feed (same
+// trading days and timestamps, so both end on the same day). RSP is the cross-check / fallback.
+async function loadSpxew(raw) {
+  const [ew, gspc, rsp] = await Promise.allSettled([fetchYahooObs(YAHOO_SPXEW), fetchYahooObs(YAHOO_GSPC), fetchYahooObs(YAHOO_RSP)]);
+  const ewObs = ew.status === 'fulfilled' ? ew.value : null;
+  const rspObs = rsp.status === 'fulfilled' ? rsp.value : null;
+  const gap = ewObs && rspObs ? maxDailyGap(ewObs, rspObs) : null;
+  const ewBad = !ewObs || (gap != null && gap > EW_CHECK_MAX_PP);
+  const useObs = ewBad ? rspObs : ewObs;
+  if (!useObs) throw new Error('spxew: ' + [ew, rsp].map((r) => (r.status === 'rejected' ? r.reason.message : 'empty')).join(' | '));
+  raw.spxew = useObs;
+  raw.spxewBench = gspc.status === 'fulfilled' ? gspc.value : null;
+  const out = { ...summarize('spxew', useObs), source: ewBad ? 'yahoo-rsp' : 'yahoo', breadthBy: ewBad ? 'RSP' : 'SPXEW' };
+  if (ewBad) { out.label = 'RSP (S&P 500 Equal Weight ETF)'; out.ewIssue = ewObs ? `^SPXEW daily moves off RSP by ${gap} pp` : '^SPXEW unavailable: ' + ew.reason.message; }
+  if (gap != null) out.rspGap = gap;
+  if (gspc.status === 'rejected') out.benchError = gspc.reason.message;
+  return out;
+}
+
 // % change of a joined breadth row field over the last `days` calendar days.
 function pctOver(rows, field, days) {
   const last = rows[rows.length - 1];
@@ -571,7 +624,7 @@ async function buildPayload(apiKey, event = null) {
     Promise.allSettled(keys.map((k) => (k === 'dollar'
       ? loadDxy().catch((e) => loadSeries(k, apiKey).then((s) => ({ ...s, dxyError: e.message })))
       : SERIES[k].loader === 'yahoo' ? loadMove()
-      : SERIES[k].loader === 'spxew' ? loadYahoo('spxew', YAHOO_SPXEW, raw)
+      : SERIES[k].loader === 'spxew' ? loadSpxew(raw)
       : SERIES[k].loader === 'sofrSpread' ? loadSofrSpread(apiKey)
       : SERIES[k].loader === 'cftc' ? loadLevShort()
       : loadSeries(k, apiKey, raw)))),
@@ -606,11 +659,21 @@ async function buildPayload(apiKey, event = null) {
   }
   if (tnxLive.error) errors.tnxLive = tnxLive.error;
   else if (series.us10y) series.us10y = mergeLive(series.us10y, tnxLive);
-  // Breadth: SPXEW against the S&P 500 after the Cboe overlay, so both end on the same day.
+  // Breadth: against Yahoo's ^GSPC (same feed and days as ^SPXEW); FRED + Cboe S&P 500 if that failed.
   if (series.spxew) {
     try {
-      if (!raw.sp500 || !series.sp500) throw new Error('sp500 unavailable');
-      Object.assign(series.spxew, breadthSummary(raw.spxew, withLatest(raw.sp500, series.sp500)));
+      let bench = raw.spxewBench;
+      if (!bench || !bench.length) {
+        if (!raw.sp500 || !series.sp500) throw new Error('sp500 unavailable');
+        bench = withLatest(raw.sp500, series.sp500);
+      }
+      const b = breadthSummary(raw.spxew, bench);
+      // keep the headline on the same day as the comparison under it
+      if (b.breadthDate < series.spxew.date) {
+        const upTo = raw.spxew.filter((o) => o.date <= b.breadthDate);
+        if (upTo.length) series.spxew = { ...series.spxew, ...summarize('spxew', upTo), label: series.spxew.label };
+      }
+      Object.assign(series.spxew, b);
     } catch (e) { errors.spxewBreadth = e.message; }
   }
   // US − Japan spreads, after the overlays so they end on the same day as the US yield tiles.
@@ -690,4 +753,4 @@ exports.handler = async function (event) {
   }
 };
 
-module.exports.__test = { breadthSummary, pctOver, parseMofCsv, mergeJgb, withLatest, joinUsJp, changeOver, usJpSummary, parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, parseCftcLevShort, SERIES, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; jgbHistCache = { rows: null, expiresAt: 0 }; } };
+module.exports.__test = { breadthSummary, pctOver, maxDailyGap, parseMofCsv, mergeJgb, withLatest, joinUsJp, changeOver, usJpSummary, parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, parseCftcLevShort, SERIES, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; jgbHistCache = { rows: null, expiresAt: 0 }; } };

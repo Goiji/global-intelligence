@@ -78,12 +78,71 @@ test('index.html: SPXEW card, tooltip, TradingView ratio link; colour and analys
   ];
   for (const [rel, cls, accent, dot] of cases) {
     sb.renderBreadth({ ...base, ...rel });
-    assert.match(els.get('mkSpxew').className, new RegExp(cls));
+    assert.doesNotMatch(els.get('mkSpxew').className, /tone-/);   // big number stays neutral
+    assert.match(els.get('mkSpxewZone').className, new RegExp(cls));
     assert.match(els.get('mkSpxewZone').textContent, dot);
     assert.ok(els.get('mktAnalysis').innerHTML.includes('border-left:3px solid ' + accent), 'analysis box uses the card colour');
   }
   // no comparison → plain number, no analysis box
   sb.renderBreadth({ ...base });
-  assert.doesNotMatch(els.get('mkSpxew').className, /tone-/);
+  assert.doesNotMatch(els.get('mkSpxewZone').className, /tone-/);
   assert.equal(els.get('mktAnalysis').innerHTML, '');
+});
+
+function yahooJson(days, closes) {
+  const ts = days.map((d) => Date.parse(d + 'T21:00:00Z') / 1000);
+  return JSON.stringify({ chart: { result: [{ meta: { gmtoffset: -18000 }, timestamp: ts, indicators: { quote: [{ close: closes }] } }] } });
+}
+
+test('maxDailyGap: largest gap between two series\' daily % moves on shared days', () => {
+  const a = [{ date: 'd1', value: 100 }, { date: 'd2', value: 101 }, { date: 'd3', value: 99.99 }];
+  const b = [{ date: 'd1', value: 50 }, { date: 'd2', value: 50.5 }, { date: 'd3', value: 50 }];
+  assert.ok(T.maxDailyGap(a, b) < 0.05);
+  const c = [{ date: 'd1', value: 50 }, { date: 'd2', value: 50.5 }, { date: 'd3', value: 51 }];
+  assert.ok(T.maxDailyGap(a, c) > 1.9);
+  assert.equal(T.maxDailyGap(a.slice(0, 2), b), null);
+});
+
+test('markets handler: breadth uses Yahoo ^GSPC (same days as ^SPXEW) and ends on the same day', async (t) => {
+  T._clearCache();
+  const realFetch = global.fetch;
+  const ok = (text) => ({ ok: true, status: 200, text: async () => text });
+  const days = weekdays('2026-08-03', '2026-11-19');
+  global.fetch = async (url) => {
+    if (url.includes('%5ESPXEW')) return ok(yahooJson(days, days.map((d, i) => 8000 * Math.pow(1.0005, i))));
+    if (url.includes('/RSP?')) return ok(yahooJson(days, days.map((d, i) => 190 * Math.pow(1.0005, i))));
+    if (url.includes('%5EGSPC')) return ok(yahooJson(days, days.map((d, i) => 6000 * Math.pow(0.999, i))));
+    // FRED's S&P 500 lags a day: must not be what breadth uses
+    if (url.includes('fredgraph.csv?id=SP500')) return ok('observation_date,SP500\n' + days.slice(0, -1).map((d) => `${d},6000`).join('\n'));
+    return { ok: false, status: 503, text: async () => '' };
+  };
+  t.after(() => { global.fetch = realFetch; T._clearCache(); });
+  const s = JSON.parse((await markets.handler()).body).series.spxew;
+  assert.equal(s.breadthDate, '2026-11-19');
+  assert.equal(s.date, '2026-11-19');
+  assert.equal(s.breadthBy, 'SPXEW');
+  assert.ok(s.rspGap < 0.01);
+  assert.ok(s.spx1m < 0 && s.ew1m > 0 && s.rel1m > 2);
+});
+
+test('markets handler: ^SPXEW that disagrees with RSP is dropped for RSP; headline trimmed to the compared day', async (t) => {
+  T._clearCache();
+  const realFetch = global.fetch;
+  const ok = (text) => ({ ok: true, status: 200, text: async () => text });
+  const days = weekdays('2026-08-03', '2026-11-19');
+  const bad = days.map((d, i) => (i >= days.length - 3 ? 8000 * (1 - 0.02 * (i - days.length + 4)) : 8000));
+  global.fetch = async (url) => {
+    if (url.includes('%5ESPXEW')) return ok(yahooJson(days, bad));
+    if (url.includes('/RSP?')) return ok(yahooJson(days, days.map(() => 190)));
+    if (url.includes('%5EGSPC')) return ok(yahooJson(days.slice(0, -1), days.slice(0, -1).map(() => 6000)));
+    return { ok: false, status: 503, text: async () => '' };
+  };
+  t.after(() => { global.fetch = realFetch; T._clearCache(); });
+  const s = JSON.parse((await markets.handler()).body).series.spxew;
+  assert.equal(s.breadthBy, 'RSP');
+  assert.match(s.ewIssue, /RSP/);
+  assert.equal(s.latest, 190);
+  assert.equal(s.breadthDate, '2026-11-18');
+  assert.equal(s.date, '2026-11-18');      // not a day ahead of the comparison
+  assert.equal(s.rel1m, 0);
 });
