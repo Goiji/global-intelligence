@@ -18,6 +18,7 @@
     ├── cmc-fear-greed.js               ← Fear & Greed (CoinMarketCap keyless → alternative.me)
     ├── news-feed.js                    ← พาดหัวข่าว: อ่าน Google News RSS ฝั่งเซิร์ฟเวอร์เอง
     ├── onchain.js                      ← NUPL / MVRV Z-Score / MVRV Ratio (BGeometrics, แคช 8 ชม.)
+    ├── markets.js                      ← ตลาดสหรัฐฯ (S&P 500, Nasdaq, บอนด์, VIX/MOVE/OVX, DXY …) + SPXEW ความกว้างตลาด (Yahoo ^SPXEW เทียบ S&P 500 เป็น % ใน 1 เดือน)
     ├── usdjpy.js                       ← USD/JPY สด (ช้าไม่กี่นาที: Yahoo → CNBC → Stooq) — แถว USD/JPY ในกล่องราคาตลาด
     ├── wti.js                          ← ราคา WTI จริงจาก NYMEX (CL เดือนใกล้สุด, Yahoo → CNBC → Stooq) — แหล่งหลักของการ์ดน้ำมัน
     ├── oil-price.js                    ← ราคา WTI ผ่าน Alpha Vantage (ตัวสำรองชั้นสุดท้าย)

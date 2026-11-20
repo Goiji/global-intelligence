@@ -39,6 +39,14 @@
 //   Each spread also carries chg1w / chg1m (change over 7 / 30 calendar days) — a fast narrowing is
 //   what forces yen carry trades to unwind (Aug 2024).
 //
+// Market breadth (spxew): S&P 500 Equal Weight (^SPXEW, every stock 0.2%) from Yahoo's chart API
+// (query1 then query2), joined by date with the S&P 500 series above (FRED + Cboe overlay). Raw
+// points aren't comparable (different base dates), so the payload carries % changes: ew1m / spx1m
+// (1 month = 30 calendar days), rel1m = ew1m − spx1m in percentage points (positive = the average
+// stock beats the cap-weighted index = broad market), the same over 3 months, and relHist = the
+// EW / S&P ratio indexed to 100 a year ago (weekly) for the sparkline. Same KV entry as everything
+// else here (markets:lastGood): no new KV reads or writes.
+//
 // Caching: memory + CDN for 1 h, but only 15 min on CPI / jobs / FOMC days (same calendar as
 // fred-data.js) so the CPI / unemployment / Fed sparklines don't trail the cards for hours after a
 // release. If every source fails we serve the last good payload marked stale instead of an error.
@@ -55,7 +63,9 @@ const CBOE_OVX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_OVX.jso
 const CBOE_TNX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_TNX.json';
 const CBOE_SPX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_SPX.json';
 const CBOE_NDX = 'https://cdn.cboe.com/api/global/delayed_quotes/quotes/_NDX.json';
-const YAHOO_MOVE = 'https://query1.finance.yahoo.com/v8/finance/chart/%5EMOVE?interval=1d&range=13mo';
+const YAHOO_CHART = 'https://query1.finance.yahoo.com/v8/finance/chart/';
+const YAHOO_MOVE = YAHOO_CHART + '%5EMOVE?interval=1d&range=13mo';
+const YAHOO_SPXEW = YAHOO_CHART + '%5ESPXEW?interval=1d&range=13mo';
 const CFTC_TFF = 'https://publicreporting.cftc.gov/resource/gpe5-46if.json';
 // CFTC contract code → face value per contract (USD)
 const UST_FUTURES = { '042601': 200000, '044601': 100000, '043602': 100000, '043607': 100000, '020601': 100000, '020604': 100000 };
@@ -79,6 +89,7 @@ const SERIES = {
   vix:      { id: 'VIXCLS',   label: 'VIX', unit: '', cadence: 'daily' },
   ovx:      { id: 'OVXCLS',   label: 'OVX', unit: '', cadence: 'daily' },
   move:     { id: '^MOVE',    label: 'MOVE', unit: '', cadence: 'daily', loader: 'yahoo' },
+  spxew:    { id: '^SPXEW',   label: 'S&P 500 Equal Weight', unit: '', cadence: 'daily', loader: 'spxew' },
   sofrSpread: { id: 'SOFR-IORB', label: 'SOFR − IORB', unit: 'bp', cadence: 'daily', loader: 'sofrSpread' },
   levShort: { id: 'CFTC-TFF-UST', label: 'Leveraged funds net short, UST futures', unit: '$bn', cadence: 'weekly', loader: 'cftc' },
   dollar:   { id: 'DTWEXBGS', label: 'Dollar (Broad)', unit: '', cadence: 'daily' },
@@ -367,16 +378,54 @@ function parseYahooSeries(text) {
   return [...byDay.entries()].map(([date, value]) => ({ date, value })).sort((a, b) => a.date.localeCompare(b.date));
 }
 
-async function loadMove() {
+async function loadYahoo(key, url, raw) {
   const errors = [];
-  for (const url of [YAHOO_MOVE, YAHOO_MOVE.replace('//query1.', '//query2.')]) {
+  for (const u of [url, url.replace('//query1.', '//query2.')]) {
     try {
-      const obs = parseYahooSeries(await fetchText(url));
-      if (obs.length) return { ...summarize('move', obs), source: 'yahoo' };
+      const obs = parseYahooSeries(await fetchText(u));
+      if (obs.length) {
+        if (raw) raw[key] = obs;
+        return { ...summarize(key, obs), source: 'yahoo' };
+      }
       errors.push('yahoo: no observations');
     } catch (e) { errors.push(e.message); }
   }
-  throw new Error('move: ' + errors.join(' | '));
+  throw new Error(key + ': ' + errors.join(' | '));
+}
+
+function loadMove() { return loadYahoo('move', YAHOO_MOVE); }
+
+// % change of a joined breadth row field over the last `days` calendar days.
+function pctOver(rows, field, days) {
+  const last = rows[rows.length - 1];
+  if (!last) return null;
+  const cutoff = daysAgoIso(days, new Date(last.date + 'T00:00:00Z'));
+  const base = rows.filter((r) => r.date <= cutoff).pop();
+  if (!base || !(base[field] > 0)) return null;
+  return Math.round((last[field] / base[field] - 1) * 10000) / 100;
+}
+
+// SPXEW vs S&P 500 on the same trading days → % changes, relative performance and a ratio history.
+function breadthSummary(ewObs, spxObs) {
+  const spx = new Map((spxObs || []).map((o) => [o.date, o.value]));
+  const rows = (ewObs || []).filter((o) => spx.has(o.date) && o.value > 0 && spx.get(o.date) > 0)
+    .map((o) => ({ date: o.date, ew: o.value, spx: spx.get(o.date) }));
+  if (rows.length < 2) throw new Error('spxew: no overlapping dates with the S&P 500');
+  const last = rows[rows.length - 1];
+  const rel = (a, b) => (a == null || b == null ? null : Math.round((a - b) * 100) / 100);
+  const ew1m = pctOver(rows, 'ew', 30), spx1m = pctOver(rows, 'spx', 30);
+  const ew3m = pctOver(rows, 'ew', 91), spx3m = pctOver(rows, 'spx', 91);
+  const yearAgo = daysAgoIso(365, new Date(last.date + 'T00:00:00Z'));
+  const win = weekly(rows.filter((r) => r.date >= yearAgo));
+  if (win.length && win[win.length - 1].date !== last.date) win.push(last);
+  const base = win.length ? win[0].ew / win[0].spx : null;
+  return {
+    breadthDate: last.date,
+    spx: last.spx,
+    ew1m, spx1m, rel1m: rel(ew1m, spx1m),
+    ew3m, spx3m, rel3m: rel(ew3m, spx3m),
+    relHist: base ? win.map((r) => [r.date, Math.round(r.ew / r.spx / base * 10000) / 100]) : []
+  };
 }
 
 // CFTC TFF rows → weekly [{date, value}] of leveraged funds' net short in $bn (positive = short).
@@ -522,6 +571,7 @@ async function buildPayload(apiKey, event = null) {
     Promise.allSettled(keys.map((k) => (k === 'dollar'
       ? loadDxy().catch((e) => loadSeries(k, apiKey).then((s) => ({ ...s, dxyError: e.message })))
       : SERIES[k].loader === 'yahoo' ? loadMove()
+      : SERIES[k].loader === 'spxew' ? loadYahoo('spxew', YAHOO_SPXEW, raw)
       : SERIES[k].loader === 'sofrSpread' ? loadSofrSpread(apiKey)
       : SERIES[k].loader === 'cftc' ? loadLevShort()
       : loadSeries(k, apiKey, raw)))),
@@ -556,6 +606,13 @@ async function buildPayload(apiKey, event = null) {
   }
   if (tnxLive.error) errors.tnxLive = tnxLive.error;
   else if (series.us10y) series.us10y = mergeLive(series.us10y, tnxLive);
+  // Breadth: SPXEW against the S&P 500 after the Cboe overlay, so both end on the same day.
+  if (series.spxew) {
+    try {
+      if (!raw.sp500 || !series.sp500) throw new Error('sp500 unavailable');
+      Object.assign(series.spxew, breadthSummary(raw.spxew, withLatest(raw.sp500, series.sp500)));
+    } catch (e) { errors.spxewBreadth = e.message; }
+  }
   // US − Japan spreads, after the overlays so they end on the same day as the US yield tiles.
   for (const k of Object.keys(SERIES).filter((x) => SERIES[x].loader === 'usjp')) {
     const usKey = SERIES[k].us;
@@ -633,4 +690,4 @@ exports.handler = async function (event) {
   }
 };
 
-module.exports.__test = { parseMofCsv, mergeJgb, withLatest, joinUsJp, changeOver, usJpSummary, parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, parseCftcLevShort, SERIES, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; jgbHistCache = { rows: null, expiresAt: 0 }; } };
+module.exports.__test = { breadthSummary, pctOver, parseMofCsv, mergeJgb, withLatest, joinUsJp, changeOver, usJpSummary, parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, parseCftcLevShort, SERIES, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; jgbHistCache = { rows: null, expiresAt: 0 }; } };
