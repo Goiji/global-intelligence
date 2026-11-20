@@ -199,6 +199,8 @@ test('markup: 9 cards, each with an (i) explainer in Thai and English', () => {
   assert.equal((m[1].match(/class="tv-btn" href="https:\/\/www\.tradingview\.com\/chart\/\?symbol=/g) || []).length, 9, 'each card links to TradingView');
   assert.match(m[1], /symbol=FRED%3ADFII10/, 'real yield card opens FRED:DFII10');
   assert.match(m[1], /ทองคำมักวิ่งสวน/);
+  assert.equal((m[1].match(/<b>ผลต่อทอง\/BTC:<\/b> Breakeven/g) || []).length, 2, 'both breakeven tooltips say what it means for gold/BTC');
+  assert.equal((m[1].match(/<b>Effect on gold\/BTC:<\/b>/g) || []).length, 2);
   assert.match(m[1], /Direction matters more than level/);
 });
 
