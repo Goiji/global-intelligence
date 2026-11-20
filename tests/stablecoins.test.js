@@ -123,7 +123,7 @@ test('index.html: stablecoin tile in the BTC Sentiment panel with explainer, spa
   for (const id of ['stableNum', 'stableZone', 'stableChanges', 'spStable']) assert.match(HTML, new RegExp(`id="${id}"`), `missing #${id}`);
   assert.match(HTML, /tradingview\.com\/chart\/\?symbol=CRYPTOCAP%3ASTABLE\.C/);
   assert.match(HTML, /aria-label="Stablecoin Market Cap คืออะไร" data-en-aria="What is the stablecoin market cap\?"/);
-  assert.ok(HTML.indexOf('id="etfNum"') < HTML.indexOf('id="stableNum"') && HTML.indexOf('id="stableNum"') < HTML.indexOf('id="halvingDays"'));
+  assert.ok(HTML.indexOf('id="dvolNum"') < HTML.indexOf('id="stableNum"') && HTML.indexOf('id="stableNum"') < HTML.indexOf('id="etfNum"'), 'under Fear & Greed, above ETF Flow');
   assert.match(HTML, /fetchEtfFlow\(\), fetchStablecoins\(\)/);
   assert.match(HTML, /etf-flow\|stablecoins\|news-feed/, 'browser keeps a last good copy');
   assert.match(HTML, /#btcTab \.sl-stable\{display:flex; flex-direction:column;\}/, 'small tile like DVOL, not full width');
