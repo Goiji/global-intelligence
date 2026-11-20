@@ -23,6 +23,7 @@ import markets from '../netlify/functions/markets.js';
 import newsFeed from '../netlify/functions/news-feed.js';
 import oilPrice from '../netlify/functions/oil-price.js';
 import onchain from '../netlify/functions/onchain.js';
+import stablecoins from '../netlify/functions/stablecoins.js';
 import usdjpy from '../netlify/functions/usdjpy.js';
 import visitors from '../netlify/functions/visitors.js';
 import wti from '../netlify/functions/wti.js';
@@ -30,7 +31,7 @@ import wti from '../netlify/functions/wti.js';
 const HANDLERS = {
   calendar, 'cmc-fear-greed': cmcFearGreed, consensus,
   dvol, 'econ-extra': econExtra, 'etf-flow': etfFlow, 'fred-data': fredData, 'gold-th': goldTh, markets,
-  'news-feed': newsFeed, 'oil-price': oilPrice, onchain, usdjpy, visitors, wti,
+  'news-feed': newsFeed, 'oil-price': oilPrice, onchain, stablecoins, usdjpy, visitors, wti,
 };
 
 // Same idea as _redirects on Netlify: the publish dir is the repo root, so keep source/notes private.
