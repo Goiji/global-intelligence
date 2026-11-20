@@ -2,7 +2,7 @@
 // market inflation expectations.
 //
 //   GET /.netlify/functions/econ-extra
-//   → { items: { homeSales, mort30, mort15, retail, ismMfg, ismSvc, be5, be10 }, errors?, ttl, fetchedAt }
+//   → { items: { homeSales, mort30, mort15, retail, ismMfg, ismSvc, be5, be10, ry10 }, errors?, ttl, fetchedAt }
 //     each item: { value, date, prev?, change?, hist: [[isoDate, value], ...], source, ... }
 //
 // Sources (all public, no key needed; FRED_API_KEY is used first when it is set, like fred-data.js):
@@ -19,6 +19,8 @@
 //                event (sbcharts…/events_charts/us/173|176.json: full history + actual + forecast)
 //                → ISM's own Report On Business page (the "PMI® registered 48.7 percent" sentence).
 //   • be5/be10   5-year / 10-year breakeven inflation, daily — FRED T5YIE / T10YIE.
+//   • ry10       10-year real yield (TIPS, constant maturity), daily — FRED DFII10. Also carries
+//                `change1m` = latest − the close about a month earlier, which drives the card colour.
 //
 // Investing.com's chart data also gives the analyst forecast of each past release, so the page can say
 // "ดีกว่า/แย่กว่าที่คาด" for retail sales, home sales and ISM without another lookup. The forecast for the
@@ -46,7 +48,8 @@ const RANGE = {
   mortgage: [0.5, 25], // %
   retailMom: [-25, 25], // % MoM (Apr 2020 was −14.6%)
   pmi: [20, 80],
-  breakeven: [-3, 8] // %
+  breakeven: [-3, 8], // %
+  realYield: [-4, 8] // %
 };
 
 let memCache = { data: null, expiresAt: 0, lastGood: null };
@@ -355,6 +358,21 @@ async function loadBreakeven(id, apiKey, deadline) {
   return { ...levelSummary(obs, RANGE.breakeven, { thinDaily: true, digits: 2 }), source };
 }
 
+// 10-year real yield: level series + the move over about one month (the direction matters most).
+function realYieldSummary(obsNewestFirst) {
+  const s = levelSummary(obsNewestFirst, RANGE.realYield, { thinDaily: true, digits: 2 });
+  const obs = obsNewestFirst.filter((o) => inRange(o.value, RANGE.realYield));
+  const ago = valueOnOrBefore(obs, daysAgoIso(30, new Date(s.date + 'T00:00:00Z')));
+  s.change1m = ago ? round(s.value - ago.value, 2) : null;
+  s.change1mFrom = ago ? ago.date : null;
+  return s;
+}
+
+async function loadRealYield(apiKey, deadline) {
+  const { obs, source } = await fredObs('DFII10', { apiKey, deadline, start: daysAgoIso(380) });
+  return { ...realYieldSummary(obs), source };
+}
+
 async function buildPayload(apiKey) {
   const deadline = Date.now() + HARD_DEADLINE_MS;
   const jobs = {
@@ -364,7 +382,8 @@ async function buildPayload(apiKey) {
     ismMfg: () => loadIsm('ismMfg', deadline),
     ismSvc: () => loadIsm('ismSvc', deadline),
     be5: () => loadBreakeven('T5YIE', apiKey, deadline),
-    be10: () => loadBreakeven('T10YIE', apiKey, deadline)
+    be10: () => loadBreakeven('T10YIE', apiKey, deadline),
+    ry10: () => loadRealYield(apiKey, deadline)
   };
   const keys = Object.keys(jobs);
   const settled = await Promise.allSettled(keys.map((k) => jobs[k]()));
@@ -433,6 +452,7 @@ module.exports.__test = {
   levelSummary,
   valueOnOrBefore,
   mortgageSummary,
+  realYieldSummary,
   retailFromLevels,
   parseSbcharts,
   summaryFromReleases,

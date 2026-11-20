@@ -103,6 +103,29 @@ test('breakeven history is thinned to one point per week', () => {
   assert.equal(s.hist[s.hist.length - 1][0], '2026-11-13');
 });
 
+test('real yield: one-month change from the daily series', () => {
+  const obs = [];
+  for (let i = 0; i < 120; i++) obs.push({ date: new Date(Date.UTC(2026, 10, 13) - i * 86400000).toISOString().slice(0, 10), value: 2.1 - i * 0.01 });
+  const s = T.realYieldSummary(obs);
+  assert.equal(s.value, 2.1);
+  assert.equal(s.change1mFrom, '2026-10-14');
+  assert.equal(s.change1m, 0.3);
+  assert.equal(T.realYieldSummary(obs.slice(0, 5)).change1m, null, 'no month of history → no change');
+});
+
+test('real yield verdict: direction first, then level', async () => {
+  const sb = makeSandbox({ fetchImpl: stub() });
+  await runAllScripts(sb);
+  const V = sb.window.realYieldVerdict;
+  assert.equal(V(1.5, 0.25).key, 'rising');
+  assert.equal(V(2.4, -0.3).key, 'falling', 'falling fast beats a high level');
+  assert.equal(V(2.0, 0.1).key, 'high');
+  assert.equal(V(0.5, null).key, 'low');
+  assert.equal(V(1.5, 0.1).key, 'normal');
+  assert.equal(V(1.5, 0.1).accent, 'var(--warn)');
+  assert.equal(V(null, 0.1), null);
+});
+
 test('handler: every source down → 502, never throws', async () => {
   const orig = global.fetch;
   global.fetch = async () => { throw new Error('offline'); };
@@ -159,21 +182,24 @@ test('calendar: ISM on the 1st / 3rd US business day, skipping holidays', () => 
 });
 
 // ── the page ────────────────────────────────────────────────────────────────────────────────
-test('markup: 8 new cards, each with an (i) explainer in Thai and English', () => {
+test('markup: 9 cards, each with an (i) explainer in Thai and English', () => {
   const m = /<div class="metrics" id="extraMetrics">([\s\S]*?)<div class="muted"[^>]*id="econExtraNote"/.exec(HTML);
   assert.ok(m, '#extraMetrics missing');
-  assert.equal((m[1].match(/class="tip-btn"/g) || []).length, 8);
-  for (const id of ['homeSales', 'mort30', 'mort15', 'retailSales', 'ismMfg', 'ismSvc', 'be5', 'be10', 'spHome', 'spMort30', 'spMort15', 'spRetail', 'spIsmMfg', 'spIsmSvc', 'spBe5', 'spBe10']) {
+  assert.equal((m[1].match(/class="tip-btn"/g) || []).length, 9);
+  for (const id of ['homeSales', 'mort30', 'mort15', 'retailSales', 'ismMfg', 'ismSvc', 'be5', 'be10', 'ry10', 'spHome', 'spMort30', 'spMort15', 'spRetail', 'spIsmMfg', 'spIsmSvc', 'spBe5', 'spBe10', 'spRy10']) {
     assert.match(m[1], new RegExp(`id="${id}"`), `missing #${id}`);
   }
   assert.match(m[1], /ยังไม่หักเงินเฟ้อ/, 'retail tooltip must say it is not inflation-adjusted');
   assert.match(m[1], /not adjusted for inflation/);
   assert.match(m[1], /เส้นแบ่งคือ 50/);
   assert.match(m[1], /TIPS/);
-  assert.equal((m[1].match(/<b>สีบนการ์ด:<\/b>/g) || []).length, 8, 'every card explains its colours');
-  assert.equal((m[1].match(/<b>Colours on the card:<\/b>/g) || []).length, 8);
+  assert.equal((m[1].match(/<b>สีบนการ์ด:<\/b>/g) || []).length, 9, 'every card explains its colours');
+  assert.equal((m[1].match(/<b>Colours on the card:<\/b>/g) || []).length, 9);
   assert.match(m[1], /2\.5%/);
-  assert.equal((m[1].match(/class="tv-btn" href="https:\/\/www\.tradingview\.com\/chart\/\?symbol=/g) || []).length, 8, 'each card links to TradingView');
+  assert.equal((m[1].match(/class="tv-btn" href="https:\/\/www\.tradingview\.com\/chart\/\?symbol=/g) || []).length, 9, 'each card links to TradingView');
+  assert.match(m[1], /symbol=FRED%3ADFII10/, 'real yield card opens FRED:DFII10');
+  assert.match(m[1], /ทองคำมักวิ่งสวน/);
+  assert.match(m[1], /Direction matters more than level/);
 });
 
 test('every US Markets card links to TradingView', () => {
@@ -202,7 +228,8 @@ function extraPayload() {
       ismMfg: { value: 48.7, date: '2026-10-01', prev: { value: 49.1, date: '2026-09-01' }, forecast: 49.2, hist: hist([49.1, 48.7]) },
       ismSvc: { value: 52.4, date: '2026-10-01', prev: { value: 49.9, date: '2026-09-01' }, forecast: 51.0, hist: hist([49.9, 52.4]) },
       be5: { value: 2.41, date: '2026-11-13', change: 0.02, hist: [['2026-11-06', 2.39], ['2026-11-13', 2.41]] },
-      be10: { value: 2.55, date: '2026-11-13', change: -0.01, hist: [['2026-11-06', 2.56], ['2026-11-13', 2.55]] }
+      be10: { value: 2.55, date: '2026-11-13', change: -0.01, hist: [['2026-11-06', 2.56], ['2026-11-13', 2.55]] },
+      ry10: { value: 1.85, date: '2026-11-13', change: 0.03, change1m: 0.31, change1mFrom: '2026-10-13', hist: [['2026-10-13', 1.54], ['2026-11-13', 1.85]] }
     },
     ttl: 1800
   };
@@ -234,7 +261,14 @@ test('page: cards and the analysis section use the econ-extra numbers (Thai)', a
   assert.match(txt(sb, 'ismMfgInfo'), /หดตัว/);
   assert.match(txt(sb, 'ismSvcInfo'), /ขยายตัว/);
   assert.match(txt(sb, 'be10Info'), /ไม่เชื่อ/);
+  // Real Yield: rising +0.31 in a month → red on the card AND in the analysis (same verdict)
+  assert.match(txt(sb, 'ry10'), /1\.85%/);
+  assert.match(sb.document.getElementById('ry10').className, /tone-bad/);
+  assert.match(txt(sb, 'ry10Info'), /🔴 พุ่งขึ้นเร็ว/);
+  assert.match(txt(sb, 'ry10Info'), /\+0\.31/);
   const a = txt(sb, 'fedAnalysis');
+  assert.match(a, /Real Yield 10 ปี — 🔴 พุ่งขึ้นเร็ว/);
+  assert.match(a, /บอนด์ 10 ปีราว 4\.40%/);
   assert.match(a, /ยอดค้าปลีก — 🟢 แรงกว่าที่คาด/);
   assert.match(a, /หักเงินเฟ้อคร่าว ๆ/);
   assert.match(a, /ISM ภาคการผลิต — 🔴 แย่กว่าที่คาด/);
@@ -250,9 +284,10 @@ test('page: English mode has no Thai left in the new cards and analysis', async 
   await runAllScripts(sb);
   await new Promise((r) => setTimeout(r, 30));
   const THAI = /[฀-๿]/;
-  for (const id of ['homeSalesInfo', 'mort30Info', 'retailInfo', 'ismMfgInfo', 'ismSvcInfo', 'be5Info', 'be10Info', 'econExtraNote', 'fedAnalysis']) {
+  for (const id of ['homeSalesInfo', 'mort30Info', 'retailInfo', 'ismMfgInfo', 'ismSvcInfo', 'be5Info', 'be10Info', 'ry10Info', 'econExtraNote', 'fedAnalysis']) {
     const t = txt(sb, id);
     assert.ok(!THAI.test(t), `#${id} has Thai: ${(t.match(/.{0,40}[฀-๿]+.{0,40}/) || [''])[0]}`);
   }
   assert.match(txt(sb, 'fedAnalysis'), /Retail Sales — 🟢 Stronger than forecast/);
+  assert.match(txt(sb, 'fedAnalysis'), /10-year real yield — 🔴 Rising fast/);
 });
