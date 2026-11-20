@@ -547,7 +547,7 @@ body{margin:0}
   .metric .next.today{color:var(--warn)}
   .cal-fc{color:var(--accent-hi)}
   @media(max-width:800px){ #fedMetrics{grid-template-columns:repeat(2,1fr)} }
-  /* ตัวเลขเศรษฐกิจเพิ่มเติม (บ้าน · ดอกเบี้ยบ้าน · ค้าปลีก · ISM · Breakeven): 8 การ์ด → 4 ต่อแถว */
+  /* ตัวเลขเศรษฐกิจเพิ่มเติม (บ้าน · ดอกเบี้ยบ้าน · ค้าปลีก · ISM · Breakeven · Real Yield): 9 การ์ด → 4 ต่อแถว */
   #extraMetrics{grid-template-columns:repeat(4,1fr);margin-top:10px}
   #extraMetrics .metric{position:relative;display:flex;flex-direction:column}   /* ปุ่ม TradingView ชิดล่างการ์ด */
   #extraMetrics .num .delta{font-size:11px;font-weight:600;margin-left:6px}
@@ -1103,6 +1103,21 @@ body{margin:0}
     </div>
   </div></div></div><div class="num" id="be10">–</div><div class="spark" id="spBe10"></div><div class="next" id="be10Info"></div>
     <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3AT10YIE" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  <div class="metric"><div class="name"><span data-en="10-year real yield (DFII10)">ดอกเบี้ยแท้จริง 10 ปี (Real Yield)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Real Yield 10 ปี คืออะไร" data-en-aria="What is the 10-year real yield?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>Real Yield 10 ปี (DFII10)</b> = ผลตอบแทน "จริง" ของพันธบัตรสหรัฐ 10 ปี หลังหักเงินเฟ้อแล้ว (yield ของบอนด์ป้องกันเงินเฟ้อ TIPS) หน่วยเป็น % ต่อปี คิดง่าย ๆ คือ <b>บอนด์ 10 ปี ลบ Breakeven 10 ปี ≈ Real Yield</b></p>
+    <p><b>อ่านค่า:</b> ติดลบหรือใกล้ 0% = ถือเงินสด/บอนด์แล้วขาดทุนจริง คนจึงวิ่งไปหาสินทรัพย์เสี่ยง ทอง BTC หุ้นเทคชอบ · ราว 1–2% = ปกติ · เกิน 2% = ตึง เงินปลอดภัยได้ผลตอบแทนดีโดยไม่ต้องเสี่ยง กดดันทอง BTC และหุ้นเติบโต</p>
+    <p><b>ทิศทางสำคัญกว่าระดับ:</b> Real Yield พุ่งขึ้นเร็ว = ลบต่อสินทรัพย์เสี่ยง · ลดลง = บวก · ทองคำมักวิ่งสวนกับเส้นนี้ชัดที่สุด เพราะทองไม่มีดอกเบี้ย เมื่อดอกเบี้ยจริงสูง การถือทองยิ่งเสียโอกาส</p>
+    <p><b>สีบนการ์ด:</b> 🔴 ขึ้นเร็ว (+0.25 จุดขึ้นไปใน 1 เดือน) หรือสูงตั้งแต่ 2% = กดดันทอง/BTC/หุ้นเทค · 🟢 ลงเร็ว (−0.25 จุดขึ้นไปใน 1 เดือน) หรือต่ำกว่า 1% = เป็นบวกต่อสินทรัพย์เสี่ยง · 🟡 1–2% และไม่ได้เคลื่อนแรง = ปกติ (ดูทิศทางก่อนระดับ)</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>10-year real yield (DFII10)</b> = the "real" return on a 10-year US Treasury after inflation (the yield on inflation-protected TIPS), in % a year. Simply: <b>10-year Treasury yield minus the 10-year breakeven ≈ real yield</b>.</p>
+    <p><b>How to read it:</b> negative or near 0% = cash and bonds lose money in real terms, so money moves to risk assets; gold, BTC and tech like it · about 1–2% = normal · above 2% = tight: safe money earns a good return without risk, which weighs on gold, BTC and growth stocks.</p>
+    <p><b>Direction matters more than level:</b> a fast rise in real yields = negative for risk assets · a fall = positive. Gold usually moves opposite this line most clearly, because gold pays no interest: the higher real rates are, the more it costs to hold gold.</p>
+    <p><b>Colours on the card:</b> 🔴 rising fast (+0.25 pts or more in 1 month) or at 2% and up = pressure on gold/BTC/tech · 🟢 falling fast (−0.25 pts or more in 1 month) or below 1% = supportive for risk assets · 🟡 1–2% with no big move = normal (direction is checked before level)</p>
+    </div>
+  </div></div></div><div class="num" id="ry10">–</div><div class="spark" id="spRy10"></div><div class="next" id="ry10Info"></div>
+    <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3ADFII10" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
 </div>
 <div class="muted" style="margin-top:10px; font-size:11px; line-height:1.6;" id="econExtraNote" data-en="Loading…">กำลังโหลด…</div>
 
@@ -3058,7 +3073,7 @@ window.setHeaderStamp();
   // ค่าคาดของรอบล่าสุด: econ-extra (ข้อมูลกราฟของ Investing.com) ก่อน แล้วค่อย /consensus (LIVE_EXTRA)
   // ค่าคาดของรอบถัดไป: /consensus → LIVE_UPCOMING เหมือนการ์ดอื่น
   // var (ไม่ใช่ let): loadConsensus()/renderFedAnalysis() อาจเรียกก่อนบรรทัดนี้จะรัน
-  var EXTRA = null;        // { homeSales, mort30, mort15, retail, ismMfg, ismSvc, be5, be10 }
+  var EXTRA = null;        // { homeSales, mort30, mort15, retail, ismMfg, ismSvc, be5, be10, ry10 }
   var LIVE_EXTRA = {};     // จาก /consensus: { retail: { actual, forecast, previous, releaseDate }, ... }
   var extraNextAt = 0;
   const EXTRA_POLL_MS = 60 * 60 * 1000;
@@ -3113,6 +3128,20 @@ window.setHeaderStamp();
     }
     return v >= 0.5 ? tr('🟢 ใช้จ่ายแข็ง', '🟢 Strong spending') : v >= 0 ? tr('🟡 ปกติ', '🟡 Normal') : tr('🔴 ยอดขายหด', '🔴 Sales fell');
   }
+
+  // Real Yield 10 ปี (DFII10) — เกณฑ์เดียว ใช้ทั้งสีการ์ดและกล่องวิเคราะห์ · ทิศทาง 1 เดือนสำคัญกว่าระดับ
+  var RY_FAST = 0.25, RY_HIGH = 2, RY_LOW = 1;   // จุด % (0.25 = 25 bp)
+  function realYieldVerdict(value, change1m){
+    if(!isValidNum(value)) return null;
+    const ch = isValidNum(change1m) ? change1m : null;
+    if(ch != null && ch >= RY_FAST) return { key:'rising', accent:'var(--bad)', dot:'🔴', label:tr('พุ่งขึ้นเร็ว กดดันสินทรัพย์เสี่ยง', 'Rising fast: pressure on risk assets') };
+    if(ch != null && ch <= -RY_FAST) return { key:'falling', accent:'var(--good)', dot:'🟢', label:tr('ลดลงเร็ว หนุนสินทรัพย์เสี่ยง', 'Falling fast: supportive for risk assets') };
+    if(value >= RY_HIGH) return { key:'high', accent:'var(--bad)', dot:'🔴', label:tr('สูง (ตึง) กดดันทอง/BTC/หุ้นเทค', 'High (tight): weighs on gold/BTC/tech') };
+    if(value < RY_LOW) return { key:'low', accent:'var(--good)', dot:'🟢', label:tr('ต่ำ หนุนสินทรัพย์เสี่ยง', 'Low: supportive for risk assets') };
+    return { key:'normal', accent:'var(--warn)', dot:'🟡', label:tr('ปกติ', 'Normal') };
+  }
+  window.realYieldVerdict = realYieldVerdict;   // tests
+  function ppTxt(x){ return (x > 0 ? '+' : x < 0 ? '−' : '±') + Math.abs(x).toFixed(2);}
 
   function setExtraNum(id, html, cls){
     const n = el(id);
@@ -3179,11 +3208,23 @@ window.setHeaderStamp();
       el(row[2]).innerHTML = zone + tr(' · ปิด ', ' · close ') + esc(thDay(b.date));
       setSpark(row[1], b, { upIsBad:true, dec:2 });
     });
+    // ── Real Yield 10 ปี (รายวัน) · สีจาก realYieldVerdict() ตัวเดียวกับกล่องวิเคราะห์ ──
+    const ry = EXTRA && EXTRA.ry10;
+    if(ry && isValidNum(ry.value)){
+      const v = realYieldVerdict(ry.value, ry.change1m);
+      setExtraNum('ry10', esc(ry.value.toFixed(2)) + '%' + bpDelta(ry.change));
+      toneNum('ry10', v.accent);
+      const bits = [v.dot + ' ' + v.label];
+      if(isValidNum(ry.change1m)) bits.push(tr('1 เดือน ', '1 month ') + '<b>' + ppTxt(ry.change1m) + tr(' จุด', ' pts') + '</b>');
+      bits.push(tr('ปิด ', 'close ') + esc(thDay(ry.date)));
+      el('ry10Info').innerHTML = bits.join(' · ');
+      setSpark('spRy10', ry, { upIsBad:true, dec:2 });
+    }
     const note = el('econExtraNote');
     if(note && EXTRA){
       const errs = EXTRA.__errors ? Object.keys(EXTRA.__errors) : [];
-      note.textContent = tr('ที่มา: ยอดขายบ้าน NAR · ดอกเบี้ยบ้าน Freddie Mac · ค้าปลีก Census · Breakeven ผ่าน FRED · ISM และค่าคาดจาก Investing.com · กราฟเล็ก = ย้อนหลัง 12 เดือน',
-        'Sources: home sales NAR · mortgage rates Freddie Mac · retail sales Census · breakevens via FRED · ISM and forecasts from Investing.com · mini charts = last 12 months')
+      note.textContent = tr('ที่มา: ยอดขายบ้าน NAR · ดอกเบี้ยบ้าน Freddie Mac · ค้าปลีก Census · Breakeven และ Real Yield ผ่าน FRED · ISM และค่าคาดจาก Investing.com · กราฟเล็ก = ย้อนหลัง 12 เดือน',
+        'Sources: home sales NAR · mortgage rates Freddie Mac · retail sales Census · breakevens and real yield via FRED · ISM and forecasts from Investing.com · mini charts = last 12 months')
         + (errs.length ? tr(' · ⚠️ ยังดึงไม่ได้: ', ' · ⚠️ not available right now: ') + errs.join(', ') : '');
     }
     try{ renderNextReleases(); }catch(e){ /* best-effort */ }
@@ -3315,6 +3356,27 @@ window.setHeaderStamp();
       body += nextReleaseLine('mort30');
       if(bp != null && Math.abs(bp) >= 3) body += impact(bp < 0 ? tr('ค่าผ่อนบ้านถูกลง = หนุนยอดขาย/รีไฟแนนซ์ และหุ้นกลุ่มอสังหาฯ', 'cheaper mortgages = supports home sales, refinancing and housing stocks') : tr('ค่าผ่อนบ้านแพงขึ้น = กดดันตลาดบ้านและหุ้นกลุ่มอสังหาฯ', 'pricier mortgages = pressure on housing activity and housing stocks'));
       out.push(analysisCard(accent, tr('ดอกเบี้ยบ้าน — ', 'Mortgage rates — ') + verdict, body));
+    }
+    // ── Real Yield 10 ปี — verdict ตัวเดียวกับสีการ์ด ──
+    const ry = EXTRA && EXTRA.ry10;
+    const ryV = ry ? realYieldVerdict(ry.value, ry.change1m) : null;
+    if(ryV){
+      let body = tr('Real Yield 10 ปี ', '10-year real yield ') + '<b>' + ry.value.toFixed(2) + '%</b>'
+        + (isValidNum(ry.change1m) ? tr(' · 1 เดือน ', ' · 1 month ') + '<b>' + ppTxt(ry.change1m) + tr(' จุด</b>', ' pts</b>') + (ry.change1mFrom ? tr(' (จาก ', ' (from ') + esc(thDay(ry.change1mFrom)) + ')' : '') : '')
+        + tr(' · ปิด ', ' · close ') + esc(thDay(ry.date));
+      const be = EXTRA && EXTRA.be10;
+      if(be && isValidNum(be.value)) body += tr(' · Breakeven 10 ปี ', ' · 10Y breakeven ') + be.value.toFixed(2) + '% ' + tr('→ บอนด์ 10 ปีราว ', '→ 10Y Treasury about ') + (ry.value + be.value).toFixed(2) + '%';
+      body += '<br><b>' + tr('ความหมาย:', 'What it means:') + '</b> ' + (
+        ryV.key === 'rising' ? tr('ดอกเบี้ยจริงขึ้นเร็ว เงินปลอดภัยได้ผลตอบแทนดีขึ้นทันที การถือทองและ BTC ที่ไม่มีดอกเบี้ยเสียโอกาสมากขึ้น', 'real rates are climbing fast: safe money suddenly pays more, so holding gold and BTC (which pay nothing) costs more')
+        : ryV.key === 'falling' ? tr('ดอกเบี้ยจริงลดลงเร็ว ผลตอบแทนเงินปลอดภัยหลังหักเงินเฟ้อน้อยลง เงินมักไหลกลับไปหาทอง BTC และหุ้นเติบโต', 'real rates are falling fast: safe money earns less after inflation, and money tends to flow back to gold, BTC and growth stocks')
+        : ryV.key === 'high' ? tr('ดอกเบี้ยจริงอยู่ระดับตึง (2% ขึ้นไป) ถือบอนด์ก็ได้ผลตอบแทนดีโดยไม่ต้องเสี่ยง เป็นแรงกดดันต่อเนื่องต่อทอง BTC และหุ้นเทค', 'real rates are tight (2% or more): bonds pay well with no risk, a steady headwind for gold, BTC and tech')
+        : ryV.key === 'low' ? tr('ดอกเบี้ยจริงต่ำ ถือเงินสด/บอนด์แทบไม่ได้อะไรหลังหักเงินเฟ้อ เป็นบวกต่อทอง BTC และหุ้นเติบโต', 'real rates are low: cash and bonds earn little after inflation, supportive for gold, BTC and growth stocks')
+        : tr('ดอกเบี้ยจริงอยู่ช่วงปกติ (1–2%) และไม่ได้เคลื่อนแรงใน 1 เดือน ยังไม่ใช่แรงกดดันหรือแรงหนุนพิเศษ', 'real rates are in the normal 1–2% range with no big move over the month: neither a special headwind nor a tailwind'));
+      body += impact(ryV.accent === 'var(--bad)' ? tr('ลบต่อทองคำ BTC และหุ้นเทค (ทองมักวิ่งสวนเส้นนี้ชัดที่สุด)', 'negative for gold, BTC and tech (gold usually moves opposite this line most clearly)')
+        : ryV.accent === 'var(--good)' ? tr('บวกต่อทองคำ BTC และหุ้นเทค', 'positive for gold, BTC and tech')
+        : tr('กลาง ๆ ให้ดูทิศทางในสัปดาห์ถัดไป', 'neutral; watch the direction over the coming weeks'));
+      body += '<br><span style="opacity:.75;">' + tr('ℹ️ เกณฑ์: ดูทิศทางก่อน 🔴 ขึ้น +0.25 จุดขึ้นไปใน 1 เดือน · 🟢 ลง 0.25 จุดขึ้นไป · ถ้าไม่เคลื่อนแรง 🔴 ตั้งแต่ 2% · 🟢 ต่ำกว่า 1% · 🟡 1–2% · ข้อมูล FRED DFII10', 'ℹ️ Thresholds: direction first 🔴 up 0.25 pts or more in 1 month · 🟢 down 0.25 pts or more · otherwise 🔴 2% and up · 🟢 below 1% · 🟡 1–2% · data FRED DFII10') + '</span>';
+      out.push(analysisCard(ryV.accent, tr('Real Yield 10 ปี — ', '10-year real yield — ') + ryV.dot + ' ' + ryV.label, body));
     }
     return out;
   }
