@@ -731,7 +731,7 @@ body{margin:0}
     <p><b>Reading the TradingView chart (SPXEW/SPX):</b> the button opens SPXEW divided by the S&amp;P 500. The axis value (e.g. 1.19) means nothing on its own, watch the direction: rising = the average stock beating the giants (broad, green) · falling = giants leading (narrow, red) · flat = amber. The mini chart on the card is the same line, rebased to 100.</p>
     <p><b>Why it matters:</b> healthy rallies usually carry most stocks with them. If the index makes new highs while SPXEW lags, the market leans on a few names, and if they stumble the index can fall hard.</p>
     </div>
-  </div></div></div><div class="num" id="mkSpxew">–</div><div class="spark" id="spSpxew"></div><div class="zone" id="mkSpxewZone"></div><div class="zone" id="mkSpxewInfo"></div>
+  </div></div></div><div class="num" id="mkSpxew">–</div><div class="spark" id="spSpxew"></div><div class="zone" id="mkSpxewZone"></div><div class="zone" id="mkSpxewInfo"></div><div class="zone" id="mkSpxewMeaning"></div>
     <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=SP%3ASPXEW%2FSP%3ASPX" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
   <div class="metric mkt"><div class="name"><span data-en="US 10-year yield">บอนด์สหรัฐ 10 ปี</span> <div class="tip"><button type="button" class="tip-btn" aria-label="บอนด์ 10 ปีคืออะไร" data-en-aria="What is the 10-year yield?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
     <div class="i18n-th">
@@ -877,11 +877,7 @@ body{margin:0}
   </div></div></div><div class="num" id="mkUsJp10y">–</div><div class="spark" id="spUsJp10y"></div><div class="zone" id="mkUsJp10yZone"></div><div class="zone" id="mkUsJp10yInfo"></div>
     <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3AUS10Y-TVC%3AJP10Y" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
 </div>
-<div class="muted" id="mktNote" style="font-size:11px; margin-top:10px; line-height:1.6;" data-en="Mini charts = last 12 months">กราฟเล็ก = ย้อนหลัง 12 เดือน</div>
-<div id="mktAnalysisWrap" hidden style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line);">
-  <h3 style="font-size:14px; margin-bottom:12px;" data-en="🔍 Analysis: what the market cards are saying">🔍 วิเคราะห์: การ์ดตลาดบอกอะไร</h3>
-  <div id="mktAnalysis" style="display:flex; flex-direction:column; gap:12px;"></div>
-</div>
+<div class="muted" id="mktNote" style="font-size:11px; margin-top:10px;" data-en="Mini charts = last 12 months">กราฟเล็ก = ย้อนหลัง 12 เดือน</div>
 </section>
 
 <section class="card full">
@@ -3038,7 +3034,7 @@ window.setHeaderStamp();
   }
   window.usJpZone = usJpZone;   // tests
 
-  // ความกว้างตลาด (SPXEW − S&P 500 ใน 1 เดือน, หน่วย % point) — เกณฑ์เดียว ใช้ทั้งสีการ์ดและกล่องวิเคราะห์
+  // ความกว้างตลาด (SPXEW − S&P 500 ใน 1 เดือน, หน่วย % point) — เกณฑ์เดียว ใช้ทั้งสีและบรรทัดความหมายบนการ์ด
   const BREADTH_BROAD = 0.5, BREADTH_NARROW = -1.5;
   function breadthVerdict(rel1m){
     if(!isValidNum(rel1m)) return null;
@@ -3049,10 +3045,8 @@ window.setHeaderStamp();
   window.breadthVerdict = breadthVerdict;   // tests
   const signedPctTxt = (x) => (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x).toFixed(2) + '%';
   function renderBreadth(s){
-    const box = el('mktAnalysis');
-    const wrap = el('mktAnalysisWrap');
-    const showBox = (on) => { if(wrap) wrap.hidden = !on; };
-    if(!s || !isValidNum(s.latest)){ if(box) box.innerHTML = ''; showBox(false); return; }
+    const meaning = el('mkSpxewMeaning');
+    if(!s || !isValidNum(s.latest)){ if(meaning) meaning.innerHTML = ''; return; }
     const pct = (isValidNum(s.change) && isValidNum(s.prev) && s.prev) ? s.change / s.prev * 100 : null;
     el('mkSpxew').innerHTML = esc(s.latest.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 }))
       + (pct == null ? '' : '<span class="delta ' + (pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat') + '">' + (pct > 0 ? '+' : '') + pct.toFixed(2) + '%</span>');
@@ -3070,24 +3064,17 @@ window.setHeaderStamp();
     // กราฟเล็ก = อัตราส่วน EW ÷ S&P (100 = 12 เดือนก่อน) สีกลาง ไม่ใช่สีเขียว/แดง เพื่อไม่ให้สับสนกับผลเทียบ 1 เดือน
     if(s.relHist && s.relHist.length > 1) setSpark('spSpxew', { hist: s.relHist }, { dec:1, color:'var(--accent)' });
     else setSpark('spSpxew', s, { dec:0, color:'var(--accent)' });
-    if(!box) return;
-    if(!v){ box.innerHTML = ''; showBox(false); return; }
-    showBox(true);
-    // บทวิเคราะห์ใช้ verdict ตัวเดียวกับสีการ์ด
+    if(!meaning) return;
+    if(!v){ meaning.innerHTML = ''; return; }
+    // ความหมายของผลเทียบ อยู่ในการ์ดเลย (การ์ดตลาดใบอื่นก็แสดงทุกอย่างในการ์ด ไม่มีกล่องวิเคราะห์แยก)
     const up = s.spx1m >= 0;
-    let body = tr('ใน 1 เดือน หุ้นแบบถ่วงเท่ากัน (SPXEW) ', 'Over 1 month the equal-weight index (SPXEW) ') + '<b>' + signedPctTxt(s.ew1m) + '</b>'
-      + tr(' เทียบ S&P 500 ปกติ ', ' vs the regular S&P 500 ') + '<b>' + signedPctTxt(s.spx1m) + '</b>'
-      + tr(' ต่างกัน ', ', a gap of ') + '<b>' + signedPctTxt(s.rel1m) + '</b>';
-    if(isValidNum(s.rel3m)) body += tr(' · 3 เดือนต่างกัน ', ' · 3-month gap ') + signedPctTxt(s.rel3m);
-    body += '<br><b>' + tr('ความหมาย:', 'What it means:') + '</b> ' + (v.key === 'narrow'
+    meaning.innerHTML = '<b>' + tr('ความหมาย:', 'What it means:') + '</b> ' + (v.key === 'narrow'
       ? (up ? tr('ดัชนีขึ้นเพราะหุ้นยักษ์ไม่กี่ตัว หุ้นส่วนใหญ่ไม่ได้ขึ้นตาม = ขาขึ้นที่เปราะ ถ้าหุ้นกลุ่มนั้นสะดุด ดัชนีร่วงได้แรง', 'the index is rising on a few mega-caps while most stocks lag = a fragile rally; if those names stumble the index can fall hard')
             : tr('หุ้นส่วนใหญ่ร่วงหนักกว่าดัชนี แรงขายกระจายทั่วตลาด มีแค่หุ้นยักษ์ที่ยังพยุงดัชนีไว้', 'most stocks are falling harder than the index; selling is widespread and only the giants are holding it up'))
       : v.key === 'broad'
       ? (up ? tr('หุ้นส่วนใหญ่ขึ้นไปด้วยกัน ไม่ได้พึ่งแค่หุ้นยักษ์ = ขาขึ้นที่แข็งแรงกว่า', 'most stocks are rising together rather than leaning on the giants = a healthier rally')
             : tr('ดัชนีลงเพราะหุ้นยักษ์เป็นหลัก หุ้นส่วนใหญ่ยังยืนได้ดีกว่า = แรงขายกระจุกตัว ยังไม่ลามทั้งตลาด', 'the index is falling mainly on the giants while most stocks hold up better = selling is concentrated, not market-wide'))
       : tr('หุ้นส่วนใหญ่กับหุ้นยักษ์วิ่งไปทางเดียวกันพอๆ กัน ยังไม่มีสัญญาณว่าตลาดแคบหรือกว้างผิดปกติ', 'the average stock and the giants are moving about the same; no sign of an unusually narrow or broad market'));
-    body += '<br><span style="opacity:.75;">' + tr('ℹ️ เกณฑ์: 🟢 ตั้งแต่ +0.5% · 🟡 −1.5% ถึง +0.5% · 🔴 ต่ำกว่า −1.5% (SPXEW ลบ S&P 500 ใน 1 เดือน) · SPXEW และ S&P 500 จาก Yahoo Finance ราคาปิดวันเดียวกัน', 'ℹ️ Thresholds: 🟢 +0.5% or more · 🟡 −1.5% to +0.5% · 🔴 below −1.5% (SPXEW minus S&P 500 over 1 month) · SPXEW and S&P 500 from Yahoo Finance, same-day closes') + '</span>';
-    box.innerHTML = analysisCard(v.accent, tr('🔍 ความกว้างตลาด (SPXEW) — ', '🔍 Market breadth (SPXEW) — ') + v.label, body);
   }
   window.renderBreadth = renderBreadth;   // tests
   // ถ้าเซิร์ฟเวอร์ไม่ได้ส่ง chg1m มา คิดเองจากกราฟ (จุดล่าสุด เทียบจุดที่เก่ากว่า 30 วัน) — ไม่ให้แถบสีหายเงียบๆ
