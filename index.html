@@ -4144,12 +4144,14 @@ window.setHeaderStamp();
         </div>
       </div>
       <div class="i18n-en" lang="en" style="flex-basis:100%; font-size:11px; color:var(--sub); line-height:1.6;">
-        Bonus rule: if the price is more than <span style="color:var(--text)">55%</span> below ATH you get +1.5 points,
-        more than 65% below gives +2.0, and more than 75% below gives +2.5 points (the total is capped at 10).
+        Bonus rule: if the price is more than <span style="color:var(--text)">50%</span> below ATH you get +0.5 points,
+        and more than 65% below gives +0.75 points (the total is capped at 10). The bonus is small because a deep
+        drawdown already lowers NUPL and MVRV, so their scores rise anyway.
       </div>
       <div class="i18n-th" style="flex-basis:100%; font-size:11px; color:var(--sub); line-height:1.6;">
-        กติกาโบนัส: ถ้าราคาลงมามากกว่า <span style="color:var(--text)">55%</span> จาก ATH จะได้ +1.5 คะแนน,
-        ถ้าลงมากกว่า 65% ได้ +2.0, และถ้าลงมากกว่า 75% ได้ +2.5 คะแนน (คะแนนรวมสูงสุดไม่เกิน 10)
+        กติกาโบนัส: ถ้าราคาลงมามากกว่า <span style="color:var(--text)">50%</span> จาก ATH จะได้ +0.5 คะแนน,
+        และถ้าลงมากกว่า 65% ได้ +0.75 คะแนน (คะแนนรวมสูงสุดไม่เกิน 10) ให้โบนัสน้อยเพราะตอนราคาลงลึก
+        ค่า NUPL และ MVRV ก็ต่ำลงอยู่แล้ว คะแนนของสองตัวนี้จึงสูงขึ้นเองอยู่แล้ว
       </div>
     </div>
 
@@ -4413,10 +4415,11 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     return 'var(--red)';
   }
 
+  // Kept small on purpose: a deep drawdown already pushes NUPL and MVRV scores up,
+  // so a big bonus would count the same event twice.
   function athBonus(ddPct){
-    if(ddPct>=75) return 2.5;
-    if(ddPct>=65) return 2.0;
-    if(ddPct>=55) return 1.5;
+    if(ddPct>=65) return 0.75;
+    if(ddPct>=50) return 0.5;
     return 0;
   }
 
@@ -4566,7 +4569,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       <div><span>MVRV Z-Score score</span><span class="v">${sZ.toFixed(1)}</span></div>
       <div><span>MVRV Ratio score</span><span class="v">${sM.toFixed(1)}</span></div>
       <div><span>${tr('ค่าเฉลี่ย 3 ตัวชี้วัด', 'Average of 3 metrics')}</span><span class="v">${avg.toFixed(1)}</span></div>
-      <div><span>${tr('โบนัส ATH drawdown', 'ATH drawdown bonus')}</span><span class="v">+${bonus.toFixed(1)}</span></div>
+      <div><span>${tr('โบนัส ATH drawdown', 'ATH drawdown bonus')}</span><span class="v">+${bonus.toFixed(2).replace(/0$/, '')}</span></div>
       <div><span>${tr('รวมสุดท้าย', 'Final score')}</span><span class="v">${final.toFixed(1)} / 10${Math.abs(rawTotal - final) > 0.05 ? ' <span class="muted">(' + tr('ก่อนจำกัดเพดาน ', 'before cap ') + rawTotal.toFixed(1) + ')</span>' : ''}</span></div>
     `;
   }
