@@ -211,3 +211,14 @@ test('"new version available" check stays silent when the host sends no ETag/Las
   assert.equal(await sandbox.giCheckUpdate(), false);
   assert.equal(appended.length, 0);
 });
+
+test('source footers are collapsed behind an "ⓘ แหล่งข้อมูล" toggle, warnings stay visible', () => {
+  const H = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8');
+  for (const id of ['livePricesNote', 'mktNote', 'fedAsOf', 'econExtraNote']) {
+    const re = new RegExp('<details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div[^>]*id="' + id + '"');
+    assert.match(H, re, id + ' should sit inside a collapsed src-note');
+  }
+  for (const id of ['mktWarn', 'fedAsOfWarn', 'econExtraWarn']) {
+    assert.match(H, new RegExp('<div class="src-warn" id="' + id + '"></div>'), id + ' should be outside the toggle');
+  }
+});
