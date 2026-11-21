@@ -163,6 +163,35 @@ const STRICT_TOPICS = {
     'economy', 'economic', 'baht', 'set index', 'stocks', 'gold', 'inflation', 'interest rate', 'bank of thailand', 'gdp', 'export', 'tariff',
     'budget', 'government', 'prime minister', 'oil', 'investment', 'investor', 'fed', 'bitcoin', 'crypto']
 };
+// The English publisher feeds are whole sections too (BBC Business carries GTA 6 sales and Airbnb
+// house rules; The Verge carries gadget round-ups), so each topic also has a relevance list. Stories
+// that match neither it nor the search terms are dropped when at least MIN_ON_TOPIC stories match;
+// otherwise they are kept to fill the list but flagged onTopic:false, and the page does not score them.
+const MIN_ON_TOPIC = 4;
+const TOPIC_TERMS = {
+  geopolitical: ['war', 'military', 'missile', 'missiles', 'troops', 'nato', 'sanction', 'sanctions', 'ceasefire', 'truce', 'invasion',
+    'coup', 'election', 'president', 'prime minister', 'minister', 'government', 'diplomat', 'diplomatic', 'summit', 'border', 'attack',
+    'strike', 'strikes', 'nuclear', 'iran', 'israel', 'gaza', 'ukraine', 'russia', 'china', 'taiwan', 'korea', 'protest', 'protests',
+    'refugee', 'refugees', 'un', 'treaty', 'talks', 'drone', 'drones', 'army', 'rebels', 'killed'],
+  economic: ['fed', 'federal reserve', 'central bank', 'inflation', 'cpi', 'ppi', 'interest rate', 'interest rates', 'rate hike', 'rate cut',
+    'rates', 'gdp', 'economy', 'economic', 'economist', 'economists', 'recession', 'jobs', 'unemployment', 'payrolls', 'wages', 'retail sales',
+    'consumer spending', 'consumer prices', 'tariff', 'tariffs', 'trade', 'deficit', 'debt', 'treasury', 'budget', 'tax', 'taxes', 'boj',
+    'ecb', 'bank of england', 'bank of japan', 'imf', 'growth', 'manufacturing', 'pmi', 'housing market', 'mortgage', 'mortgages',
+    'cost of living', 'prices', 'shares', 'stocks', 'markets', 'ipo'],
+  energy: ['oil', 'crude', 'brent', 'wti', 'opec', 'gas', 'lng', 'lpg', 'energy', 'fuel', 'gasoline', 'petrol', 'diesel', 'refinery',
+    'refineries', 'pipeline', 'power grid', 'electricity', 'coal', 'nuclear', 'hormuz', 'barrel', 'barrels', 'iea', 'solar', 'wind power', 'utilities'],
+  financial: ['stock', 'stocks', 'shares', 'market', 'markets', 'wall st', 'wall street', 's&p', 'nasdaq', 'dow', 'bond', 'bonds', 'yield',
+    'yields', 'treasury', 'treasuries', 'investor', 'investors', 'ipo', 'earnings', 'bank', 'banks', 'credit', 'dollar', 'currency', 'yen',
+    'euro', 'bitcoin', 'crypto', 'gold', 'hedge fund', 'fund', 'index', 'selloff', 'sell-off', 'rally', 'fed', 'rates', 'valuation'],
+  techAi: [' ai ', 'ai', 'a.i.', 'artificial intelligence', 'chip', 'chips', 'semiconductor', 'semiconductors', 'nvidia', 'openai', 'anthropic',
+    'google', 'microsoft', 'apple', 'meta', 'amazon', 'tesla', 'tsmc', 'data center', 'data centers', 'tech', 'big tech', 'regulation',
+    'antitrust', 'cyber', 'cyberattack', 'hack', 'hackers', 'outage', 'outages', 'ipo', 'shares', 'stocks', 'export controls', 'startup', 'funding']
+};
+function termTester(t) {
+  if (!/^[\x00-\x7f]+$/.test(t)) return (text) => text.includes(t);
+  const re = new RegExp('(?:^|[^a-z0-9])' + t.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![a-z0-9])', 'i');
+  return (text) => re.test(text);
+}
 async function fromCategoryFeeds(q, lang, cat) {
   const urls = CATEGORY_FEEDS[cat];
   if (!urls) throw new Error('no publisher feeds for this topic');
@@ -186,6 +215,13 @@ async function fromCategoryFeeds(q, lang, cat) {
   };
   let ranked = items.filter(hit).concat(items.filter((it) => !hit(it)));
   const strict = STRICT_TOPICS[cat];
+  const topic = TOPIC_TERMS[cat];
+  if (!strict && topic) {
+    const testers = topic.map(termTester);
+    const onTopic = (it) => { const text = it.title + ' ' + it.description; return hit(it) || testers.some((f) => f(text)); };
+    const yes = ranked.filter(onTopic);
+    ranked = yes.length >= MIN_ON_TOPIC ? yes : yes.concat(ranked.filter((it) => !onTopic(it)).map((it) => ({ ...it, onTopic: false })));
+  }
   if (strict) {
     const relevant = (it) => {
       const text = (it.title + ' ' + it.description).toLowerCase();
@@ -244,4 +280,4 @@ exports.handler = async function (event) {
 };
 
 // Exported for local unit testing (node --test / plain require). Netlify ignores extra exports.
-module.exports.__test = { parseRssItems, decodeEntities, stripTags, cleanText, unwrapBingLink, CATEGORY_FEEDS, STRICT_TOPICS, fromCategoryFeeds };
+module.exports.__test = { parseRssItems, decodeEntities, stripTags, cleanText, unwrapBingLink, CATEGORY_FEEDS, STRICT_TOPICS, TOPIC_TERMS, MIN_ON_TOPIC, fromCategoryFeeds };

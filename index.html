@@ -1271,7 +1271,8 @@ window.setHeaderStamp();
         description: (it.description || '').replace(/<[^>]+>/g, '').trim().slice(0, 220),
         link: it.link || '',
         source: it.source || '',
-        pubDate: it.pubDate || ''
+        pubDate: it.pubDate || '',
+        onTopic: it.onTopic
       }));
       const titles = items.slice(0, 5).map(it => it.title);
       return { ...feed, titles, items };
@@ -1389,6 +1390,13 @@ window.setHeaderStamp();
     'cyberattack':1, 'cyber attack*':1, 'martial law':2, 'state of emergency':1.5, 'bank run':2, 'debt default':2,
     'market crash':2, 'stocks crash*':2, 'stock market crash':2, 'rate hike':1, 'hike rates':1, 'inflation surge':1,
     kill:1, 'casualties':1.5,
+    // ภาษาข่าวตลาดจริง (Nov 2026: วันที่ S&P ลง 3.7% หมวดการเงินได้แค่ 60 เพราะไม่รู้จักคำเหล่านี้)
+    'inflation soar*':1.5, 'inflation jump*':1, 'inflation spike*':1, 'prices soar*':1, 'high inflation':1, 'elevated inflation':1,
+    'inflation worr*':1, 'inflation fear*':1, 'raise interest rates':1, 'raising interest rates':1, 'raise rates':1, 'raising rates':1, 'shares fall*':1, 'shares fell':1,
+    'stocks fall*':1, 'stocks fell':1, 'sharply lower':1, 'losing run':1, 'losing streak':1, 'in correction':1.5,
+    'into a correction':1.5, 'correction territory':1.5,
+    wipeout:1.5, 'wiped out':1.5, rout:1.5, turmoil:1, fear:1, 'worries':1, sink:1, skid:1, falter:1, 'worsen*':1,
+    losses:1, 'selling off':1, 'unravel*':1, 'violat*':1, outage:1, 'penaliz*':0.5,
     // single words
     war:1, invasion:2, invade:2, missile:1.5, nuclear:1, coup:2, crash:1.5, collapse:1.5, default:1.5,
     recession:1.5, conflict:1, crisis:1, attack:1, strike:1, sanction:1, tension:1, shutdown:1, emergency:1,
@@ -1396,16 +1404,21 @@ window.setHeaderStamp();
     'escalat*':1, unrest:1, protest:1, tariff:1, downgrade:1, 'mobiliz*':1.5 };
   const LOW_RISK_TERMS = { ceasefire:1.5, 'cease-fire':1.5, truce:1.5, 'peace deal':1.5, 'peace talks':1, peace:1,
     agreement:1, 'deal reached':1, growth:1, rally:1, recovery:1, rebound:1, stability:1, 'stabiliz*':1, ease:1, easing:1,
-    'rate cut':1, 'cut rates':1, surplus:1, stimulus:1, breakthrough:1, cooperation:1, 'record high':1, 'optimis*':1, upgrade:1 };
+    'rate cut':1, 'cut rates':1, surplus:1, stimulus:1, breakthrough:1, cooperation:1, 'record high':1, 'optimis*':1, upgrade:1,
+    'inflation cool*':1, 'inflation eas*':1, 'soft landing':1 };
   // ข่าวที่ไม่เกี่ยวกับความเสี่ยงโลก — ไม่นำมาคิดคะแนนเลย (ข้ามไปใช้พาดหัวถัดไปแทน)
   const OFF_TOPIC_RE = new RegExp('\\b(?:' + [
     'nfl', 'nba', 'mlb', 'nhl', 'mls', 'ufc', 'wwe', 'f1', 'formula (?:one|1)', 'premier league', 'champions league', 'la liga',
     'serie a', 'bundesliga', 'world cup', 'super bowl', 'world series', 'grand slam', 'wimbledon', 'olympics?', 'football',
     'soccer', 'basketball', 'baseball', 'hockey', 'tennis', 'golf', 'cricket', 'rugby', 'boxing', 'quarterback',
-    'touchdowns?', 'playoffs?', 'halftime', 'head coach', 'coach', 'pregame', 'postgame', 'kickoff', 'season opener', '(?:win|winning|losing) streak', 'box office', 'movies?', 'films?', 'trailer', 'sitcom',
+    'touchdowns?', 'playoffs?', 'halftime', 'head coach', 'coach', 'pregame', 'postgame', 'kickoff', 'season opener', '(?:win|winning) streak', 'box office', 'movies?', 'films?', 'trailer', 'sitcom',
     'tv series', 'season finale', 'episode', 'netflix series', 'album', 'concert', 'grammys?', 'oscars?', 'emmys?',
     'celebrity', 'red carpet', 'video games?', 'recipe', 'horoscope', 'museum', 'anniversary', 'reenactment',
-    'historians?', 'on this day', 'obituary', 'dies at \\d+'
+    'historians?', 'on this day', 'obituary', 'dies at \\d+',
+    // ไลฟ์สไตล์ / บทความแนะนำ / ลิสต์ — ไม่ใช่ข่าวความเสี่ยง (เช่น "bargains in a crash", "AI-powered gadgets")
+    'gadgets?', 'home office', 'house rules', 'wildlife', 'divorce', 'showrunner', 'how to', 'should you', 'what to (?:buy|watch|know)',
+    'best (?:\\w+ )?(?:bargains?|buys?|deals?|stocks to buy)', 'bargains? in a', 'could (?:be|make) (?:among )?(?:the |your )?(?:best|smarter)',
+    '(?:\\d+|three|four|five|six|seven|eight|nine|ten) (?:[\\w-]+ ){0,2}(?:ways|things|tips|gadgets|stocks|investments)'
   ].join('|') + ')\\b', 'i');
   // วลีที่มีคำเสี่ยงแต่ไม่ใช่ความเสี่ยงจริง — ลบออกก่อนจับคำ
   const NEUTRAL_PHRASES_RE = new RegExp('\\b(?:' + [
@@ -1414,15 +1427,18 @@ window.setHeaderStamp();
     'heart attacks?', 'panic attacks?', 'shark attacks?', 'asthma attacks?', 'dog attacks?', 'strikes? (?:a|an) (?:deal|balance|chord|tone|pose)',
     'strikes? deals?', 'strike(?:s|d)? out', 'lightning strikes?', 'strike gold', '(?:car|plane|bus|train|helicopter) crash(?:es)?',
     'by default', 'default (?:settings?|option|browser|apps?|search(?: engine)?)', 'nuclear (?:power|energy|reactors?|plants?|fusion)',
-    'peace prize', '(?:campaign|political|protest|trump|harris) rall(?:y|ies)', 'fashion week', 'growth mindset'
+    'peace prize', 'department of war', 'secretary of war', 'war department', 'study of war', 'love and war', 'war on (?:drugs|poverty|cancer)', '(?:campaign|political|protest|trump|harris) rall(?:y|ies)', 'fashion week', 'growth mindset'
   ].join('|') + ')\\b', 'gi');
   const NEGATION_RE = /\b(?:no|not|avoids?|avoided|averts?|averted|without|ends?|ended|ending|lifts?|lifted|eases?|eased)\s+(?:\w+\s+)?$/i;
+  // คำฝั่งบวกที่ถูกปฏิเสธ = ไม่นับ: "didn't ease fears", "fails to rally", "truce unravels", "ceasefire collapses"
+  const LOW_NEGATION_BEFORE_RE = /\b(?:no|not|never|didn't|did not|doesn't|does not|don't|won't|fails? to|failed to|without)\s+(?:\w+\s+)?$/i;
+  const LOW_NEGATION_AFTER_RE = /^\s*(?:\w+\s+)?(?:unravel|collapse|fail|falter|stall|break(?:s|ing)? down|broke down|violat|shatter|in doubt|at risk)/i;
   // คำแปลไทยของคำบ่งชี้ — ใช้แสดงผลอย่างเดียว (ระบบยังจับคำจากพาดหัวภาษาอังกฤษตามเดิม)
   const RISK_TERM_TH = { war:'สงคราม', invasion:'การรุกราน', invade:'รุกราน', missile:'ขีปนาวุธ', nuclear:'นิวเคลียร์', coup:'รัฐประหาร',
     crash:'ร่วงหนัก', collapse:'ล่มสลาย', default:'ผิดนัดชำระหนี้', recession:'เศรษฐกิจถดถอย', conflict:'ความขัดแย้ง',
     crisis:'วิกฤต', attack:'การโจมตี', strike:'โจมตี/นัดหยุดงาน', sanction:'คว่ำบาตร', tension:'ความตึงเครียด',
     shutdown:'ปิดทำการ', emergency:'ภาวะฉุกเฉิน', threat:'ภัยคุกคาม', bankruptcy:'ล้มละลาย', layoff:'ปลดพนักงาน',
-    selloff:'เทขาย', 'sell-off':'เทขาย', plunge:'ดิ่งลง', tumble:'ร่วงลง', slump:'ทรุดตัว', 'rate hike':'ขึ้นดอกเบี้ย',
+    selloff:'เทขาย', 'sell-off':'เทขาย', 'selling off':'เทขาย', plunge:'ดิ่งลง', tumble:'ร่วงลง', slump:'ทรุดตัว', 'rate hike':'ขึ้นดอกเบี้ย',
     'hike rates':'ขึ้นดอกเบี้ย', escalat:'ยกระดับความรุนแรง', unrest:'ความไม่สงบ', protest:'การประท้วง', tariff:'ภาษีนำเข้า',
     downgrade:'ลดอันดับ', 'inflation surge':'เงินเฟ้อพุ่ง', mobiliz:'ระดมพล', 'military strike':'โจมตีทางทหาร',
     'air strike':'โจมตีทางอากาศ', airstrike:'โจมตีทางอากาศ', 'drone strike':'โจมตีด้วยโดรน', 'missile strike':'โจมตีด้วยขีปนาวุธ',
@@ -1436,7 +1452,15 @@ window.setHeaderStamp();
     peace:'สันติภาพ', agreement:'ข้อตกลง', 'deal reached':'บรรลุข้อตกลง', growth:'การเติบโต', rally:'ปรับขึ้นแรง',
     recovery:'ฟื้นตัว', rebound:'ดีดกลับ', stability:'เสถียรภาพ', stabiliz:'มีเสถียรภาพ', ease:'ผ่อนคลาย', easing:'ผ่อนคลาย',
     'rate cut':'ลดดอกเบี้ย', 'cut rates':'ลดดอกเบี้ย', surplus:'เกินดุล', stimulus:'มาตรการกระตุ้น', breakthrough:'ความคืบหน้าสำคัญ',
-    cooperation:'ความร่วมมือ', 'record high':'สูงสุดเป็นประวัติการณ์', optimis:'มองบวก', upgrade:'เพิ่มอันดับ' };
+    cooperation:'ความร่วมมือ', 'record high':'สูงสุดเป็นประวัติการณ์', optimis:'มองบวก', upgrade:'เพิ่มอันดับ',
+    'inflation soar':'เงินเฟ้อพุ่ง', 'inflation jump':'เงินเฟ้อพุ่ง', 'inflation spike':'เงินเฟ้อพุ่ง', 'prices soar':'ราคาพุ่ง',
+    'high inflation':'เงินเฟ้อสูง', 'elevated inflation':'เงินเฟ้อสูง', 'inflation worr':'กังวลเงินเฟ้อ', 'inflation fear':'กังวลเงินเฟ้อ',
+    'raise interest rates':'ขึ้นดอกเบี้ย', 'raising interest rates':'ขึ้นดอกเบี้ย', 'raise rates':'ขึ้นดอกเบี้ย', 'raising rates':'ขึ้นดอกเบี้ย', 'shares fall':'หุ้นร่วง', 'shares fell':'หุ้นร่วง',
+    'stocks fall':'หุ้นร่วง', 'stocks fell':'หุ้นร่วง', 'sharply lower':'ปิดลบหนัก', 'losing run':'ลงติดต่อกัน', 'losing streak':'ลงติดต่อกัน',
+    'in correction':'เข้าเขตปรับฐาน', 'into a correction':'เข้าเขตปรับฐาน', 'correction territory':'เข้าเขตปรับฐาน',
+    wipeout:'มูลค่าหายวับ', 'wiped out':'มูลค่าหายวับ', rout:'เทขายหนัก', turmoil:'ปั่นป่วน', fear:'ความกังวล', worries:'ความกังวล',
+    sink:'ดิ่งลง', skid:'ไถลลง', falter:'อ่อนแรง', worsen:'แย่ลง', losses:'ขาดทุน/ร่วงลง', unravel:'พังลง', violat:'ละเมิด',
+    outage:'ระบบล่ม', penaliz:'ลงโทษ', 'inflation cool':'เงินเฟ้อชะลอ', 'inflation eas':'เงินเฟ้อชะลอ', 'soft landing':'ลงจอดนุ่มนวล' };
   function termRegex(term){
     const stem = term.endsWith('*');
     const body = (stem ? term.slice(0, -1) : term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1448,16 +1472,34 @@ window.setHeaderStamp();
     .concat(Object.entries(LOW_RISK_TERMS).map(([t, w]) => ({ term: t.replace('*', ''), re: termRegex(t), w: -w })))
     .sort((a, b) => b.term.length - a.term.length);
   function isOffTopic(title){ return OFF_TOPIC_RE.test(title || ''); }
-  function scoreHeadline(title){
+  // ตัดชื่อสำนักท้ายพาดหัว (" - Institute for the Study of War", " - The Hollywood Reporter") ไม่ให้ถูกนับเป็นคำเสี่ยง
+  function stripSource(title, source){
+    let t = String(title || '');
+    if(source){
+      const tail = ' - ' + source;
+      if(t.endsWith(tail)) return t.slice(0, -tail.length);
+    }
+    return t;
+  }
+  // echo = คำค้นของหมวดนั้นเอง (เช่น "war" ในหมวดภูมิรัฐศาสตร์ที่ค้นด้วยคำว่า war) — ทุกพาดหัวมีคำนี้เพราะเราค้นหามันเอง
+  // ถ้านับเต็มจะดันคะแนนหมวดขึ้นเสมอโดยไม่เกี่ยวกับว่าโลกตึงเครียดแค่ไหน จึงนับครึ่งเดียว
+  function scoreHeadline(title, echo){
     if(isOffTopic(title)) return { net: 0, hits: [], offTopic: true };
-    let text = ' ' + String(title || '').replace(NEUTRAL_PHRASES_RE, ' ~ ') + ' ';
+    let text = ' ' + String(title || '').replace(/[\u2018\u2019]/g, "'").replace(NEUTRAL_PHRASES_RE, ' ~ ') + ' ';
+    const orig = text;
     const hits = [];
     RISK_RULES.forEach(r => {
       const m = r.re.exec(text);
       if(!m) return;
-      text = text.slice(0, m.index) + ' ~ ' + text.slice(m.index + m[0].length);   // ไม่ให้คำย่อยถูกนับซ้ำ
-      if(r.w > 0 && NEGATION_RE.test(text.slice(0, m.index))) return;              // "no recession", "averts shutdown"
-      hits.push({ term: r.term, w: r.w });
+      const before = text.slice(0, m.index), after = text.slice(m.index + m[0].length);
+      text = before + ' ~ ' + after;   // ไม่ให้คำย่อยถูกนับซ้ำ
+      if(r.w > 0 && NEGATION_RE.test(before)) return;                                 // "no recession", "averts shutdown"
+      if(r.w < 0){
+        const om = r.re.exec(orig);   // ดูคำถัดไปจากพาดหัวเดิม — คำอย่าง "unravels" อาจถูกจับไปก่อนแล้ว
+        if(LOW_NEGATION_BEFORE_RE.test(before) || LOW_NEGATION_AFTER_RE.test(om ? orig.slice(om.index + om[0].length) : after)) return;
+      }
+      const w = echo && echo.has(r.term) ? r.w / 2 : r.w;
+      hits.push({ term: r.term, w });
     });
     const net = Math.max(-3, Math.min(3, hits.reduce((a, h) => a + h.w, 0)));
     return { net, hits };
@@ -1477,10 +1519,23 @@ window.setHeaderStamp();
   const RECENCY_HALF_LIFE_H = 24;
   // รับได้ทั้ง array ของพาดหัว (string) หรือ array ของ item {title, pubDate} จาก news-feed
   // คะแนนหมวด = 50 ± ตามค่าเฉลี่ยถ่วงน้ำหนักความใหม่ (ใช้ tanh ให้กระจายตัวแต่ไม่ชน 0/100 ง่าย)
-  function scoreCategoryDetail(input, now){
+  const STALE_DAYS = 7;          // ข่าวเก่ากว่านี้ไม่นับ (Google News บางทีส่งข่าวเดือนก่อนมาปน)
+  const SCORE_PRIOR = 0.5;       // เหมือนมีพาดหัวกลาง ๆ อีกครึ่งข่าว — ข่าวเดียวจะดันหมวดไป 90+ ไม่ได้
+  function echoTerms(q){
+    // ทุกคำในคำค้น ("energy crisis" → crisis ด้วย) — มีผลเฉพาะคำที่เป็นคำบ่งชี้ความเสี่ยงอยู่แล้ว
+    return new Set(String(q || '').toLowerCase().split(/\s+or\s+|\s+/).map(t => t.trim()).filter(t => /^[a-z-]+$/.test(t) && t !== 'or'));
+  }
+  function scoreCategoryDetail(input, now, q){
     now = now || Date.now();
-    const list = (input || []).map((x, i) => (typeof x === 'string' ? { title: x, pubDate: '', i } : { title: x && x.title, pubDate: x && x.pubDate, i }))
-      .filter(x => x.title && !isOffTopic(x.title));
+    const echo = echoTerms(q);
+    let list = (input || []).map((x, i) => (typeof x === 'string' ? { title: x, pubDate: '', i }
+        : { title: x && stripSource(x.title, x.source), pubDate: x && x.pubDate, onTopic: x && x.onTopic, i }))
+      .filter(x => x.title && x.onTopic !== false && !isOffTopic(x.title));
+    const fresh = list.filter(x => { const ts = Date.parse(x.pubDate); return !isFinite(ts) || now - ts <= STALE_DAYS * 86400000; });
+    if(fresh.length) list = fresh;
+    // เลือก 5 เรื่อง "ล่าสุด" ไม่ใช่ 5 อันแรกตามลำดับของ Google (ซึ่งเรียงตามความเกี่ยวข้อง — ข่าวขีปนาวุธตกในโปแลนด์
+    // เมื่อ 3 ชม.ก่อนเคยอยู่อันดับ 9 เลยไม่ถูกนับ) ข่าวที่ไม่มีวันที่คงลำดับเดิม
+    list = list.slice().sort((a, b) => ((Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0)) || (a.i - b.i));
     const kept = [];
     for(const it of list){
       const tok = headlineTokens(it.title);
@@ -1492,10 +1547,10 @@ window.setHeaderStamp();
       const ts = Date.parse(it.pubDate);
       const ageH = isFinite(ts) ? Math.max(0, (now - ts) / 3600000) : null;
       const weight = ageH != null ? Math.max(0.25, Math.pow(0.5, ageH / RECENCY_HALF_LIFE_H)) : 1 / (1 + 0.15 * pos);
-      return { title: it.title, weight, ...scoreHeadline(it.title) };
+      return { title: it.title, weight, ...scoreHeadline(it.title, echo) };
     });
     const wsum = rows.reduce((a, r) => a + r.weight, 0);
-    const mean = wsum ? rows.reduce((a, r) => a + r.net * r.weight, 0) / wsum : 0;
+    const mean = wsum ? rows.reduce((a, r) => a + r.net * r.weight, 0) / (wsum + SCORE_PRIOR) : 0;
     const score = Math.max(0, Math.min(100, Math.round(50 + 50 * Math.tanh(mean * 0.8))));
     const drivers = rows.filter(r => r.hits.length).sort((a, b) => Math.abs(b.net * b.weight) - Math.abs(a.net * a.weight)).slice(0, 3)
       .map(r => ({ title: r.title, net: r.net, hits: r.hits }));
@@ -1507,7 +1562,7 @@ window.setHeaderStamp();
     // หมวดที่ listOnly (ข่าวไทย) ไม่นับคะแนน — เอาไว้แสดงในรายการข่าวอย่างเดียว
     const feedResults = allFeeds.filter(f => !f.listOnly);
     const categories = {}, drivers = {};
-    feedResults.forEach(f => { const r = scoreCategoryDetail(f.items && f.items.length ? f.items : f.titles); categories[f.key] = r.score; drivers[f.key] = r.drivers; });
+    feedResults.forEach(f => { const r = scoreCategoryDetail(f.items && f.items.length ? f.items : f.titles, null, f.q); categories[f.key] = r.score; drivers[f.key] = r.drivers; });
 
     const vals = Object.values(categories);
     const worldRiskScore = Math.round(vals.reduce((a,b)=>a+b,0) / vals.length);
