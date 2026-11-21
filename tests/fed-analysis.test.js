@@ -100,9 +100,9 @@ test('analysis is generated from the live numbers for all four metrics', async (
 test('verdicts are computed against the consensus in both directions', async () => {
   // ทุกตัวแย่กว่าที่คาด: เงินเฟ้อสูงกว่า, ว่างงานสูงกว่า, จ้างงานต่ำกว่า
   const bearish = html(await runAllScripts(makeSandbox({ fetchImpl: fetchStub() })));
-  assert.match(bearish, /CPI เงินเฟ้อ — 🔴 สูงกว่าที่คาด/, 'CPI above consensus must be flagged');
-  assert.match(bearish, /Unemployment Rate — 🔴 แย่กว่าที่คาด/, 'unemployment above consensus must be flagged');
-  assert.match(bearish, /Nonfarm Payrolls — 🔴 แย่กว่าที่คาด/, 'payrolls below consensus must be flagged');
+  assert.match(bearish, /CPI เงินเฟ้อ — [^<]* · (?:เทียบคาด: )?สูงกว่าที่คาด/, 'CPI above consensus must be flagged');
+  assert.match(bearish, /Unemployment Rate — [^<]* · (?:เทียบคาด: )?แย่กว่าที่คาด/, 'unemployment above consensus must be flagged');
+  assert.match(bearish, /Nonfarm Payrolls — [^<]* · (?:เทียบคาด: )?แย่กว่าที่คาด/, 'payrolls below consensus must be flagged');
 
   // กลับกันทั้งหมด: เงินเฟ้อต่ำกว่าคาด, ว่างงานต่ำกว่าคาด, จ้างงานเกินคาด
   // same print month as the baked consensus (Aug 2026), so the baked forecast applies
@@ -113,9 +113,9 @@ test('verdicts are computed against the consensus in both directions', async () 
     nfp: { value: C.nfp + 180000, date: '2026-08-01', source: 'fred-csv', prevDate: '2026-07-01', unit: 'jobs', recentChanges: [C.nfp + 180000, 120000, 150000], prevChange: 120000, avg3Change: 100000 }
   });
   const bullish = html(await runAllScripts(makeSandbox({ fetchImpl: fetchStub({ fred: bullishPayload }) })));
-  assert.match(bullish, /CPI เงินเฟ้อ — 🟢 ต่ำกว่าที่คาด/, 'CPI below consensus must be flagged');
-  assert.match(bullish, /Unemployment Rate — 🟢 ดีกว่าที่คาด/, 'unemployment below consensus must be flagged');
-  assert.match(bullish, /Nonfarm Payrolls — 🟢 ดีกว่าที่คาด/, 'a payroll beat must be flagged');
+  assert.match(bullish, /CPI เงินเฟ้อ — [^<]* · (?:เทียบคาด: )?ต่ำกว่าที่คาด/, 'CPI below consensus must be flagged');
+  assert.match(bullish, /Unemployment Rate — [^<]* · (?:เทียบคาด: )?ดีกว่าที่คาด/, 'unemployment below consensus must be flagged');
+  assert.match(bullish, /Nonfarm Payrolls — [^<]* · (?:เทียบคาด: )?ดีกว่าที่คาด/, 'a payroll beat must be flagged');
 });
 
 test('the text moves with the numbers — no code edit needed when a new print lands', async () => {
@@ -147,7 +147,7 @@ test('a live consensus from Investing.com replaces the baked one and is labelled
   assert.match(h, /ตรวจแล้วว่าค่าคาดตรงรอบเดียวกับตัวเลขบนการ์ด/, 'the print-match check should be reported');
   // คาดการณ์สด (4.4%) สูงกว่าตัวเลขบนการ์ด (3.8%) → ต้องออกเป็น "ต่ำกว่าที่คาด"
   // (ถ้าใช้ค่าที่ฝังไว้ 3.4% จะออกเป็น "สูงกว่าที่คาด" — เทสต์นี้จึงพิสูจน์ว่าใช้ค่าสดจริง)
-  assert.match(h, /CPI เงินเฟ้อ — 🟢 ต่ำกว่าที่คาด/, 'the live forecast must be the one used for the verdict');
+  assert.match(h, /CPI เงินเฟ้อ — [^<]* · (?:เทียบคาด: )?ต่ำกว่าที่คาด/, 'the live forecast must be the one used for the verdict');
   assert.ok(!h.includes('ค่าที่ฝังไว้'), 'the baked-consensus wording must not appear when live data was used');
 });
 
@@ -179,9 +179,9 @@ test('a baked consensus from an older round is never used to call a newer print 
     nfp: { value: 29000, date: '2026-09-01', source: 'fred-csv', prevDate: '2026-08-01', unit: 'jobs' }
   });
   const h = html(await runAllScripts(makeSandbox({ fetchImpl: fetchStub({ fred: newer, consensus: null }) })));
-  assert.match(h, /CPI เงินเฟ้อ — ⚪ ยังไม่มีค่าคาดของรอบนี้/);
-  assert.match(h, /Unemployment Rate — ⚪ ยังไม่มีค่าคาดของรอบนี้/);
-  assert.match(h, /Nonfarm Payrolls — ⚪ ยังไม่มีค่าคาดของรอบนี้/);
+  assert.match(h, /CPI เงินเฟ้อ — [^<]* · (?:เทียบคาด: )?ยังไม่มีค่าคาดของรอบนี้/);
+  assert.match(h, /Unemployment Rate — [^<]* · (?:เทียบคาด: )?ยังไม่มีค่าคาดของรอบนี้/);
+  assert.match(h, /Nonfarm Payrolls — [^<]* · (?:เทียบคาด: )?ยังไม่มีค่าคาดของรอบนี้/);
   assert.match(h, /ค่าสำรองที่ฝังไว้เป็นของรอบ ส\.ค\. 2026/);
   assert.doesNotMatch(h, /สูงกว่าที่คาด|ต่ำกว่าที่คาด|ดีกว่าที่คาด|แย่กว่าที่คาด/, 'no verdict may be drawn from another round\'s forecast');
 
@@ -194,7 +194,7 @@ test('a baked consensus from an older round is never used to call a newer print 
     fed: { actual: 4.0, forecast: 4.0, previous: 3.75, releaseDate: '2026-09-16' }
   });
   const h2 = html(await runAllScripts(makeSandbox({ fetchImpl: fetchStub({ fred: newer, consensus: live }) })));
-  assert.match(h2, /CPI เงินเฟ้อ — 🟡 ใกล้เคียงที่คาด/);
+  assert.match(h2, /CPI เงินเฟ้อ — [^<]* · (?:เทียบคาด: )?ใกล้เคียงที่คาด/);
   assert.doesNotMatch(h2, /ยังไม่มีค่าคาดของรอบนี้/);
 });
 
@@ -216,7 +216,7 @@ test('the live consensus loads even when the Fed numbers come from the local cac
   sb.localStorage.setItem('fed-data-cache-v3', JSON.stringify({ data: fred, refreshAfter: Date.now() + 3600e3, savedAt: Date.now() }));
   const h = html(await runAllScripts(sb));
   assert.match(h, /ดึงสด/, 'the live consensus must be used');
-  assert.match(h, /CPI เงินเฟ้อ — 🟡 ใกล้เคียงที่คาด/);
+  assert.match(h, /CPI เงินเฟ้อ — [^<]* · (?:เทียบคาด: )?ใกล้เคียงที่คาด/);
   assert.match(h, /ตรงกับที่ตลาดคาดไว้/, 'the Fed hike must be compared with the live 4.00% forecast');
 });
 

@@ -117,7 +117,7 @@ test('the claims tile shows actual, forecast and previous', async () => {
 
 test('the analysis card judges claims against the forecast', async () => {
   const h = node(await runAllScripts(makeSandbox({ fetchImpl: stub({ fredClaims: FRED_CLAIMS, claimsEv: LIVE }) })), 'fedAnalysis').innerHTML;
-  assert.match(h, /Initial Jobless Claims — 🟢 ต่ำกว่าคาด \(ดี\)/);
+  assert.match(h, /Initial Jobless Claims — [^<]* · (?:เทียบคาด: )?ต่ำกว่าคาด \(ดี\)/);
   assert.match(h, /ตลาดคาด 196K \(ต่ำกว่าคาด 7K\)/);
   assert.match(h, /สัปดาห์ก่อน = 194K \(−5K\)/);
   assert.match(h, /ค่าเฉลี่ย 4 สัปดาห์ = 194K \(ลดลง\)/);
@@ -150,7 +150,7 @@ test('FRED already has this week but Investing.com still lists it as upcoming: t
   assert.equal(node(sb, 'claims').textContent, '189K');
   assert.match(node(sb, 'claimsInfo').innerHTML, /คาด <b>196K<\/b>/);
   const h = node(sb, 'fedAnalysis').innerHTML;
-  assert.match(h, /Initial Jobless Claims — 🟢 ต่ำกว่าคาด \(ดี\)/);
+  assert.match(h, /Initial Jobless Claims — [^<]* · (?:เทียบคาด: )?ต่ำกว่าคาด \(ดี\)/);
   assert.match(h, /ตลาดคาด 196K/);
 });
 
@@ -160,13 +160,18 @@ test('an upcoming forecast for a later week is not attached to the FRED print', 
   assert.match(node(sb, 'claimsInfo').innerHTML, /ยังไม่มีค่าคาด/);
 });
 
-test('card number colours follow the analysis box: above forecast = red, close = amber, no forecast = plain', async () => {
-  const above = { ...LIVE, forecast: 182000 };   // 189K vs 182K → 7K above
-  let sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredClaims: FRED_CLAIMS, claimsEv: above }) }));
-  assert.match(node(sb, 'claims').className, /\btone-bad\b/);
-  assert.match(node(sb, 'fedAnalysis').innerHTML, /var\(--bad\).*Initial Jobless Claims — 🔴/);
-  sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredClaims: FRED_CLAIMS, claimsEv: { ...LIVE, forecast: 188000 } }) }));
-  assert.match(node(sb, 'claims').className, /\btone-warn\b/);
-  sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredClaims: FRED_CLAIMS, claimsEv: { ...LIVE, releaseDate: iso(NOW - 14 * DAY) } }) }));
-  assert.doesNotMatch(node(sb, 'claims').className, /tone-/);
+test('card colour = level status (like the Real Yield card), forecast beat/miss only in the analysis text', async () => {
+  // 189K is low whatever the forecast says → green number, green dot, green analysis box
+  for (const forecast of [182000, 188000, 196000]) {
+    const sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredClaims: FRED_CLAIMS, claimsEv: { ...LIVE, forecast } }) }));
+    assert.match(node(sb, 'claims').className, /\btone-good\b/);
+    assert.match(node(sb, 'claimsZone').textContent, /^🟢 /);
+    assert.match(node(sb, 'fedAnalysis').innerHTML, /var\(--good\);"><b[^>]*>Initial Jobless Claims — 🟢/);
+  }
+  const sb = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredClaims: FRED_CLAIMS, claimsEv: { ...LIVE, forecast: 182000 } }) }));
+  assert.match(node(sb, 'fedAnalysis').innerHTML, /Initial Jobless Claims — 🟢[^<]* · เทียบคาด: สูงกว่าคาด \(แย่\)/);
+  const high = { ...FRED_CLAIMS, value: 320000 };
+  const sb2 = await runAllScripts(makeSandbox({ fetchImpl: stub({ fredClaims: high, claimsEv: { ...LIVE, actual: 320000, forecast: 330000 } }) }));
+  assert.match(node(sb2, 'claims').className, /\btone-bad\b/);
+  assert.match(node(sb2, 'claimsZone').textContent, /^🔴 /);
 });
