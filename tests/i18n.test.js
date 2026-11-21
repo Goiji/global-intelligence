@@ -83,7 +83,7 @@ test('the toggle sits in the top bar with both choices', () => {
 test('English mode: the Fed analysis and macro cards have no Thai left', async () => {
   const sb = await load({ lang: 'en' });
   const h = text(sb, 'fedAnalysis');
-  assert.match(h, /CPI inflation — 🔴 Above forecast|CPI inflation — ⚪ No forecast/, 'CPI card should be in English');
+  assert.match(h, /CPI inflation — [^<]* · (vs forecast: above forecast|no forecast)/, 'CPI card should be in English');
   assert.match(h, /Market impact:/);
   assert.match(h, /Nonfarm Payrolls/);
   assert.ok(!THAI.test(h), 'Thai text left in the English analysis: ' + (h.match(/.{0,40}[฀-๿]+.{0,40}/) || [''])[0]);

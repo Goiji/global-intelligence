@@ -86,7 +86,7 @@ test('tiles show the next release date and the forecast before the number is out
 test('the analysis judges PPI against its consensus and carries the next forecast', async () => {
   const h = node(await runAllScripts(makeSandbox({ fetchImpl: stub() })), 'fedAnalysis').innerHTML;
   // 0.52 → 0.5 vs forecast 0.2 → above expectations by 0.3pp
-  assert.match(h, /PPI ราคาผู้ผลิต — 🔴 สูงกว่าที่คาด/);
+  assert.match(h, /PPI ราคาผู้ผลิต — [^<]* · (?:เทียบคาด: )?สูงกว่าที่คาด/);
   assert.match(h, /ตลาดคาด \+0\.2% → สูงกว่าที่คาด 0\.3pp/);
   assert.match(h, /เร่งขึ้น/);
   assert.match(h, /ครั้งถัดไป .* ตลาดคาด <b>\+0\.3%<\/b> · ครั้งก่อน \+0\.5%/);

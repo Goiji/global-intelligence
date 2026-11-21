@@ -82,11 +82,20 @@ test('index.html: SPXEW card, tooltip, TradingView ratio link; colour and analys
     assert.match(els.get('mkSpxewZone').className, new RegExp(cls));
     assert.match(els.get('mkSpxewZone').textContent, dot);
     assert.ok(els.get('mktAnalysis').innerHTML.includes('border-left:3px solid ' + accent), 'analysis box uses the card colour');
+    assert.equal(els.get('mktAnalysisWrap').hidden, false, 'the analysis block (with its heading) shows when there is a box');
   }
   // no comparison → plain number, no analysis box
   sb.renderBreadth({ ...base });
   assert.doesNotMatch(els.get('mkSpxewZone').className, /tone-/);
   assert.equal(els.get('mktAnalysis').innerHTML, '');
+  assert.equal(els.get('mktAnalysisWrap').hidden, true, 'no box → the heading hides too');
+});
+
+test('index.html: the SPXEW analysis sits in its own titled block after the sources line, not loose under it', () => {
+  const sec = HTML.slice(HTML.indexOf('id="spxewCard"'), HTML.indexOf('Top Events'));
+  const note = sec.indexOf('id="mktNote"'), wrap = sec.indexOf('id="mktAnalysisWrap"'), box = sec.indexOf('id="mktAnalysis"');
+  assert.ok(note > 0 && wrap > note && box > wrap, 'order: sources note → analysis heading → analysis box');
+  assert.match(sec.slice(wrap, box), /<h3[^>]*>🔍 วิเคราะห์/);
 });
 
 function yahooJson(days, closes) {

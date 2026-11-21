@@ -877,8 +877,11 @@ body{margin:0}
   </div></div></div><div class="num" id="mkUsJp10y">–</div><div class="spark" id="spUsJp10y"></div><div class="zone" id="mkUsJp10yZone"></div><div class="zone" id="mkUsJp10yInfo"></div>
     <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3AUS10Y-TVC%3AJP10Y" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
 </div>
-<div id="mktAnalysis" style="display:flex; flex-direction:column; gap:12px; margin-top:12px;"></div>
-<div class="muted" id="mktNote" style="font-size:11px; margin-top:10px;" data-en="Mini charts = last 12 months">กราฟเล็ก = ย้อนหลัง 12 เดือน</div>
+<div class="muted" id="mktNote" style="font-size:11px; margin-top:10px; line-height:1.6;" data-en="Mini charts = last 12 months">กราฟเล็ก = ย้อนหลัง 12 เดือน</div>
+<div id="mktAnalysisWrap" hidden style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line);">
+  <h3 style="font-size:14px; margin-bottom:12px;" data-en="🔍 Analysis: what the market cards are saying">🔍 วิเคราะห์: การ์ดตลาดบอกอะไร</h3>
+  <div id="mktAnalysis" style="display:flex; flex-direction:column; gap:12px;"></div>
+</div>
 </section>
 
 <section class="card full">
@@ -913,84 +916,100 @@ body{margin:0}
     <div class="i18n-th">
     <p><b>ดอกเบี้ยนโยบายของสหรัฐฯ</b> ที่ Fed (ธนาคารกลางสหรัฐฯ) กำหนดเป็นช่วง เป็นเป้าของดอกเบี้ยที่ธนาคารให้กู้ยืมเงินกันข้ามคืน และเป็นต้นทางของดอกเบี้ยเงินกู้/เงินฝากทั้งระบบ</p>
     <p><b>อ่านค่า:</b> ขึ้นดอกเบี้ย = เบรกเศรษฐกิจเพื่อสู้เงินเฟ้อ · ลดดอกเบี้ย = กระตุ้นเศรษฐกิจ ดอกเบี้ยสูงมักทำให้ดอลลาร์แข็ง และกดดันหุ้น ทอง และคริปโต</p>
+    <p><b>สีบนการ์ด (ผลต่อตลาด):</b> 🔴 เพิ่งขึ้นดอกเบี้ย (ภายใน ~45 วัน) = กดดันหุ้น/คริปโต หนุนดอลลาร์ · 🟢 เพิ่งลดดอกเบี้ย = หนุนหุ้น/คริปโต · 🟡 คงดอกเบี้ย = เป็นกลาง · ตัวเลขใหญ่ใช้สีเดียวกับจุดสถานะ</p>
     </div>
     <div class="i18n-en" lang="en">
     <p><b>The US policy rate</b>, set by the Fed as a range. It is the target for the rate banks charge each other overnight, and it feeds into loan and deposit rates across the economy.</p>
     <p><b>How to read it:</b> a hike brakes the economy to fight inflation; a cut stimulates it. Higher rates tend to lift the dollar and weigh on stocks, gold and crypto.</p>
+    <p><b>Colours on the card (market effect):</b> 🔴 recent hike (within ~45 days) = pressure on stocks/crypto, supports the dollar · 🟢 recent cut = supports stocks/crypto · 🟡 on hold = neutral · The big number uses the same colour as the status dot</p>
     </div>
-  </div></div></div><div class="num" id="fedRange">–</div><div class="spark" id="spFed"></div><div class="next" id="nextFed"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=ECONOMICS%3AUSINTR" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  </div></div></div><div class="num" id="fedRange">–</div><div class="spark" id="spFed"></div><div class="next" id="fedRangeZone"></div><div class="next" id="nextFed"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=ECONOMICS%3AUSINTR" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
   <div class="metric"><div class="name">Effective Fed Funds Rate <div class="tip"><button type="button" class="tip-btn" aria-label="Effective Fed Funds Rate คืออะไร" data-en-aria="What is Effective Fed Funds Rate?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
     <div class="i18n-th">
     <p><b>ดอกเบี้ยที่ธนาคารกู้ยืมกันจริง</b> (ค่าเฉลี่ยถ่วงน้ำหนักของวันทำการก่อนหน้า ประกาศโดย Fed สาขานิวยอร์ก)</p>
     <p><b>อ่านค่า:</b> ปกติจะอยู่ในกรอบ Target Range ถ้าขยับเข้าใกล้หรือเกินขอบบน แปลว่าเงินในระบบเริ่มตึง</p>
+    <p><b>สีบนการ์ด (ผลต่อตลาด):</b> ใช้สีเดียวกับการ์ด Fed Funds Target Range (EFFR วิ่งตามกรอบเป้าเสมอ) · ตัวเลขใหญ่ใช้สีเดียวกับจุดสถานะ</p>
     </div>
     <div class="i18n-en" lang="en">
     <p><b>The rate banks actually paid</b> each other overnight (volume-weighted average of the previous business day, published by the New York Fed).</p>
     <p><b>How to read it:</b> it normally sits inside the target range. Drifting toward or above the top of the range means cash in the system is getting tight.</p>
+    <p><b>Colours on the card (market effect):</b> same colour as the Fed Funds Target Range card (EFFR always tracks the target range) · The big number uses the same colour as the status dot</p>
     </div>
-  </div></div></div><div class="num" id="fedEffr">–</div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3ADFF" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  </div></div></div><div class="num" id="fedEffr">–</div><div class="next" id="fedEffrZone"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3ADFF" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  <div class="metric"><div class="name"><span data-en="Core PCE (YoY) · the Fed's inflation gauge">Core PCE (YoY) · เงินเฟ้อที่ Fed ใช้</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Core PCE คืออะไร" data-en-aria="What is Core PCE?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>Core PCE</b> คือดัชนีราคาการใช้จ่ายของผู้บริโภค (จัดทำโดย BEA) แบบไม่รวมอาหารและพลังงาน ครอบคลุมการใช้จ่ายกว้างกว่า CPI</p>
+    <p><b>ทำไมสำคัญ:</b> เป้าเงินเฟ้อ 2% ของ Fed วัดจากตัวนี้โดยตรง แต่ประกาศช้ากว่า CPI ราว 2 สัปดาห์ ตลาดเลยมักเดาทางจาก CPI/PPI ไว้ก่อน</p>
+    <p><b>สีบนการ์ด (ผลต่อตลาด):</b> 🟢 ต่ำกว่า 2.5% = ใกล้เป้า 2% Fed มีทางลดดอกเบี้ย หนุนหุ้น/บอนด์ · 🟡 2.5–3% = สูงกว่าเป้าเล็กน้อย · 🔴 ตั้งแต่ 3% = สูงกว่าเป้ามาก Fed ลดดอกเบี้ยยาก กดดันหุ้น/บอนด์ · ตัวเลขใหญ่ใช้สีเดียวกับจุดสถานะ</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>Core PCE</b> is the price index for personal consumption expenditures (from the BEA), excluding food and energy. It covers a wider range of spending than CPI.</p>
+    <p><b>Why it matters:</b> the Fed's 2% target is defined on this measure. It comes out about two weeks after CPI, so markets usually estimate it from CPI and PPI first.</p>
+    <p><b>Colours on the card (market effect):</b> 🟢 below 2.5% = near the 2% target, room for Fed cuts, supports stocks/bonds · 🟡 2.5–3% = a bit above target · 🔴 3% and up = well above target, hard for the Fed to cut, pressure on stocks/bonds · The big number uses the same colour as the status dot</p>
+    </div>
+  </div></div></div><div class="num" id="corePce">–</div><div class="next" id="corePceZone"></div><div class="next" id="corePceInfo"></div><div class="next" id="nextPce"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3APCEPILFE" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
   <div class="metric"><div class="name"><span data-en="CPI inflation (YoY)">CPI เงินเฟ้อ (YoY)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="CPI คืออะไร" data-en-aria="What is CPI?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
     <div class="i18n-th">
     <p><b>CPI (ดัชนีราคาผู้บริโภค)</b> วัดว่าราคาของที่คนทั่วไปซื้อ เช่น อาหาร ค่าเช่าบ้าน น้ำมัน ค่ารักษาพยาบาล แพงขึ้นเท่าไร ประกาศโดย BLS ทุกเดือน</p>
     <p><b>YoY</b> = เทียบกับเดือนเดียวกันของปีก่อน · <b>MoM</b> = เทียบกับเดือนก่อนหน้า · <b>Core</b> = ไม่รวมอาหารและพลังงานที่ราคาแกว่งแรง เลยเห็นแนวโน้มชัดกว่า</p>
     <p><b>อ่านค่า:</b> เป้าของ Fed คือเงินเฟ้อราว 2% ถ้าออกมาสูงกว่าที่คาด Fed มีแนวโน้มคงดอกเบี้ยสูงนานขึ้นหรือขึ้นดอกเบี้ย</p>
+    <p><b>สีบนการ์ด (ผลต่อตลาด):</b> 🟢 ต่ำกว่า 2.5% = ใกล้เป้า 2% Fed มีทางลดดอกเบี้ย หนุนหุ้น/บอนด์ · 🟡 2.5–3% = สูงกว่าเป้าเล็กน้อย · 🔴 ตั้งแต่ 3% = สูงกว่าเป้ามาก Fed ลดดอกเบี้ยยาก กดดันหุ้น/บอนด์ · ผลเทียบค่าคาดอยู่ในกล่องวิเคราะห์ด้านล่าง · ตัวเลขใหญ่ใช้สีเดียวกับจุดสถานะ</p>
     </div>
     <div class="i18n-en" lang="en">
     <p><b>CPI (Consumer Price Index)</b> measures how much the things households buy (food, rent, gasoline, medical care…) have gone up in price. Published monthly by the BLS.</p>
     <p><b>YoY</b> = vs the same month a year earlier · <b>MoM</b> = vs the previous month · <b>Core</b> = excluding volatile food and energy, so the trend is clearer.</p>
     <p><b>How to read it:</b> the Fed aims for about 2% inflation. A hotter-than-expected print makes it more likely the Fed keeps rates high for longer, or hikes.</p>
+    <p><b>Colours on the card (market effect):</b> 🟢 below 2.5% = near the 2% target, room for Fed cuts, supports stocks/bonds · 🟡 2.5–3% = a bit above target · 🔴 3% and up = well above target, hard for the Fed to cut, pressure on stocks/bonds · the beat/miss vs forecast is in the analysis box below · The big number uses the same colour as the status dot</p>
     </div>
-  </div></div></div><div class="num" id="cpiYoy">–</div><div class="spark" id="spCpi"></div><div class="next" id="cpiInfo"></div><div class="next" id="nextCpi"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=ECONOMICS%3AUSIRYY" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
-  <div class="metric"><div class="name"><span data-en="Core PCE (YoY) · the Fed's inflation gauge">Core PCE (YoY) · เงินเฟ้อที่ Fed ใช้</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Core PCE คืออะไร" data-en-aria="What is Core PCE?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
-    <div class="i18n-th">
-    <p><b>Core PCE</b> คือดัชนีราคาการใช้จ่ายของผู้บริโภค (จัดทำโดย BEA) แบบไม่รวมอาหารและพลังงาน ครอบคลุมการใช้จ่ายกว้างกว่า CPI</p>
-    <p><b>ทำไมสำคัญ:</b> เป้าเงินเฟ้อ 2% ของ Fed วัดจากตัวนี้โดยตรง แต่ประกาศช้ากว่า CPI ราว 2 สัปดาห์ ตลาดเลยมักเดาทางจาก CPI/PPI ไว้ก่อน</p>
-    </div>
-    <div class="i18n-en" lang="en">
-    <p><b>Core PCE</b> is the price index for personal consumption expenditures (from the BEA), excluding food and energy. It covers a wider range of spending than CPI.</p>
-    <p><b>Why it matters:</b> the Fed's 2% target is defined on this measure. It comes out about two weeks after CPI, so markets usually estimate it from CPI and PPI first.</p>
-    </div>
-  </div></div></div><div class="num" id="corePce">–</div><div class="next" id="corePceInfo"></div><div class="next" id="nextPce"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3APCEPILFE" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  </div></div></div><div class="num" id="cpiYoy">–</div><div class="spark" id="spCpi"></div><div class="next" id="cpiYoyZone"></div><div class="next" id="cpiInfo"></div><div class="next" id="nextCpi"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=ECONOMICS%3AUSIRYY" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
   <div class="metric"><div class="name"><span data-en="PPI producer prices (YoY)">PPI ราคาผู้ผลิต (YoY)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="PPI คืออะไร" data-en-aria="What is PPI?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
     <div class="i18n-th">
     <p><b>PPI (ดัชนีราคาผู้ผลิต)</b> วัดราคาที่ผู้ผลิตและผู้ขายส่งได้รับ หรือก็คือต้นทุนก่อนสินค้าจะถึงมือผู้บริโภค ประกาศโดย BLS ทุกเดือน</p>
     <p><b>อ่านค่า:</b> PPI มักขยับนำ CPI เพราะเมื่อต้นทุนสูงขึ้น ผู้ขายมักส่งต่อให้ผู้บริโภคในภายหลัง ตลาดและค่าคาดของ PPI ดู MoM (เทียบเดือนก่อน) เป็นหลัก</p>
+    <p><b>สีบนการ์ด (ผลต่อตลาด):</b> ดูจาก YoY: 🟢 ต่ำกว่า 2.5% = ต้นทุนผู้ผลิตนิ่ง · 🟡 2.5–4% = ต้นทุนเร่งขึ้น จับตาการส่งต่อไป CPI · 🔴 ตั้งแต่ 4% = ต้นทุนสูง เสี่ยงดัน CPI ขึ้น กดดันหุ้น/บอนด์ (ถ้าไม่มี YoY ใช้ MoM: 🟢 ไม่เกิน +0.2% · 🟡 ไม่เกิน +0.4% · 🔴 เกินกว่านั้น) · ผลเทียบค่าคาดอยู่ในกล่องวิเคราะห์ด้านล่าง · ตัวเลขใหญ่ใช้สีเดียวกับจุดสถานะ</p>
     </div>
     <div class="i18n-en" lang="en">
     <p><b>PPI (Producer Price Index)</b> measures the prices producers and wholesalers receive, i.e. costs before goods reach consumers. Published monthly by the BLS.</p>
     <p><b>How to read it:</b> PPI tends to lead CPI, because higher costs are usually passed on to consumers later. Markets and the PPI forecast focus on MoM (vs the previous month).</p>
+    <p><b>Colours on the card (market effect):</b> by YoY: 🟢 below 2.5% = producer costs steady · 🟡 2.5–4% = costs picking up, watch pass-through to CPI · 🔴 4% and up = high costs, risk of pushing CPI up, pressure on stocks/bonds (without YoY, MoM: 🟢 up to +0.2% · 🟡 up to +0.4% · 🔴 above) · the beat/miss vs forecast is in the analysis box below · The big number uses the same colour as the status dot</p>
     </div>
-  </div></div></div><div class="num" id="ppiHead">–</div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3APPIFIS" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  </div></div></div><div class="num" id="ppiHead">–</div><div class="next" id="ppiHeadZone"></div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3APPIFIS" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
   <div class="metric"><div class="name">Unemployment Rate <div class="tip"><button type="button" class="tip-btn" aria-label="อัตราว่างงาน คืออะไร" data-en-aria="What is Unemployment Rate?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
     <div class="i18n-th">
     <p><b>อัตราว่างงาน</b> = % ของคนในกำลังแรงงานที่กำลังหางานแต่ยังไม่มีงานทำ (จากการสำรวจครัวเรือนของ BLS ประกาศพร้อม Nonfarm Payrolls)</p>
     <p><b>อ่านค่า:</b> ตัวเลขที่ขึ้นต่อเนื่องแปลว่าตลาดแรงงานอ่อนลง ทำให้ Fed มีเหตุผลลดดอกเบี้ยมากขึ้น</p>
+    <p><b>สีบนการ์ด (ผลต่อตลาด):</b> 🟢 ต่ำกว่า 4.5% และไม่พุ่ง = ตลาดแรงงานยังแข็ง เศรษฐกิจไม่ถดถอย · 🟡 4.5–5% หรือขึ้น 0.3 จุดใน 3 เดือน = เริ่มอ่อนลง Fed มีเหตุลดดอกเบี้ย · 🔴 ตั้งแต่ 5% หรือขึ้น 0.5 จุดใน 3 เดือน = สัญญาณถดถอย กดดันหุ้น · ตัวเลขใหญ่ใช้สีเดียวกับจุดสถานะ</p>
     </div>
     <div class="i18n-en" lang="en">
     <p><b>Unemployment rate</b> = the share of the labour force looking for work but without a job (BLS household survey, released with Nonfarm Payrolls).</p>
     <p><b>How to read it:</b> a steady rise means the job market is weakening, which gives the Fed more reason to cut rates.</p>
+    <p><b>Colours on the card (market effect):</b> 🟢 below 4.5% and not jumping = labour market solid, no recession · 🟡 4.5–5% or up 0.3 pts in 3 months = softening, a reason for Fed cuts · 🔴 5% and up or up 0.5 pts in 3 months = recession signal, pressure on stocks · The big number uses the same colour as the status dot</p>
     </div>
-  </div></div></div><div class="num" id="unrate">–</div><div class="spark" id="spUnrate"></div><div class="next" id="nextUnrate"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=ECONOMICS%3AUSUR" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  </div></div></div><div class="num" id="unrate">–</div><div class="spark" id="spUnrate"></div><div class="next" id="unrateZone"></div><div class="next" id="nextUnrate"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=ECONOMICS%3AUSUR" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
   <div class="metric"><div class="name"><span data-en="Nonfarm Payrolls (latest month)">Nonfarm Payrolls (เดือนล่าสุด)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Nonfarm Payrolls คืออะไร" data-en-aria="What is Nonfarm Payrolls?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
     <div class="i18n-th">
     <p><b>Nonfarm Payrolls</b> = จำนวนตำแหน่งงานที่เพิ่มขึ้น (หรือลดลง) ในเดือนนั้น ไม่รวมภาคเกษตร จากการสำรวจนายจ้างของ BLS ปกติประกาศวันศุกร์แรกของเดือน</p>
     <p><b>อ่านค่า:</b> บวกมากกว่าที่คาด = เศรษฐกิจแข็งแรง (Fed ไม่รีบลดดอกเบี้ย) · ติดลบหรือต่ำกว่าคาดมาก = สัญญาณชะลอตัว เป็นหนึ่งในตัวเลขที่ตลาดตอบสนองแรงที่สุด</p>
+    <p><b>สีบนการ์ด (ผลต่อตลาด):</b> 🟢 ตั้งแต่ +150,000 = จ้างงานแข็ง เศรษฐกิจยังโต · 🟡 +50,000 ถึง +150,000 = จ้างงานชะลอ · 🔴 ต่ำกว่า +50,000 = จ้างงานอ่อน เสี่ยงเศรษฐกิจชะลอ · ผลเทียบค่าคาดอยู่ในกล่องวิเคราะห์ด้านล่าง · ตัวเลขใหญ่ใช้สีเดียวกับจุดสถานะ</p>
     </div>
     <div class="i18n-en" lang="en">
     <p><b>Nonfarm Payrolls</b> = jobs added (or lost) that month, excluding farm work, from the BLS employer survey. Usually released on the first Friday of the month.</p>
     <p><b>How to read it:</b> a bigger gain than expected = a strong economy (the Fed is in no hurry to cut); a negative or much weaker print = a slowdown signal. One of the most market-moving numbers.</p>
+    <p><b>Colours on the card (market effect):</b> 🟢 +150,000 or more = strong hiring, economy growing · 🟡 +50,000 to +150,000 = hiring slowing · 🔴 below +50,000 = weak hiring, slowdown risk · the beat/miss vs forecast is in the analysis box below · The big number uses the same colour as the status dot</p>
     </div>
-  </div></div></div><div class="num" id="nfp">–</div><div class="next" id="nextNfp"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=ECONOMICS%3AUSNFP" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  </div></div></div><div class="num" id="nfp">–</div><div class="next" id="nfpZone"></div><div class="next" id="nextNfp"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=ECONOMICS%3AUSNFP" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
   <div class="metric"><div class="name"><span data-en="Initial Jobless Claims (weekly)">Initial Jobless Claims (รายสัปดาห์)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Jobless Claims คืออะไร" data-en-aria="What is Jobless Claims?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
     <div class="i18n-th">
     <p><b>Initial Jobless Claims</b> = จำนวนคนที่ยื่นขอสวัสดิการว่างงานเป็นครั้งแรกในสัปดาห์นั้น (กระทรวงแรงงานสหรัฐฯ ประกาศทุกวันพฤหัสบดี)</p>
     <p><b>อ่านค่า:</b> เป็นตัวเลขที่ออกเร็วที่สุดที่จับสัญญาณการเลิกจ้างได้ ยิ่งต่ำยิ่งดี ถ้าไต่ขึ้นต่อเนื่องหลายสัปดาห์มักเป็นสัญญาณแรกว่าตลาดแรงงานเริ่มอ่อน</p>
+    <p><b>สีบนการ์ด (ผลต่อตลาด):</b> 🟢 ต่ำกว่า 230K = ตลาดแรงงานยังแน่น · 🟡 230K–300K = เริ่มผ่อนคลาย · 🔴 ตั้งแต่ 300K = ตลาดแรงงานอ่อนแรง · ผลเทียบค่าคาดอยู่ในกล่องวิเคราะห์ด้านล่าง · ตัวเลขใหญ่ใช้สีเดียวกับจุดสถานะ</p>
     </div>
     <div class="i18n-en" lang="en">
     <p><b>Initial jobless claims</b> = people filing for unemployment benefits for the first time that week (US Labor Department, every Thursday).</p>
     <p><b>How to read it:</b> the fastest read on layoffs; lower is better. A rise that persists for several weeks is often the first sign the job market is softening.</p>
+    <p><b>Colours on the card (market effect):</b> 🟢 below 230K = labour market still tight · 🟡 230K–300K = loosening · 🔴 300K and up = weak labour market · the beat/miss vs forecast is in the analysis box below · The big number uses the same colour as the status dot</p>
     </div>
-  </div></div></div><div class="num" id="claims">–</div><div class="next" id="claimsInfo"></div><div class="next" id="nextClaims"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=ECONOMICS%3AUSIJC" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  </div></div></div><div class="num" id="claims">–</div><div class="next" id="claimsZone"></div><div class="next" id="claimsInfo"></div><div class="next" id="nextClaims"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=ECONOMICS%3AUSIJC" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
 </div>
 <div class="muted" style="margin-top:12px; font-size:11px; line-height:1.6;" id="fedAsOf"></div>
 <h3 style="font-size:14px; margin:18px 0 0;" data-en="🏠 Housing · shoppers · businesses · inflation expectations">🏠 บ้าน · การใช้จ่าย · ภาคธุรกิจ · เงินเฟ้อที่ตลาดคาด</h3>
@@ -2380,6 +2399,43 @@ window.setHeaderStamp();
     }catch(e){ /* เงียบไว้ — ใช้ค่าที่ฝังใน CONSENSUS */ }
   }
 
+  // การ์ด US Macro — ป้ายสถานะ = "ระดับนี้หมายถึงอะไรต่อตลาด" (แบบเดียวกับการ์ด Real Yield / ชุดบ้าน-ค้าปลีก)
+  // สีตัวเลขใหญ่ จุดสถานะ และหัวกล่องวิเคราะห์ใช้ verdict เดียวกัน · ผลเทียบค่าคาดเป็นข้อความในกล่องวิเคราะห์
+  // เกณฑ์ของแต่ละสีเขียนไว้ในปุ่ม (i) ของการ์ด
+  function macroV(dot, th, en){
+    return { accent: dot === '🟢' ? 'var(--good)' : dot === '🔴' ? 'var(--bad)' : 'var(--warn)', dot: dot, label: tr(th, en) };
+  }
+  const macroVerdicts = {
+    fed: (changePp, fresh) => (fresh && isValidNum(changePp) && changePp > 0) ? macroV('🔴', 'เพิ่งขึ้นดอกเบี้ย กดดันหุ้น/คริปโต', 'Just hiked: pressure on stocks/crypto')
+      : (fresh && isValidNum(changePp) && changePp < 0) ? macroV('🟢', 'เพิ่งลดดอกเบี้ย หนุนหุ้น/คริปโต', 'Just cut: supports stocks/crypto')
+      : macroV('🟡', 'คงดอกเบี้ย เป็นกลาง', 'On hold: neutral'),
+    inflation: (v) => v < 2.5 ? macroV('🟢', 'ใกล้เป้า 2% เปิดทาง Fed ลดดอกเบี้ย หนุนหุ้น/บอนด์', 'Near the 2% target: room for Fed cuts, supports stocks/bonds')
+      : v < 3 ? macroV('🟡', 'สูงกว่าเป้า 2% เล็กน้อย', 'A bit above the 2% target')
+      : macroV('🔴', 'สูงกว่าเป้า 2% มาก Fed ลดดอกเบี้ยยาก กดดันหุ้น/บอนด์', 'Well above the 2% target: hard for the Fed to cut, pressure on stocks/bonds'),
+    ppi: (yoy, mom) => isValidNum(yoy)
+      ? (yoy < 2.5 ? macroV('🟢', 'ต้นทุนผู้ผลิตนิ่ง', 'Producer costs steady')
+        : yoy < 4 ? macroV('🟡', 'ต้นทุนเร่งขึ้น จับตาส่งต่อไป CPI', 'Costs picking up: watch pass-through to CPI')
+        : macroV('🔴', 'ต้นทุนสูง เสี่ยงดัน CPI ขึ้น กดดันหุ้น/บอนด์', 'High costs: risk of pushing CPI up, pressure on stocks/bonds'))
+      : (Math.round(mom * 10) / 10 <= 0.2 ? macroV('🟢', 'ต้นทุนผู้ผลิตนิ่ง', 'Producer costs steady')
+        : Math.round(mom * 10) / 10 <= 0.4 ? macroV('🟡', 'ต้นทุนเร่งขึ้น จับตาส่งต่อไป CPI', 'Costs picking up: watch pass-through to CPI')
+        : macroV('🔴', 'ต้นทุนสูง เสี่ยงดัน CPI ขึ้น กดดันหุ้น/บอนด์', 'High costs: risk of pushing CPI up, pressure on stocks/bonds')),
+    unrate: (v, ch3m) => (v >= 5 || (isValidNum(ch3m) && ch3m >= 0.5)) ? macroV('🔴', 'ว่างงานสูง/พุ่งเร็ว สัญญาณถดถอย กดดันหุ้น', 'High or jumping: recession signal, pressure on stocks')
+      : (v >= 4.5 || (isValidNum(ch3m) && ch3m >= 0.3)) ? macroV('🟡', 'ตลาดแรงงานเริ่มอ่อน Fed มีเหตุลดดอกเบี้ย', 'Labour market softening: a reason for Fed cuts')
+      : macroV('🟢', 'ตลาดแรงงานยังแข็ง เศรษฐกิจไม่ถดถอย', 'Labour market solid: no recession'),
+    nfp: (n) => n >= 150000 ? macroV('🟢', 'จ้างงานแข็ง เศรษฐกิจยังโต', 'Strong hiring: economy growing')
+      : n >= 50000 ? macroV('🟡', 'จ้างงานชะลอ', 'Hiring slowing')
+      : macroV('🔴', 'จ้างงานอ่อน เสี่ยงเศรษฐกิจชะลอ', 'Weak hiring: slowdown risk'),
+    claims: (v) => v < 230000 ? macroV('🟢', 'ต่ำ ตลาดแรงงานยังแน่น', 'Low: labour market still tight')
+      : v < 300000 ? macroV('🟡', 'ปานกลาง ตลาดแรงงานเริ่มผ่อน', 'Moderate: labour market loosening')
+      : macroV('🔴', 'สูง ตลาดแรงงานอ่อนแรง', 'High: weak labour market')
+  };
+  window.macroVerdicts = macroVerdicts;   // tests
+  function setMacroZone(id, v){
+    toneNum(id, v ? v.accent : null);
+    const z = el(id + 'Zone');
+    if(z) z.textContent = v ? v.dot + ' ' + v.label : '';
+  }
+
   function renderFedAnalysis(data, failReason){
     const box = el('fedAnalysis');
     if(!box) return;
@@ -2406,6 +2462,8 @@ window.setHeaderStamp();
     const noConsText = tr(' · ยังไม่มีค่าคาดของรอบนี้ให้เทียบ (ค่าสำรองที่ฝังไว้เป็นของรอบ ', ' · no forecast for this release to compare against (the built-in fallback is for the ') + esc(thMonth(bakedMonth)) + tr(')', ' release)');
     // ส่วนท้ายของ verdict (ตัดอีโมจิออก) ใช้ต่อท้าย "ตลาดคาด … →" — โหมดอังกฤษทำเป็นตัวพิมพ์เล็ก
     const verdictTail = v => { const t = v.replace(/^[^\s]+\s/, ''); return EN ? t.charAt(0).toLowerCase() + t.slice(1) : t; };
+    // หัวกล่อง = สถานะ (สีเดียวกับการ์ด) + ผลเทียบค่าคาดต่อท้าย
+    const vsCons = (verdict, has) => ' · ' + (has ? tr('เทียบคาด: ', 'vs forecast: ') + verdictTail(verdict) : verdictTail(NOCONS));
 
     // ── 1) Fed Funds Rate ────────────────────────────────────────────────────────────────────
     if(d.upper && d.lower && isValidNum(d.upper.value) && isValidNum(d.lower.value)){
@@ -2438,7 +2496,10 @@ window.setHeaderStamp();
       if(nextFomc && nextFomc.textContent) body += tr(' · รอบถัดไป ', ' · next meeting ') + esc(nextFomc.textContent);
       body += nextReleaseLine('fed');
       body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (fresh ? (d.upper.changePp > 0 ? tr('การขึ้นดอกเบี้ยกดดันหุ้น/คริปโตและหนุนดอลลาร์', 'a hike pressures stocks/crypto and supports the dollar') : tr('การลดดอกเบี้ยหนุนหุ้น/คริปโตและกดดันดอลลาร์', 'a cut supports stocks/crypto and weighs on the dollar')) : tr('การยืนดอกเบี้ยนิ่ง = เป็นกลาง ไม่มีเซอร์ไพรส์จากฝั่งนโยบาย', 'holding rates steady = neutral, no policy surprise'));
-      cards.push(analysisCard(accent, 'Fed Funds Rate — ' + verdict, body));
+      const mv = macroVerdicts.fed(d.upper.changePp, fresh);
+      setMacroZone('fedRange', mv);
+      setMacroZone('fedEffr', mv);
+      cards.push(analysisCard(mv.accent, 'Fed Funds Rate — ' + mv.dot + ' ' + mv.label + (fresh && isValidNum(d.upper.changePp) && d.upper.changePp !== 0 ? ' (' + verdict.replace(/^[^\s]+\s/, '') + ')' : ''), body));
     }
 
     // ── 2) CPI (headline + core) ─────────────────────────────────────────────────────────────
@@ -2462,8 +2523,21 @@ window.setHeaderStamp();
       try{ const nh = cpiNoYoyHtml(d.cpi, d.coreCpi); if(nh) body += '<br>⚠️ ' + nh; }catch(e){ /* best-effort */ }
       body += nextReleaseLine('cpi');
       if(dev != null) body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (dev > 0.1 ? tr('เงินเฟ้อสูงกว่าคาด = กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)', 'hotter inflation = pressure on stocks/bonds (slower Fed cuts)') : dev < -0.1 ? tr('เงินเฟ้อต่ำกว่าคาด = หนุนหุ้น (Fed มีทางลดดอกเบี้ยเร็วขึ้น)', 'cooler inflation = supports stocks (room for faster Fed cuts)') : tr('ตรงคาด = ตลาดมักไม่ตอบสนองรุนแรงเพราะไม่มีเซอร์ไพรส์', 'in line = markets usually don\'t react much, no surprise'));
-      toneNum('cpiYoy', accent);
-      cards.push(analysisCard(accent, tr('CPI เงินเฟ้อ — ', 'CPI inflation — ') + verdict, body));
+      const mv = macroVerdicts.inflation(cpi);
+      setMacroZone('cpiYoy', mv);
+      cards.push(analysisCard(mv.accent, tr('CPI เงินเฟ้อ — ', 'CPI inflation — ') + mv.dot + ' ' + mv.label + vsCons(verdict, dev != null), body));
+    }
+
+    // ── 2a) Core PCE (เงินเฟ้อที่ Fed ใช้ตั้งเป้า 2%) ────────────────────────────────────────
+    if(d.corePce && isValidNum(d.corePce.value)){
+      const v = d.corePce.value;
+      const mv = macroVerdicts.inflation(v);
+      setMacroZone('corePce', mv);
+      let body = tr('Core PCE เดือน ' + esc(thMonth(d.corePce.date)) + ' อยู่ที่ ', esc(thMonth(d.corePce.date)) + ' Core PCE: ') + '<b>' + v.toFixed(1) + '% YoY</b>';
+      if(isValidNum(d.corePce.changePp)) body += tr(' · เทียบเดือนก่อน ', ' · vs previous month ') + (d.corePce.changePp >= 0.05 ? tr('เร่งขึ้น ', 'up ') + d.corePce.changePp.toFixed(1) + 'pp' : d.corePce.changePp <= -0.05 ? tr('ชะลอลง ', 'down ') + Math.abs(d.corePce.changePp).toFixed(1) + 'pp' : tr('ทรงตัว', 'unchanged'));
+      body += tr('<br>เป็นตัวเลขที่ Fed ใช้ตั้งเป้า 2% โดยตรง ', '<br>This is the gauge the Fed targets at 2%: ') + (v > 2 ? tr('ห่างเป้า ', 'it is ') + (v - 2).toFixed(1) + tr('pp → ยิ่งห่าง Fed ยิ่งไม่รีบลดดอกเบี้ย', 'pp above → the further above, the slower the Fed cuts') : tr('อยู่ในเป้าแล้ว', 'within target'));
+      body += nextReleaseLine('pce');
+      cards.push(analysisCard(mv.accent, 'Core PCE — ' + mv.dot + ' ' + mv.label, body));
     }
 
     // ── 2b) PPI ราคาผู้ผลิต (final demand, MoM) ─────────────────────────────────────────────
@@ -2487,8 +2561,9 @@ window.setHeaderStamp();
       }
       body += nextReleaseLine('ppi');
       if(dev != null) body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (dev >= 0.05 ? tr('ต้นทุนผู้ผลิตสูงกว่าคาด = มักส่งต่อไปที่ CPI ในเดือนถัด ๆ ไป → กดดันหุ้น/พันธบัตร (Fed ลดดอกเบี้ยช้าลง)', 'producer costs above forecast = often pass through to CPI in the following months → pressure on stocks/bonds (slower Fed cuts)') : dev <= -0.05 ? tr('ต้นทุนผู้ผลิตต่ำกว่าคาด = แรงกดดันเงินเฟ้อข้างหน้าเบาลง → หนุนหุ้น', 'producer costs below forecast = less inflation pressure ahead → supports stocks') : tr('ตรงคาด = ตลาดมักไม่ตอบสนองแรง', 'in line = markets usually don\'t react much'));
-      toneNum('ppiHead', accent);
-      cards.push(analysisCard(accent, tr('PPI ราคาผู้ผลิต — ', 'PPI producer prices — ') + verdict, body));
+      const mv = macroVerdicts.ppi(d.ppi.yoy, p);
+      setMacroZone('ppiHead', mv);
+      cards.push(analysisCard(mv.accent, tr('PPI ราคาผู้ผลิต — ', 'PPI producer prices — ') + mv.dot + ' ' + mv.label + vsCons(verdict, dev != null), body));
     }
 
     // ── 3) Unemployment ──────────────────────────────────────────────────────────────────────
@@ -2509,8 +2584,9 @@ window.setHeaderStamp();
       body += tr('<br><b>ข้อควรระวัง:</b> ตัวเลขว่างงานต่ำลงอาจมาจาก "คนออกจากตลาดแรงงาน" ไม่ใช่มีคนได้งานเพิ่ม (ดู participation rate ประกอบ) และตัวเลขนี้เป็นรายเดือน อาจถูก revise ได้',
                  '<br><b>Caveat:</b> a lower unemployment rate can come from people leaving the labour force rather than more people finding jobs (check the participation rate too), and this monthly figure can be revised');
       if(dev != null) body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (dev < -0.1 ? tr('ดีกว่าคาด = หนุนความเชื่อมั่น แต่ลดโอกาสที่ Fed จะรีบลดดอกเบี้ย', 'better than forecast = supports confidence, but lowers the odds of quick Fed cuts') : dev > 0.1 ? tr('แย่กว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย (bad news is good news ระยะสั้น) แต่น่ากังวลเรื่องเศรษฐกิจถดถอย', 'worse than forecast = raises the odds of Fed cuts (bad news is good news short term) but adds recession worries') : tr('ตรงคาด = เป็นกลาง', 'in line = neutral'));
-      toneNum('unrate', accent);
-      cards.push(analysisCard(accent, 'Unemployment Rate — ' + verdict, body));
+      const mv = macroVerdicts.unrate(u, d.unrate.change3m);
+      setMacroZone('unrate', mv);
+      cards.push(analysisCard(mv.accent, 'Unemployment Rate — ' + mv.dot + ' ' + mv.label + vsCons(verdict, dev != null), body));
     }
 
     // ── 4) Nonfarm Payrolls ──────────────────────────────────────────────────────────────────
@@ -2533,8 +2609,9 @@ window.setHeaderStamp();
       body += nextReleaseLine('nfp');
       if(dev != null || n < 0) body += '<br><b>' + tr('ผลต่อตลาด:', 'Market impact:') + '</b> ' + (n < 0 ? tr('ตัวเลขติดลบ = ข่าวร้ายของเศรษฐกิจ แต่ระยะสั้นตลาดอาจตีความว่า Fed จะรีบลดดอกเบี้ย (bad news is good news) — ถ้าติดลบต่อเนื่องหลายเดือนจะกลายเป็นสัญญาณถดถอยจริงจัง', 'a negative print = bad news for the economy, but short term markets may read it as the Fed cutting sooner (bad news is good news). Several negative months in a row would be a serious recession signal') : dev < -30000 ? tr('อ่อนกว่าคาด = เพิ่มโอกาส Fed ลดดอกเบี้ย แต่กดดันความเชื่อมั่นเศรษฐกิจ', 'weaker than forecast = higher odds of Fed cuts, but weighs on economic confidence') : dev > 30000 ? tr('แข็งกว่าคาด = เศรษฐกิจยังดี แต่ลดโอกาส Fed ลดดอกเบี้ยเร็ว ๆ นี้', 'stronger than forecast = the economy is still solid, but lowers the odds of a Fed cut soon') : tr('ใกล้เคียงคาด = เป็นกลาง', 'close to forecast = neutral'));
       body += '<br><span style="opacity:.75;">' + tr('ℹ️ รวมการปรับปรุงตัวเลขย้อนหลังแล้ว จึงอาจต่างจากที่ข่าวรายงานครั้งแรกเล็กน้อย', 'ℹ️ Includes revisions to earlier months, so it can differ slightly from the first reported headline') + '</span>';
-      toneNum('nfp', accent);
-      cards.push(analysisCard(accent, 'Nonfarm Payrolls — ' + verdict, body));
+      const mv = macroVerdicts.nfp(n);
+      setMacroZone('nfp', mv);
+      cards.push(analysisCard(mv.accent, 'Nonfarm Payrolls — ' + mv.dot + ' ' + mv.label + vsCons(verdict, dev != null), body));
     }
 
     // ── 5) Initial Jobless Claims (รายสัปดาห์) ───────────────────────────────────────────────
@@ -2557,8 +2634,9 @@ window.setHeaderStamp();
         ? tr('ตลาดแรงงานแข็งกว่าคาด = ลดแรงกดดันให้ Fed ต้องรีบลดดอกเบี้ย (มักหนุนดอลลาร์/บอนด์ยีลด์ และกดทองคำระยะสั้น)', 'labour market stronger than forecast = less pressure on the Fed to cut quickly (tends to lift the dollar/bond yields and weigh on gold short term)')
         : tr('คนตกงานใหม่มากกว่าคาด = ตลาดแรงงานเริ่มอ่อน เพิ่มโอกาส Fed ลดดอกเบี้ย (มักกดดอลลาร์/บอนด์ยีลด์)', 'more new jobless claims than forecast = labour market softening, higher odds of Fed cuts (tends to weigh on the dollar/bond yields)'));
       body += '<br><span style="opacity:.75;">' + tr('ℹ️ ตัวเลขรายสัปดาห์ผันผวนสูง ดูค่าเฉลี่ย 4 สัปดาห์ประกอบ · แหล่ง: ', 'ℹ️ Weekly data is noisy, check the 4-week average too · source: ') + esc(cl.source === 'FRED' ? 'FRED (ICSA) / DOL' : 'Investing.com') + '</span>';
-      toneNum('claims', accent);
-      cards.push(analysisCard(accent, 'Initial Jobless Claims — ' + verdict, body));
+      const mv = macroVerdicts.claims(cl.value);
+      setMacroZone('claims', mv);
+      cards.push(analysisCard(mv.accent, 'Initial Jobless Claims — ' + mv.dot + ' ' + mv.label + vsCons(verdict, dev != null), body));
     }
 
     // ── 6) ค้าปลีก · ISM · บ้าน · ดอกเบี้ยบ้าน (การ์ดชุดเพิ่มเติม) ───────────────────────────
@@ -2972,7 +3050,9 @@ window.setHeaderStamp();
   const signedPctTxt = (x) => (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x).toFixed(2) + '%';
   function renderBreadth(s){
     const box = el('mktAnalysis');
-    if(!s || !isValidNum(s.latest)){ if(box) box.innerHTML = ''; return; }
+    const wrap = el('mktAnalysisWrap');
+    const showBox = (on) => { if(wrap) wrap.hidden = !on; };
+    if(!s || !isValidNum(s.latest)){ if(box) box.innerHTML = ''; showBox(false); return; }
     const pct = (isValidNum(s.change) && isValidNum(s.prev) && s.prev) ? s.change / s.prev * 100 : null;
     el('mkSpxew').innerHTML = esc(s.latest.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 }))
       + (pct == null ? '' : '<span class="delta ' + (pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat') + '">' + (pct > 0 ? '+' : '') + pct.toFixed(2) + '%</span>');
@@ -2991,7 +3071,8 @@ window.setHeaderStamp();
     if(s.relHist && s.relHist.length > 1) setSpark('spSpxew', { hist: s.relHist }, { dec:1, color:'var(--accent)' });
     else setSpark('spSpxew', s, { dec:0, color:'var(--accent)' });
     if(!box) return;
-    if(!v){ box.innerHTML = ''; return; }
+    if(!v){ box.innerHTML = ''; showBox(false); return; }
+    showBox(true);
     // บทวิเคราะห์ใช้ verdict ตัวเดียวกับสีการ์ด
     const up = s.spx1m >= 0;
     let body = tr('ใน 1 เดือน หุ้นแบบถ่วงเท่ากัน (SPXEW) ', 'Over 1 month the equal-weight index (SPXEW) ') + '<b>' + signedPctTxt(s.ew1m) + '</b>'
