@@ -55,7 +55,7 @@ test('markets handler: spxew from Yahoo joined with the S&P 500 (FRED + Cboe)', 
 });
 
 test('index.html: SPXEW card, tooltip, TradingView ratio link; colour and analysis share one verdict', async () => {
-  for (const id of ['spxewCard', 'mkSpxew', 'spSpxew', 'mkSpxewZone', 'mkSpxewInfo', 'mktAnalysis']) {
+  for (const id of ['spxewCard', 'mkSpxew', 'spSpxew', 'mkSpxewZone', 'mkSpxewInfo', 'mkSpxewMeaning']) {
     assert.match(HTML, new RegExp(`id="${id}"`), `missing #${id}`);
   }
   assert.match(HTML, /symbol=SP%3ASPXEW%2FSP%3ASPX/);
@@ -81,21 +81,18 @@ test('index.html: SPXEW card, tooltip, TradingView ratio link; colour and analys
     assert.doesNotMatch(els.get('mkSpxew').className, /tone-/);   // big number stays neutral
     assert.match(els.get('mkSpxewZone').className, new RegExp(cls));
     assert.match(els.get('mkSpxewZone').textContent, dot);
-    assert.ok(els.get('mktAnalysis').innerHTML.includes('border-left:3px solid ' + accent), 'analysis box uses the card colour');
-    assert.equal(els.get('mktAnalysisWrap').hidden, false, 'the analysis block (with its heading) shows when there is a box');
+    assert.match(els.get('mkSpxewMeaning').innerHTML, /^<b>ความหมาย:<\/b> /, 'the meaning line sits on the card');
   }
   // no comparison → plain number, no analysis box
   sb.renderBreadth({ ...base });
   assert.doesNotMatch(els.get('mkSpxewZone').className, /tone-/);
-  assert.equal(els.get('mktAnalysis').innerHTML, '');
-  assert.equal(els.get('mktAnalysisWrap').hidden, true, 'no box → the heading hides too');
+  assert.equal(els.get('mkSpxewMeaning').innerHTML, '');
 });
 
-test('index.html: the SPXEW analysis sits in its own titled block after the sources line, not loose under it', () => {
-  const sec = HTML.slice(HTML.indexOf('id="spxewCard"'), HTML.indexOf('Top Events'));
-  const note = sec.indexOf('id="mktNote"'), wrap = sec.indexOf('id="mktAnalysisWrap"'), box = sec.indexOf('id="mktAnalysis"');
-  assert.ok(note > 0 && wrap > note && box > wrap, 'order: sources note → analysis heading → analysis box');
-  assert.match(sec.slice(wrap, box), /<h3[^>]*>🔍 วิเคราะห์/);
+test('index.html: no separate analysis block in US Markets; the SPXEW meaning is on its card', () => {
+  assert.doesNotMatch(HTML, /id="mktAnalysis/);
+  const card = HTML.slice(HTML.indexOf('id="spxewCard"'), HTML.indexOf('id="mkSpxewMeaning"'));
+  assert.ok(card.length > 0 && card.length < 8000, 'meaning line is inside the SPXEW card');
 });
 
 function yahooJson(days, closes) {
