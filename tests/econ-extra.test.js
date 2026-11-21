@@ -193,8 +193,8 @@ test('markup: 9 cards, each with an (i) explainer in Thai and English', () => {
   assert.match(m[1], /not adjusted for inflation/);
   assert.match(m[1], /เส้นแบ่งคือ 50/);
   assert.match(m[1], /TIPS/);
-  assert.equal((m[1].match(/<b>สีบนการ์ด:<\/b>/g) || []).length, 9, 'every card explains its colours');
-  assert.equal((m[1].match(/<b>Colours on the card:<\/b>/g) || []).length, 9);
+  assert.equal((m[1].match(/<b>สีบนการ์ด[^<]*:<\/b>/g) || []).length, 9, 'every card explains its colours');
+  assert.equal((m[1].match(/<b>Colours on the card[^<]*:<\/b>/g) || []).length, 9);
   assert.match(m[1], /2\.5%/);
   assert.equal((m[1].match(/class="tv-btn" href="https:\/\/www\.tradingview\.com\/chart\/\?symbol=/g) || []).length, 9, 'each card links to TradingView');
   assert.match(m[1], /symbol=FRED%3ADFII10/, 'real yield card opens FRED:DFII10');
@@ -255,8 +255,20 @@ test('page: cards and the analysis section use the econ-extra numbers (Thai)', a
   assert.match(txt(sb, 'mort30'), /6\.17%/);
   assert.match(txt(sb, 'mort30Info'), /ห่างบอนด์ 10 ปี/);
   assert.match(txt(sb, 'mort30Info'), /🟡 ปานกลาง/);
-  assert.match(txt(sb, 'homeSalesInfo'), /🟢 ปกติ|🟠 ต่ำกว่าปกติ|🔴 ซบเซามาก/);
-  assert.match(txt(sb, 'retailInfo'), /🟢 แรงกว่าคาด/);
+  // 4.06M → 🟡 ต่ำกว่าปกติ · ตัวเลขใหญ่สีเดียวกับจุด · ต่ำกว่าคาด 4.10M แค่ 40K (เกิน ±25K) → "(ต่ำกว่าคาด)" เป็นข้อความ
+  assert.match(txt(sb, 'homeSalesInfo'), /🟡 ต่ำกว่าปกติ ตลาดบ้านยังฝืด/);
+  assert.match(txt(sb, 'homeSalesInfo'), /\(ต่ำกว่าคาด\)/);
+  assert.match(sb.document.getElementById('homeSales').className, /tone-warn/);
+  assert.match(sb.document.getElementById('mort30').className, /tone-warn/);
+  assert.match(sb.document.getElementById('mort15').className, /tone-warn/);
+  assert.match(txt(sb, 'retailInfo'), /🟢 ใช้จ่ายแข็ง เศรษฐกิจยังดี/);
+  assert.match(txt(sb, 'retailInfo'), /\(สูงกว่าคาด\)/);
+  assert.match(sb.document.getElementById('retailSales').className, /tone-good/);
+  assert.match(sb.document.getElementById('ismMfg').className, /tone-bad/);
+  assert.match(sb.document.getElementById('ismSvc').className, /tone-good/);
+  assert.match(txt(sb, 'ismSvcInfo'), /\(สูงกว่าคาด\)/);
+  assert.match(sb.document.getElementById('be5').className, /tone-warn/);
+  assert.match(sb.document.getElementById('be10').className, /tone-bad/);
   assert.match(txt(sb, 'retailSales'), /\+0\.6%/);
   assert.match(txt(sb, 'retailInfo'), /คาด/);
   assert.match(txt(sb, 'ismMfg'), /48\.7/);
@@ -271,13 +283,16 @@ test('page: cards and the analysis section use the econ-extra numbers (Thai)', a
   const a = txt(sb, 'fedAnalysis');
   assert.match(a, /Real Yield 10 ปี — 🔴 พุ่งขึ้นเร็ว/);
   assert.match(a, /บอนด์ 10 ปีราว 4\.40%/);
-  assert.match(a, /ยอดค้าปลีก — 🟢 แรงกว่าที่คาด/);
+  assert.match(a, /ยอดค้าปลีก — 🟢 ใช้จ่ายแข็ง/);
+  assert.match(a, /ตลาดคาด \+0\.4% → แรงกว่าที่คาด/);
   assert.match(a, /หักเงินเฟ้อคร่าว ๆ/);
-  assert.match(a, /ISM ภาคการผลิต — 🔴 แย่กว่าที่คาด/);
-  assert.match(a, /ISM ภาคบริการ — 🟢 ดีกว่าที่คาด/);
+  assert.match(a, /ISM ภาคการผลิต — 🔴 หดตัว/);
+  assert.match(a, /ISM ภาคบริการ — 🟢 ขยายตัวดี/);
+  assert.match(a, /ตลาดคาด 51\.0 → ดีกว่าที่คาด/);
   assert.match(a, /กลับมาขยายตัว/);
-  assert.match(a, /ยอดขายบ้านมือสอง — 🟡 ใกล้เคียงที่คาด|ยอดขายบ้านมือสอง — 🔴 แย่กว่าที่คาด/);
-  assert.match(a, /ดอกเบี้ยบ้าน — 🟢 ลดลงจากสัปดาห์ก่อน/);
+  assert.match(a, /ยอดขายบ้านมือสอง — 🟡 ต่ำกว่าปกติ/);
+  assert.match(a, /ดอกเบี้ยบ้าน — 🟡 ปานกลาง/);
+  assert.match(a, /ทิศทาง: ลดลงจากสัปดาห์ก่อน/);
 });
 
 test('page: English mode has no Thai left in the new cards and analysis', async () => {
@@ -290,6 +305,29 @@ test('page: English mode has no Thai left in the new cards and analysis', async 
     const t = txt(sb, id);
     assert.ok(!THAI.test(t), `#${id} has Thai: ${(t.match(/.{0,40}[฀-๿]+.{0,40}/) || [''])[0]}`);
   }
-  assert.match(txt(sb, 'fedAnalysis'), /Retail Sales — 🟢 Stronger than forecast/);
+  assert.match(txt(sb, 'fedAnalysis'), /Retail Sales — 🟢 Strong spending/);
   assert.match(txt(sb, 'fedAnalysis'), /10-year real yield — 🔴 Rising fast/);
+});
+
+test('econ-extra verdicts: big-number colour = status dot, one rule per card', async () => {
+  const sb = makeSandbox({ fetchImpl: stub() });
+  await runAllScripts(sb);
+  const V = sb.window.extraVerdicts;
+  const tone = (x) => x.dot + ' ' + x.accent;
+  assert.equal(tone(V.homeSales(3.75e6)), '🔴 var(--bad)');
+  assert.equal(tone(V.homeSales(4.3e6)), '🟡 var(--warn)');
+  assert.equal(tone(V.homeSales(5e6)), '🟢 var(--good)');
+  assert.equal(tone(V.mortgage('mort30', 7.28)), '🔴 var(--bad)');
+  assert.equal(tone(V.mortgage('mort15', 6.66)), '🔴 var(--bad)');
+  assert.equal(tone(V.mortgage('mort30', 6.0)), '🟡 var(--warn)');
+  assert.equal(tone(V.mortgage('mort15', 4.7)), '🟢 var(--good)');
+  assert.equal(tone(V.retail(0.2)), '🟡 var(--warn)');
+  assert.equal(tone(V.retail(-0.3)), '🔴 var(--bad)');
+  assert.equal(tone(V.ism(54.5)), '🟢 var(--good)');
+  assert.equal(tone(V.ism(51)), '🟡 var(--warn)');
+  assert.equal(tone(V.ism(49.9)), '🔴 var(--bad)');
+  assert.equal(tone(V.breakeven(2.18)), '🟢 var(--good)');
+  assert.equal(tone(V.breakeven(2.4)), '🟡 var(--warn)');
+  assert.equal(tone(V.breakeven(1.6)), '🟡 var(--warn)');
+  assert.match(V.breakeven(2.6).label, /กดดันหุ้น/);
 });
