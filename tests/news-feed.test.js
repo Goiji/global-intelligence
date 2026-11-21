@@ -156,3 +156,39 @@ test('Thai publisher feeds keep only market / economy / politics stories (no PR 
   assert.ok(titles.includes('จับตาชอร์ตเซลคืนชีพ สัดส่วนขายชอร์ตสูง'));
   assert.ok(!titles.some((x) => /กอล์ฟ|MUTELU/.test(x)), 'filler dropped');
 });
+
+test('English publisher feeds drop off-topic section filler when enough stories are on topic', async (t) => {
+  const { fromCategoryFeeds, CATEGORY_FEEDS } = require('../netlify/functions/news-feed.js').__test;
+  const realFetch = global.fetch;
+  t.after(() => { global.fetch = realFetch; });
+  const item = (title, h) => `<item><title>${title}</title><link>https://x/${encodeURIComponent(title)}</link><pubDate>Fri, 20 Nov 2026 1${h}:00:00 GMT</pubDate><description></description></item>`;
+  // real BBC Business headlines from 20 Nov 2026
+  const rss = '<rss><channel>' + [
+    item('Anthropic shares fall after blockbuster opening', 9),
+    item('GTA 6 drives spike in download demand, as estimated sales top $2.3bn', 8),
+    item("Airbnb's divisive new house rules come into force", 7),
+    item("Tinned food and long-life milk boost retail sales after 'Be Ready' campaign launch", 6),
+    item('Japan core inflation soars to highest this year as energy subsidy expiry pushes up consumer prices', 5),
+    item("Peterson: The Fed's chairman sees an AI revolution coming", 4),
+  ].join('') + '</channel></rss>';
+  global.fetch = async () => ({ ok: true, status: 200, text: async () => rss });
+  assert.ok(CATEGORY_FEEDS.economic.length >= 1);
+  const titles = (await fromCategoryFeeds('federal reserve OR inflation OR interest rates', 'en', 'economic')).map((i) => i.title);
+  assert.ok(titles.some((x) => x.startsWith('Japan core inflation')));
+  assert.ok(titles.some((x) => x.startsWith('Anthropic shares fall')));
+  assert.ok(!titles.some((x) => /GTA 6|Airbnb/.test(x)), 'lifestyle / gaming filler dropped: ' + titles.join(' | '));
+});
+
+test('when too few stories are on topic, filler is kept for the list but flagged so it is not scored', async (t) => {
+  const { fromCategoryFeeds } = require('../netlify/functions/news-feed.js').__test;
+  const realFetch = global.fetch;
+  t.after(() => { global.fetch = realFetch; });
+  const rss = '<rss><channel>' +
+    '<item><title>Oil prices climb as OPEC signals cuts</title><pubDate>Fri, 20 Nov 2026 10:00:00 GMT</pubDate></item>' +
+    '<item><title>Celebrity chef opens new restaurant</title><pubDate>Fri, 20 Nov 2026 11:00:00 GMT</pubDate></item>' +
+    '</channel></rss>';
+  global.fetch = async () => ({ ok: true, status: 200, text: async () => rss });
+  const items = await fromCategoryFeeds('oil price OR energy crisis OR OPEC', 'en', 'energy');
+  assert.equal(items.find((i) => i.title.startsWith('Oil')).onTopic, undefined);
+  assert.equal(items.find((i) => i.title.startsWith('Celebrity')).onTopic, false);
+});

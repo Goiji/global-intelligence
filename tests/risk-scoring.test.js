@@ -81,3 +81,82 @@ test('off-topic items are skipped so they do not dilute the category', () => {
   assert.ok(r.score >= 80, `got ${r.score}`);
   assert.equal(r.drivers[0].title, 'Russia launches missile strikes on Kyiv power grid');
 });
+
+// ---- Nov 2026 review: real headlines from 20 Nov 2026 (S&P 500 −3.7%, AI sell-off) ----
+const NOW = Date.parse('2026-11-21T01:00:00Z');
+const at = (h) => new Date(NOW - h * 3600e3).toUTCString();
+
+test('market-news wording is recognised (the old rules scored these 0)', () => {
+  for (const t of [
+    'Japan core inflation soars to highest this year as energy subsidy expiry pushes up consumer prices',
+    'Anthropic shares fall after blockbuster opening',
+    "Anthropic's IPO Turmoil Caps $4 Trillion AI Wipeout on Wall Street",
+    'Stocks Skid Into a Correction, as A.I. Worries Intensify',
+    'S&P 500 Is Set for Longest Losing Run Since 2020: Markets Wrap',
+    'The Federal Reserve Is Expected to Raise Interest Rates Next Month',
+    'White House removes cyber-security chief after series of tech outages'
+  ]) assert.ok(net(t) > 0, t);
+});
+
+test('a calm word that is negated or undone does not lower risk', () => {
+  assert.ok(net('Why Anthropic’s blockbuster debut didn’t ease Wall Street’s AI fears') > 0, "didn't ease fears");
+  assert.ok(!terms('Trump’s Ukraine Energy Truce Unravels as Russian Missiles Hit Kyiv').includes('truce'));
+  assert.ok(net('Trump’s Ukraine Energy Truce Unravels as Russian Missiles Hit Kyiv') >= 2);
+  assert.ok(net('Ceasefire holds as talks end war in Gaza') < 0, 'an intact ceasefire still lowers risk');
+});
+
+test('lifestyle pieces, listicles and names that contain "war" are not risk', () => {
+  for (const t of [
+    'These little-known investments could be among the best bargains in a crash',
+    'Six AI-powered gadgets that could make your home office smarter',
+    'The War Is Ravaging Ukraine’s Wildlife, Too',
+    "Airbnb's divisive new house rules come into force"
+  ]) assert.ok(api.isOffTopic(t), t);
+  assert.equal(net('Department of War Publishes Eighth Release of Unidentified Anomalous Phenomena Files'), 0);
+  assert.equal(net('Stocks hit a losing streak of five sessions'), 1, '"losing streak" is market news, not only sports');
+});
+
+test('the outlet name after " - " is not scored', () => {
+  const r = api.scoreCategoryDetail([
+    { title: 'Russian Offensive Campaign Assessment, November 19 - Institute for the Study of War', source: 'Institute for the Study of War', pubDate: at(2) }
+  ], NOW);
+  assert.equal(r.score, 50);
+});
+
+test('the five newest stories are scored, not the first five in feed order', () => {
+  const calm = (n) => ({ title: `Diplomats meet in Geneva for round ${n} of routine consultations`, pubDate: at(20 + n) });
+  const items = [calm(1), calm(2), calm(3), calm(4), calm(5),
+    { title: 'Russian missiles land in Poland. NATO calls it a violation', pubDate: at(3) }];
+  const r = api.scoreCategoryDetail(items, NOW);
+  assert.ok(r.drivers.some((d) => d.title.startsWith('Russian missiles')), 'the newest story is counted');
+  assert.ok(r.score > 50);
+});
+
+test("the category's own search word counts half, and stale or flagged items are skipped", () => {
+  const items = [{ title: 'Leaders discuss war', pubDate: at(1) }];
+  const plain = api.scoreCategoryDetail(items, NOW).score;
+  const echoed = api.scoreCategoryDetail(items, NOW, 'geopolitics OR conflict OR war').score;
+  assert.ok(echoed < plain && echoed > 50, `plain=${plain} echoed=${echoed}`);
+  const r = api.scoreCategoryDetail([
+    { title: 'Market crash wipes out savings', pubDate: at(24 * 30) },
+    { title: 'Bank run fears grip regional lender', pubDate: at(2), onTopic: false },
+    { title: 'Central bank holds steady', pubDate: at(1) }
+  ], NOW);
+  assert.equal(r.used, 1);
+  assert.equal(r.score, 50);
+});
+
+test('one lone risky headline cannot push a category to the top of the scale', () => {
+  const r = api.scoreCategoryDetail([{ title: 'Oil prices crash after surprise output hike', pubDate: at(1) }], NOW);
+  assert.ok(r.score < 85, `got ${r.score}`);
+});
+
+test('a genuine sell-off day scores clearly high', () => {
+  const r = api.scoreCategoryDetail([
+    { title: "Anthropic's IPO Turmoil Caps $4 Trillion AI Wipeout on Wall Street - WSJ", source: 'WSJ', pubDate: at(1) },
+    { title: 'Wall St ends sharply lower on AI selloff, S&P 500, Dow in correction - Reuters', source: 'Reuters', pubDate: at(2) },
+    { title: 'S&P 500 sinks 3.7% and Nasdaq composite goes negative for the year as tech sell-off worsens - AP News', source: 'AP News', pubDate: at(2) },
+    { title: 'S&P 500 Is Set for Longest Losing Run Since 2020: Markets Wrap - Bloomberg.com', source: 'Bloomberg.com', pubDate: at(1) }
+  ], NOW, 'stock market OR wall street OR bonds');
+  assert.ok(r.score >= 85, `got ${r.score}`);
+});
