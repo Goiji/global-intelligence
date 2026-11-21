@@ -489,6 +489,14 @@ body{margin:0}
   .why{margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px}
   .why summary{cursor:pointer;color:var(--accent);font-size:12px;font-weight:500;list-style:none}
   .why summary::-webkit-details-marker{display:none}
+  /* บรรทัดแหล่งข้อมูลใต้แต่ละส่วน: ย่อไว้เป็นปุ่ม ⓘ กดแล้วค่อยขยาย (คำเตือนยังโชว์เสมอใน .src-warn) */
+  .src-note{margin-top:10px;font-size:11px;line-height:1.6}
+  .src-note summary{cursor:pointer;color:var(--muted);list-style:none;display:inline-block;user-select:none;padding:2px 0}
+  .src-note summary::-webkit-details-marker{display:none}
+  .src-note summary:hover,.src-note[open] summary{color:var(--text)}
+  .src-note > div{margin-top:4px}
+  .src-warn{margin-top:8px;font-size:11px;line-height:1.6;color:var(--warn)}
+  .src-warn:empty{display:none}
   #riskWhy{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:12px}
   .why-cat{border:1px solid var(--line-soft);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.015)}
   .why-head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
@@ -683,7 +691,7 @@ body{margin:0}
     <span>🇨🇳 CNY/THB <span class="muted" style="font-size:10px;" data-en="(per 1 yuan)">(ต่อ 1 หยวน)</span> <a class="tv-arrow" href="https://www.tradingview.com/chart/?symbol=FX_IDC%3ACNYTHB" target="_blank" rel="noopener noreferrer" title="เปิด CNY/THB ใน TradingView" data-en-title="Open CNY/THB in TradingView" aria-label="เปิด CNY/THB ใน TradingView" data-en-aria="Open CNY/THB in TradingView">↗</a></span><b id="lpCnyThb" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
   </div>
 </div>
-<div id="livePricesNote" class="muted" style="font-size:10px; margin-top:10px;" data-en="Gold price tracks PAXG (a token backed by physical gold)">ราคาทองอ้างอิง PAXG (โทเคนที่หนุนด้วยทองคำจริง)</div>
+<details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div id="livePricesNote" class="muted" data-en="Gold price tracks PAXG (a token backed by physical gold)">ราคาทองอ้างอิง PAXG (โทเคนที่หนุนด้วยทองคำจริง)</div></details>
 </section>
 
 <section class="card full">
@@ -877,7 +885,8 @@ body{margin:0}
   </div></div></div><div class="num" id="mkUsJp10y">–</div><div class="spark" id="spUsJp10y"></div><div class="zone" id="mkUsJp10yZone"></div><div class="zone" id="mkUsJp10yInfo"></div>
     <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=TVC%3AUS10Y-TVC%3AJP10Y" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
 </div>
-<div class="muted" id="mktNote" style="font-size:11px; margin-top:10px;" data-en="Mini charts = last 12 months">กราฟเล็ก = ย้อนหลัง 12 เดือน</div>
+<div class="src-warn" id="mktWarn"></div>
+<details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div class="muted" id="mktNote" data-en="Mini charts = last 12 months">กราฟเล็ก = ย้อนหลัง 12 เดือน</div></details>
 </section>
 
 <section class="card full">
@@ -1007,7 +1016,8 @@ body{margin:0}
     </div>
   </div></div></div><div class="num" id="claims">–</div><div class="next" id="claimsZone"></div><div class="next" id="claimsInfo"></div><div class="next" id="nextClaims"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=ECONOMICS%3AUSIJC" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
 </div>
-<div class="muted" style="margin-top:12px; font-size:11px; line-height:1.6;" id="fedAsOf"></div>
+<div class="src-warn" id="fedAsOfWarn"></div>
+<details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div class="muted" id="fedAsOf"></div></details>
 <h3 style="font-size:14px; margin:18px 0 0;" data-en="🏠 Housing · shoppers · businesses · inflation expectations">🏠 บ้าน · การใช้จ่าย · ภาคธุรกิจ · เงินเฟ้อที่ตลาดคาด</h3>
 <div class="metrics" id="extraMetrics">
   <div class="metric"><div class="name"><span data-en="Existing Home Sales (per year)">ยอดขายบ้านมือสอง (ต่อปี)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ยอดขายบ้านมือสอง คืออะไร" data-en-aria="What is Existing Home Sales?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
@@ -1138,7 +1148,8 @@ body{margin:0}
   </div></div></div><div class="num" id="ry10">–</div><div class="spark" id="spRy10"></div><div class="next" id="ry10Info"></div>
     <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3ADFII10" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
 </div>
-<div class="muted" style="margin-top:10px; font-size:11px; line-height:1.6;" id="econExtraNote" data-en="Loading…">กำลังโหลด…</div>
+<div class="src-warn" id="econExtraWarn"></div>
+<details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div class="muted" id="econExtraNote" data-en="Loading…">กำลังโหลด…</div></details>
 
 <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line);">
   <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
@@ -2181,8 +2192,9 @@ window.setHeaderStamp();
         const warnBits = [];
         if(cpi && cpi.warning) warnBits.push('CPI: ' + cpi.warning);
         if(data.stale) warnBits.push(tr('อาจยังไม่ใช่ตัวเลขล่าสุด', 'may not be the latest numbers'));
-        el('fedAsOf').innerHTML = tr('ข้อมูลล่าสุด: ', 'Latest data: ') + esc(bits.join(' · '))
-          + (warnBits.length ? '<br><span style="color:var(--warn);">⚠️ ' + esc(warnBits.join(' · ')) + '</span>' : '');
+        el('fedAsOf').innerHTML = tr('ข้อมูลล่าสุด: ', 'Latest data: ') + esc(bits.join(' · '));
+        // คำเตือนอยู่นอกปุ่ม ⓘ เพื่อให้เห็นได้โดยไม่ต้องกดขยาย
+        el('fedAsOfWarn').textContent = warnBits.length ? '⚠️ ' + warnBits.join(' · ') : '';
       }
     }catch(e){ /* never let a render hiccup break the page */ }
 
@@ -2677,7 +2689,7 @@ window.setHeaderStamp();
       + '<br>' + srcLine + esc(consensusNote)
       + '<br>' + linkLine;
     const foot = (notes.length ? notes.join('<br>') + '<br>' : '')
-      + '<details><summary style="cursor:pointer; list-style:none;">' + tr('ℹ️ ที่มาของค่าที่คาด · อัปเดต ', 'ℹ️ Where the forecasts come from · updated ') + esc(when) + '</summary>'
+      + '<details class="src-note"><summary>' + tr('ⓘ ที่มาของค่าที่คาด · อัปเดต ', 'ⓘ Where the forecasts come from · updated ') + esc(when) + '</summary>'
       + '<div style="margin-top:6px;">' + details + '</div></details>';
 
     box.innerHTML = cards.join('') + '<div class="muted" style="font-size:10px; line-height:1.6; opacity:.8;">' + foot + '</div>';
@@ -3178,13 +3190,14 @@ window.setHeaderStamp();
         ? name + tr(' จาก Cboe ', ' from Cboe ') + thDay(s.date).replace(/ \d{4}$/, '') + ' ' + s.time.slice(11, 16) + tr(' NY (ช้า ~15 นาที)', ' NY (~15 min delay)')
         : s.source === 'treasury' ? name + tr(' ราคาปิด ', ' close ') + thDay(s.date) + tr(' (กระทรวงการคลังสหรัฐ)', ' (US Treasury)')
         : name + tr(' ราคาปิด ', ' close ') + thDay(s.date) + tr(' (FRED ช้ากว่าตลาดประมาณ 1 วันทำการ)', ' (FRED, about 1 business day behind the market)');
+      el('mktWarn').textContent = '';
       el('mktNote').textContent = [yieldNote(tr('บอนด์ 10 ปี', '10Y yield'), S.us10y), yieldNote(tr('2 ปี', '2Y'), S.us2y)].filter(Boolean).join(' · ')
         + tr(' · DXY จากอัตรา ECB ', ' · DXY from ECB rates ') + (S.dollar && S.dollar.date ? thDay(S.dollar.date) : '–')
         + tr(' · VIX/OVX ราคาจาก Cboe ช้า ~15 นาที · MOVE ราคาปิด (ICE ผ่าน Yahoo) · SPXEW จาก Yahoo · SOFR/IORB จาก FRED · short บอนด์ฟิวเจอร์สจาก CFTC รายสัปดาห์ · ยีลด์ญี่ปุ่นจาก MOF ญี่ปุ่น · อัปเดตทุกชั่วโมง · กราฟเล็ก = ย้อนหลัง 12 เดือน',
              ' · VIX/OVX from Cboe, ~15 min delay · MOVE daily close (ICE via Yahoo) · SPXEW from Yahoo · SOFR/IORB from FRED · UST futures short from CFTC, weekly · JGB yields from Japan MOF · updated hourly · mini charts = last 12 months');
     }catch(e){
       console.warn('[markets]', e);
-      el('mktNote').textContent = tr('ดึงข้อมูลตลาดไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ', 'Can\'t load market data right now. Retrying automatically.');
+      el('mktWarn').textContent = tr('⚠️ ดึงข้อมูลตลาดไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ', '⚠️ Can\'t load market data right now. Retrying automatically.');
       marketsNextAt = Date.now() + 10 * 60 * 1000;
     }
   }
@@ -3385,8 +3398,9 @@ window.setHeaderStamp();
     if(note && EXTRA){
       const errs = EXTRA.__errors ? Object.keys(EXTRA.__errors) : [];
       note.textContent = tr('ที่มา: ยอดขายบ้าน NAR · ดอกเบี้ยบ้าน Freddie Mac · ค้าปลีก Census · Breakeven และ Real Yield ผ่าน FRED · ISM และค่าคาดจาก Investing.com · กราฟเล็ก = ย้อนหลัง 12 เดือน',
-        'Sources: home sales NAR · mortgage rates Freddie Mac · retail sales Census · breakevens and real yield via FRED · ISM and forecasts from Investing.com · mini charts = last 12 months')
-        + (errs.length ? tr(' · ⚠️ ยังดึงไม่ได้: ', ' · ⚠️ not available right now: ') + errs.join(', ') : '');
+        'Sources: home sales NAR · mortgage rates Freddie Mac · retail sales Census · breakevens and real yield via FRED · ISM and forecasts from Investing.com · mini charts = last 12 months');
+      const warn = el('econExtraWarn');
+      if(warn) warn.textContent = errs.length ? tr('⚠️ ยังดึงไม่ได้: ', '⚠️ Not available right now: ') + errs.join(', ') : '';
     }
     try{ renderNextReleases(); }catch(e){ /* best-effort */ }
   }
@@ -3402,8 +3416,8 @@ window.setHeaderStamp();
     }catch(e){
       console.warn('[econ-extra]', e);
       extraNextAt = Date.now() + 10 * 60 * 1000;
-      const note = el('econExtraNote');
-      if(note && !EXTRA) note.textContent = tr('ดึงข้อมูลชุดนี้ไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ', 'Can\'t load these numbers right now. Retrying automatically.');
+      const warn = el('econExtraWarn');
+      if(warn && !EXTRA) warn.textContent = tr('⚠️ ดึงข้อมูลชุดนี้ไม่ได้ในขณะนี้ — จะลองใหม่อัตโนมัติ', '⚠️ Can\'t load these numbers right now. Retrying automatically.');
     }
     try{ renderExtraCards(); }catch(e){ console.warn('[econ-extra render]', e); }
     try{ if(lastFedPayload) renderFedAnalysis(lastFedPayload); }catch(e){ /* best-effort */ }
