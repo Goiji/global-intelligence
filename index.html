@@ -329,21 +329,21 @@ body{margin:0}
   #btcTab .liq-sum{font-size:12px; color:var(--text); line-height:1.6;}
   #btcTab .liq-sum b{font-weight:600;}
   /* ยอดล้างพอร์ต BTC 1/4/12/24 ชม.: 4 กล่อง (2×2 บนมือถือ) แต่ละกล่องมียอดรวม, long/short และแถบสัดส่วน */
-  #btcTab .rekt-grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:12px;}
-  @media (max-width:800px){ #btcTab .rekt-grid{grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;} }
-  #btcTab .rekt-box{border:1px solid var(--line); border-radius:12px; padding:12px 12px 10px; background:rgba(255,255,255,.02); min-width:0;}
-  #btcTab .rekt-top{display:flex; align-items:baseline; justify-content:space-between; gap:6px; flex-wrap:wrap;}
-  #btcTab .rekt-lbl{font-size:12px; color:var(--sub);}
-  #btcTab .rekt-tot{font-size:22px; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums; letter-spacing:-.01em;}
-  @media (max-width:800px){ #btcTab .rekt-tot{font-size:19px;} }
-  #btcTab .rekt-row{display:flex; justify-content:space-between; gap:6px; font-size:12px; margin-top:6px; color:var(--sub);}
-  #btcTab .rekt-row b{font-weight:600; font-variant-numeric:tabular-nums;}
-  #btcTab .rekt-row.long b{color:var(--red);}
-  #btcTab .rekt-row.short b{color:var(--green);}
-  #btcTab .rekt-bar{display:flex; height:5px; border-radius:3px; overflow:hidden; margin-top:9px; background:var(--line);}
+  #btcTab .rekt-main{margin-top:14px;}
+  #btcTab .rekt-pcts{display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
+  #btcTab .rekt-pcts span{font-size:13px; color:var(--sub);}
+  #btcTab .rekt-pcts b{font-size:26px; font-weight:700; margin-left:6px; font-variant-numeric:tabular-nums;}
+  #btcTab .rekt-pcts .long b{color:var(--red);}
+  #btcTab .rekt-pcts .short b{color:var(--green);}
+  #btcTab .rekt-bar{display:flex; height:10px; border-radius:5px; overflow:hidden; margin-top:8px; background:var(--line); gap:2px;}
   #btcTab .rekt-bar i{display:block; height:100%;}
   #btcTab .rekt-bar i.l{background:var(--red);}
   #btcTab .rekt-bar i.s{background:var(--green);}
+  #btcTab .rekt-rows{display:grid; gap:7px; margin-top:14px;}
+  #btcTab .rekt-row{display:grid; grid-template-columns:52px 40px minmax(0,1fr) 40px; align-items:center; gap:8px; font-size:12px; color:var(--sub); font-variant-numeric:tabular-nums;}
+  #btcTab .rekt-row .rekt-bar{height:6px; margin-top:0;}
+  #btcTab .rekt-row .l{color:var(--red); text-align:right;}
+  #btcTab .rekt-row .s{color:var(--green);}
   #btcTab .rekt-meaning{font-size:12px; line-height:1.6; color:var(--text); margin-top:12px;}
   #btcTab .rekt-ex{font-size:11px; line-height:1.6; color:var(--sub); margin-top:4px;}
   #btcTab .etf-bars svg{display:block; width:100%; height:64px;}
@@ -4996,27 +4996,30 @@ window.setHeaderStamp();
     <!-- LIQUIDATIONS 1h/4h/12h/24h (actual, many exchanges via Coinalyze; see fetchRekt) -->
     <div class="panel chart-panel rekt-panel">
       <div class="liq-head">
-        <h2 style="margin-bottom:0;"><span data-en="BTC Liquidations (last 1–24h)">ยอดล้างพอร์ต BTC (1–24 ชม. ล่าสุด)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ยอดล้างพอร์ตคืออะไร" data-en-aria="What are liquidations?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+        <h2 style="margin-bottom:0;"><span data-en="BTC Liquidations: long vs short (24h)">สัดส่วนล้างพอร์ต BTC Long/Short (24 ชม.)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ยอดล้างพอร์ตคืออะไร" data-en-aria="What are liquidations?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
           <div class="i18n-th">
-          <p><b>คืออะไร:</b> ยอดเงิน (US$) ของสถานะ BTC futures ที่โดนตลาดบังคับปิด (liquidate) เพราะขาดทุนจนหลักประกันไม่พอ ในช่วง 1, 4, 12 และ 24 ชั่วโมงที่ผ่านมา นับย้อนจากตอนนี้ · "Rekt" ในเว็บอย่าง CoinGlass คือศัพท์แสลงของคำนี้ เช่น 4h Rekt = ยอดที่โดนล้างใน 4 ชั่วโมงล่าสุด</p>
-          <p><b>Long / Short:</b> Long = คนที่เดิมพันว่าราคาขึ้นแล้วราคาลงจนโดนล้าง (ตลาดต้องขายออกให้) · Short = คนที่เดิมพันว่าราคาลงแล้วราคาขึ้นจนโดนล้าง (ตลาดต้องซื้อคืนให้) · แถบใต้แต่ละกล่องคือสัดส่วน long (แดง) ต่อ short (เขียว)</p>
+          <p><b>คืออะไร:</b> ใน 24 ชั่วโมงที่ผ่านมา สถานะ BTC futures ที่โดนตลาดบังคับปิด (liquidate) เพราะขาดทุนจนหลักประกันไม่พอ เป็นฝั่ง long กี่ % และ short กี่ % · แถบเล็กด้านล่างคือสัดส่วนเดียวกันในช่วง 1, 4 และ 12 ชั่วโมงล่าสุด · "Rekt" ในเว็บอย่าง CoinGlass คือศัพท์แสลงของการโดนล้าง เช่น 4h Rekt = ยอดที่โดนล้างใน 4 ชั่วโมงล่าสุด</p>
+          <p><b>Long / Short:</b> Long = คนที่เดิมพันว่าราคาขึ้นแล้วราคาลงจนโดนล้าง (ตลาดต้องขายออกให้) · Short = คนที่เดิมพันว่าราคาลงแล้วราคาขึ้นจนโดนล้าง (ตลาดต้องซื้อคืนให้) · แถบแดง = long, แถบเขียว = short</p>
           <p><b>อ่านสี:</b> 🔴 long โดนล้าง 65% ขึ้นไป = ราคาหักลงจนคน long โดนขายทิ้งยกแผง · 🟡 long 35–65% = โดนล้างพอ ๆ กันทั้งสองฝั่ง (ราคาแกว่งทั้งขึ้นและลง) · 🟢 short โดนล้าง 65% ขึ้นไป = ราคาพุ่งจน short ต้องซื้อคืน (short squeeze)</p>
-          <p><b>ทำไมสำคัญ:</b> ยอดล้างก้อนใหญ่ = เลเวอเรจถูกกวาดออกจากตลาด หลังล้างหนัก ๆ ราคามักนิ่งลงหรือเด้งกลับ เพราะคนที่ถูกบังคับขาย/ซื้อหมดไปแล้ว · ถ้า 1 ชม. หรือ 4 ชม. พุ่งผิดปกติเทียบกับ 24 ชม. = เพิ่งมีการล้างเป็นทอด ๆ (cascade) · อ่านคู่กับ Liquidation Heatmap ด้านบน (จุดที่ยังรอโดนล้าง) และ Open Interest</p>
+          <p><b>ทำไมสำคัญ:</b> ฝั่งที่โดนล้างหนัก = เลเวอเรจฝั่งนั้นถูกกวาดออกจากตลาด หลังล้างหนัก ๆ ราคามักนิ่งลงหรือเด้งกลับ เพราะคนที่ถูกบังคับขาย/ซื้อหมดไปแล้ว · ถ้าแถบ 1 ชม. หรือ 4 ชม. เอียงไปคนละฝั่งกับ 24 ชม. = ทิศทางเพิ่งกลับ · อ่านคู่กับ Liquidation Heatmap ด้านบน (จุดที่ยังรอโดนล้าง) และ Open Interest</p>
           </div>
           <div class="i18n-en" lang="en">
-          <p><b>What it is:</b> the US$ value of BTC futures positions force-closed (liquidated) because losses ate their margin, over the last 1, 4, 12 and 24 hours counted back from now · "Rekt" on sites like CoinGlass is slang for this, so 4h Rekt = what was liquidated in the last 4 hours.</p>
-          <p><b>Long / Short:</b> Long = traders betting on a rise who got wiped out as price fell (the exchange sells for them) · Short = traders betting on a fall who got wiped out as price rose (the exchange buys back for them) · the bar under each box is the long (red) vs short (green) split.</p>
+          <p><b>What it is:</b> of the BTC futures positions force-closed (liquidated) in the last 24 hours because losses ate their margin, the share that were longs vs shorts · the small bars below show the same split for the last 1, 4 and 12 hours · "Rekt" on sites like CoinGlass is slang for being liquidated, so 4h Rekt = what was liquidated in the last 4 hours.</p>
+          <p><b>Long / Short:</b> Long = traders betting on a rise who got wiped out as price fell (the exchange sells for them) · Short = traders betting on a fall who got wiped out as price rose (the exchange buys back for them) · red bar = longs, green bar = shorts.</p>
           <p><b>Colours:</b> 🔴 longs 65% or more of liquidations = price dropped hard and longs were dumped en masse · 🟡 longs 35–65% = both sides hit about equally (price whipsawed) · 🟢 shorts 65% or more = price spiked and shorts had to buy back (short squeeze)</p>
-          <p><b>Why it matters:</b> a big liquidation total = leverage flushed out of the market; after a heavy flush price often calms or bounces because the forced sellers or buyers are gone · if 1h or 4h is unusually large next to 24h, a cascade just happened · read it with the Liquidation Heatmap above (where liquidations are still waiting) and Open Interest.</p>
+          <p><b>Why it matters:</b> the side hit hardest = that side's leverage flushed out; after a heavy flush price often calms or bounces because the forced sellers or buyers are gone · if the 1h or 4h bar leans the other way from 24h, the direction just turned · read it with the Liquidation Heatmap above (where liquidations are still waiting) and Open Interest.</p>
           </div>
         </div></div></h2>
         <div class="sl-sub" id="rektAt"></div>
       </div>
-      <div class="rekt-grid" id="rektGrid">
-        <div class="rekt-box" data-w="1h"><div class="rekt-top"><span class="rekt-lbl" data-en="Last 1h">1 ชม. ล่าสุด</span><span class="rekt-tot">–</span></div><div class="rekt-row long"><span>Long</span><b>–</b></div><div class="rekt-row short"><span>Short</span><b>–</b></div><div class="rekt-bar"></div></div>
-        <div class="rekt-box" data-w="4h"><div class="rekt-top"><span class="rekt-lbl" data-en="Last 4h">4 ชม. ล่าสุด</span><span class="rekt-tot">–</span></div><div class="rekt-row long"><span>Long</span><b>–</b></div><div class="rekt-row short"><span>Short</span><b>–</b></div><div class="rekt-bar"></div></div>
-        <div class="rekt-box" data-w="12h"><div class="rekt-top"><span class="rekt-lbl" data-en="Last 12h">12 ชม. ล่าสุด</span><span class="rekt-tot">–</span></div><div class="rekt-row long"><span>Long</span><b>–</b></div><div class="rekt-row short"><span>Short</span><b>–</b></div><div class="rekt-bar"></div></div>
-        <div class="rekt-box" data-w="24h"><div class="rekt-top"><span class="rekt-lbl" data-en="Last 24h">24 ชม. ล่าสุด</span><span class="rekt-tot">–</span></div><div class="rekt-row long"><span>Long</span><b>–</b></div><div class="rekt-row short"><span>Short</span><b>–</b></div><div class="rekt-bar"></div></div>
+      <div class="rekt-main" id="rektGrid">
+        <div class="rekt-pcts"><span class="long">Long<b id="rektLong">–</b></span><span class="short">Short<b id="rektShort">–</b></span></div>
+        <div class="rekt-bar" id="rektBar24"></div>
+        <div class="rekt-rows">
+          <div class="rekt-row" data-w="1h"><span data-en="1h">1 ชม.</span><b class="l">–</b><div class="rekt-bar"></div><b class="s">–</b></div>
+          <div class="rekt-row" data-w="4h"><span data-en="4h">4 ชม.</span><b class="l">–</b><div class="rekt-bar"></div><b class="s">–</b></div>
+          <div class="rekt-row" data-w="12h"><span data-en="12h">12 ชม.</span><b class="l">–</b><div class="rekt-bar"></div><b class="s">–</b></div>
+        </div>
       </div>
       <div class="rekt-meaning" id="rektMeaning" data-en="Loading…">กำลังโหลด…</div>
       <div class="rekt-ex" id="rektEx"></div>
@@ -6102,31 +6105,37 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       : lp <= 0.35 ? ['🟢', tr('short โดนล้างเป็นหลัก (' + Math.round((1 - lp) * 100) + '%) ราคาพุ่งจนคนเปิด short ต้องซื้อคืน (short squeeze)', 'mostly shorts liquidated (' + Math.round((1 - lp) * 100) + '%): price spiked and shorts had to buy back (short squeeze)')]
       : ['🟡', tr('โดนล้างพอ ๆ กันทั้งสองฝั่ง (long ' + Math.round(lp * 100) + '%) ราคาแกว่งทั้งขึ้นและลง', 'both sides hit about equally (longs ' + Math.round(lp * 100) + '%): price whipsawed')];
   }
+  function rektBar(w){
+    if(!w || !(w.total > 0)) return '';
+    const lp = w.long / w.total * 100;
+    return '<i class="l" style="width:' + lp.toFixed(1) + '%"></i><i class="s" style="width:' + (100 - lp).toFixed(1) + '%"></i>';
+  }
+  const rektPct = (w, side) => (w && w.total > 0) ? (w[side] / w.total * 100).toFixed(1) + '%' : '–';
   function renderRekt(d){
-    const grid = el('rektGrid');
-    if(!grid) return;
-    REKT_WINDOWS.forEach(function(k){
-      const box = grid.querySelector('[data-w="' + k + '"]'), w = d.windows && d.windows[k];
-      if(!box || !w) return;
-      box.querySelector('.rekt-tot').textContent = fmtRekt(w.total);
-      box.querySelector('.rekt-row.long b').textContent = fmtRekt(w.long);
-      box.querySelector('.rekt-row.short b').textContent = fmtRekt(w.short);
-      const lp = w.total > 0 ? w.long / w.total * 100 : 50;
-      box.querySelector('.rekt-bar').innerHTML = w.total > 0 ? '<i class="l" style="width:' + lp.toFixed(1) + '%"></i><i class="s" style="width:' + (100 - lp).toFixed(1) + '%"></i>' : '';
-      box.title = 'Long ' + lp.toFixed(0) + '% · Short ' + (100 - lp).toFixed(0) + '%';
+    const W = d.windows || {}, w24d = W['24h'];
+    el('rektLong').textContent = rektPct(w24d, 'long');
+    el('rektShort').textContent = rektPct(w24d, 'short');
+    el('rektBar24').innerHTML = rektBar(w24d);
+    ['1h', '4h', '12h'].forEach(function(k){
+      const row = el('rektGrid').querySelector('.rekt-row[data-w="' + k + '"]'), w = W[k];
+      if(!row) return;
+      row.querySelector('b.l').textContent = (w && w.total > 0) ? Math.round(w.long / w.total * 100) + '%' : '–';
+      row.querySelector('b.s').textContent = (w && w.total > 0) ? Math.round(w.short / w.total * 100) + '%' : '–';
+      row.querySelector('.rekt-bar').innerHTML = rektBar(w);
     });
     const w24 = d.windows && d.windows['24h'], w4 = d.windows && d.windows['4h'], z = rektZone(w24);
     let txt = z ? z[0] + ' 24' + tr(' ชม.: ', 'h: ') + z[1] : tr('24 ชม. ที่ผ่านมาแทบไม่มีการล้างพอร์ต', 'Almost no liquidations in the last 24h');
-    // 4 ชม. ล่าสุดกินยอดเกินครึ่งของทั้งวัน = เพิ่งล้างเป็นทอด ๆ
-    if(w24 && w4 && w24.total > 0 && w4.total / w24.total >= 0.5) txt += tr(' · ครึ่งหนึ่งของยอดทั้งวันเกิดใน 4 ชม. ล่าสุด = เพิ่งมีการล้างเป็นทอด ๆ', ' · half the day\'s total came in the last 4h = a cascade just happened');
+    // 4 ชม. ล่าสุดเอียงไปคนละฝั่งกับทั้งวัน = ทิศทางเพิ่งกลับ
+    const z4 = rektZone(w4);
+    if(z && z4 && z[0] !== '🟡' && z4[0] !== '🟡' && z4[0] !== z[0]) txt += tr(' · แต่ 4 ชม. ล่าสุดกลับเป็นอีกฝั่ง ทิศทางเพิ่งเปลี่ยน', ' · but the last 4h lean the other way: the direction just turned');
     el('rektMeaning').innerHTML = '<b>' + tr('ความหมาย:', 'What it means:') + '</b> ' + txt.replace(/[&<>]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]));
     const ex = (d.exchanges || []).filter((e) => e.total > 0), sum = ex.reduce((a, e) => a + e.total, 0);
-    el('rektEx').textContent = sum > 0 ? tr('24 ชม. แยกตามตลาด: ', '24h by exchange: ') + ex.slice(0, 7).map((e) => { const pc = e.total / sum * 100; return e.name + ' ' + (pc < 1 ? '<1' : Math.round(pc)) + '%'; }).join(' · ') : '';
+    el('rektEx').textContent = sum > 0 ? tr('ตลาดที่โดนล้างมากสุด 24 ชม.: ', 'Largest exchange share, 24h: ') + ex.slice(0, 3).map((e) => { const pc = e.total / sum * 100; return e.name + ' ' + (pc < 1 ? '<1' : Math.round(pc)) + '%'; }).join(' · ') : '';
     const names = [...new Set((d.markets || []).map((m) => String(m).split(' ')[0]))];
     const when = d.at ? new Date(d.at).toLocaleTimeString(window.GI_LOCALE || 'th-TH', { hour:'2-digit', minute:'2-digit' }) : '';
     el('rektAt').textContent = when ? tr('อัปเดต ', 'Updated ') + when + (d.stale ? tr(' (ข้อมูลล่าสุดที่ดึงได้)', ' (last good copy)') : '') : '';
     el('rektNote').textContent = tr('Coinalyze (API ฟรี) รวม BTC perpetual futures ' + names.length + ' ตลาด: ', 'Coinalyze (free API), BTC perpetual futures on ' + names.length + ' exchanges: ') + names.join(', ')
-      + tr(' · อัปเดตทุก 5 นาที · นับเฉพาะ BTC และเฉพาะตลาดที่ Coinalyze เก็บ ตัวเลขจึงต่ำกว่าหน้า CoinGlass ที่รวมทุกเหรียญและตลาดมากกว่า', ' · refreshed every 5 minutes · BTC only and only the exchanges Coinalyze covers, so it reads lower than the CoinGlass page, which adds every coin and more exchanges');
+      + tr(' · อัปเดตทุก 5 นาที · นับเฉพาะ BTC · สัดส่วนใกล้เคียง CoinGlass แต่ไม่ตรงเป๊ะ เพราะนับตลาดคนละชุด', ' · refreshed every 5 minutes · BTC only · the split is close to CoinGlass but not identical, since the exchange lists differ');
   }
   async function fetchRekt(){
     rektAt = Date.now();
@@ -6142,7 +6151,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     return false;
   }
   setInterval(() => { if(document.body.classList.contains('theme-btc') && !document.hidden && Date.now() - rektAt >= 5 * 60 * 1000) fetchRekt(); }, 60 * 1000);
-  if(typeof window !== 'undefined') window.__rektTest = { fmtRekt, rektZone, renderRekt, fetchRekt };
+  if(typeof window !== 'undefined') window.__rektTest = { fmtRekt, rektZone, rektPct, renderRekt, fetchRekt };
 
   // ---------- DVOL (Deribit BTC implied volatility, "VIX ของ BTC") ----------
   // ชั้นแรก: /.netlify/functions/dvol (แคช 5 นาที) · ถ้าเซิร์ฟเวอร์ล่ม ดึงตรงจาก Deribit public API
