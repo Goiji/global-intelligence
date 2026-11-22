@@ -214,7 +214,7 @@ test('page: rows sorted largest first, "others" last, bars on one scale, values 
   assert.match(rows, /เหรียญอื่น/, 'crypto "others" says other coins');
   assert.match(rows, /ประเทศอื่น/, 'stocks/bonds "others" says other countries');
   assert.doesNotMatch(rows, />· อื่นๆ</);
-  assert.match(rows, /title="ก้อนใหญ่สุดคือ Ethereum \$208 พันล้าน, XRP/, 'hover on other coins names the biggest ones');
+  assert.match(rows, /class="tip-btn"[^>]*>i<\/button><span class="tip-pop" role="tooltip">ก้อนใหญ่สุดคือ Ethereum \$208 พันล้าน, XRP/, 'i button on other coins names the biggest ones');
 
   // many countries: 16 biggest per box, Thailand always kept, the rest folded into "other countries"
   const many = { equities: { total: 100, byKey: { TH: 0.4 } } };
