@@ -46,7 +46,7 @@
 // เพราะพวกนั้นมีแหล่งสำรองสดของตัวเองที่ดีกว่าราคาเก่า และไม่ใช้กับ visitors (เขียนข้อมูล)
 (function(){
   if(typeof window === 'undefined' || typeof window.fetch !== 'function' || typeof Response !== 'function') return;
-  var CACHED = /^\/\.netlify\/functions\/(fred-data|markets|econ-extra|consensus|calendar|etf-flow|stablecoins|news-feed)\/?(\?|$)/;
+  var CACHED = /^\/\.netlify\/functions\/(fred-data|markets|econ-extra|consensus|calendar|etf-flow|stablecoins|news-feed|capital-markets)\/?(\?|$)/;
   var MAX_AGE = 3 * 86400000;
   var orig = window.fetch.bind(window);
   window.fetch = function(input, init){
@@ -495,6 +495,26 @@ body{margin:0}
   .src-note summary:hover,.src-note[open] summary{color:var(--text)}
   .src-note > div{margin-top:4px}
   .src-warn{margin-top:8px;font-size:11px;line-height:1.6;color:var(--warn)}
+  /* ขนาดตลาดทุนโลก: กราฟแท่งแนวนอน · แถวหลัก = ประเภทสินทรัพย์ · แถวย่อย = รายประเทศ (สเกลเดียวกันทั้งกราฟ) */
+  .cm-total{font-size:13px;color:var(--muted);margin:-6px 0 12px}
+  .cm-total b{color:var(--text);font-size:15px}
+  .cm-rows{display:grid;gap:7px}
+  .cm-row{display:grid;grid-template-columns:170px 1fr 118px;gap:10px;align-items:center;font-size:13px}
+  .cm-row .cm-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cm-row .cm-track{height:12px;background:#202b42;border-radius:99px;overflow:hidden}
+  .cm-row .cm-fill{height:100%;border-radius:99px;min-width:2px}
+  .cm-row .cm-val{text-align:right;font-variant-numeric:tabular-nums;font-weight:750}
+  .cm-row .cm-val small{color:var(--muted);font-weight:500;margin-left:4px}
+  .cm-row.main{margin-top:8px}
+  .cm-row.main:first-child{margin-top:0}
+  .cm-row.main .cm-name{font-weight:750}
+  .cm-row.sub{font-size:12px;color:#c9d2e6}
+  .cm-row.sub .cm-name{padding-left:18px}
+  .cm-row.sub .cm-track{height:7px}
+  .cm-row.sub .cm-fill{opacity:.55}
+  .cm-row.sub .cm-val{font-weight:600}
+  .cm-asof{grid-column:1/-1;font-size:10px;color:var(--muted);margin:-3px 0 0 18px}
+  @media(max-width:560px){ .cm-row{grid-template-columns:118px 1fr 84px;gap:8px;font-size:12px} .cm-row.sub{font-size:11px} .cm-row.sub .cm-name{padding-left:10px} .cm-row .cm-val small{display:none} }
   .src-warn:empty{display:none}
   #riskWhy{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:12px}
   .why-cat{border:1px solid var(--line-soft);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.015)}
@@ -691,6 +711,14 @@ body{margin:0}
   </div>
 </div>
 <details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div id="livePricesNote" class="muted" data-en="Gold price tracks PAXG (a token backed by physical gold)">ราคาทองอ้างอิง PAXG (โทเคนที่หนุนด้วยทองคำจริง)</div></details>
+</section>
+
+<section class="card full" id="capMarketsCard">
+<h2>🌐 <span data-en="World Capital Markets">ขนาดตลาดทุนโลก</span> <span class="h-en" data-en="Where the money sits">เงินอยู่ที่ไหนบ้าง</span></h2>
+<div class="cm-total" id="cmTotal" data-en="Loading…">กำลังโหลด…</div>
+<div class="cm-rows" id="cmRows"></div>
+<div class="src-warn" id="cmWarn"></div>
+<details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div id="cmNote" class="muted"></div></details>
 </section>
 
 <section class="card full">
@@ -3258,6 +3286,113 @@ window.setHeaderStamp();
   var marketsNextAt = 0;
   fetchMarkets();
   setInterval(function(){ if(Date.now() >= marketsNextAt) fetchMarkets(); }, 60 * 1000);
+
+  // ---------- ขนาดตลาดทุนโลก (กราฟแท่งแนวนอน) ----------
+  // ข้อมูลทั้งหมดมาจาก /.netlify/functions/capital-markets (หน่วย ล้านล้านดอลลาร์) ไม่มีตัวเลขพิมพ์เอง:
+  // หุ้นรายประเทศ = companiesmarketcap (สด) · ตราสารหนี้ = BIS (รายไตรมาส) · ทอง = ราคาสด × ปริมาณทองโลก (WGC) · คริปโต = CoinGecko (สด)
+  // ดึงใหม่ทุก 15 นาทีตอนแท็บเปิดอยู่ (เท่ากับอายุแคชของเซิร์ฟเวอร์) และทันทีเมื่อกลับมาที่แท็บถ้าเกินเวลาแล้ว
+  const CM_POLL_MS = 15 * 60 * 1000;
+  let cmNextAt = 0;
+  const CM_PARTS = {
+    bonds:    { icon:'🏦', th:'ตราสารหนี้ทั่วโลก', en:'Global bonds', color:'#6ea8ff' },
+    equities: { icon:'📈', th:'หุ้นทั่วโลก', en:'Global stocks', color:'#45d483' },
+    gold:     { icon:'🥇', th:'ทองคำ', en:'Gold', color:'#f2c94c' },
+    crypto:   { icon:'₿',  th:'คริปโต', en:'Crypto', color:'#f7931a' }
+  };
+  const CM_SUBS = {
+    US:['🇺🇸','สหรัฐฯ','United States'], CN:['🇨🇳','จีน','China'], JP:['🇯🇵','ญี่ปุ่น','Japan'], GB:['🇬🇧','อังกฤษ','United Kingdom'],
+    U2:['🇪🇺','ยูโรโซน','Euro area'], EU:['🇪🇺','ยุโรป (รวมอังกฤษ สวิส)','Europe (incl. UK, Switzerland)'], IN:['🇮🇳','อินเดีย','India'],
+    CA:['🇨🇦','แคนาดา','Canada'], TW:['🇹🇼','ไต้หวัน','Taiwan'], KR:['🇰🇷','เกาหลีใต้','South Korea'], TH:['🇹🇭','ไทย','Thailand'],
+    BTC:['₿','Bitcoin','Bitcoin'], OTHER:['·','อื่นๆ','Others']
+  };
+  // ล้านล้านดอลลาร์ → "$62.2 ล้านล้าน" / "$62.2T" · ต่ำกว่า 1 ล้านล้าน → "$430 พันล้าน" / "$430B"
+  function fmtCapT(t){
+    if(!isValidNum(t)) return '–';
+    if(t >= 1) return '$' + (t >= 100 ? t.toFixed(0) : t.toFixed(1)) + tr(' ล้านล้าน', 'T');
+    return '$' + Math.round(t * 1000) + tr(' พันล้าน', 'B');
+  }
+  function cmDate(iso, withTime){
+    const d = new Date(iso);
+    if(isNaN(d)) return '';
+    const o = withTime ? { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' } : { day:'numeric', month:'short', year:'numeric' };
+    try{ return d.toLocaleString(window.GI_LOCALE || 'th-TH', o); }catch(e){ return iso.slice(0, 10); }
+  }
+  // parts จากเซิร์ฟเวอร์ → แถวที่จะวาด เรียงใหญ่ไปเล็ก ("อื่นๆ" อยู่ท้ายกลุ่มเสมอ) · width เทียบกับแถวที่ใหญ่ที่สุดทั้งกราฟ
+  function capMarketRows(parts){
+    const mains = Object.keys(CM_PARTS).filter(function(k){ return parts && parts[k] && isValidNum(parts[k].total) && parts[k].total > 0; })
+      .map(function(k){ return { key:k, total:parts[k].total, part:parts[k] }; })
+      .sort(function(a, b){ return b.total - a.total; });
+    const grand = mains.reduce(function(a, m){ return a + m.total; }, 0);
+    const max = mains.length ? mains[0].total : 1;
+    const rows = [];
+    mains.forEach(function(m){
+      const meta = CM_PARTS[m.key];
+      rows.push({ kind:'main', key:m.key, label:meta.icon + ' ' + tr(meta.th, meta.en), value:m.total, pct:grand ? m.total / grand * 100 : null,
+        width:m.total / max * 100, color:meta.color, part:m.part });
+      const by = (m.part && m.part.byKey) || {};
+      Object.keys(by).filter(function(k){ return isValidNum(by[k]) && by[k] > 0 && CM_SUBS[k]; })
+        .sort(function(a, b){ return (a === 'OTHER') - (b === 'OTHER') || by[b] - by[a]; })
+        .forEach(function(k){
+          const s = CM_SUBS[k];
+          rows.push({ kind:'sub', key:m.key + ':' + k, label:s[0] + ' ' + tr(s[1], s[2]), value:by[k], share:by[k] / m.total * 100,
+            width:by[k] / max * 100, color:meta.color });
+        });
+    });
+    return { rows:rows, grand:grand };
+  }
+  function cmAsOf(key, p){
+    if(!p) return '';
+    const stale = p.stale ? tr(' (ข้อมูลเก่า)', ' (stale)') : '';
+    if(key === 'bonds') return tr('ข้อมูล ณ สิ้นไตรมาส ', 'As of quarter end ') + cmDate(p.asOf) + tr(' · BIS อัปเดตรายไตรมาส', ' · BIS updates quarterly') + stale;
+    if(key === 'gold') return tr('ราคาทอง $', 'Gold $') + (isValidNum(p.price) ? p.price.toLocaleString('en-US', { maximumFractionDigits:0 }) : '–') + tr('/ออนซ์ × ทองที่ขุดขึ้นมาแล้ว ~', '/oz × ~') + (isValidNum(p.tonnes) ? p.tonnes.toLocaleString('en-US') : '–') + tr(' ตัน', ' tonnes mined to date') + ' · ' + cmDate(p.asOf, true) + stale;
+    return tr('สด · ', 'Live · ') + cmDate(p.asOf, true) + stale;
+  }
+  function renderCapMarkets(j){
+    const parts = (j && j.parts) || {};
+    (j && j.staleParts || []).forEach(function(k){ if(parts[k]) parts[k].stale = true; });
+    if(j && j.stale) Object.keys(parts).forEach(function(k){ if(parts[k]) parts[k].stale = true; });
+    const r = capMarketRows(parts);
+    if(!r.rows.length) throw new Error('no parts');
+    el('cmTotal').innerHTML = tr('รวมทั้งหมด ', 'Total ') + '<b>' + esc(fmtCapT(r.grand)) + '</b>' + tr(' (ดอลลาร์สหรัฐ) · เรียงจากใหญ่ไปเล็ก', ' (US$) · largest to smallest');
+    el('cmRows').innerHTML = r.rows.map(function(row){
+      const val = esc(fmtCapT(row.value)) + (row.kind === 'main' && isValidNum(row.pct) ? '<small>' + row.pct.toFixed(0) + '%</small>' : '');
+      const title = row.kind === 'sub' ? tr('สัดส่วน ', 'Share ') + row.share.toFixed(1) + tr('% ของกลุ่มนี้', '% of this group') : tr('สัดส่วน ', 'Share ') + (row.pct || 0).toFixed(1) + tr('% ของทั้งหมด', '% of the total');
+      return '<div class="cm-row ' + row.kind + '" title="' + esc(title) + '"><span class="cm-name">' + esc(row.label) + '</span>'
+        + '<div class="cm-track"><div class="cm-fill" style="width:' + Math.max(0.3, row.width).toFixed(2) + '%;background:' + row.color + '"></div></div>'
+        + '<span class="cm-val">' + val + '</span></div>'
+        + (row.kind === 'main' ? '<div class="cm-asof">' + esc(cmAsOf(row.key, row.part)) + '</div>' : '');
+    }).join('');
+    const missing = Object.keys(CM_PARTS).filter(function(k){ return !parts[k]; });
+    el('cmWarn').textContent = missing.length ? tr('⚠️ ยังดึงไม่ได้: ', '⚠️ Not loaded yet: ') + missing.map(function(k){ return tr(CM_PARTS[k].th, CM_PARTS[k].en); }).join(', ') + tr(' · จะลองใหม่อัตโนมัติ', ' · retrying automatically') : '';
+    const b = parts.bonds, e = parts.equities;
+    el('cmNote').textContent = tr(
+      'หุ้น: มูลค่าตลาดรวมของบริษัทจดทะเบียนที่ companiesmarketcap.com ติดตาม' + (e && e.countries ? ' (' + e.countries + ' ประเทศ)' : '') + ' นับตามประเทศที่ตั้งบริษัท ราคาช้าไม่กี่นาทีถึงไม่กี่ชั่วโมง จีนนับเฉพาะบริษัทใหญ่ จึงต่ำกว่าตัวเลขรวมของตลาดหลักทรัพย์จีน'
+        + ' · ตราสารหนี้: พันธบัตรรัฐบาลและหุ้นกู้ทุกประเภทที่ยังไม่ครบกำหนด มูลค่าที่ตราไว้ จาก BIS Debt securities statistics' + (b && b.countries ? ' (' + b.countries + ' ประเทศ' + (b.period ? ' ไตรมาส ' + b.period : '') + ')' : '') + ' ยูโรโซนคือรวมประเทศสมาชิก'
+        + ' · ทองคำ: ราคาทองฟิวเจอร์ส (Yahoo GC=F, สำรอง PAXG จาก CoinGecko) × ปริมาณทองที่ขุดขึ้นมาแล้วทั้งโลก (World Gold Council สิ้นปี 2024 ราว 216,265 ตัน บวกการขุดปีละราว 3,661 ตัน)'
+        + ' · คริปโต: มูลค่าตลาดรวมจาก CoinGecko (สำรอง CoinPaprika) · ไม่รวมอสังหาริมทรัพย์ เงินฝาก และอนุพันธ์ · อัปเดตทุก 15 นาที',
+      'Stocks: total market cap of the listed companies companiesmarketcap.com tracks' + (e && e.countries ? ' (' + e.countries + ' countries)' : '') + ', by the country of the company\'s headquarters, prices delayed minutes to hours. China counts large companies only, so it reads below the exchanges\' own totals'
+        + ' · Bonds: all government and corporate debt securities outstanding at face value, BIS debt securities statistics' + (b && b.countries ? ' (' + b.countries + ' countries' + (b.period ? ', ' + b.period : '') + ')' : '') + '. The euro area is the sum of its members'
+        + ' · Gold: gold futures price (Yahoo GC=F, fallback PAXG from CoinGecko) × all gold ever mined (World Gold Council, ~216,265 t at end-2024 plus ~3,661 t of mine output a year)'
+        + ' · Crypto: total market cap from CoinGecko (fallback CoinPaprika) · excludes real estate, deposits and derivatives · refreshed every 15 minutes');
+  }
+  async function fetchCapMarkets(){
+    cmNextAt = Date.now() + CM_POLL_MS;
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/capital-markets', 15000);
+      const j = await r.json();
+      if(!j || !j.parts) throw new Error(j && j.error || 'HTTP ' + r.status);
+      renderCapMarkets(j);
+      if(isValidNum(j.ttl) && j.ttl > 0) cmNextAt = Date.now() + Math.min(j.ttl * 1000, CM_POLL_MS);
+    }catch(e){
+      console.warn('[capital-markets]', e);
+      if(!el('cmRows').innerHTML) el('cmTotal').textContent = tr('ดึงข้อมูลไม่สำเร็จ จะลองใหม่อัตโนมัติ', 'Unavailable right now. Retrying automatically.');
+      cmNextAt = Date.now() + 5 * 60 * 1000;
+    }
+  }
+  window.__capTest = { capMarketRows, fmtCapT, renderCapMarkets };
+  fetchCapMarkets();
+  setInterval(function(){ if(!document.hidden && Date.now() >= cmNextAt) fetchCapMarkets(); }, 60 * 1000);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden && Date.now() >= cmNextAt) fetchCapMarkets(); });
 
   // ---------- ตัวเลขเศรษฐกิจเพิ่มเติม: บ้าน · ดอกเบี้ยบ้าน · ค้าปลีก · ISM · Breakeven ----------
   // ตัวเลขจริง + กราฟ 12 เดือนมาจาก /.netlify/functions/econ-extra (FRED + Investing.com + ISM)

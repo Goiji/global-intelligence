@@ -19,6 +19,7 @@
     ├── news-feed.js                    ← พาดหัวข่าว: อ่าน Google News RSS ฝั่งเซิร์ฟเวอร์เอง
     ├── onchain.js                      ← NUPL / MVRV Z-Score / MVRV Ratio (BGeometrics, แคช 8 ชม.)
     ├── markets.js                      ← ตลาดสหรัฐฯ (S&P 500, Nasdaq, บอนด์, VIX/MOVE/OVX, DXY …) + SPXEW ความกว้างตลาด (Yahoo ^SPXEW เทียบ S&P 500 เป็น % ใน 1 เดือน)
+    ├── capital-markets.js              ← ขนาดตลาดทุนโลก (กราฟแท่ง): หุ้นรายประเทศ companiesmarketcap (สด) · ตราสารหนี้ BIS (รายไตรมาส) · ทอง = ราคาสด × ปริมาณทอง WGC · คริปโต CoinGecko · ไม่ต้องใช้ key, แคช 15 นาที
     ├── stablecoins.js                  ← มูลค่ารวม stablecoin + เปลี่ยนแปลง 7/30 วัน (DefiLlama ฟรี ไม่ต้องใช้ key, แคช 1 ชม., ไม่ใช้ KV)
     ├── usdjpy.js                       ← USD/JPY สด (ช้าไม่กี่นาที: Yahoo → CNBC → Stooq) — แถว USD/JPY ในกล่องราคาตลาด
     ├── wti.js                          ← ราคา WTI จริงจาก NYMEX (CL เดือนใกล้สุด, Yahoo → CNBC → Stooq) — แหล่งหลักของการ์ดน้ำมัน
