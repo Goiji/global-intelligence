@@ -3467,6 +3467,9 @@ window.setHeaderStamp();
     US:['🇺🇸','สหรัฐฯ','United States'], CN:['🇨🇳','จีน','China'], JP:['🇯🇵','ญี่ปุ่น','Japan'], GB:['🇬🇧','อังกฤษ','United Kingdom'],
     U2:['🇪🇺','ยูโรโซน','Euro area'], EU:['🇪🇺','ยุโรป (รวมอังกฤษ สวิส)','Europe (incl. UK, Switzerland)'], IN:['🇮🇳','อินเดีย','India'],
     CA:['🇨🇦','แคนาดา','Canada'], TW:['🇹🇼','ไต้หวัน','Taiwan'], KR:['🇰🇷','เกาหลีใต้','South Korea'], TH:['🇹🇭','ไทย','Thailand'],
+    BR:['🇧🇷','บราซิล','Brazil'], AU:['🇦🇺','ออสเตรเลีย','Australia'], CH:['🇨🇭','สวิตเซอร์แลนด์','Switzerland'], MX:['🇲🇽','เม็กซิโก','Mexico'],
+    SE:['🇸🇪','สวีเดน','Sweden'], SG:['🇸🇬','สิงคโปร์','Singapore'], DK:['🇩🇰','เดนมาร์ก','Denmark'], NO:['🇳🇴','นอร์เวย์','Norway'],
+    SA:['🇸🇦','ซาอุดีอาระเบีย','Saudi Arabia'], HK:['🇭🇰','ฮ่องกง','Hong Kong'], AE:['🇦🇪','ยูเออี','UAE'],
     BTC:['₿','Bitcoin','Bitcoin'], OTHER:['·','อื่นๆ','Others']
   };
   // ล้านล้านดอลลาร์ → "$62.2 ล้านล้าน" / "$62.2T" · ต่ำกว่า 1 ล้านล้าน → "$430 พันล้าน" / "$430B"
@@ -3497,7 +3500,8 @@ window.setHeaderStamp();
       Object.keys(by).filter(function(k){ return isValidNum(by[k]) && by[k] > 0 && CM_SUBS[k]; })
         .sort(function(a, b){ return (a === 'OTHER') - (b === 'OTHER') || by[b] - by[a]; })
         .forEach(function(k){
-          const s = CM_SUBS[k];
+          // "อื่นๆ" บอกให้ชัดว่าอื่นอะไร: คริปโต = เหรียญอื่นนอกจาก Bitcoin · หุ้น/ตราสารหนี้ = ประเทศที่ไม่ได้แยกแท่ง
+          const s = k === 'OTHER' ? (m.key === 'crypto' ? ['🪙','เหรียญอื่น','Other coins'] : ['🌍','ประเทศอื่น','Other countries']) : CM_SUBS[k];
           rows.push({ kind:'sub', key:m.key + ':' + k, label:s[0] + ' ' + tr(s[1], s[2]), value:by[k], share:by[k] / m.total * 100,
             width:by[k] / max * 100, color:meta.color });
         });

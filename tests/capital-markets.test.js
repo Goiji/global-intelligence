@@ -9,7 +9,7 @@ const { HTML, makeSandbox, runAllScripts } = require('./dom-stub.js');
 const cmcRow = (rank, name, usd, n) => `<tr><td class="rank-td td-right" data-sort="${rank}">${rank}</td><td data-sort="${name}"><a href="/x/">🏳 ${name}</a></td><td class="td-right" data-sort="${usd}"><span class="currency-symbol-left">$</span>x T</td><td class="td-right" data-sort="${n}">${n}</td></tr>`;
 const CMC_ROWS = [
   ['United States', 70e12], ['China', 10e12], ['Japan', 7e12], ['India', 4e12], ['United Kingdom', 4e12], ['Canada', 3.5e12],
-  ['Taiwan', 3e12], ['Switzerland', 3e12], ['France', 2.8e12], ['South Korea', 2.7e12], ['Germany', 2.7e12], ['Thailand', 0.4e12], ['Brazil', 0.8e12]
+  ['Taiwan', 3e12], ['Switzerland', 3e12], ['France', 2.8e12], ['South Korea', 2.7e12], ['Germany', 2.7e12], ['Thailand', 0.4e12], ['Brazil', 0.8e12], ['Chile', 0.15e12]
 ];
 const CMC_HTML = '<table><thead><tr><th>Rank</th><th>Name</th></tr></thead><tbody>' + CMC_ROWS.map((r, i) => cmcRow(i + 1, r[0], r[1], 100)).join('') + '</tbody></table>';
 const CMC_TOTAL = CMC_ROWS.reduce((a, r) => a + r[1], 0) / 1e12;
@@ -51,7 +51,8 @@ test('parseCmcCountries + equitiesPart: sums countries, Europe bar, "other" = th
   assert.equal(e.byKey.TH, 0.4);
   const sum = Object.values(e.byKey).reduce((a, v) => a + v, 0);
   assert.ok(Math.abs(sum - e.total) < 0.01, 'bars add up to the world total');
-  assert.equal(e.byKey.OTHER, 0.8, 'Brazil is the only country not shown on its own');
+  assert.equal(e.byKey.BR, 0.8);
+  assert.equal(e.byKey.OTHER, 0.15, 'Chile is the only country not shown on its own');
   assert.throws(() => T.parseCmcCountries('<tr><td data-sort="1"></td></tr>'), /too few/);
 });
 
@@ -183,6 +184,9 @@ test('page: rows sorted largest first, "others" last, bars on one scale, values 
   const rows = sb.__elements.get('cmRows').innerHTML;
   assert.match(rows, /หุ้นทั่วโลก/);
   assert.match(rows, /🇹🇭 ไทย/);
+  assert.match(rows, /เหรียญอื่น/, 'crypto "others" says other coins');
+  assert.match(rows, /ประเทศอื่น/, 'stocks/bonds "others" says other countries');
+  assert.doesNotMatch(rows, />· อื่นๆ</);
   assert.match(sb.__elements.get('cmTotal').innerHTML, /มูลค่ารวม/);
   assert.match(sb.__elements.get('cmStack').innerHTML, /flex:/);
   assert.match(sb.__elements.get('cmLegend').innerHTML, /ตราสารหนี้ทั่วโลก/);

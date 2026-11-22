@@ -47,8 +47,10 @@ const EUROPE = new Set(['United Kingdom', 'Switzerland', 'France', 'Germany', 'N
   'Slovakia', 'Croatia', 'Bulgaria', 'Monaco', 'Liechtenstein']);
 // bars under "stocks", in this order of preference (the page sorts them by size); the rest → "other"
 const EQUITY_KEYS = [['US', 'United States'], ['EU', null], ['CN', 'China'], ['JP', 'Japan'], ['IN', 'India'],
-  ['CA', 'Canada'], ['TW', 'Taiwan'], ['KR', 'South Korea'], ['TH', 'Thailand']];
-const BOND_KEYS = ['US', 'CN', 'U2', 'JP', 'GB'];
+  ['CA', 'Canada'], ['TW', 'Taiwan'], ['KR', 'South Korea'], ['SA', 'Saudi Arabia'], ['AU', 'Australia'], ['HK', 'Hong Kong'],
+  ['AE', 'United Arab Emirates'], ['BR', 'Brazil'], ['SG', 'Singapore'], ['TH', 'Thailand']];
+// euro-area members are inside U2, so they are not listed again; the rest of the bigger BIS reporters get their own bar
+const BOND_KEYS = ['US', 'CN', 'U2', 'JP', 'GB', 'CA', 'BR', 'KR', 'AU', 'IN', 'CH', 'MX', 'SE', 'SG', 'DK', 'NO', 'TH'];
 
 let memCache = { data: null, expiresAt: 0, lastGood: null };
 let bisCache = { data: null, expiresAt: 0 };
