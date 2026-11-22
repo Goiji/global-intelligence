@@ -495,26 +495,39 @@ body{margin:0}
   .src-note summary:hover,.src-note[open] summary{color:var(--text)}
   .src-note > div{margin-top:4px}
   .src-warn{margin-top:8px;font-size:11px;line-height:1.6;color:var(--warn)}
-  /* ขนาดตลาดทุนโลก: กราฟแท่งแนวนอน · แถวหลัก = ประเภทสินทรัพย์ · แถวย่อย = รายประเทศ (สเกลเดียวกันทั้งกราฟ) */
-  .cm-total{font-size:13px;color:var(--muted);margin:-6px 0 12px}
-  .cm-total b{color:var(--text);font-size:15px}
-  .cm-rows{display:grid;gap:7px}
-  .cm-row{display:grid;grid-template-columns:170px 1fr 118px;gap:10px;align-items:center;font-size:13px}
+  /* ขนาดตลาดทุนโลก: แถบสัดส่วนรวมด้านบน + กล่องละประเภท (หุ้น/ตราสารหนี้/ทอง/คริปโต) แต่ละกล่องมีแท่งรายประเทศ
+     สีโทนเดียวกับเว็บ (กรมท่า + ทอง) ไล่เฉดอ่อน ๆ ต่อประเภท แท่งรายประเทศเทียบกับยอดรวมของกลุ่มตัวเอง */
+  #capMarketsCard{--cm-bonds:#8ea2ff;--cm-bonds2:#b9c5ff;--cm-equities:#4cc9b0;--cm-equities2:#8fe3d2;--cm-gold:#d4b26a;--cm-gold2:#f1dba1;--cm-crypto:#ef9a62;--cm-crypto2:#f8c39d}
+  .cm-total{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:-4px 0 12px;color:var(--muted);font-size:12.5px}
+  .cm-total b{color:var(--text);font-size:28px;font-weight:850;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .cm-stack{display:flex;gap:3px;height:14px;border-radius:99px;overflow:hidden;background:rgba(255,255,255,.04)}
+  .cm-stack span{display:block;height:100%;min-width:4px}
+  .cm-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 0 18px;font-size:12px;color:var(--muted)}
+  .cm-legend span{display:inline-flex;align-items:center;gap:6px}
+  .cm-legend i{width:9px;height:9px;border-radius:3px;display:inline-block}
+  .cm-legend b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+  .cm-rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+  .cm-group{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:16px 16px 12px;position:relative;overflow:hidden}
+  .cm-group::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(180deg,var(--c1),var(--c2))}
+  .cm-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .cm-title{font-size:14px;font-weight:750;color:var(--text)}
+  .cm-asof{font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+  .cm-big{text-align:right;white-space:nowrap}
+  .cm-big b{display:block;font-size:22px;font-weight:850;color:var(--c2);font-variant-numeric:tabular-nums;line-height:1.1}
+  .cm-big small{font-size:11px;color:var(--muted)}
+  .cm-subs{display:grid;gap:9px;margin-top:14px}
+  .cm-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.7fr) auto;gap:10px;align-items:center;font-size:12.5px;color:#cfd7e8}
   .cm-row .cm-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .cm-row .cm-track{height:12px;background:#202b42;border-radius:99px;overflow:hidden}
-  .cm-row .cm-fill{height:100%;border-radius:99px;min-width:2px}
-  .cm-row .cm-val{text-align:right;font-variant-numeric:tabular-nums;font-weight:750}
-  .cm-row .cm-val small{color:var(--muted);font-weight:500;margin-left:4px}
-  .cm-row.main{margin-top:8px}
-  .cm-row.main:first-child{margin-top:0}
-  .cm-row.main .cm-name{font-weight:750}
-  .cm-row.sub{font-size:12px;color:#c9d2e6}
-  .cm-row.sub .cm-name{padding-left:18px}
-  .cm-row.sub .cm-track{height:7px}
-  .cm-row.sub .cm-fill{opacity:.55}
-  .cm-row.sub .cm-val{font-weight:600}
-  .cm-asof{grid-column:1/-1;font-size:10px;color:var(--muted);margin:-3px 0 0 18px}
-  @media(max-width:560px){ .cm-row{grid-template-columns:118px 1fr 84px;gap:8px;font-size:12px} .cm-row.sub{font-size:11px} .cm-row.sub .cm-name{padding-left:10px} .cm-row .cm-val small{display:none} }
+  .cm-row .cm-track{height:8px;background:rgba(255,255,255,.05);border-radius:99px;overflow:hidden}
+  .cm-row .cm-fill{height:100%;border-radius:99px;min-width:3px;background:linear-gradient(90deg,var(--c1),var(--c2))}
+  .cm-row.other .cm-fill{background:rgba(255,255,255,.18)}
+  .cm-row.other{color:var(--muted)}
+  .cm-row.th .cm-name{color:var(--accent-hi,#f0dba4);font-weight:700}
+  .cm-row .cm-val{text-align:right;font-variant-numeric:tabular-nums;font-weight:650;white-space:nowrap;min-width:150px}
+  .cm-row .cm-val small{display:inline-block;min-width:34px;font-size:10.5px;color:var(--muted);font-weight:500;margin-left:6px}
+  .cm-group.solo .cm-subs{display:none}
+  @media(max-width:800px){ .cm-rows{grid-template-columns:1fr} .cm-row .cm-val{min-width:130px} }
+  @media(max-width:480px){ .cm-group{padding:14px 12px 10px} .cm-big b{font-size:19px} .cm-total b{font-size:24px} .cm-row{gap:8px;font-size:12px;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) auto} .cm-row .cm-val{min-width:92px} .cm-row .cm-val small{min-width:30px;margin-left:4px} }
   .src-warn:empty{display:none}
   #riskWhy{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:12px}
   .why-cat{border:1px solid var(--line-soft);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.015)}
@@ -1193,6 +1206,8 @@ body{margin:0}
 <section class="card full" id="capMarketsCard">
 <h2>🌐 <span data-en="World Capital Markets">ขนาดตลาดทุนโลก</span> <span class="h-en" data-en="Where the money sits">เงินอยู่ที่ไหนบ้าง</span></h2>
 <div class="cm-total" id="cmTotal" data-en="Loading…">กำลังโหลด…</div>
+<div class="cm-stack" id="cmStack" aria-hidden="true"></div>
+<div class="cm-legend" id="cmLegend"></div>
 <div class="cm-rows" id="cmRows"></div>
 <div class="src-warn" id="cmWarn"></div>
 <details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div id="cmNote" class="muted"></div></details>
@@ -3294,10 +3309,10 @@ window.setHeaderStamp();
   const CM_POLL_MS = 15 * 60 * 1000;
   let cmNextAt = 0;
   const CM_PARTS = {
-    bonds:    { icon:'🏦', th:'ตราสารหนี้ทั่วโลก', en:'Global bonds', color:'#6ea8ff' },
-    equities: { icon:'📈', th:'หุ้นทั่วโลก', en:'Global stocks', color:'#45d483' },
-    gold:     { icon:'🥇', th:'ทองคำ', en:'Gold', color:'#f2c94c' },
-    crypto:   { icon:'₿',  th:'คริปโต', en:'Crypto', color:'#f7931a' }
+    bonds:    { icon:'🏦', th:'ตราสารหนี้ทั่วโลก', en:'Global bonds', color:'var(--cm-bonds)' },
+    equities: { icon:'📈', th:'หุ้นทั่วโลก', en:'Global stocks', color:'var(--cm-equities)' },
+    gold:     { icon:'🥇', th:'ทองคำ', en:'Gold', color:'var(--cm-gold)' },
+    crypto:   { icon:'₿',  th:'คริปโต', en:'Crypto', color:'var(--cm-crypto)' }
   };
   const CM_SUBS = {
     US:['🇺🇸','สหรัฐฯ','United States'], CN:['🇨🇳','จีน','China'], JP:['🇯🇵','ญี่ปุ่น','Japan'], GB:['🇬🇧','อังกฤษ','United Kingdom'],
@@ -3353,14 +3368,29 @@ window.setHeaderStamp();
     if(j && j.stale) Object.keys(parts).forEach(function(k){ if(parts[k]) parts[k].stale = true; });
     const r = capMarketRows(parts);
     if(!r.rows.length) throw new Error('no parts');
-    el('cmTotal').innerHTML = tr('รวมทั้งหมด ', 'Total ') + '<b>' + esc(fmtCapT(r.grand)) + '</b>' + tr(' (ดอลลาร์สหรัฐ) · เรียงจากใหญ่ไปเล็ก', ' (US$) · largest to smallest');
-    el('cmRows').innerHTML = r.rows.map(function(row){
-      const val = esc(fmtCapT(row.value)) + (row.kind === 'main' && isValidNum(row.pct) ? '<small>' + row.pct.toFixed(0) + '%</small>' : '');
-      const title = row.kind === 'sub' ? tr('สัดส่วน ', 'Share ') + row.share.toFixed(1) + tr('% ของกลุ่มนี้', '% of this group') : tr('สัดส่วน ', 'Share ') + (row.pct || 0).toFixed(1) + tr('% ของทั้งหมด', '% of the total');
-      return '<div class="cm-row ' + row.kind + '" title="' + esc(title) + '"><span class="cm-name">' + esc(row.label) + '</span>'
-        + '<div class="cm-track"><div class="cm-fill" style="width:' + Math.max(0.3, row.width).toFixed(2) + '%;background:' + row.color + '"></div></div>'
-        + '<span class="cm-val">' + val + '</span></div>'
-        + (row.kind === 'main' ? '<div class="cm-asof">' + esc(cmAsOf(row.key, row.part)) + '</div>' : '');
+    el('cmTotal').innerHTML = '<b>' + esc(fmtCapT(r.grand)) + '</b><span>' + tr('มูลค่ารวม (ดอลลาร์สหรัฐ) · เรียงจากใหญ่ไปเล็ก', 'in total (US$) · largest to smallest') + '</span>';
+    const mains = r.rows.filter(function(x){ return x.kind === 'main'; });
+    const cv = function(k){ return 'var(--cm-' + k + ')'; };
+    el('cmStack').innerHTML = mains.map(function(m){
+      return '<span style="flex:' + m.value.toFixed(3) + ' 1 0;background:linear-gradient(90deg,' + cv(m.key) + ',var(--cm-' + m.key + '2))" title="' + esc(m.label + ' ' + (m.pct || 0).toFixed(1) + '%') + '"></span>';
+    }).join('');
+    el('cmLegend').innerHTML = mains.map(function(m){
+      return '<span><i style="background:' + cv(m.key) + '"></i>' + esc(tr(CM_PARTS[m.key].th, CM_PARTS[m.key].en)) + ' <b>' + (m.pct || 0).toFixed(0) + '%</b></span>';
+    }).join('');
+    el('cmRows').innerHTML = mains.map(function(m){
+      const subs = r.rows.filter(function(x){ return x.kind === 'sub' && x.key.indexOf(m.key + ':') === 0; });
+      const top = subs.length ? Math.max.apply(null, subs.map(function(x){ return x.value; })) : 1;
+      const rows = subs.map(function(x){
+        const code = x.key.split(':')[1];
+        return '<div class="cm-row' + (code === 'OTHER' ? ' other' : '') + (code === 'TH' ? ' th' : '') + '" title="' + esc(x.label + ' · ' + x.share.toFixed(1) + tr('% ของกลุ่มนี้', '% of this group')) + '">'
+          + '<span class="cm-name">' + esc(x.label) + '</span>'
+          + '<div class="cm-track"><div class="cm-fill" style="width:' + Math.max(0.6, x.value / top * 100).toFixed(2) + '%"></div></div>'
+          + '<span class="cm-val">' + esc(fmtCapT(x.value)) + '<small>' + (x.share < 1 ? x.share.toFixed(1) : x.share.toFixed(0)) + '%</small></span></div>';
+      }).join('');
+      return '<div class="cm-group' + (subs.length ? '' : ' solo') + '" style="--c1:' + cv(m.key) + ';--c2:var(--cm-' + m.key + '2)">'
+        + '<div class="cm-head"><div><div class="cm-title">' + esc(m.label) + '</div><div class="cm-asof">' + esc(cmAsOf(m.key, m.part)) + '</div></div>'
+        + '<div class="cm-big"><b>' + esc(fmtCapT(m.value)) + '</b><small>' + (m.pct || 0).toFixed(0) + tr('% ของทั้งหมด', '% of total') + '</small></div></div>'
+        + (rows ? '<div class="cm-subs">' + rows + '</div>' : '') + '</div>';
     }).join('');
     const missing = Object.keys(CM_PARTS).filter(function(k){ return !parts[k]; });
     el('cmWarn').textContent = missing.length ? tr('⚠️ ยังดึงไม่ได้: ', '⚠️ Not loaded yet: ') + missing.map(function(k){ return tr(CM_PARTS[k].th, CM_PARTS[k].en); }).join(', ') + tr(' · จะลองใหม่อัตโนมัติ', ' · retrying automatically') : '';
