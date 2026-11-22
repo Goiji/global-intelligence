@@ -22,6 +22,10 @@ test('pickBtcPerps: BTC perpetuals only, big exchanges first, USDT before USD, c
   assert.deepEqual(p.map((x) => x.symbol), ['BTCUSDT_PERP.A', 'BTCUSD_PERP.A', 'BTCUSDT.6', 'BTCUSDT_PERP.3', 'BTCUSD_PERP.Z']);
   assert.equal(p[2].exchange, 'Bybit');
   assert.equal(T.pickBtcPerps(MARKETS, EXCHANGES, 2).length, 2);
+  // a third Binance contract waits until every exchange has its first two
+  const more = MARKETS.concat([{ symbol: 'BTCUSDC_PERP.A', exchange: 'A', base_asset: 'BTC', quote_asset: 'USDC', is_perpetual: true }]);
+  assert.deepEqual(T.pickBtcPerps(more, EXCHANGES, 5).map((x) => x.symbol), ['BTCUSDT_PERP.A', 'BTCUSD_PERP.A', 'BTCUSDT.6', 'BTCUSDT_PERP.3', 'BTCUSD_PERP.Z']);
+  assert.equal(T.pickBtcPerps(more, EXCHANGES, 6)[5].symbol, 'BTCUSDC_PERP.A');
 });
 
 test('sumLiquidations: rolling 1/4/12/24h windows, long vs short, per exchange', () => {
