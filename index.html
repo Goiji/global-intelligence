@@ -6130,16 +6130,15 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   }
   async function fetchRekt(){
     rektAt = Date.now();
-    let d = null, err = '';
+    let d = null;
     try{
       const r = await fetchWithTimeout('/.netlify/functions/liquidations', 12000);
       d = await r.json().catch(() => null);
-      if(!r.ok || !d || !d.windows){ err = (d && d.error) || ('HTTP ' + r.status); d = null; }
-    }catch(e){ err = 'network'; }
+      if(!r.ok || !d || !d.windows) d = null;
+    }catch(e){ d = null; }
     if(d){ renderRekt(d); return true; }
-    el('rektMeaning').textContent = err === 'missing-key'
-      ? tr('ยังไม่ได้ตั้งค่า COINALYZE_API_KEY บนเซิร์ฟเวอร์ ดูตัวเลขบน CoinGlass ไปก่อน', 'COINALYZE_API_KEY is not set on the server yet. Use CoinGlass for now.')
-      : tr('ดึงข้อมูลไม่สำเร็จ ลองใหม่ภายหลัง หรือดูบน CoinGlass', 'Could not load data. Try later, or open CoinGlass');
+    // ไม่บอกผู้ชมเรื่องตั้งค่าเซิร์ฟเวอร์ (เช่นยังไม่มี key) ข้อความเดียวกับดึงไม่สำเร็จทั่วไป
+    el('rektMeaning').textContent = tr('ดึงข้อมูลไม่สำเร็จ ลองใหม่ภายหลัง หรือดูบน CoinGlass', 'Could not load data. Try later, or open CoinGlass');
     return false;
   }
   setInterval(() => { if(document.body.classList.contains('theme-btc') && !document.hidden && Date.now() - rektAt >= 5 * 60 * 1000) fetchRekt(); }, 60 * 1000);
