@@ -9,7 +9,7 @@ const { HTML, makeSandbox, runAllScripts } = require('./dom-stub.js');
 const cmcRow = (rank, name, usd, n) => `<tr><td class="rank-td td-right" data-sort="${rank}">${rank}</td><td data-sort="${name}"><a href="/x/">🏳 ${name}</a></td><td class="td-right" data-sort="${usd}"><span class="currency-symbol-left">$</span>x T</td><td class="td-right" data-sort="${n}">${n}</td></tr>`;
 const CMC_ROWS = [
   ['United States', 70e12], ['China', 10e12], ['Japan', 7e12], ['India', 4e12], ['United Kingdom', 4e12], ['Canada', 3.5e12],
-  ['Taiwan', 3e12], ['Switzerland', 3e12], ['France', 2.8e12], ['South Korea', 2.7e12], ['Germany', 2.7e12], ['Thailand', 0.4e12], ['Brazil', 0.8e12], ['Chile', 0.15e12]
+  ['Taiwan', 3e12], ['Switzerland', 3e12], ['France', 2.8e12], ['South Korea', 2.7e12], ['Germany', 2.7e12], ['Thailand', 0.4e12], ['Brazil', 0.8e12], ['Chile', 0.15e12], ['Narnia', 0.05e12]
 ];
 const CMC_HTML = '<table><thead><tr><th>Rank</th><th>Name</th></tr></thead><tbody>' + CMC_ROWS.map((r, i) => cmcRow(i + 1, r[0], r[1], 100)).join('') + '</tbody></table>';
 const CMC_TOTAL = CMC_ROWS.reduce((a, r) => a + r[1], 0) / 1e12;
@@ -19,7 +19,7 @@ const BIS_CSV = 'FREQ,ADJUSTMENT,REF_AREA,COUNTERPART_AREA,REF_SECTOR,COUNTERPAR
      ['GB', '2026-Q1', 6833], ['DE', '2026-Q1', 5237], ['MT', '2025-Q4', 21.7], ['XX', 'bad', 5]]
     .map(([a, p, v]) => `Q,N,${a},XW,S1,S1,N,L,LE,F3,T,_Z,USD,_T,N,V,N,_T,${p},${v}`).join('\n');
 
-const CG_GLOBAL = JSON.stringify({ data: { total_market_cap: { usd: 2.08e12 }, market_cap_percentage: { btc: 57.8 }, updated_at: 1795313622 } });
+const CG_GLOBAL = JSON.stringify({ data: { total_market_cap: { usd: 2.08e12 }, market_cap_percentage: { btc: 57.8, eth: 10, usdt: 8, xrp: 4, bnb: 3.5, usdc: 3, sol: 3 }, updated_at: 1795313622 } });
 const YAHOO_GOLD = JSON.stringify({ chart: { result: [{ meta: { regularMarketPrice: 4000 } }] } });
 
 function fakeFetch(overrides = {}) {
@@ -52,7 +52,9 @@ test('parseCmcCountries + equitiesPart: sums countries, Europe bar, "other" = th
   const sum = Object.values(e.byKey).reduce((a, v) => a + v, 0);
   assert.ok(Math.abs(sum - e.total) < 0.01, 'bars add up to the world total');
   assert.equal(e.byKey.BR, 0.8);
-  assert.equal(e.byKey.OTHER, 0.15, 'Chile is the only country not shown on its own');
+  assert.equal(e.byKey.CL, 0.15, 'every mapped country gets its own key');
+  assert.equal(e.byKey.OTHER, 0.05, 'only names the map does not know fall into other');
+  assert.equal(e.byKey.FR, undefined, 'European countries live inside the Europe bar');
   assert.throws(() => T.parseCmcCountries('<tr><td data-sort="1"></td></tr>'), /too few/);
 });
 
@@ -68,6 +70,10 @@ test('parseBisDss + bondsPart: US$ bn → tn, euro area not counted twice, bad r
   assert.equal(p.asOf, '2026-03-31');
   assert.equal(p.cadence, 'quarterly');
   assert.ok(p.byKey.OTHER >= 0);
+  assert.equal(p.byKey.FR, undefined, 'euro members are inside the euro-area bar');
+  assert.equal(p.byKey.DE, undefined);
+  assert.equal(p.byKey.MT, undefined);
+  assert.equal(p.byKey.GB, 6.833, 'non-euro countries get their own bar');
   assert.throws(() => T.parseBisDss('nope'), /header/);
 });
 
@@ -82,6 +88,8 @@ test('quarterEnd, goldPart, cryptoPart', () => {
   const c = T.cryptoPart(CG_GLOBAL);
   assert.equal(c.total, 2.08);
   assert.equal(c.byKey.BTC, Math.round(2.08 * 0.578 * 1000) / 1000);
+  assert.deepEqual(c.top.map((x) => x[0]), ['ETH', 'XRP', 'BNB', 'SOL'], 'biggest coins, no BTC, no stablecoins');
+  assert.equal(c.top[0][1], 0.208);
   assert.throws(() => T.cryptoPart('{"data":{}}'), /implausible/);
 });
 
@@ -115,6 +123,25 @@ test('handler: all four parts, memory cache, gold falls back to PAXG, a dead sou
   assert.ok(body.errors.crypto);
   assert.equal(body.parts.crypto, undefined);
   assert.ok(body.parts.equities);
+});
+
+test('crypto: stablecoins split out of "other coins" with the DefiLlama total; skipped when it is missing or too big', async (t) => {
+  const p = T.cryptoPart(CG_GLOBAL);
+  const s = T.splitStablecoins(p, { total: 0.3, date: '2026-11-21' });
+  assert.equal(s.byKey.STABLE, 0.3);
+  assert.equal(s.byKey.OTHER, Math.round((p.byKey.OTHER - 0.3) * 1000) / 1000);
+  assert.equal(s.byKey.BTC, p.byKey.BTC);
+  assert.equal(T.splitStablecoins(p, null), p);
+  assert.equal(T.splitStablecoins(p, { total: 5 }), p, 'bigger than the non-BTC part = bad data, no split');
+
+  const realFetch = global.fetch;
+  t.after(() => { global.fetch = realFetch; T._clearCache(); });
+  T._clearCache();
+  const day = Date.UTC(2026, 10, 21) / 1000;
+  global.fetch = fakeFetch({ [T.URLS.STABLE_URL]: JSON.stringify([{ date: String(day), totalCirculatingUSD: { peggedUSD: 300e9 } }]) });
+  const body = JSON.parse((await cm.handler({})).body);
+  assert.equal(body.parts.crypto.byKey.STABLE, 0.3);
+  assert.equal(body.parts.crypto.stableSource, 'DefiLlama');
 });
 
 test('handler: a part that fails later is served from the last good copy (staleParts)', async (t) => {
@@ -187,6 +214,18 @@ test('page: rows sorted largest first, "others" last, bars on one scale, values 
   assert.match(rows, /เหรียญอื่น/, 'crypto "others" says other coins');
   assert.match(rows, /ประเทศอื่น/, 'stocks/bonds "others" says other countries');
   assert.doesNotMatch(rows, />· อื่นๆ</);
+  assert.match(rows, /title="ก้อนใหญ่สุดคือ Ethereum \$208 พันล้าน, XRP/, 'hover on other coins names the biggest ones');
+
+  // many countries: 16 biggest per box, Thailand always kept, the rest folded into "other countries"
+  const many = { equities: { total: 100, byKey: { TH: 0.4 } } };
+  for (let i = 0; i < 25; i++) many.equities.byKey['Q' + String.fromCharCode(65 + i)] = 3 + i;
+  many.equities.byKey.OTHER = 1;
+  const rr = capMarketRows(many).rows.filter((x) => x.kind === 'sub').map((x) => x.key.split(':')[1]);
+  assert.equal(rr.length, 16 + 2, '16 countries + Thailand + other');
+  assert.ok(rr.includes('TH'));
+  assert.equal(rr[rr.length - 1], 'OTHER');
+  const otherRow = capMarketRows(many).rows.find((x) => x.key === 'equities:OTHER');
+  assert.equal(otherRow.value, 1 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11, 'the 9 smallest folded in');
   assert.match(sb.__elements.get('cmTotal').innerHTML, /มูลค่ารวม/);
   assert.match(sb.__elements.get('cmStack').innerHTML, /flex:/);
   assert.match(sb.__elements.get('cmLegend').innerHTML, /ตราสารหนี้ทั่วโลก/);

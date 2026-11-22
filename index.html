@@ -3470,8 +3470,18 @@ window.setHeaderStamp();
     BR:['🇧🇷','บราซิล','Brazil'], AU:['🇦🇺','ออสเตรเลีย','Australia'], CH:['🇨🇭','สวิตเซอร์แลนด์','Switzerland'], MX:['🇲🇽','เม็กซิโก','Mexico'],
     SE:['🇸🇪','สวีเดน','Sweden'], SG:['🇸🇬','สิงคโปร์','Singapore'], DK:['🇩🇰','เดนมาร์ก','Denmark'], NO:['🇳🇴','นอร์เวย์','Norway'],
     SA:['🇸🇦','ซาอุดีอาระเบีย','Saudi Arabia'], HK:['🇭🇰','ฮ่องกง','Hong Kong'], AE:['🇦🇪','ยูเออี','UAE'],
-    BTC:['₿','Bitcoin','Bitcoin'], OTHER:['·','อื่นๆ','Others']
+    BTC:['₿','Bitcoin','Bitcoin'], STABLE:['💵','Stablecoin (USDT, USDC ฯลฯ)','Stablecoins (USDT, USDC…)'], OTHER:['·','อื่นๆ','Others']
   };
+  const CM_MAX_SUBS = 16;
+  // ประเทศที่ไม่มีใน CM_SUBS: ธงจากรหัส ISO 2 ตัว + ชื่อจาก Intl.DisplayNames (ไทย/อังกฤษ) · ใช้ไม่ได้ก็แสดงรหัส
+  function cmRegionName(code, lang){
+    try{ return new Intl.DisplayNames([lang], { type:'region' }).of(code) || code; }catch(e){ return code; }
+  }
+  function cmSubLabel(k){
+    if(CM_SUBS[k]) return CM_SUBS[k];
+    const flag = /^[A-Z]{2}$/.test(k) ? String.fromCodePoint(0x1F1E6 + k.charCodeAt(0) - 65, 0x1F1E6 + k.charCodeAt(1) - 65) : '·';
+    return [flag, cmRegionName(k, 'th'), cmRegionName(k, 'en')];
+  }
   // ล้านล้านดอลลาร์ → "$62.2 ล้านล้าน" / "$62.2T" · ต่ำกว่า 1 ล้านล้าน → "$430 พันล้าน" / "$430B"
   function fmtCapT(t){
     if(!isValidNum(t)) return '–';
@@ -3496,17 +3506,36 @@ window.setHeaderStamp();
       const meta = CM_PARTS[m.key];
       rows.push({ kind:'main', key:m.key, label:meta.icon + ' ' + tr(meta.th, meta.en), value:m.total, pct:grand ? m.total / grand * 100 : null,
         width:m.total / max * 100, color:meta.color, part:m.part });
-      const by = (m.part && m.part.byKey) || {};
-      Object.keys(by).filter(function(k){ return isValidNum(by[k]) && by[k] > 0 && CM_SUBS[k]; })
-        .sort(function(a, b){ return (a === 'OTHER') - (b === 'OTHER') || by[b] - by[a]; })
-        .forEach(function(k){
-          // "อื่นๆ" บอกให้ชัดว่าอื่นอะไร: คริปโต = เหรียญอื่นนอกจาก Bitcoin · หุ้น/ตราสารหนี้ = ประเทศที่ไม่ได้แยกแท่ง
-          const s = k === 'OTHER' ? (m.key === 'crypto' ? ['🪙','เหรียญอื่น','Other coins'] : ['🌍','ประเทศอื่น','Other countries']) : CM_SUBS[k];
-          rows.push({ kind:'sub', key:m.key + ':' + k, label:s[0] + ' ' + tr(s[1], s[2]), value:by[k], share:by[k] / m.total * 100,
-            width:by[k] / max * 100, color:meta.color });
-        });
+      // แสดงประเทศใหญ่สุด CM_MAX_SUBS แถวต่อกล่อง (ไทยแสดงเสมอ) ที่เหลือรวมเป็น "ประเทศอื่น" · กล่องหุ้นกับตราสารหนี้จึงสูงเท่ากัน
+      const by = Object.assign({}, (m.part && m.part.byKey) || {});
+      const keys = Object.keys(by).filter(function(k){ return k !== 'OTHER' && isValidNum(by[k]) && by[k] > 0; })
+        .sort(function(a, b){ return by[b] - by[a]; });
+      const keep = keys.slice(0, CM_MAX_SUBS);
+      if(keys.indexOf('TH') >= CM_MAX_SUBS) keep.push('TH');
+      let other = isValidNum(by.OTHER) ? by.OTHER : 0;
+      keys.forEach(function(k){ if(keep.indexOf(k) < 0) other += by[k]; });
+      keep.sort(function(a, b){ return by[b] - by[a]; });
+      if(other > 0.0005){ keep.push('OTHER'); by.OTHER = other; }
+      keep.forEach(function(k){
+        // "อื่นๆ" บอกให้ชัดว่าอื่นอะไร: คริปโต = เหรียญอื่นนอกจาก Bitcoin · หุ้น/ตราสารหนี้ = ประเทศที่ไม่ได้แยกแท่ง
+        const s = k === 'OTHER' ? (m.key === 'crypto' ? ['🪙','เหรียญอื่น (ไม่รวม stablecoin)','Other coins (excl. stablecoins)'] : ['🌍','ประเทศอื่น','Other countries']) : cmSubLabel(k);
+        rows.push({ kind:'sub', key:m.key + ':' + k, label:s[0] + ' ' + tr(s[1], s[2]), value:by[k], share:by[k] / m.total * 100,
+          width:by[k] / max * 100, color:meta.color });
+      });
     });
     return { rows:rows, grand:grand };
+  }
+  // ข้อความเมื่อชี้เมาส์ที่แถวคริปโต: บอกว่าในก้อนนั้นมีเหรียญอะไร (ตัวเลขสดจาก CoinGecko ถ้ามี)
+  function cmRowHint(group, code, part){
+    if(group !== 'crypto') return '';
+    if(code === 'STABLE') return tr('เหรียญที่ผูกค่ากับดอลลาร์ ก้อนใหญ่สุดคือ USDT (Tether) รองลงมาคือ USDC แล้วก็ USDe, DAI และอื่นๆ เป็นเงินที่จอดรอในโลกคริปโต',
+      'Coins pegged to the dollar: USDT (Tether) is the biggest, then USDC, USDe, DAI and others. Cash parked inside crypto');
+    if(code !== 'OTHER') return '';
+    const top = (part && Array.isArray(part.top) ? part.top : []).filter(function(t){ return t && isValidNum(t[1]); });
+    const NAMES = { ETH:'Ethereum', XRP:'XRP', BNB:'BNB', SOL:'Solana', DOGE:'Dogecoin', TRX:'TRON', ADA:'Cardano', STETH:'Lido stETH' };
+    const list = top.length ? top.map(function(t){ return (NAMES[t[0]] || t[0]) + ' ' + fmtCapT(t[1]); }).join(', ') : 'Ethereum, XRP, BNB, Solana';
+    return tr('ก้อนใหญ่สุดคือ ' + list + ' และเหรียญเล็กอีกหลายพันตัว (ไม่รวม Bitcoin และ stablecoin)',
+      'Biggest: ' + list + ', plus thousands of smaller coins (excluding Bitcoin and stablecoins)');
   }
   function cmAsOf(key, p){
     if(!p) return '';
@@ -3535,7 +3564,7 @@ window.setHeaderStamp();
       const top = subs.length ? Math.max.apply(null, subs.map(function(x){ return x.value; })) : 1;
       const rows = subs.map(function(x){
         const code = x.key.split(':')[1];
-        return '<div class="cm-row' + (code === 'OTHER' ? ' other' : '') + (code === 'TH' ? ' th' : '') + '" title="' + esc(x.label + ' · ' + x.share.toFixed(1) + tr('% ของกลุ่มนี้', '% of this group')) + '">'
+        return '<div class="cm-row' + (code === 'OTHER' ? ' other' : '') + (code === 'TH' ? ' th' : '') + '" title="' + esc(cmRowHint(m.key, code, m.part) || (x.label + ' · ' + x.share.toFixed(1) + tr('% ของกลุ่มนี้', '% of this group'))) + '">'
           + '<span class="cm-name">' + esc(x.label) + '</span>'
           + '<div class="cm-track"><div class="cm-fill" style="width:' + Math.max(0.6, x.value / top * 100).toFixed(2) + '%"></div></div>'
           + '<span class="cm-val">' + esc(fmtCapT(x.value)) + '<small>' + (x.share < 1 ? x.share.toFixed(1) : x.share.toFixed(0)) + '%</small></span></div>';
@@ -3552,11 +3581,11 @@ window.setHeaderStamp();
       'หุ้น: มูลค่าตลาดรวมของบริษัทจดทะเบียนที่ companiesmarketcap.com ติดตาม' + (e && e.countries ? ' (' + e.countries + ' ประเทศ)' : '') + ' นับตามประเทศที่ตั้งบริษัท ราคาช้าไม่กี่นาทีถึงไม่กี่ชั่วโมง จีนนับเฉพาะบริษัทใหญ่ จึงต่ำกว่าตัวเลขรวมของตลาดหลักทรัพย์จีน'
         + ' · ตราสารหนี้: พันธบัตรรัฐบาลและหุ้นกู้ทุกประเภทที่ยังไม่ครบกำหนด มูลค่าที่ตราไว้ จาก BIS Debt securities statistics' + (b && b.countries ? ' (' + b.countries + ' ประเทศ' + (b.period ? ' ไตรมาส ' + b.period : '') + ')' : '') + ' ยูโรโซนคือรวมประเทศสมาชิก'
         + ' · ทองคำ: ราคาทองฟิวเจอร์ส (Yahoo GC=F, สำรอง PAXG จาก CoinGecko) × ปริมาณทองที่ขุดขึ้นมาแล้วทั้งโลก (World Gold Council สิ้นปี 2024 ราว 216,265 ตัน บวกการขุดปีละราว 3,661 ตัน)'
-        + ' · คริปโต: มูลค่าตลาดรวมจาก CoinGecko (สำรอง CoinPaprika) · ไม่รวมอสังหาริมทรัพย์ เงินฝาก และอนุพันธ์ · อัปเดตทุก 15 นาที',
+        + ' · คริปโต: มูลค่าตลาดรวมจาก CoinGecko (สำรอง CoinPaprika) แยก stablecoin ออกด้วยยอดรวมจาก DefiLlama · ไม่รวมอสังหาริมทรัพย์ เงินฝาก และอนุพันธ์ · อัปเดตทุก 15 นาที',
       'Stocks: total market cap of the listed companies companiesmarketcap.com tracks' + (e && e.countries ? ' (' + e.countries + ' countries)' : '') + ', by the country of the company\'s headquarters, prices delayed minutes to hours. China counts large companies only, so it reads below the exchanges\' own totals'
         + ' · Bonds: all government and corporate debt securities outstanding at face value, BIS debt securities statistics' + (b && b.countries ? ' (' + b.countries + ' countries' + (b.period ? ', ' + b.period : '') + ')' : '') + '. The euro area is the sum of its members'
         + ' · Gold: gold futures price (Yahoo GC=F, fallback PAXG from CoinGecko) × all gold ever mined (World Gold Council, ~216,265 t at end-2024 plus ~3,661 t of mine output a year)'
-        + ' · Crypto: total market cap from CoinGecko (fallback CoinPaprika) · excludes real estate, deposits and derivatives · refreshed every 15 minutes');
+        + ' · Crypto: total market cap from CoinGecko (fallback CoinPaprika), stablecoins split out with the DefiLlama total · excludes real estate, deposits and derivatives · refreshed every 15 minutes');
   }
   async function fetchCapMarkets(){
     cmNextAt = Date.now() + CM_POLL_MS;

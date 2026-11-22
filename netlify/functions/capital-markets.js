@@ -16,7 +16,8 @@
 //              as its own bar but not added again).
 //   gold     — gold price (Yahoo GC=F → CoinGecko PAX Gold) × above-ground gold stock. The stock is the
 //              World Gold Council's end-2024 figure grown by one year of mine output per year since.
-//   crypto   — CoinGecko /global: total crypto market cap and Bitcoin's share (live). No key. CoinGecko
+//   crypto   — CoinGecko /global: total crypto market cap and Bitcoin's share (live), stablecoins split out with
+//              DefiLlama's total stablecoin supply (hourly). No key. CoinGecko
 //              rate-limits shared Cloudflare IPs (HTTP 429), so CoinPaprika /v1/global is the fallback.
 //
 // Answers from memory/CDN for 15 min (the BIS file for 12 h). A source that fails is filled from the
@@ -45,12 +46,19 @@ const EUROPE = new Set(['United Kingdom', 'Switzerland', 'France', 'Germany', 'N
   'Ireland', 'Denmark', 'Belgium', 'Norway', 'Finland', 'Poland', 'Austria', 'Luxembourg', 'Greece', 'Portugal',
   'Czech Republic', 'Iceland', 'Hungary', 'Romania', 'Cyprus', 'Malta', 'Estonia', 'Latvia', 'Lithuania', 'Slovenia',
   'Slovakia', 'Croatia', 'Bulgaria', 'Monaco', 'Liechtenstein']);
-// bars under "stocks", in this order of preference (the page sorts them by size); the rest → "other"
-const EQUITY_KEYS = [['US', 'United States'], ['EU', null], ['CN', 'China'], ['JP', 'Japan'], ['IN', 'India'],
-  ['CA', 'Canada'], ['TW', 'Taiwan'], ['KR', 'South Korea'], ['SA', 'Saudi Arabia'], ['AU', 'Australia'], ['HK', 'Hong Kong'],
-  ['AE', 'United Arab Emirates'], ['BR', 'Brazil'], ['SG', 'Singapore'], ['TH', 'Thailand']];
-// euro-area members are inside U2, so they are not listed again; the rest of the bigger BIS reporters get their own bar
-const BOND_KEYS = ['US', 'CN', 'U2', 'JP', 'GB', 'CA', 'BR', 'KR', 'AU', 'IN', 'CH', 'MX', 'SE', 'SG', 'DK', 'NO', 'TH'];
+// companiesmarketcap country name → ISO 3166 code, for every non-European country it lists. Each one gets its own
+// bar (the page shows the biggest and folds the rest into "other countries"); a name not in this map → "other".
+const CMC_ISO = {
+  'United States': 'US', 'China': 'CN', 'Japan': 'JP', 'India': 'IN', 'Canada': 'CA', 'Taiwan': 'TW', 'South Korea': 'KR',
+  'Saudi Arabia': 'SA', 'Australia': 'AU', 'Hong Kong': 'HK', 'United Arab Emirates': 'AE', 'Brazil': 'BR', 'Singapore': 'SG',
+  'Mexico': 'MX', 'Israel': 'IL', 'Thailand': 'TH', 'South Africa': 'ZA', 'Russia': 'RU', 'Malaysia': 'MY', 'Indonesia': 'ID',
+  'Vietnam': 'VN', 'Turkey': 'TR', 'Qatar': 'QA', 'Kuwait': 'KW', 'Chile': 'CL', 'Argentina': 'AR', 'New Zealand': 'NZ',
+  'Philippines': 'PH', 'Pakistan': 'PK', 'Oman': 'OM', 'Bahrain': 'BH', 'Cambodia': 'KH', 'Colombia': 'CO', 'Peru': 'PE',
+  'Egypt': 'EG', 'Nigeria': 'NG', 'Kazakhstan': 'KZ', 'Morocco': 'MA', 'Bermuda': 'BM', 'Cayman Islands': 'KY', 'Panama': 'PA',
+  'Uruguay': 'UY', 'Kenya': 'KE', 'Sri Lanka': 'LK', 'Bangladesh': 'BD', 'Jordan': 'JO', 'Macau': 'MO', 'Ukraine': 'UA'
+};
+// euro-area members: inside the BIS euro-area aggregate (U2), so they get no bar of their own (no double counting)
+const EURO = new Set(['AT', 'BE', 'BG', 'HR', 'CY', 'EE', 'FI', 'FR', 'DE', 'GR', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PT', 'SK', 'SI', 'ES']);
 
 let memCache = { data: null, expiresAt: 0, lastGood: null };
 let bisCache = { data: null, expiresAt: 0 };
@@ -95,15 +103,14 @@ function parseCmcCountries(html) {
 
 function equitiesPart(cmc) {
   const byKey = {};
-  for (const [key, name] of EQUITY_KEYS) {
-    if (key === 'EU') {
-      let s = 0;
-      for (const n of Object.keys(cmc.countries)) if (EUROPE.has(n)) s += cmc.countries[n];
-      if (s > 0) byKey.EU = r3(s);
-    } else if (cmc.countries[name] > 0) byKey[key] = r3(cmc.countries[name]);
+  let europe = 0, other = 0;
+  for (const [name, v] of Object.entries(cmc.countries)) {
+    if (EUROPE.has(name)) europe += v;
+    else if (CMC_ISO[name]) byKey[CMC_ISO[name]] = r3((byKey[CMC_ISO[name]] || 0) + v);
+    else other += v;
   }
-  const shown = Object.values(byKey).reduce((a, v) => a + v, 0);
-  byKey.OTHER = r3(Math.max(0, cmc.total - shown));
+  if (europe > 0) byKey.EU = r3(europe);
+  byKey.OTHER = r3(other);
   return { total: r3(cmc.total), byKey, asOf: new Date().toISOString(), cadence: 'live', source: 'companiesmarketcap.com', countries: cmc.count };
 }
 
@@ -140,9 +147,15 @@ function quarterEnd(period) {
 }
 
 function bondsPart(bis) {
+  // every reporting country gets a bar except euro members (they are inside U2); if U2 is missing, members show on their own
+  const hasU2 = bis.byArea.U2 > 0;
   const byKey = {};
-  for (const k of BOND_KEYS) if (bis.byArea[k] > 0) byKey[k] = r3(bis.byArea[k]);
-  const shown = Object.values(byKey).reduce((a, v) => a + v, 0);
+  for (const [k, v] of Object.entries(bis.byArea)) {
+    if (!(v > 0) || !/^[A-Z][A-Z0-9]$/.test(k)) continue;
+    if (hasU2 && EURO.has(k)) continue;
+    byKey[k] = r3(v);
+  }
+  const shown = Object.entries(byKey).reduce((a, [k, v]) => a + (k === 'U2' ? 0 : v), 0) + (hasU2 ? [...EURO].reduce((a, k) => a + (bis.byArea[k] || 0), 0) : 0);
   byKey.OTHER = r3(Math.max(0, bis.total - shown));
   return { total: r3(bis.total), byKey, asOf: quarterEnd(bis.period), period: bis.period, cadence: 'quarterly', source: 'BIS debt securities statistics', countries: bis.count };
 }
@@ -185,8 +198,14 @@ function cryptoPart(json) {
   const total = usd / 1e12;
   const byKey = {};
   if (btcPct > 0 && btcPct < 100) { byKey.BTC = r3(total * btcPct / 100); byKey.OTHER = r3(total - byKey.BTC); }
+  // biggest non-BTC, non-stablecoin coins with their US$ tn, for the "other coins" tooltip (CoinGecko lists the top ~10)
+  const STABLES = new Set(['usdt', 'usdc', 'dai', 'usde', 'usds', 'fdusd', 'tusd', 'pyusd', 'usd1', 'busd']);
+  const top = Object.entries(d.market_cap_percentage || {})
+    .filter(([k, v]) => k !== 'btc' && !STABLES.has(k) && Number(v) > 0)
+    .sort((a, b) => b[1] - a[1]).slice(0, 5)
+    .map(([k, v]) => [k.toUpperCase(), r3(total * Number(v) / 100)]);
   const at = Number(d.updated_at);
-  return { total: r3(total), byKey, asOf: new Date(at > 1e9 ? at * 1000 : Date.now()).toISOString(), cadence: 'live', source: 'CoinGecko' };
+  return { total: r3(total), byKey, top, asOf: new Date(at > 1e9 ? at * 1000 : Date.now()).toISOString(), cadence: 'live', source: 'CoinGecko' };
 }
 
 // CoinPaprika /v1/global → same shape as cryptoPart
@@ -196,14 +215,34 @@ function cryptoFromPaprika(json) {
   return { ...p, source: 'CoinPaprika' };
 }
 
+// Stablecoins (USDT, USDC, …) are inside the crypto total; DefiLlama gives their combined supply (US$ bn), the same
+// source the ₿ tab's stablecoin card uses. Split them out of "other coins" so that row means coins, not parked dollars.
+const { parseStablecoins, URL_ALL: STABLE_URL } = require('./stablecoins.js').__test;
+let stableCache = { data: null, expiresAt: 0 };
+async function loadStablecoins() {
+  if (stableCache.data && Date.now() < stableCache.expiresAt) return stableCache.data;
+  const d = parseStablecoins(await fetchText(STABLE_URL, 'application/json'));
+  const v = { total: d.latest / 1000, date: d.date };
+  stableCache = { data: v, expiresAt: Date.now() + 3600 * 1000 };
+  return v;
+}
+function splitStablecoins(p, stable) {
+  const by = p && p.byKey;
+  if (!by || !(by.OTHER > 0) || !stable || !(stable.total > 0) || stable.total >= by.OTHER) return p;
+  return { ...p, byKey: { ...by, STABLE: r3(stable.total), OTHER: r3(by.OTHER - stable.total) }, stableSource: 'DefiLlama', stableDate: stable.date };
+}
+
 async function buildPayload() {
   const jobs = {
     equities: async () => equitiesPart(parseCmcCountries(await fetchText(CMC_COUNTRIES, 'text/html'))),
     bonds: loadBonds,
     gold: loadGold,
     crypto: async () => {
-      try { return cryptoPart(await fetchText(COINGECKO_GLOBAL, 'application/json')); }
-      catch (e) { return cryptoFromPaprika(await fetchText(COINPAPRIKA_GLOBAL, 'application/json')); }
+      const stable = loadStablecoins().catch(() => null); // in parallel; the split is optional
+      let p;
+      try { p = cryptoPart(await fetchText(COINGECKO_GLOBAL, 'application/json')); }
+      catch (e) { p = cryptoFromPaprika(await fetchText(COINPAPRIKA_GLOBAL, 'application/json')); }
+      return splitStablecoins(p, await stable);
     }
   };
   const keys = Object.keys(jobs);
@@ -259,7 +298,7 @@ exports.handler = async function (event) {
 };
 
 module.exports.__test = {
-  parseCmcCountries, equitiesPart, parseBisDss, bondsPart, quarterEnd, goldPart, goldTonnes, cryptoPart, cryptoFromPaprika, buildPayload,
-  URLS: { CMC_COUNTRIES, BIS_DSS, COINGECKO_GLOBAL, COINPAPRIKA_GLOBAL, YAHOO_GOLD, COINGECKO_PAXG },
-  _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; bisCache = { data: null, expiresAt: 0 }; }
+  parseCmcCountries, equitiesPart, parseBisDss, bondsPart, quarterEnd, goldPart, goldTonnes, cryptoPart, cryptoFromPaprika, splitStablecoins, buildPayload,
+  URLS: { STABLE_URL, CMC_COUNTRIES, BIS_DSS, COINGECKO_GLOBAL, COINPAPRIKA_GLOBAL, YAHOO_GOLD, COINGECKO_PAXG },
+  _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; bisCache = { data: null, expiresAt: 0 }; stableCache = { data: null, expiresAt: 0 }; }
 };
