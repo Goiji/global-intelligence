@@ -83,7 +83,8 @@ test('handler: no key → 503 missing-key; with key → sums from one history ca
 });
 
 test('card: four boxes, CoinGlass link, source note, wired into the Cloudflare adapter', async () => {
-  for (const w of ['1h', '4h', '12h', '24h']) assert.match(HTML, new RegExp(`class="rekt-box" data-w="${w}"`));
+  for (const w of ['1h', '4h', '12h']) assert.match(HTML, new RegExp(`class="rekt-row" data-w="${w}"`));
+  assert.match(HTML, /id="rektBar24"/);
   assert.match(HTML, /href="https:\/\/www\.coinglass\.com\/LiquidationData"/);
   assert.match(HTML, /id="rektNote"/);
   assert.match(require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'functions', '[[path]].js'), 'utf8'), /liquidations from '\.\.\/netlify\/functions\/liquidations\.js'/);
@@ -92,6 +93,7 @@ test('card: four boxes, CoinGlass link, source note, wired into the Cloudflare a
   SCRIPTS.forEach((src) => vm.runInNewContext(src, sandbox, { filename: 'index.html' }));
   await new Promise((resolve) => setImmediate(resolve));
   const api = sandbox.window.__rektTest;
+  assert.equal(api.rektPct({ long: 192, short: 808, total: 1000 }, 'long'), '19.2%');
   assert.equal(api.fmtRekt(1.57e9), '$1.57B');
   assert.equal(api.fmtRekt(36.59e6), '$36.59M');
   assert.equal(api.fmtRekt(757810), '$757.8K');
