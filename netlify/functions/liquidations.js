@@ -12,10 +12,10 @@
 // the last 24h of every BTC perpetual we pick gives rolling 1h/4h/12h/24h sums.
 //
 // Limits: 40 calls/min per key, and each symbol counts as one call, so we ask for at most 20
-// symbols (one request) and cache the answer for 5 minutes. The market list is kept for a day.
+// symbols (one request) and cache the answer for 1 minute. The market list is kept for a day.
 
 const TIMEOUT_MS = 9000;
-const TTL_S = 300;
+const TTL_S = 60; // 20 symbols = 20 of the 40 calls/min a key allows, so at most one refresh a minute
 const MARKETS_TTL_MS = 24 * 3600 * 1000;
 const BASE = 'https://api.coinalyze.net/v1';
 const MAX_SYMBOLS = 20;
@@ -117,7 +117,7 @@ exports.handler = async function (event) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Cache-Control': `public, max-age=${TTL_S}, s-maxage=${TTL_S}, stale-while-revalidate=600`
+    'Cache-Control': `public, max-age=${TTL_S}, s-maxage=${TTL_S}, stale-while-revalidate=120`
   };
   const now = Date.now();
   if (memCache.data && now < memCache.expiresAt) {
