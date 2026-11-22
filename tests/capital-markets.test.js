@@ -147,9 +147,11 @@ test('Cloudflare adapter routes /.netlify/functions/capital-markets', () => {
   assert.match(src, /'capital-markets': capitalMarkets/);
 });
 
-test('page: card sits between Market Prices and US Markets, with a collapsible source note', () => {
+test('page: card is the last one on the first tab (after Morning Brief), with a collapsible source note', () => {
   const i = HTML.indexOf('id="capMarketsCard"');
-  assert.ok(i > HTML.indexOf('id="livePrices"') && i < HTML.indexOf('id="mktGrid"'));
+  const end = HTML.indexOf('</main>', i);
+  assert.ok(i > HTML.indexOf('id="aiBrief"') && end > i && end < HTML.indexOf('id="newsStatus"'));
+  assert.equal(/<section class="card/.test(HTML.slice(i, end)), false, 'no card after it');
   assert.match(HTML, /<details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล<\/summary><div id="cmNote"/);
 });
 
