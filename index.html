@@ -3468,7 +3468,7 @@ window.setHeaderStamp();
   };
   const CM_SUBS = {
     US:['🇺🇸','สหรัฐฯ','United States'], CN:['🇨🇳','จีน','China'], JP:['🇯🇵','ญี่ปุ่น','Japan'], GB:['🇬🇧','อังกฤษ','United Kingdom'],
-    U2:['🇪🇺','ยูโรโซน','Euro area'], EU:['🇪🇺','ยุโรป (รวมอังกฤษ สวิส)','Europe (incl. UK, Switzerland)'], IN:['🇮🇳','อินเดีย','India'],
+    U2:['🇪🇺','ยูโรโซน','Euro area'], EU:['🇪🇺','ยุโรป','Europe'], IN:['🇮🇳','อินเดีย','India'],
     CA:['🇨🇦','แคนาดา','Canada'], TW:['🇹🇼','ไต้หวัน','Taiwan'], KR:['🇰🇷','เกาหลีใต้','South Korea'], TH:['🇹🇭','ไทย','Thailand'],
     BR:['🇧🇷','บราซิล','Brazil'], AU:['🇦🇺','ออสเตรเลีย','Australia'], CH:['🇨🇭','สวิตเซอร์แลนด์','Switzerland'], MX:['🇲🇽','เม็กซิโก','Mexico'],
     SE:['🇸🇪','สวีเดน','Sweden'], SG:['🇸🇬','สิงคโปร์','Singapore'], DK:['🇩🇰','เดนมาร์ก','Denmark'], NO:['🇳🇴','นอร์เวย์','Norway'],
@@ -3529,7 +3529,36 @@ window.setHeaderStamp();
     return { rows:rows, grand:grand };
   }
   // ข้อความเมื่อชี้เมาส์ที่แถวคริปโต: บอกว่าในก้อนนั้นมีเหรียญอะไร (ตัวเลขสดจาก CoinGecko ถ้ามี)
+  // บริษัทเด่นของแต่ละประเทศ (หุ้นตัวใหญ่ที่สุด ณ ปลายปี 2026) + ทำธุรกิจอะไร · ใช้ในปุ่ม i ของกล่องหุ้น
+  const CM_CHAMPS = {
+    US:[['Nvidia','ชิป AI','AI chips'],['Apple','iPhone','iPhone'],['Microsoft','Windows, คลาวด์ Azure','Windows, Azure cloud'],['Alphabet','Google, YouTube','Google, YouTube']],
+    EU:[['ASML','เครื่องผลิตชิป (เนเธอร์แลนด์)','chip-making machines (NL)'],['SAP','ซอฟต์แวร์องค์กร (เยอรมนี)','business software (DE)'],['Roche, Nestlé','ยา, อาหาร (สวิส)','pharma, food (CH)'],['HSBC, AstraZeneca','ธนาคาร, ยา (อังกฤษ)','bank, pharma (UK)'],['LVMH','แบรนด์หรู Louis Vuitton (ฝรั่งเศส)','luxury, Louis Vuitton (FR)']],
+    CN:[['Tencent','WeChat, เกม','WeChat, games'],['ICBC','ธนาคารใหญ่สุดโลก','world\'s largest bank'],['Alibaba','อีคอมเมิร์ซ, คลาวด์','e-commerce, cloud'],['Kweichow Moutai','เหล้าเหมาไถ','Moutai liquor'],['CATL','แบตเตอรี่รถ EV','EV batteries']],
+    JP:[['Toyota','รถยนต์','cars'],['Mitsubishi UFJ','ธนาคาร','banking'],['Sony','เกม PlayStation, เซนเซอร์กล้อง','PlayStation, camera sensors'],['Hitachi','ระบบไฟฟ้า, ไอที','power grids, IT']],
+    IN:[['Reliance','น้ำมัน, ค้าปลีก, มือถือ Jio','oil, retail, Jio mobile'],['HDFC Bank','ธนาคาร','banking'],['TCS','บริการไอที','IT services'],['Bharti Airtel','มือถือ','mobile telecom']],
+    CA:[['Royal Bank of Canada','ธนาคาร','banking'],['Shopify','ระบบร้านค้าออนไลน์','online store platform'],['Enbridge','ท่อส่งน้ำมันและก๊าซ','oil & gas pipelines']],
+    TW:[['TSMC','รับผลิตชิปให้ Apple, Nvidia','makes chips for Apple, Nvidia'],['Foxconn','ประกอบ iPhone, เซิร์ฟเวอร์ AI','assembles iPhones, AI servers'],['MediaTek','ชิปมือถือ','phone chips']],
+    KR:[['Samsung Electronics','ชิปหน่วยความจำ, มือถือ','memory chips, phones'],['SK Hynix','หน่วยความจำ HBM สำหรับ AI','HBM memory for AI'],['Hyundai','รถยนต์','cars']],
+    SA:[['Saudi Aramco','น้ำมัน','oil'],['Al Rajhi Bank','ธนาคารอิสลาม','Islamic banking'],['ACWA Power','ไฟฟ้า, น้ำจืด','power, desalination']],
+    AU:[['Commonwealth Bank','ธนาคาร','banking'],['BHP','เหมืองแร่เหล็ก, ทองแดง','iron ore, copper mining'],['CSL','ยา, พลาสมา','biotech, plasma']],
+    HK:[['AIA','ประกันชีวิต','life insurance'],['HKEX','ตลาดหลักทรัพย์ฮ่องกง','Hong Kong stock exchange'],['Hang Seng Bank','ธนาคาร','banking']],
+    AE:[['IHC','บริษัทลงทุนของอาบูดาบี','Abu Dhabi holding company'],['TAQA','ไฟฟ้า, น้ำ','power, water'],['First Abu Dhabi Bank','ธนาคาร','banking']],
+    BR:[['Petrobras','น้ำมัน','oil'],['Itaú Unibanco','ธนาคาร','banking'],['Vale','แร่เหล็ก','iron ore']],
+    SG:[['DBS','ธนาคาร','banking'],['Sea','Shopee, เกม Garena','Shopee, Garena games'],['OCBC','ธนาคาร','banking']],
+    MX:[['Walmex','Walmart เม็กซิโก','Walmart Mexico'],['Grupo México','เหมืองทองแดง','copper mining'],['América Móvil','มือถือ','mobile telecom']],
+    IL:[['Check Point','ความปลอดภัยไซเบอร์','cybersecurity'],['Bank Leumi','ธนาคาร','banking'],['Teva','ยาสามัญ','generic drugs']],
+    ZA:[['Naspers','ถือหุ้น Tencent','owns a Tencent stake'],['FirstRand','ธนาคาร','banking'],['Gold Fields','เหมืองทอง','gold mining']],
+    ID:[['Bank Central Asia','ธนาคาร','banking'],['Bank Rakyat Indonesia','ธนาคาร','banking'],['Telkom Indonesia','โทรคมนาคม','telecom']],
+    MY:[['Maybank','ธนาคาร','banking'],['Public Bank','ธนาคาร','banking'],['Tenaga Nasional','การไฟฟ้า','power utility']],
+    TH:[['DELTA','อุปกรณ์ไฟฟ้าสำหรับศูนย์ข้อมูล, EV','power gear for data centres, EVs'],['Gulf','โรงไฟฟ้า, มือถือ AIS','power plants, AIS mobile'],['PTT','น้ำมัน, ก๊าซ','oil & gas'],['AOT','สนามบิน','airports']],
+    VN:[['Vingroup','อสังหาฯ, รถ VinFast','property, VinFast cars'],['Vietcombank','ธนาคาร','banking']]
+  };
   function cmRowHint(group, code, part){
+    if(group === 'equities'){
+      const c = CM_CHAMPS[code];
+      if(!c) return '';
+      return (code === 'EU' ? tr('รวมอังกฤษ สวิส และนอร์ดิก · ', 'Incl. UK, Switzerland and the Nordics · ') : '') + tr('บริษัทเด่น: ', 'Champion stocks: ') + c.map(function(x){ return x[0] + ' (' + tr(x[1], x[2]) + ')'; }).join(' · ');
+    }
     if(group !== 'crypto') return '';
     if(code === 'STABLE') return tr('เหรียญที่ผูกค่ากับดอลลาร์ ก้อนใหญ่สุดคือ USDT (Tether) รองลงมาคือ USDC แล้วก็ USDe, DAI และอื่นๆ เป็นเงินที่จอดรอในโลกคริปโต',
       'Coins pegged to the dollar: USDT (Tether) is the biggest, then USDC, USDe, DAI and others. Cash parked inside crypto');
