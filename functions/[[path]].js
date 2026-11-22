@@ -21,6 +21,7 @@ import econExtra from '../netlify/functions/econ-extra.js';
 import etfFlow from '../netlify/functions/etf-flow.js';
 import fredData from '../netlify/functions/fred-data.js';
 import goldTh from '../netlify/functions/gold-th.js';
+import liquidations from '../netlify/functions/liquidations.js';
 import markets from '../netlify/functions/markets.js';
 import newsFeed from '../netlify/functions/news-feed.js';
 import oilPrice from '../netlify/functions/oil-price.js';
@@ -32,7 +33,7 @@ import wti from '../netlify/functions/wti.js';
 
 const HANDLERS = {
   calendar, 'capital-markets': capitalMarkets, 'cmc-fear-greed': cmcFearGreed, consensus, 'country-profiles': countryProfiles,
-  dvol, 'econ-extra': econExtra, 'etf-flow': etfFlow, 'fred-data': fredData, 'gold-th': goldTh, markets,
+  dvol, 'econ-extra': econExtra, 'etf-flow': etfFlow, 'fred-data': fredData, 'gold-th': goldTh, liquidations, markets,
   'news-feed': newsFeed, 'oil-price': oilPrice, onchain, stablecoins, usdjpy, visitors, wti,
 };
 
