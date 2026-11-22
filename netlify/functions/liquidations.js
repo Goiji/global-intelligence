@@ -19,10 +19,11 @@ const TTL_S = 300;
 const MARKETS_TTL_MS = 24 * 3600 * 1000;
 const BASE = 'https://api.coinalyze.net/v1';
 const MAX_SYMBOLS = 20;
+const PER_EXCHANGE = 2;
 const WINDOWS = [['1h', 1], ['4h', 4], ['12h', 12], ['24h', 24]];
 
 // Largest BTC derivatives venues first; anything unlisted comes after, in Coinalyze's own order.
-const EXCHANGE_RANK = [/binance/i, /bybit/i, /okx|okex/i, /bitget/i, /hyperliquid/i, /gate/i, /bitmex/i,
+const EXCHANGE_RANK = [/binance/i, /bybit/i, /okx|okex/i, /bitget/i, /hyperliquid/i, /gate/i, /aster/i, /lighter/i, /bitmex/i,
   /deribit/i, /huobi|htx/i, /bingx/i, /mexc/i, /kraken/i, /coinbase/i, /bitfinex/i, /dydx/i, /phemex/i, /kucoin/i];
 const QUOTE_RANK = ['USDT', 'USD', 'USDC', 'FDUSD'];
 
@@ -60,7 +61,12 @@ function pickBtcPerps(markets, exchanges, max = MAX_SYMBOLS) {
     const q = QUOTE_RANK.indexOf(String(m.quote_asset).toUpperCase());
     return { symbol: String(m.symbol), exchange: ex, r: exchangeRank(ex), q: q < 0 ? QUOTE_RANK.length : q, i };
   }).sort((a, b) => a.r - b.r || a.q - b.q || a.i - b.i);
-  return ranked.slice(0, max);
+  // At most PER_EXCHANGE symbols per exchange first, so Binance/Bybit/OKX's many BTC contracts
+  // don't use up all 20 slots and leave out Bitget, Hyperliquid, Gate and others; spare slots
+  // then go to the remaining contracts in the same order.
+  const first = [], rest = [], seen = {};
+  for (const m of ranked) ((seen[m.exchange] = (seen[m.exchange] || 0) + 1) <= PER_EXCHANGE ? first : rest).push(m);
+  return first.concat(rest).slice(0, max);
 }
 
 // Coinalyze [{ symbol, history: [{ t (s), l, s }] }] → rolling window sums (USD) and per-exchange 24h.

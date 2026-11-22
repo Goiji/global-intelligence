@@ -6121,7 +6121,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     if(w24 && w4 && w24.total > 0 && w4.total / w24.total >= 0.5) txt += tr(' · ครึ่งหนึ่งของยอดทั้งวันเกิดใน 4 ชม. ล่าสุด = เพิ่งมีการล้างเป็นทอด ๆ', ' · half the day\'s total came in the last 4h = a cascade just happened');
     el('rektMeaning').innerHTML = '<b>' + tr('ความหมาย:', 'What it means:') + '</b> ' + txt.replace(/[&<>]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]));
     const ex = (d.exchanges || []).filter((e) => e.total > 0), sum = ex.reduce((a, e) => a + e.total, 0);
-    el('rektEx').textContent = sum > 0 ? tr('24 ชม. แยกตามตลาด: ', '24h by exchange: ') + ex.slice(0, 6).map((e) => e.name + ' ' + Math.round(e.total / sum * 100) + '%').join(' · ') : '';
+    el('rektEx').textContent = sum > 0 ? tr('24 ชม. แยกตามตลาด: ', '24h by exchange: ') + ex.slice(0, 7).map((e) => { const pc = e.total / sum * 100; return e.name + ' ' + (pc < 1 ? '<1' : Math.round(pc)) + '%'; }).join(' · ') : '';
     const names = [...new Set((d.markets || []).map((m) => String(m).split(' ')[0]))];
     const when = d.at ? new Date(d.at).toLocaleTimeString(window.GI_LOCALE || 'th-TH', { hour:'2-digit', minute:'2-digit' }) : '';
     el('rektAt').textContent = when ? tr('อัปเดต ', 'Updated ') + when + (d.stale ? tr(' (ข้อมูลล่าสุดที่ดึงได้)', ' (last good copy)') : '') : '';
