@@ -119,7 +119,7 @@
 .risk-scale .pin{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #0b1020;transform:translate(-50%,-50%);box-shadow:0 0 0 1px #fff6;transition:left .4s}
 .risk-scale .ticks{position:relative;height:14px;font-size:10px;color:var(--muted);margin-top:6px}.risk-scale .ticks span{position:absolute;transform:translateX(-50%)}.risk-scale .ticks span:first-child{transform:none}.risk-scale .ticks span:last-child{transform:translateX(-100%)}
 .chg{display:inline-block;font-size:11px;font-weight:700;margin-left:8px;min-width:58px;text-align:right}
-.full{grid-column:1/-1}.events{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.event{border:1px solid var(--line);background:var(--panel2);border-radius:14px;padding:15px}.event .rank{font-size:11px;color:var(--accent);font-weight:800}.event h3{font-size:15px;margin:7px 0}.event p{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 10px}.impact{font-size:12px;font-weight:800}.brief{font-size:15px;line-height:1.75;color:#d9e0ef}.watch{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.watch div{padding:14px;background:var(--panel2);border:1px solid var(--line);border-radius:13px}.watch b{display:block;font-size:14px;margin-bottom:4px}.footer{margin-top:18px;color:#68758e;font-size:12px;line-height:1.6}
+.full{grid-column:1/-1}.events{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.event{border:1px solid var(--line);background:var(--panel2);border-radius:14px;padding:15px}.event .rank{font-size:11px;color:var(--accent);font-weight:800}.event h3{font-size:15px;margin:7px 0}.event p{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 10px}.impact{font-size:12px;font-weight:800}.brief{font-size:15px;line-height:1.75;color:#d9e0ef}.footer{margin-top:18px;color:#68758e;font-size:12px;line-height:1.6}
 .news-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .news-filters button{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:12px;cursor:pointer}
 .news-filters button.on{border-color:var(--accent);color:var(--text);background:rgba(212,178,106,.12)}
@@ -133,7 +133,7 @@
 .news-item .nm{font-size:11px;color:var(--muted);margin-top:5px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .news-item .tag{color:var(--accent);font-weight:700}
 .news-more{margin-top:10px;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:8px 14px;font-size:12px;cursor:pointer;width:100%}
-@media(max-width:800px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.events,.watch{grid-template-columns:1fr}.top{flex-direction:column}.date{text-align:left}.barrow{grid-template-columns:100px 1fr 36px}.full{grid-column:auto}}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.events{grid-template-columns:1fr}.top{flex-direction:column}.date{text-align:left}.barrow{grid-template-columns:100px 1fr 36px}.full{grid-column:auto}}
 
 
 *{box-sizing:border-box}
@@ -424,8 +424,8 @@ body{margin:0}
   .muted{color:var(--muted)}
 
   /* inner tiles */
-  .metric,.event,.watch div,#btcTab .metric-card,#btcTab .sl-tile{background:rgba(255,255,255,.018);border:1px solid var(--line-soft);border-radius:14px;transition:border-color .25s,background .25s}
-  .metric:hover,.event:hover,.watch div:hover,#btcTab .metric-card:hover,#btcTab .sl-tile:hover{border-color:var(--gold-line);background:rgba(212,178,106,.035)}
+  .metric,.event,#btcTab .metric-card,#btcTab .sl-tile{background:rgba(255,255,255,.018);border:1px solid var(--line-soft);border-radius:14px;transition:border-color .25s,background .25s}
+  .metric:hover,.event:hover,#btcTab .metric-card:hover,#btcTab .sl-tile:hover{border-color:var(--gold-line);background:rgba(212,178,106,.035)}
   .metric .name,#btcTab .sl-name{font-size:11px;font-weight:500;letter-spacing:.06em;color:var(--muted);text-transform:none}
   .metric .num{font-family:var(--sans);font-weight:600;font-size:26px;color:#f6f1e6}
   /* สีตัวเลขบนการ์ด = สีเดียวกับกล่องวิเคราะห์ด้านล่าง (ตั้งโดย toneNum() ใน renderFedAnalysis) */
@@ -435,7 +435,6 @@ body{margin:0}
   .event h3{font-family:var(--sans);font-weight:600;font-size:15px;line-height:1.5;color:#f3eee3}
   .impact{color:var(--accent-hi);font-weight:500;font-size:12px}
   .brief{font-size:15px;line-height:1.9;color:#d8d2c4;font-weight:300}
-  .watch b{font-weight:600;color:#f3eee3}
 
   /* hero numbers in serif */
   .score{font-family:var(--serif);font-weight:700;font-size:72px;letter-spacing:-.03em;color:#f8f3e8}
@@ -1171,10 +1170,6 @@ body{margin:0}
 <div class="brief" id="aiBrief" data-en="Analysing the latest news…">กำลังวิเคราะห์ข่าวล่าสุด…</div>
 </section>
 
-<section class="card full">
-<h2>👀 <span data-en="Watch List">สิ่งที่ต้องจับตาวันนี้</span> <span class="h-en i18n-th">Watch List</span></h2>
-<div class="watch" id="watchList"></div>
-</section>
 </main>
 <div class="footer">
   <span id="newsStatus" data-en="Loading news…">กำลังโหลดข่าว…</span> ·
@@ -1627,9 +1622,8 @@ window.setHeaderStamp();
     }));
 
     const brief = buildBrief({ worldRiskScore, badge, categories, assets, headlines: totalHeadlines });
-    const watch = sorted.slice(0,4).map(f => ({ key: f.key, title: f.label, subtitle: categories[f.key]+'/100' }));
 
-    return { worldRiskScore, badge, confidence, categories, drivers, assets, topEvents, aiBrief: brief, headlines: totalHeadlines, watch, news: buildNewsList(allFeeds) };
+    return { worldRiskScore, badge, confidence, categories, drivers, assets, topEvents, aiBrief: brief, headlines: totalHeadlines, news: buildNewsList(allFeeds) };
   }
 
   // "สรุปเช้านี้" — สร้างจากตัวเลขตอนแสดงผล (ไม่ใช่ข้อความที่แคชไว้) จึงสลับภาษาได้แม้ใช้ข้อมูลจากแคช
@@ -1871,10 +1865,6 @@ window.setHeaderStamp();
       + '<span class="muted">' + tr('— สรุปอัตโนมัติจากพาดหัวข่าว ไม่ใช่คำแนะนำการลงทุน', '— Auto-generated from headlines. Not investment advice.') + '</span>';
 
     if(Array.isArray(d.news)) renderNewsList(d.news);
-
-    el('watchList').innerHTML = (d.watch || []).map(w =>
-      `<div><b>${esc(feedLabel(w.key, w.title))}</b><span class="muted">${esc(w.subtitle)}</span></div>`
-    ).join('');
   }
 
   // ---------- World Risk Score history + trend sparkline ----------
