@@ -1,7 +1,7 @@
 // Netlify Function: US market snapshot + 12-month histories for the dashboard's sparklines.
 //
 //   GET /.netlify/functions/markets
-//   → { series: { sp500, nasdaq100, us10y, us2y, vix, ovx, move, sofrSpread, levShort, dollar, cpi, unrate, fedUpper }, asOf, ttl }
+//   → { series: { sp500, nasdaq100, cape, us10y, us2y, vix, ovx, move, sofrSpread, levShort, dollar, cpi, unrate, fedUpper }, asOf, ttl }
 //     each series: { label, unit, latest, date, prev, change, hist: [[isoDate, value], ...] }
 //
 // Every series comes from FRED. The public graph CSV needs no key; FRED_API_KEY (optional, the
@@ -49,6 +49,12 @@
 // EW / S&P ratio indexed to 100 a year ago (weekly) for the sparkline. Same KV entry as everything
 // else here (markets:lastGood): no new KV reads or writes.
 //
+// Shiller PE (cape) = S&P 500 price ÷ the 10-year average of inflation-adjusted earnings (CAPE).
+// From multpl.com's monthly table (one page, every month since 1871, plus a live estimate for today
+// as the first row). Long-run mean / median / peak / percentile are worked out from the monthly rows
+// (not hard-coded), hist = last 10 years monthly for the sparkline. The page is ~700 KB, so the
+// parsed rows are kept in memory for 3 h. Same KV entry as everything else (markets:lastGood).
+//
 // Caching: memory + CDN for 1 h, but only 15 min on CPI / jobs / FOMC days (same calendar as
 // fred-data.js) so the CPI / unemployment / Fed sparklines don't trail the cards for hours after a
 // release. If every source fails we serve the last good payload marked stale instead of an error.
@@ -85,6 +91,9 @@ const MOF_HISTORY = 'https://www.mof.go.jp/english/policy/jgbs/reference/interes
 const MOF_TIMEOUT_MS = 8000;
 const JGB_HISTORY_TTL_MS = 12 * 60 * 60 * 1000;
 const BROWSER_UA = 'Mozilla/5.0 (compatible; global-intelligence-dashboard/1.0)';
+const MULTPL_CAPE = 'https://www.multpl.com/shiller-pe/table/by-month';
+const CAPE_TIMEOUT_MS = 9000;
+const CAPE_ROWS_TTL_MS = 3 * 60 * 60 * 1000;
 const TREASURY_CSV = 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/all/';
 const TTL_S = 60 * 60;
 const RELEASE_TTL_S = 15 * 60;
@@ -98,6 +107,7 @@ const SERIES = {
   vix:      { id: 'VIXCLS',   label: 'VIX', unit: '', cadence: 'daily' },
   ovx:      { id: 'OVXCLS',   label: 'OVX', unit: '', cadence: 'daily' },
   move:     { id: '^MOVE',    label: 'MOVE', unit: '', cadence: 'daily', loader: 'yahoo' },
+  cape:     { id: 'CAPE',     label: 'Shiller PE (CAPE)', unit: '', cadence: 'monthly', loader: 'cape' },
   spxew:    { id: '^SPXEW',   label: 'S&P 500 Equal Weight', unit: '', cadence: 'daily', loader: 'spxew' },
   sofrSpread: { id: 'SOFR-IORB', label: 'SOFR − IORB', unit: 'bp', cadence: 'daily', loader: 'sofrSpread' },
   levShort: { id: 'CFTC-TFF-UST', label: 'Leveraged funds net short, UST futures', unit: '$bn', cadence: 'weekly', loader: 'cftc' },
@@ -110,6 +120,7 @@ const SERIES = {
 };
 
 let jgbHistCache = { rows: null, expiresAt: 0 };
+let capeCache = { rows: null, expiresAt: 0 };
 
 let memCache = { data: null, expiresAt: 0, lastGood: null };
 
@@ -416,6 +427,75 @@ async function fetchYahooObs(url) {
   throw new Error(errors.join(' | '));
 }
 
+// multpl.com table → [{date, value}] oldest first. Rows look like
+//   <tr class="odd"><td>Nov 20, 2026</td><td>\n \n36.44\n</td></tr>
+// (an estimate row can carry a marker like "&#x2002;" or "†" before the number).
+const MONTHS = { Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6, Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12 };
+function parseMultplTable(html) {
+  const byDate = new Map();
+  const re = /<td[^>]*>\s*([A-Z][a-z]{2})[a-z]*\.?\s+(\d{1,2}),\s*(\d{4})\s*<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>/g;
+  let m;
+  while ((m = re.exec(String(html)))) {
+    const mo = MONTHS[m[1]];
+    const num = m[4].replace(/<[^>]*>/g, ' ').replace(/&#?[a-z0-9]+;/gi, ' ').match(/-?\d+(?:\.\d+)?/);
+    const v = num ? parseFloat(num[0]) : NaN;
+    if (!mo || !isFinite(v) || v <= 0 || v > 200) continue;
+    const date = `${m[3]}-${String(mo).padStart(2, '0')}-${String(m[2]).padStart(2, '0')}`;
+    byDate.set(date, v);
+  }
+  return [...byDate.entries()].map(([date, value]) => ({ date, value })).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// CAPE rows → card payload: latest (today's estimate when multpl has one), change vs the previous
+// row (= last month start), long-run stats from the month-start rows, 10-year monthly history.
+function capeSummary(rows) {
+  if (!rows || rows.length < 24) throw new Error('cape: too few rows');
+  const r2 = (v) => Math.round(v * 100) / 100;
+  const last = rows[rows.length - 1], prev = rows[rows.length - 2];
+  const monthly = rows.filter((o) => o.date.endsWith('-01'));
+  const base = monthly.length >= 24 ? monthly : rows;
+  const vals = base.map((o) => o.value).sort((a, b) => a - b);
+  const mid = vals.length >> 1;
+  const median = vals.length % 2 ? vals[mid] : (vals[mid - 1] + vals[mid]) / 2;
+  const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const peak = base.reduce((a, b) => (b.value > a.value ? b : a));
+  const below = vals.filter((v) => v < last.value).length;
+  const tenYrsAgo = `${Number(last.date.slice(0, 4)) - 10}${last.date.slice(4)}`;
+  const yearAgo = `${Number(last.date.slice(0, 4)) - 1}${last.date.slice(4, 7)}-01`;
+  const y1 = base.filter((o) => o.date <= yearAgo).pop();
+  const hist = base.filter((o) => o.date >= tenYrsAgo);
+  if (hist.length && hist[hist.length - 1].date !== last.date) hist.push(last);
+  return {
+    label: SERIES.cape.label,
+    unit: '',
+    latest: r2(last.value),
+    date: last.date,
+    prev: r2(prev.value),
+    prevDate: prev.date,
+    change: r2(last.value - prev.value),
+    mean: r2(mean),
+    median: r2(median),
+    peak: r2(peak.value),
+    peakDate: peak.date,
+    pctile: Math.round(below / vals.length * 1000) / 10,   // % of months since 1871 below today
+    timesMean: r2(last.value / mean),
+    yearAgo: y1 ? r2(y1.value) : null,
+    since: base[0].date,
+    months: base.length,
+    hist: hist.map((o) => [o.date, r2(o.value)]),
+    source: 'multpl'
+  };
+}
+
+async function loadCape(now = Date.now()) {
+  if (!capeCache.rows || now >= capeCache.expiresAt) {
+    const rows = parseMultplTable(await fetchText(MULTPL_CAPE, CAPE_TIMEOUT_MS, BROWSER_UA, { Accept: 'text/html' }));
+    if (rows.length < 24) throw new Error('cape: multpl table had ' + rows.length + ' rows');
+    capeCache = { rows, expiresAt: now + CAPE_ROWS_TTL_MS };
+  }
+  return capeSummary(capeCache.rows);
+}
+
 // Daily % moves of two series on their shared dates, last `n` of them → largest gap in pp (null = too few).
 function maxDailyGap(aObs, bObs, n = EW_CHECK_DAYS) {
   const b = new Map((bObs || []).map((o) => [o.date, o.value]));
@@ -625,6 +705,7 @@ async function buildPayload(apiKey, event = null) {
       ? loadDxy().catch((e) => loadSeries(k, apiKey).then((s) => ({ ...s, dxyError: e.message })))
       : SERIES[k].loader === 'yahoo' ? loadMove()
       : SERIES[k].loader === 'spxew' ? loadSpxew(raw)
+      : SERIES[k].loader === 'cape' ? loadCape()
       : SERIES[k].loader === 'sofrSpread' ? loadSofrSpread(apiKey)
       : SERIES[k].loader === 'cftc' ? loadLevShort()
       : loadSeries(k, apiKey, raw)))),
@@ -753,4 +834,4 @@ exports.handler = async function (event) {
   }
 };
 
-module.exports.__test = { breadthSummary, pctOver, maxDailyGap, parseMofCsv, mergeJgb, withLatest, joinUsJp, changeOver, usJpSummary, parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, parseCftcLevShort, SERIES, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; jgbHistCache = { rows: null, expiresAt: 0 }; } };
+module.exports.__test = { parseMultplTable, capeSummary, MULTPL_CAPE, breadthSummary, pctOver, maxDailyGap, parseMofCsv, mergeJgb, withLatest, joinUsJp, changeOver, usJpSummary, parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, parseCftcLevShort, SERIES, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; jgbHistCache = { rows: null, expiresAt: 0 }; capeCache = { rows: null, expiresAt: 0 }; } };
