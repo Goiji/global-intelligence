@@ -6106,9 +6106,9 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   function rektZone(w){
     if(!w || !(w.total > 0)) return null;
     const lp = w.long / w.total;
-    return lp >= 0.65 ? ['🟢', tr('long โดนล้างเป็นหลัก (' + Math.round(lp * 100) + '%) ราคาหักลงจนคนเปิด long โดนบังคับขาย', 'mostly longs liquidated (' + Math.round(lp * 100) + '%): price dropped and leveraged longs were force-sold')]
-      : lp <= 0.35 ? ['🔴', tr('short โดนล้างเป็นหลัก (' + Math.round((1 - lp) * 100) + '%) ราคาพุ่งจนคนเปิด short ต้องซื้อคืน (short squeeze)', 'mostly shorts liquidated (' + Math.round((1 - lp) * 100) + '%): price spiked and shorts had to buy back (short squeeze)')]
-      : ['🟡', tr('โดนล้างพอ ๆ กันทั้งสองฝั่ง (long ' + Math.round(lp * 100) + '%) ราคาแกว่งทั้งขึ้นและลง', 'both sides hit about equally (longs ' + Math.round(lp * 100) + '%): price whipsawed')];
+    return lp >= 0.65 ? ['🟢', tr('long โดนล้างเป็นหลัก (' + Math.round(lp * 100) + '%)', 'mostly longs liquidated (' + Math.round(lp * 100) + '%)')]
+      : lp <= 0.35 ? ['🔴', tr('short โดนล้างเป็นหลัก (' + Math.round((1 - lp) * 100) + '%)', 'mostly shorts liquidated (' + Math.round((1 - lp) * 100) + '%)')]
+      : ['🟡', tr('โดนล้างพอ ๆ กันทั้งสองฝั่ง (long ' + Math.round(lp * 100) + '%)', 'both sides hit about equally (longs ' + Math.round(lp * 100) + '%)')];
   }
   function rektBar(w){
     if(!w || !(w.total > 0)) return '';
@@ -6132,11 +6132,8 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       box.querySelector('b.l').textContent = ok ? lp.toFixed(1) + '%' : '–';
       box.querySelector('b.s').textContent = ok ? sp.toFixed(1) + '%' : '–';
     });
-    const w24 = d.windows && d.windows['24h'], w4 = d.windows && d.windows['4h'], z = rektZone(w24);
+    const z = rektZone(d.windows && d.windows['24h']);
     let txt = z ? z[0] + ' 24' + tr(' ชม.: ', 'h: ') + z[1] : tr('24 ชม. ที่ผ่านมาแทบไม่มีการล้างพอร์ต', 'Almost no liquidations in the last 24h');
-    // 4 ชม. ล่าสุดเอียงไปคนละฝั่งกับทั้งวัน = ทิศทางเพิ่งกลับ
-    const z4 = rektZone(w4);
-    if(z && z4 && z[0] !== '🟡' && z4[0] !== '🟡' && z4[0] !== z[0]) txt += tr(' · แต่ 4 ชม. ล่าสุดกลับเป็นอีกฝั่ง ทิศทางเพิ่งเปลี่ยน', ' · but the last 4h lean the other way: the direction just turned');
     el('rektMeaning').innerHTML = '<b>' + tr('ความหมาย:', 'What it means:') + '</b> ' + txt.replace(/[&<>]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]));
     const ex = (d.exchanges || []).filter((e) => e.total > 0), sum = ex.reduce((a, e) => a + e.total, 0);
     el('rektEx').textContent = sum > 0 ? tr('ตลาดที่โดนล้างมากสุด 24 ชม.: ', 'Largest exchange share, 24h: ') + ex.slice(0, 3).map((e) => { const pc = e.total / sum * 100; return e.name + ' ' + (pc < 1 ? '<1' : Math.round(pc)) + '%'; }).join(' · ') : '';
