@@ -24,6 +24,14 @@ test('every colour legend on the page splits into one line per colour (Thai and 
   }
 });
 
+test('no legend uses the same colour for two different levels', () => {
+  for (const inner of LEGENDS) {
+    const body = inner.replace(/^<b>[^<]*<\/b>/, '').replace(/\([^)]*\)/g, '');
+    const firsts = body.split(' · ').map((seg) => (seg.match(DOT) || [])[0]).filter(Boolean);
+    assert.equal(new Set(firsts).size, firsts.length, 'repeated colour in: ' + inner.slice(0, 80));
+  }
+});
+
 test('Buffett legend: green, yellow, red on separate lines, the note stays with red', async () => {
   const sb = await runAllScripts(makeSandbox());
   const out = sb.colorLegendHtml('<b>อ่านสี:</b> 🟢 ต่ำกว่า 100% = ถูก · 🟡 100% ถึง 150% = เริ่มแพง · 🔴 150% ขึ้นไป = แพงมาก (พีคราว 160% · ช่วงหลัง 200%)');
