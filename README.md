@@ -20,6 +20,7 @@
     ├── onchain.js                      ← NUPL / MVRV Z-Score / MVRV Ratio (BGeometrics, แคช 8 ชม.)
     ├── markets.js                      ← ตลาดสหรัฐฯ (S&P 500, Nasdaq, บอนด์, VIX/MOVE/OVX, DXY …) + SPXEW ความกว้างตลาด (Yahoo ^SPXEW เทียบ S&P 500 เป็น % ใน 1 เดือน)
     ├── capital-markets.js              ← ขนาดตลาดทุนโลก (กราฟแท่ง): หุ้นรายประเทศ companiesmarketcap (สด) · ตราสารหนี้ BIS (รายไตรมาส) · ทอง = ราคาสด × ปริมาณทอง WGC · คริปโต CoinGecko · ไม่ต้องใช้ key, แคช 15 นาที
+    ├── country-profiles.js             ← ปุ่ม i ของแต่ละประเทศในตลาดทุนโลก: 4 บริษัทใหญ่สุด companiesmarketcap · คน 65+ / ดัชนีทุนมนุษย์ / ค่าครองชีพ World Bank · ผลผลิตต่อชั่วโมง ILO · ไม่ต้องใช้ key, แคช 12 ชม.
     ├── stablecoins.js                  ← มูลค่ารวม stablecoin + เปลี่ยนแปลง 7/30 วัน (DefiLlama ฟรี ไม่ต้องใช้ key, แคช 1 ชม., ไม่ใช้ KV)
     ├── usdjpy.js                       ← USD/JPY สด (ช้าไม่กี่นาที: Yahoo → CNBC → Stooq) — แถว USD/JPY ในกล่องราคาตลาด
     ├── wti.js                          ← ราคา WTI จริงจาก NYMEX (CL เดือนใกล้สุด, Yahoo → CNBC → Stooq) — แหล่งหลักของการ์ดน้ำมัน

@@ -215,7 +215,11 @@ test('page: rows sorted largest first, "others" last, bars on one scale, values 
   assert.match(rows, /ประเทศอื่น/, 'stocks/bonds "others" says other countries');
   assert.doesNotMatch(rows, />· อื่นๆ</);
   assert.match(rows, /class="tip-btn"[^>]*>i<\/button><span class="tip-pop" role="tooltip">ก้อนใหญ่สุดคือ Ethereum \$208 พันล้าน, XRP/, 'i button on other coins names the biggest ones');
-  assert.match(rows, /<span class="tip-pop" role="tooltip">บริษัทเด่น: Nvidia \(ชิป AI\)/, 'i button on US equities names champion stocks');
+  // country-profiles failed (503) → built-in fallback values, same layout
+  assert.match(rows, /<span class="cm-tip-sec"><b>🏆 บริษัทเด่น \(ใหญ่สุดตามมูลค่าตลาด\)<\/b>• Apple · iPhone\n• Microsoft · Windows/, 'i button on US equities lists champion stocks under a heading');
+  assert.match(rows, /<b>👥 ประชากร<\/b>คนอายุ 65 ปีขึ้นไป 18%/, 'US tooltip has a people section');
+  assert.match(rows, /<b>🎓 ทักษะแรงงาน: กลาง<\/b>ดัชนีทุนมนุษย์ World Bank 0.70 จาก 1/, 'US tooltip has a skills section');
+  assert.match(rows, /<b>💵 รายได้ต่อชั่วโมง เทียบค่าครองชีพ: สูง<\/b>ทำงาน 1 ชม. ได้ของเท่ากับเงิน ~\$97 ที่อเมริกา[^<]*ค่าครองชีพ: แพง \(ฐานเทียบ\)/, 'US tooltip has an earnings section');
 
   // many countries: 16 biggest per box, Thailand always kept, the rest folded into "other countries"
   const many = { equities: { total: 100, byKey: { TH: 0.4 } } };
