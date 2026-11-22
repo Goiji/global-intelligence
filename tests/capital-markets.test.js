@@ -183,6 +183,9 @@ test('page: rows sorted largest first, "others" last, bars on one scale, values 
   const rows = sb.__elements.get('cmRows').innerHTML;
   assert.match(rows, /หุ้นทั่วโลก/);
   assert.match(rows, /🇹🇭 ไทย/);
+  assert.match(rows, /เหรียญอื่น/, 'crypto "others" says other coins');
+  assert.match(rows, /ประเทศอื่น/, 'stocks/bonds "others" says other countries');
+  assert.doesNotMatch(rows, />· อื่นๆ</);
   assert.match(sb.__elements.get('cmTotal').innerHTML, /มูลค่ารวม/);
   assert.match(sb.__elements.get('cmStack').innerHTML, /flex:/);
   assert.match(sb.__elements.get('cmLegend').innerHTML, /ตราสารหนี้ทั่วโลก/);

@@ -3497,7 +3497,8 @@ window.setHeaderStamp();
       Object.keys(by).filter(function(k){ return isValidNum(by[k]) && by[k] > 0 && CM_SUBS[k]; })
         .sort(function(a, b){ return (a === 'OTHER') - (b === 'OTHER') || by[b] - by[a]; })
         .forEach(function(k){
-          const s = CM_SUBS[k];
+          // "อื่นๆ" บอกให้ชัดว่าอื่นอะไร: คริปโต = เหรียญอื่นนอกจาก Bitcoin · หุ้น/ตราสารหนี้ = ประเทศที่ไม่ได้แยกแท่ง
+          const s = k === 'OTHER' ? (m.key === 'crypto' ? ['🪙','เหรียญอื่น','Other coins'] : ['🌍','ประเทศอื่น','Other countries']) : CM_SUBS[k];
           rows.push({ kind:'sub', key:m.key + ':' + k, label:s[0] + ' ' + tr(s[1], s[2]), value:by[k], share:by[k] / m.total * 100,
             width:by[k] / max * 100, color:meta.color });
         });
