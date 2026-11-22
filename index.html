@@ -1621,40 +1621,99 @@ window.setHeaderStamp();
       marketImpact: categories[f.key]
     }));
 
-    const brief = buildBrief({ worldRiskScore, badge, categories, assets, headlines: totalHeadlines });
 
-    return { worldRiskScore, badge, confidence, categories, drivers, assets, topEvents, aiBrief: brief, headlines: totalHeadlines, news: buildNewsList(allFeeds) };
+    return { worldRiskScore, badge, confidence, categories, drivers, assets, topEvents, headlines: totalHeadlines, news: buildNewsList(allFeeds) };
   }
 
-  // "สรุปเช้านี้" — สร้างจากตัวเลขตอนแสดงผล (ไม่ใช่ข้อความที่แคชไว้) จึงสลับภาษาได้แม้ใช้ข้อมูลจากแคช
-  function buildBrief(d){
-    const categories = d.categories || {}, assets = d.assets || {};
-    const rankedCats = Object.entries(categories).filter(([, v]) => isFinite(v)).sort((a,b)=>b[1]-a[1]);
-    const rankedAssets = Object.entries(assets).filter(([, v]) => isFinite(v)).sort((a,b)=>b[1]-a[1]);
-    if(!rankedCats.length || !rankedAssets.length) return d.aiBrief || '';
-    const labelMap = { geopolitical:tr('ภูมิรัฐศาสตร์','geopolitics'), economic:tr('เศรษฐกิจมหภาค','the macro economy'), energy:tr('พลังงาน','energy'), financial:tr('ตลาดการเงิน','financial markets'), techAi:tr('เทคโนโลยี/AI','tech/AI') };
-    const assetLabelMap = { gold:tr('ทองคำ','gold'), oil:tr('น้ำมัน','oil'), usd:tr('ดอลลาร์สหรัฐ','the US dollar'), bitcoin:'Bitcoin', stocks:tr('ตลาดหุ้น','stocks') };
-    const n = isFinite(d.headlines) ? d.headlines : Math.round((d.confidence || 0) / 4);
-    const catLines = rankedCats.map(([k,v],i) => `${i+1}. ${labelMap[k]||k} ${v}/100`).join(' · ');
-    const topCat = rankedCats[0], lowCat = rankedCats[rankedCats.length-1];
-    const topAsset = rankedAssets[0], bottomAsset = rankedAssets[rankedAssets.length-1];
-    const badge = BADGE_TH[d.badge] || d.badge;
-    if(EN){
-      const cap = s => String(s).charAt(0).toUpperCase() + String(s).slice(1);
-      return `Today's overall World Risk Score is ${d.worldRiskScore}/100 (${badge}), based on ${n} recent headlines.\n\n`
-        + `Scores by category, highest risk first: ${catLines}\n\n`
-        + `The highest-risk category is ${labelMap[topCat[0]]||topCat[0]} (${topCat[1]}/100) and deserves a close watch, `
-        + `while ${labelMap[lowCat[0]]||lowCat[0]} (${lowCat[1]}/100) is calmer than the others right now.\n\n`
-        + `News direction: ${cap(assetLabelMap[topAsset[0]] || topAsset[0])} gets the most support from the news (${topAsset[1]}/100), `
-        + `while ${assetLabelMap[bottomAsset[0]] || bottomAsset[0]} is under the most pressure (${bottomAsset[1]}/100).`;
+  // "สรุปเช้านี้" — 3 บรรทัดที่หน้าเว็บไม่ได้สรุปไว้ที่อื่น (เดิมแค่เอาคะแนนรวม/รายหมวด/แถบสินทรัพย์มาเขียนซ้ำ):
+  //   1) อะไรเปลี่ยนจากเมื่อวาน (คะแนนรวม + หมวดที่ขยับมากสุด จาก news-score-history)
+  //   2) ตัวเลขเศรษฐกิจที่จะประกาศวันนี้/พรุ่งนี้ (จากปฏิทิน เวลาไทย)
+  //   3) ราคาที่ขยับแรงสุด (จากการ์ดราคาตลาด)
+  // แต่ละแหล่งโหลดไม่พร้อมกัน จึงเก็บไว้ใน BRIEF แล้ววาดใหม่ทุกครั้งที่มีข้อมูลเข้ามา
+  const BRIEF = { score: null, cats: null, prev: null, events: null, prices: {} };
+  const BRIEF_PRICE_LABELS = { lpGold: tr('ทองคำ', 'Gold'), lpOil: tr('น้ำมัน WTI', 'WTI oil'), lpUsdThb: 'USD/THB',
+    lpUsdJpy: 'USD/JPY', lpJpyThb: 'JPY/THB', lpCnyThb: 'CNY/THB' };
+  const BRIEF_CAT_LABELS = { geopolitical: tr('ภูมิรัฐศาสตร์', 'geopolitics'), economic: tr('เศรษฐกิจ', 'economy'),
+    energy: tr('พลังงาน', 'energy'), financial: tr('การเงิน', 'finance'), techAi: tr('เทคโนโลยี/AI', 'tech/AI') };
+  const signed = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n);
+
+  function briefChangeLine(b){
+    if(!isFinite(b.score)) return null;
+    const head = tr('ความเสี่ยงโลก ', 'World risk ') + b.score + '/100';
+    if(!b.prev || !isFinite(b.prev.score)) return head + tr(' · ยังไม่มีคะแนนของเมื่อวานให้เทียบ', ' · no score from yesterday to compare yet');
+    const diff = b.score - b.prev.score;
+    let text = head + (diff === 0 ? tr(' เท่ากับเมื่อวาน', ', unchanged from yesterday')
+      : diff > 0 ? tr(' เพิ่มขึ้น ' + diff + ' จุดจากเมื่อวาน', ', up ' + diff + ' from yesterday')
+      : tr(' ลดลง ' + (-diff) + ' จุดจากเมื่อวาน', ', down ' + (-diff) + ' from yesterday'));
+    const moves = Object.keys(b.cats || {}).filter(k => isFinite(b.cats[k]) && b.prev.cats && isFinite(b.prev.cats[k]))
+      .map(k => [k, b.cats[k] - b.prev.cats[k]]).filter(([, d]) => d !== 0).sort((a, c) => Math.abs(c[1]) - Math.abs(a[1]));
+    if(moves.length){
+      const [k, d] = moves[0];
+      text += tr(' · หมวดที่ขยับมากสุดคือ', '. Biggest mover: ') + (BRIEF_CAT_LABELS[k] || k) + ' ' + signed(d) + ' (' + b.cats[k] + '/100)';
     }
-    return `วันนี้คะแนนความเสี่ยงโลกโดยรวมอยู่ที่ ${d.worldRiskScore}/100 (${badge}) `
-      + `ประเมินจากข่าวล่าสุด ${n} ข่าว\n\n`
-      + `คะแนนแยกตามหมวด เรียงจากเสี่ยงมากไปน้อย: ${catLines}\n\n`
-      + `หมวดที่มีคะแนนความเสี่ยงสูงสุดคือ${labelMap[topCat[0]]||topCat[0]} (${topCat[1]}/100) ควรจับตาเป็นพิเศษ `
-      + `ขณะที่หมวด${labelMap[lowCat[0]]||lowCat[0]} (${lowCat[1]}/100) ค่อนข้างสงบกว่าหมวดอื่นในตอนนี้\n\n`
-      + `ทิศทางจากข่าว: สินทรัพย์ที่ได้แรงหนุนมากที่สุดคือ${assetLabelMap[topAsset[0]]} (${topAsset[1]}/100) `
-      + `ส่วน${assetLabelMap[bottomAsset[0]]} (${bottomAsset[1]}/100) ถูกกดดันมากที่สุด`;
+    return text;
+  }
+
+  function briefCalendarLine(events, nowMs){
+    if(!Array.isArray(events)) return null;
+    const dayKey = (ms) => { const p = bkk(new Date(ms).toISOString()); return p.year + '-' + p.month + '-' + p.day; };
+    const today = dayKey(nowMs), tomorrow = dayKey(nowMs + 86400000);
+    const label = (e) => (CAL_LABELS[e.key] || [e.title || e.key])[0];
+    const upcoming = events.filter(e => e && Date.parse(e.at || e.date) > nowMs - 2 * 3600e3)
+      .sort((a, c) => String(a.at || a.date).localeCompare(String(c.at || c.date)));
+    const soon = upcoming.map(e => {
+      const at = e.at || (e.date + 'T12:00:00Z');
+      const k = dayKey(Date.parse(at));
+      if(k !== today && k !== tomorrow) return null;
+      const p = bkk(at);
+      return (k === today ? tr('วันนี้', 'today') : tr('พรุ่งนี้', 'tomorrow')) + (e.at ? ' ' + p.hour + ':' + p.minute + TIME_SUFFIX : '') + ' ' + label(e);
+    }).filter(Boolean);
+    if(soon.length) return soon.join(' · ');
+    const next = upcoming[0];
+    if(!next) return tr('ช่วงนี้ยังไม่มีตัวเลขเศรษฐกิจสหรัฐฯ ที่ต้องรอ', 'No US data releases scheduled soon');
+    const p = bkk(next.at || (next.date + 'T12:00:00Z'));
+    return tr('วันนี้–พรุ่งนี้ไม่มีตัวเลขสำคัญ · ตัวถัดไป: ', 'Nothing due today or tomorrow · next: ') + label(next) + ' ' + (+p.day) + ' ' + TH_MONTHS[+p.month - 1];
+  }
+
+  function briefPriceLine(prices){
+    const rows = Object.keys(prices || {}).filter(k => BRIEF_PRICE_LABELS[k] && isFinite(prices[k]))
+      .sort((a, c) => Math.abs(prices[c]) - Math.abs(prices[a]));
+    if(!rows.length) return null;
+    if(Math.abs(prices[rows[0]]) < 0.5) return tr('ราคาค่อนข้างนิ่ง ไม่มีตัวไหนขยับเกิน 0.5%', 'Prices are quiet: nothing moved more than 0.5%');
+    return rows.filter(k => Math.abs(prices[k]) >= 0.5).slice(0, 3)
+      .map(k => BRIEF_PRICE_LABELS[k] + ' ' + (prices[k] > 0 ? '▲' : '▼') + ' ' + Math.abs(prices[k]).toFixed(2) + '%').join(' · ');
+  }
+
+  // คืน [{label, text}] — แยกเป็นฟังก์ชันล้วนเพื่อเทสได้
+  function buildBrief(b, nowMs){
+    const lines = [];
+    const change = briefChangeLine(b);
+    if(change) lines.push({ label: tr('อะไรเปลี่ยน', 'What changed'), text: change });
+    let cal = null;
+    try{ cal = briefCalendarLine(b.events, nowMs); }catch(e){ cal = null; }
+    if(cal) lines.push({ label: tr('ตัวเลขที่รอ', 'Data due'), text: cal });
+    const px = briefPriceLine(b.prices);
+    if(px) lines.push({ label: tr('ราคาขยับแรงสุด', 'Biggest price moves'), text: px });
+    return lines;
+  }
+  window.buildBrief = buildBrief;   // tests
+
+  function renderBrief(){
+    const box = el('aiBrief');
+    if(!box) return;
+    const lines = buildBrief(BRIEF, Date.now());
+    if(!lines.length) return;
+    box.innerHTML = lines.map(l => '<p style="margin-bottom:10px;"><b>' + esc(l.label) + ':</b> ' + esc(l.text) + '</p>').join('')
+      + '<span class="muted">' + tr('— สรุปอัตโนมัติ ไม่ใช่คำแนะนำการลงทุน', '— Auto-generated. Not investment advice.') + '</span>';
+  }
+  async function loadBriefPrev(){
+    try{
+      const raw = await storageGet('news-score-history');
+      const hist = raw ? JSON.parse(raw) : [];
+      const today = new Date().toISOString().slice(0,10);   // same day key as recordScoreHistory
+      BRIEF.prev = (Array.isArray(hist) ? hist : []).filter(h => h && h.date < today && isFinite(h.score)).pop() || null;
+    }catch(e){ BRIEF.prev = null; }
+    renderBrief();
   }
 
   // ---------- รายการ "ข่าวล่าสุด" ----------
@@ -1861,8 +1920,8 @@ window.setHeaderStamp();
       </div>`;
     }).join('');
 
-    el('aiBrief').innerHTML = String(buildBrief(d) || '').split('\n\n').map(p => `<p style="margin-bottom:10px;">${esc(p)}</p>`).join('')
-      + '<span class="muted">' + tr('— สรุปอัตโนมัติจากพาดหัวข่าว ไม่ใช่คำแนะนำการลงทุน', '— Auto-generated from headlines. Not investment advice.') + '</span>';
+    BRIEF.score = d.worldRiskScore; BRIEF.cats = d.categories || null;
+    renderBrief();
 
     if(Array.isArray(d.news)) renderNewsList(d.news);
   }
@@ -1870,7 +1929,7 @@ window.setHeaderStamp();
   // ---------- World Risk Score history + trend sparkline ----------
   // Every successful score computation gets appended (1 point/day, capped 30 days) so we
   // can show a trend line instead of just today's single number. Pure local storage, no API.
-  async function recordScoreHistory(score){
+  async function recordScoreHistory(score, cats){
     const today = new Date().toISOString().slice(0,10);
     let hist = [];
     try{
@@ -1880,8 +1939,9 @@ window.setHeaderStamp();
 
     if(hist.length && hist[hist.length-1].date === today){
       hist[hist.length-1].score = score; // update today's point instead of duplicating
+      if(cats) hist[hist.length-1].cats = cats;
     }else{
-      hist.push({ date: today, score });
+      hist.push(cats ? { date: today, score, cats } : { date: today, score });
     }
     hist = hist.slice(-30); // keep last 30 days
 
@@ -1983,7 +2043,7 @@ window.setHeaderStamp();
         renderData(d); // re-render with Thai translations filled in
       }
 
-      await recordScoreHistory(d.worldRiskScore);
+      await recordScoreHistory(d.worldRiskScore, d.categories);
       await storageSet('news-dashboard-cache', JSON.stringify({ data: d, ts: Date.now() }));
       el('newsStatus').textContent = tr('อัปเดตข่าว ', 'News updated ') + new Date().toLocaleTimeString(LOCALE, { hour:'2-digit', minute:'2-digit' });
       if(window.setHeaderStamp) window.setHeaderStamp();
@@ -2789,6 +2849,7 @@ window.setHeaderStamp();
   function setPrice(id, text, pct){
     const node = el(id); if(!node) return;
     node.innerHTML = esc(text) + chgHtml(pct);
+    if(BRIEF_PRICE_LABELS[id] && pct != null && isFinite(pct)){ BRIEF.prices[id] = pct; renderBrief(); }
   }
   const pctChange = (now, ref) => (isFinite(now) && isFinite(ref) && ref) ? (now - ref) / ref * 100 : null;
 
@@ -3674,6 +3735,8 @@ window.setHeaderStamp();
       }
     }catch(e){ /* best-effort */ }
     renderCalendar(CAL_EVENTS);
+    BRIEF.events = CAL_EVENTS;
+    try{ renderBrief(); }catch(e){ /* best-effort */ }
     try{ renderNextReleases(); }catch(e){ /* best-effort */ }
     try{ if(lastFedPayload) renderFedAnalysis(lastFedPayload); }catch(e){ /* best-effort */ }
   }
@@ -3966,6 +4029,7 @@ window.setHeaderStamp();
   // button always force a live pull. Re-fetching 5 feeds on every reload was pure waste — and it
   // burned through the (then rss2json) quota for visitors who just refreshed the page a few times.
   const NEWS_CACHE_TTL_MS = 30 * 60 * 1000;
+  loadBriefPrev();
   loadCache().then(function(ageMs){
     if(ageMs != null && ageMs < NEWS_CACHE_TTL_MS){
       return;
