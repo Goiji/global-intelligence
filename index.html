@@ -435,6 +435,11 @@ body{margin:0}
   .event h3{font-family:var(--sans);font-weight:600;font-size:15px;line-height:1.5;color:#f3eee3}
   .impact{color:var(--accent-hi);font-weight:500;font-size:12px}
   .brief{font-size:15px;line-height:1.9;color:#d8d2c4;font-weight:300}
+  .brief-alert{padding:10px 14px;border-radius:12px;margin-bottom:14px;line-height:1.6;border:1px solid var(--line-soft)}
+  .brief-alert b{font-weight:700;margin-right:6px}
+  .brief-alert.alert{background:rgba(255,101,119,.12);border-color:rgba(255,101,119,.45);color:#ffd5da}
+  .brief-alert.warn{background:rgba(240,190,80,.10);border-color:rgba(240,190,80,.40);color:#f6e3b4}
+  .brief-alert.ok{background:rgba(80,200,140,.08);border-color:rgba(80,200,140,.30);color:#cfeedd}
 
   /* hero numbers in serif */
   .score{font-family:var(--serif);font-weight:700;font-size:72px;letter-spacing:-.03em;color:#f8f3e8}
@@ -1697,20 +1702,92 @@ window.setHeaderStamp();
     return text;
   }
 
-  function briefCalendarLine(events, nowMs){
-    if(!Array.isArray(events)) return null;
+  const briefEventLabel = (e) => (CAL_LABELS[e.key] || [e.title || e.key])[0];
+  function briefUpcoming(events, nowMs){
+    return (Array.isArray(events) ? events : []).filter(e => e && Date.parse(e.at || e.date) > nowMs - 2 * 3600e3)
+      .sort((a, c) => String(a.at || a.date).localeCompare(String(c.at || c.date)));
+  }
+  // ตัวเลขที่ประกาศวันนี้/พรุ่งนี้ (เวลาไทย) → [{ e, today, text }]
+  function briefSoonEvents(events, nowMs){
     const dayKey = (ms) => { const p = bkk(new Date(ms).toISOString()); return p.year + '-' + p.month + '-' + p.day; };
     const today = dayKey(nowMs), tomorrow = dayKey(nowMs + 86400000);
-    const label = (e) => (CAL_LABELS[e.key] || [e.title || e.key])[0];
-    const upcoming = events.filter(e => e && Date.parse(e.at || e.date) > nowMs - 2 * 3600e3)
-      .sort((a, c) => String(a.at || a.date).localeCompare(String(c.at || c.date)));
-    const soon = upcoming.map(e => {
+    return briefUpcoming(events, nowMs).map(e => {
       const at = e.at || (e.date + 'T12:00:00Z');
       const k = dayKey(Date.parse(at));
       if(k !== today && k !== tomorrow) return null;
       const p = bkk(at);
-      return (k === today ? tr('วันนี้', 'today') : tr('พรุ่งนี้', 'tomorrow')) + (e.at ? ' ' + p.hour + ':' + p.minute + TIME_SUFFIX : '') + ' ' + label(e);
+      const text = (k === today ? tr('วันนี้', 'today') : tr('พรุ่งนี้', 'tomorrow')) + (e.at ? ' ' + p.hour + ':' + p.minute + TIME_SUFFIX : '') + ' ' + briefEventLabel(e);
+      return { e, today: k === today, text };
     }).filter(Boolean);
+  }
+
+  // ---- ระดับเตือน + ผลต่อหุ้น/คริปโต ----
+  // กติกาตายตัวจากตัวเลขบนหน้า (ไม่ใช่ AI): คะแนนความเสี่ยงโลก, คะแนนที่พุ่งจากเมื่อวาน, หมวดที่ร้อนแรง,
+  // ตัวเลขเศรษฐกิจตัวใหญ่ (CPI / จ้างงาน / FOMC / PCE) ที่จะออกวันนี้–พรุ่งนี้ และราคาที่ขยับแรง
+  function briefAlert(b, nowMs){
+    const reasons = [];   // [severity 2=แดง 1=เหลือง, text]
+    const add = (sev, text) => reasons.push([sev, text]);
+    const cats = b.cats || {};
+    if(isFinite(b.score)){
+      if(b.score >= 75) add(2, tr('ความเสี่ยงโลกระดับวิกฤต ' + b.score + '/100', 'world risk at crisis level, ' + b.score + '/100'));
+      else if(b.score >= 60) add(1, tr('ความเสี่ยงโลกสูง ' + b.score + '/100', 'world risk elevated, ' + b.score + '/100'));
+      if(b.prev && isFinite(b.prev.score)){
+        const diff = b.score - b.prev.score;
+        if(diff >= 8) add(2, tr('ความเสี่ยงพุ่ง +' + diff + ' จุดในวันเดียว', 'risk jumped +' + diff + ' in a day'));
+        else if(diff >= 4) add(1, tr('ความเสี่ยงเพิ่ม +' + diff + ' จุดจากเมื่อวาน', 'risk up +' + diff + ' from yesterday'));
+      }
+    }
+    Object.keys(cats).forEach(k => {
+      if(isFinite(cats[k]) && cats[k] >= 80) add(2, tr('ข่าว' + (BRIEF_CAT_LABELS[k] || k) + 'ร้อนแรง ' + cats[k] + '/100', (BRIEF_CAT_LABELS[k] || k) + ' news running hot, ' + cats[k] + '/100'));
+    });
+    let soon = [];
+    try{ soon = briefSoonEvents(b.events, nowMs).filter(x => CAL_HIGH[x.e.key]); }catch(e){ soon = []; }
+    soon.forEach(x => add(x.today ? 2 : 1, x.text + tr(' ตลาดผันผวนแรงได้', ': expect big swings')));
+    const px = b.prices || {};
+    Object.keys(px).forEach(k => {
+      if(!BRIEF_PRICE_LABELS[k] || !isFinite(px[k])) return;
+      const big = (k === 'lpGold' || k === 'lpOil') ? [3, 1.5] : [1.5, 0.8];   // ค่าเงินปกติขยับน้อยกว่าสินค้าโภคภัณฑ์
+      const t = BRIEF_PRICE_LABELS[k] + ' ' + (px[k] > 0 ? '▲' : '▼') + ' ' + Math.abs(px[k]).toFixed(2) + '%';
+      if(Math.abs(px[k]) >= big[0]) add(2, t);
+      else if(Math.abs(px[k]) >= big[1]) add(1, t);
+    });
+    reasons.sort((a, c) => c[0] - a[0]);
+    const level = reasons.length ? reasons[0][0] : 0;
+    return { level, reasons: reasons.map(r => r[1]) };
+  }
+
+  // แรงกดดันจากข่าวต่อหุ้น/คริปโต: เริ่มจากคะแนนความเสี่ยงโลก แล้วบวกตามหมวดที่กระทบสินทรัพย์นั้นโดยตรง
+  function briefMarketView(b, kind, nowMs){
+    const cats = b.cats || {}, px = b.prices || {};
+    if(!isFinite(b.score)) return null;
+    let p = b.score;
+    const why = [];
+    const hot = (k, t) => isFinite(cats[k]) && cats[k] >= t;
+    const crypto = kind === 'crypto';
+    if(hot('geopolitical', 70)){ p += 5; why.push(crypto
+      ? tr('ข่าวสงคราม/ภูมิรัฐศาสตร์ทำให้เงินออกจากสินทรัพย์เสี่ยง BTC มักร่วงตาม Nasdaq', 'geopolitical stress pushes money out of risk assets; BTC tends to fall with the Nasdaq')
+      : tr('ข่าวสงคราม/ภูมิรัฐศาสตร์ทำให้นักลงทุนขายหุ้นหนีไปสินทรัพย์ปลอดภัย', 'geopolitical stress sends money from stocks into safe havens')); }
+    if(hot('economic', 65)){ p += 5; why.push(crypto
+      ? tr('ข่าวดอกเบี้ย/เงินเฟ้อ ถ้า Fed ไม่ลดดอกเบี้ย สภาพคล่องที่ไหลเข้าคริปโตจะน้อยลง', 'rate/inflation news: no Fed cuts means less liquidity for crypto')
+      : tr('ข่าวดอกเบี้ย/เงินเฟ้อกดดัน valuation โดยเฉพาะหุ้นเทคและหุ้นเติบโต', 'rate/inflation news weighs on valuations, especially tech and growth')); }
+    if(hot('energy', 65) || px.lpOil >= 2){ p += 3; why.push(tr('น้ำมันแพงดันเงินเฟ้อ ทำให้ดอกเบี้ยลดยาก', 'pricier oil feeds inflation and delays rate cuts')); }
+    if(hot('financial', 65)){ p += 4; why.push(tr('ข่าวตลาดการเงินตึงเครียด เสี่ยงแรงขายเป็นวงกว้าง', 'financial-market stress raises the risk of broad selling')); }
+    if(!crypto && hot('techAi', 70)){ p += 2; why.push(tr('ข่าวเทค/AI แรง กระทบหุ้น Big Tech ที่มีน้ำหนักมากในดัชนี', 'heavy tech/AI news hits the Big Tech names that dominate the index')); }
+    let high = [];
+    try{ high = briefSoonEvents(b.events, nowMs).filter(x => CAL_HIGH[x.e.key] && x.today); }catch(e){ high = []; }
+    if(high.length){ p += 3; why.unshift(tr('ระวังช่วง ', 'Watch ') + high.map(x => x.text.replace(/^(วันนี้|today) /, '')).join(', ') + tr(' ราคาเหวี่ยงแรงได้ทั้งสองทาง', ': prices can swing hard either way')); }
+    const level = p >= 70 ? 2 : p >= 55 ? 1 : 0;
+    const head = level === 2 ? tr('🔴 แรงกดดันสูง', '🔴 Heavy pressure') : level === 1 ? tr('🟡 กดดันปานกลาง', '🟡 Some pressure') : tr('🟢 ข่าวไม่ค่อยกดดัน', '🟢 Little pressure from the news');
+    if(!why.length) why.push(level === 0 ? tr('บรรยากาศข่าวเอื้อต่อสินทรัพย์เสี่ยง', 'the news backdrop favours risk assets')
+      : tr('ความเสี่ยงโลกโดยรวมสูง นักลงทุนมักลดสินทรัพย์เสี่ยง', 'overall risk is high, so investors tend to cut risk'));
+    return { level, text: head + ' · ' + why.slice(0, 2).join(' · ') };
+  }
+
+  function briefCalendarLine(events, nowMs){
+    if(!Array.isArray(events)) return null;
+    const upcoming = briefUpcoming(events, nowMs);
+    const label = briefEventLabel;
+    const soon = briefSoonEvents(events, nowMs).map(x => x.text);
     if(soon.length) return soon.join(' · ');
     const next = upcoming[0];
     if(!next) return tr('ช่วงนี้ยังไม่มีตัวเลขเศรษฐกิจสหรัฐฯ ที่ต้องรอ', 'No US data releases scheduled soon');
@@ -1727,9 +1804,13 @@ window.setHeaderStamp();
       .map(k => BRIEF_PRICE_LABELS[k] + ' ' + (prices[k] > 0 ? '▲' : '▼') + ' ' + Math.abs(prices[k]).toFixed(2) + '%').join(' · ');
   }
 
-  // คืน [{label, text}] — แยกเป็นฟังก์ชันล้วนเพื่อเทสได้
+  // คืน { alert, lines: [{label, text}] } — แยกเป็นฟังก์ชันล้วนเพื่อเทสได้
   function buildBrief(b, nowMs){
     const lines = [];
+    const alert = briefAlert(b, nowMs);
+    const stocks = briefMarketView(b, 'stocks', nowMs), crypto = briefMarketView(b, 'crypto', nowMs);
+    if(stocks) lines.push({ label: tr('📈 หุ้น', '📈 Stocks'), text: stocks.text });
+    if(crypto) lines.push({ label: tr('₿ คริปโต', '₿ Crypto'), text: crypto.text });
     const change = briefChangeLine(b);
     if(change) lines.push({ label: tr('อะไรเปลี่ยน', 'What changed'), text: change });
     let cal = null;
@@ -1737,16 +1818,22 @@ window.setHeaderStamp();
     if(cal) lines.push({ label: tr('ตัวเลขที่รอ', 'Data due'), text: cal });
     const px = briefPriceLine(b.prices);
     if(px) lines.push({ label: tr('ราคาขยับแรงสุด', 'Biggest price moves'), text: px });
-    return lines;
+    return { alert, lines };
   }
   window.buildBrief = buildBrief;   // tests
 
   function renderBrief(){
     const box = el('aiBrief');
     if(!box) return;
-    const lines = buildBrief(BRIEF, Date.now());
+    const { alert, lines } = buildBrief(BRIEF, Date.now());
     if(!lines.length) return;
-    box.innerHTML = lines.map(l => '<p style="margin-bottom:10px;"><b>' + esc(l.label) + ':</b> ' + esc(l.text) + '</p>').join('')
+    const A = [
+      { icon: '🟢', cls: 'ok', title: tr('ปกติ', 'Calm'), none: tr('ไม่มีสัญญาณเตือนจากข่าว ตัวเลขเศรษฐกิจ หรือราคา', 'No warning signs from news, data or prices') },
+      { icon: '🟡', cls: 'warn', title: tr('ระวัง', 'Caution') },
+      { icon: '🔴', cls: 'alert', title: tr('เตือนแรง', 'Strong warning') }
+    ][alert.level];
+    box.innerHTML = '<div class="brief-alert ' + A.cls + '"><b>' + A.icon + ' ' + esc(A.title) + '</b> ' + esc(alert.reasons.slice(0, 3).join(' · ') || A.none || '') + '</div>'
+      + lines.map(l => '<p style="margin-bottom:10px;"><b>' + esc(l.label) + ':</b> ' + esc(l.text) + '</p>').join('')
       + '<span class="muted">' + tr('— สรุปอัตโนมัติ ไม่ใช่คำแนะนำการลงทุน', '— Auto-generated. Not investment advice.') + '</span>';
   }
   async function loadBriefPrev(){

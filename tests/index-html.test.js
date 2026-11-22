@@ -224,34 +224,42 @@ test('source footers are collapsed behind an "ⓘ แหล่งข้อมู
 });
 
 // "สรุปเช้านี้" used to restate the score, the category cards and the news-outlook bars that are all
-// already on the page. It now says only what changed since yesterday, what data is due, and what moved.
-test('buildBrief reports changes, upcoming data and price moves instead of repeating scores', async () => {
+// already on the page. It now leads with a warning level and what the news means for stocks and crypto,
+// then says what changed since yesterday, what data is due, and what moved.
+test('buildBrief gives a warning level, stock/crypto impact, changes, data due and price moves', async () => {
   const sandbox = makeSandbox();
   SCRIPTS.forEach((src) => vm.runInNewContext(src, sandbox, { filename: 'index.html' }));
   await new Promise((resolve) => setImmediate(resolve));
   const { buildBrief } = sandbox;
   assert.equal(typeof buildBrief, 'function');
   const now = Date.parse('2026-11-22T02:00:00Z');   // 09:00 Bangkok
-  const lines = buildBrief({
+  const hot = buildBrief({
     score: 63,
     cats: { geopolitical: 76, economic: 64, energy: 63 },
-    prev: { date: '2026-11-21', score: 59, cats: { geopolitical: 75, economic: 64, energy: 54 } },
+    prev: { date: '2026-11-21', score: 54, cats: { geopolitical: 75, economic: 64, energy: 54 } },
     events: [
-      { key: 'claims', date: '2026-11-22', at: '2026-11-22T13:30:00Z' },   // 20:30 Bangkok today
-      { key: 'cpi', date: '2026-11-25', at: '2026-11-25T13:30:00Z' }
+      { key: 'cpi', date: '2026-11-22', at: '2026-11-22T13:30:00Z' },      // 20:30 Bangkok today
+      { key: 'fomc', date: '2026-11-26', at: '2026-11-26T19:00:00Z' }
     ],
     prices: { lpGold: 0.3, lpOil: -2.31, lpUsdThb: 0.6 }
   }, now);
-  assert.equal(lines.length, 3);
-  assert.match(lines[0].text, /63\/100/);
-  assert.match(lines[0].text, /4/);
-  assert.match(lines[0].text, /\+9/);                 // energy moved most
-  assert.match(lines[1].text, /20:30/);
-  assert.doesNotMatch(lines[1].text, /CPI/);          // 3 days out: not "today/tomorrow"
-  assert.match(lines[2].text, /▼ 2\.31%/);
-  assert.doesNotMatch(lines[2].text, /0\.30%/);       // under 0.5% is left out
+  assert.equal(hot.alert.level, 2);                    // +9 in a day and CPI tonight
+  assert.ok(hot.alert.reasons.some((r) => /\+9/.test(r)));
+  assert.ok(hot.alert.reasons.some((r) => /20:30/.test(r)));
+  const labels = hot.lines.map((l) => l.label);
+  assert.equal(labels.length, 5);
+  assert.match(hot.lines[0].text, /20:30/);            // stocks: CPI volatility first
+  assert.match(hot.lines[1].text, /BTC|Nasdaq/);      // crypto: geopolitics risk-off
+  assert.match(hot.lines[2].text, /63\/100/);
+  assert.match(hot.lines[2].text, /\+9/);              // energy moved most
+  assert.match(hot.lines[3].text, /20:30/);
+  assert.doesNotMatch(hot.lines[3].text, /FOMC/);      // 4 days out: not "today/tomorrow"
+  assert.match(hot.lines[4].text, /▼ 2\.31%/);
+  assert.doesNotMatch(hot.lines[4].text, /0\.30%/);   // under 0.5% is left out
 
-  const quiet = buildBrief({ score: 50, prev: null, events: [{ key: 'cpi', date: '2026-11-25', at: '2026-11-25T13:30:00Z' }], prices: { lpGold: 0.1 } }, now);
-  assert.equal(quiet.length, 3);
-  assert.match(quiet[1].text, /25/);                  // names the next release date instead
+  const calm = buildBrief({ score: 35, cats: { geopolitical: 40 }, prev: null,
+    events: [{ key: 'cpi', date: '2026-11-25', at: '2026-11-25T13:30:00Z' }], prices: { lpGold: 0.1 } }, now);
+  assert.equal(calm.alert.level, 0);
+  assert.match(calm.lines[0].text, /🟢/);
+  assert.match(calm.lines[3].text, /25/);              // names the next release date instead
 });
