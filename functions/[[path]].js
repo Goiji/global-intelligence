@@ -13,6 +13,7 @@
 
 import calendar from '../netlify/functions/calendar.js';
 import capitalMarkets from '../netlify/functions/capital-markets.js';
+import countryProfiles from '../netlify/functions/country-profiles.js';
 import cmcFearGreed from '../netlify/functions/cmc-fear-greed.js';
 import consensus from '../netlify/functions/consensus.js';
 import dvol from '../netlify/functions/dvol.js';
@@ -30,7 +31,7 @@ import visitors from '../netlify/functions/visitors.js';
 import wti from '../netlify/functions/wti.js';
 
 const HANDLERS = {
-  calendar, 'capital-markets': capitalMarkets, 'cmc-fear-greed': cmcFearGreed, consensus,
+  calendar, 'capital-markets': capitalMarkets, 'cmc-fear-greed': cmcFearGreed, consensus, 'country-profiles': countryProfiles,
   dvol, 'econ-extra': econExtra, 'etf-flow': etfFlow, 'fred-data': fredData, 'gold-th': goldTh, markets,
   'news-feed': newsFeed, 'oil-price': oilPrice, onchain, stablecoins, usdjpy, visitors, wti,
 };

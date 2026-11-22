@@ -46,7 +46,7 @@
 // เพราะพวกนั้นมีแหล่งสำรองสดของตัวเองที่ดีกว่าราคาเก่า และไม่ใช้กับ visitors (เขียนข้อมูล)
 (function(){
   if(typeof window === 'undefined' || typeof window.fetch !== 'function' || typeof Response !== 'function') return;
-  var CACHED = /^\/\.netlify\/functions\/(fred-data|markets|econ-extra|consensus|calendar|etf-flow|stablecoins|news-feed|capital-markets)\/?(\?|$)/;
+  var CACHED = /^\/\.netlify\/functions\/(fred-data|markets|econ-extra|consensus|calendar|etf-flow|stablecoins|news-feed|capital-markets|country-profiles)\/?(\?|$)/;
   var MAX_AGE = 3 * 86400000;
   var orig = window.fetch.bind(window);
   window.fetch = function(input, init){
@@ -3530,65 +3530,97 @@ window.setHeaderStamp();
     return { rows:rows, grand:grand };
   }
   // ข้อความเมื่อชี้เมาส์ที่แถวคริปโต: บอกว่าในก้อนนั้นมีเหรียญอะไร (ตัวเลขสดจาก CoinGecko ถ้ามี)
-  // บริษัทเด่นของแต่ละประเทศ (หุ้นตัวใหญ่ที่สุด ณ ปลายปี 2026) + ทำธุรกิจอะไร · ใช้ในปุ่ม i ของกล่องหุ้น
-  const CM_CHAMPS = {
-    US:[['Nvidia','ชิป AI','AI chips'],['Apple','iPhone','iPhone'],['Microsoft','Windows, คลาวด์ Azure','Windows, Azure cloud'],['Alphabet','Google, YouTube','Google, YouTube']],
-    EU:[['ASML','เครื่องผลิตชิป (เนเธอร์แลนด์)','chip-making machines (NL)'],['SAP','ซอฟต์แวร์องค์กร (เยอรมนี)','business software (DE)'],['Roche, Nestlé','ยา, อาหาร (สวิส)','pharma, food (CH)'],['HSBC, AstraZeneca','ธนาคาร, ยา (อังกฤษ)','bank, pharma (UK)'],['LVMH','แบรนด์หรู Louis Vuitton (ฝรั่งเศส)','luxury, Louis Vuitton (FR)']],
-    CN:[['Tencent','WeChat, เกม','WeChat, games'],['ICBC','ธนาคารใหญ่สุดโลก','world\'s largest bank'],['Alibaba','อีคอมเมิร์ซ, คลาวด์','e-commerce, cloud'],['Kweichow Moutai','เหล้าเหมาไถ','Moutai liquor'],['CATL','แบตเตอรี่รถ EV','EV batteries']],
-    JP:[['Toyota','รถยนต์','cars'],['Mitsubishi UFJ','ธนาคาร','banking'],['Sony','เกม PlayStation, เซนเซอร์กล้อง','PlayStation, camera sensors'],['Hitachi','ระบบไฟฟ้า, ไอที','power grids, IT']],
-    IN:[['Reliance','น้ำมัน, ค้าปลีก, มือถือ Jio','oil, retail, Jio mobile'],['HDFC Bank','ธนาคาร','banking'],['TCS','บริการไอที','IT services'],['Bharti Airtel','มือถือ','mobile telecom']],
-    CA:[['Royal Bank of Canada','ธนาคาร','banking'],['Shopify','ระบบร้านค้าออนไลน์','online store platform'],['Enbridge','ท่อส่งน้ำมันและก๊าซ','oil & gas pipelines']],
-    TW:[['TSMC','รับผลิตชิปให้ Apple, Nvidia','makes chips for Apple, Nvidia'],['Foxconn','ประกอบ iPhone, เซิร์ฟเวอร์ AI','assembles iPhones, AI servers'],['MediaTek','ชิปมือถือ','phone chips']],
-    KR:[['Samsung Electronics','ชิปหน่วยความจำ, มือถือ','memory chips, phones'],['SK Hynix','หน่วยความจำ HBM สำหรับ AI','HBM memory for AI'],['Hyundai','รถยนต์','cars']],
-    SA:[['Saudi Aramco','น้ำมัน','oil'],['Al Rajhi Bank','ธนาคารอิสลาม','Islamic banking'],['ACWA Power','ไฟฟ้า, น้ำจืด','power, desalination']],
-    AU:[['Commonwealth Bank','ธนาคาร','banking'],['BHP','เหมืองแร่เหล็ก, ทองแดง','iron ore, copper mining'],['CSL','ยา, พลาสมา','biotech, plasma']],
-    HK:[['AIA','ประกันชีวิต','life insurance'],['HKEX','ตลาดหลักทรัพย์ฮ่องกง','Hong Kong stock exchange'],['Hang Seng Bank','ธนาคาร','banking']],
-    AE:[['IHC','บริษัทลงทุนของอาบูดาบี','Abu Dhabi holding company'],['TAQA','ไฟฟ้า, น้ำ','power, water'],['First Abu Dhabi Bank','ธนาคาร','banking']],
-    BR:[['Petrobras','น้ำมัน','oil'],['Itaú Unibanco','ธนาคาร','banking'],['Vale','แร่เหล็ก','iron ore']],
-    SG:[['DBS','ธนาคาร','banking'],['Sea','Shopee, เกม Garena','Shopee, Garena games'],['OCBC','ธนาคาร','banking']],
-    MX:[['Walmex','Walmart เม็กซิโก','Walmart Mexico'],['Grupo México','เหมืองทองแดง','copper mining'],['América Móvil','มือถือ','mobile telecom']],
-    IL:[['Check Point','ความปลอดภัยไซเบอร์','cybersecurity'],['Bank Leumi','ธนาคาร','banking'],['Teva','ยาสามัญ','generic drugs']],
-    ZA:[['Naspers','ถือหุ้น Tencent','owns a Tencent stake'],['FirstRand','ธนาคาร','banking'],['Gold Fields','เหมืองทอง','gold mining']],
-    ID:[['Bank Central Asia','ธนาคาร','banking'],['Bank Rakyat Indonesia','ธนาคาร','banking'],['Telkom Indonesia','โทรคมนาคม','telecom']],
-    MY:[['Maybank','ธนาคาร','banking'],['Public Bank','ธนาคาร','banking'],['Tenaga Nasional','การไฟฟ้า','power utility']],
-    TH:[['DELTA','อุปกรณ์ไฟฟ้าสำหรับศูนย์ข้อมูล, EV','power gear for data centres, EVs'],['Gulf','โรงไฟฟ้า, มือถือ AIS','power plants, AIS mobile'],['PTT','น้ำมัน, ก๊าซ','oil & gas'],['AOT','สนามบิน','airports']],
-    VN:[['Vingroup','อสังหาฯ, รถ VinFast','property, VinFast cars'],['Vietcombank','ธนาคาร','banking']]
+  // ปุ่ม i ของแต่ละประเทศในกล่องหุ้น: ข้อมูลสดจาก /.netlify/functions/country-profiles (companiesmarketcap, World Bank, ILO)
+  // อัปเดตเองเมื่อแหล่งข้อมูลออกตัวเลขใหม่ · ตารางข้างล่างเป็นค่าสำรองตอนยังโหลดไม่เสร็จหรือดึงไม่ได้เท่านั้น
+  let cmProfiles = null;
+  const CM_CHAMPS_FALLBACK = {
+    US:['Apple','Microsoft','Alphabet (Google)','NVIDIA'], EU:['ASML','HSBC','Roche','SAP'], CN:['China Construction Bank','Tencent','Agricultural Bank of China','Bank of China'],
+    JP:['Toyota','Mitsubishi UFJ Financial','Sony','Fast Retailing'], IN:['Reliance Industries','Bharti Airtel','HDFC Bank','ICICI Bank'], CA:['Royal Bank Of Canada','Toronto Dominion Bank','Shopify','Bank of Montreal'],
+    TW:['TSMC','MediaTek','Foxconn','Delta Electronics'], KR:['Samsung','SK Hynix','SK Square','LG Energy Solution'], SA:['Saudi Aramco','Al Rajhi Bank','The Saudi National Bank','Ma\'aden'],
+    AU:['Commonwealth Bank','BHP Group','Westpac Banking','ANZ Bank'], HK:['AIA','Bank of China (Hong Kong)','Hong Kong Exchanges & Clearing','Swire Pacific'], AE:['International Holding Company','TAQA','ADNOC Gas','First Abu Dhabi Bank'],
+    BR:['Petrobras','Itaú Unibanco','Nu Holdings','Vale'], SG:['DBS Group','OCBC Bank','Singtel','UOB'], MX:['Grupo México','America Movil','Walmex','FEMSA'],
+    IL:['Teva Pharmaceutical Industries','Bank Leumi','Elbit Systems','Bank Hapoalim'], ZA:['AngloGold Ashanti','Capitec Bank','Gold Fields','FirstRand'], ID:['Bank Central Asia','Bank Rakyat Indonesia','Bank Mandiri','PT DCI Indonesia'],
+    MY:['Maybank','Public Bank','CIMB Group','Tenaga Nasional'], TH:['Delta Electronics (Thailand)','PTT PCL','Advanced Info Service (AIS)','Gulf Development'], VN:['Vingroup','Vinhomes','BIDV','VPBank']
   };
-  // คนในประเทศ: [อายุมัธยฐานของประชากร (UN World Population Prospects 2024, ปี), ดัชนีทุนมนุษย์ World Bank HCI 2020 (0–1),
-  //   ผลผลิตต่อชั่วโมงทำงาน (GDP per hour worked, ILO modelled estimates ปีล่าสุด, ดอลลาร์ PPP โดยประมาณ),
-  //   ระดับค่าครองชีพเทียบสหรัฐฯ (World Bank price level ratio, PPP ÷ อัตราแลกเปลี่ยน, สหรัฐฯ = 1, โดยประมาณ)]
-  // HCI = เด็กที่เกิดวันนี้ เมื่อโตเป็นแรงงานจะทำงานได้กี่ % ของศักยภาพเต็ม ดูจากจำนวนปีและคุณภาพการศึกษา (คะแนนสอบ) กับสุขภาพ · ไต้หวันไม่อยู่ในข้อมูล World Bank
-  const CM_PEOPLE = {
-    US:[38.5,0.70,97,1], EU:[44,0.75,70,0.75], CN:[39.5,0.65,16,0.55], JP:[49,0.80,50,0.65], IN:[28.8,0.49,9,0.25], CA:[41,0.80,68,0.85], TW:[44,null,62,0.45], KR:[45,0.80,50,0.65],
-    SA:[30,0.58,62,0.5], AU:[38,0.77,72,0.9], HK:[46,0.81,62,0.75], AE:[33,0.67,58,0.6], BR:[34,0.55,20,0.45], SG:[42,0.88,80,0.65], MX:[30,0.61,22,0.55], IL:[30,0.73,60,0.95],
-    ZA:[28,0.43,25,0.4], ID:[30,0.54,14,0.3], MY:[31,0.61,30,0.35], TH:[40,0.61,17,0.35], VN:[33,0.69,10,0.3]
+  // ค่าสำรอง (ประมาณ): สัดส่วนคนอายุ 65+ (%), ดัชนีทุนมนุษย์ World Bank, ผลผลิตต่อชั่วโมง ILO ($ PPP), ระดับราคาเทียบสหรัฐฯ
+  const CM_PEOPLE_FALLBACK = {
+    US:[18,0.70,97,1], EU:[22,0.76,75,0.75], CN:[15,0.65,16,0.55], JP:[30,0.80,50,0.65], IN:[7,0.49,9,0.25], CA:[20,0.80,68,0.85], TW:[19,null,70,0.45], KR:[20,0.80,50,0.65],
+    SA:[3,0.58,62,0.5], AU:[17,0.77,72,0.9], HK:[23,0.81,62,0.71], AE:[2,0.67,58,0.6], BR:[11,0.55,20,0.45], SG:[18,0.88,80,0.65], MX:[9,0.61,22,0.55], IL:[12,0.73,60,0.95],
+    ZA:[6,0.43,25,0.4], ID:[7,0.54,14,0.3], MY:[8,0.61,30,0.35], TH:[16,0.61,18,0.31], VN:[9,0.69,10,0.3]
   };
+  // ธุรกิจของบริษัท: จับจากชื่อ (บริษัทที่ไม่รู้จักจะแสดงแค่ชื่อ)
+  const CM_BIZ = [
+    [/apple/i,'iPhone','iPhone'], [/microsoft/i,'Windows, คลาวด์ Azure','Windows, Azure cloud'], [/alphabet|google/i,'Google, YouTube','Google, YouTube'],
+    [/nvidia/i,'ชิป AI','AI chips'], [/amazon/i,'อีคอมเมิร์ซ, คลาวด์ AWS','e-commerce, AWS cloud'], [/^meta/i,'Facebook, Instagram','Facebook, Instagram'],
+    [/broadcom/i,'ชิปเครือข่าย','networking chips'], [/tesla/i,'รถ EV','EVs'], [/berkshire/i,'บริษัทลงทุนของ Warren Buffett','Warren Buffett\'s holding company'],
+    [/tsmc/i,'รับผลิตชิปให้ Apple, Nvidia','makes chips for Apple, Nvidia'], [/sk hynix/i,'หน่วยความจำ HBM สำหรับ AI','HBM memory for AI'], [/samsung/i,'ชิปหน่วยความจำ, มือถือ','memory chips, phones'],
+    [/sk square/i,'บริษัทลงทุน (ถือ SK Hynix)','holding company (owns SK Hynix)'], [/lg energy/i,'แบตเตอรี่รถ EV','EV batteries'], [/hyundai/i,'รถยนต์','cars'],
+    [/asml/i,'เครื่องผลิตชิป','chip-making machines'], [/^sap$/i,'ซอฟต์แวร์องค์กร','business software'], [/lvmh/i,'แบรนด์หรู Louis Vuitton','luxury, Louis Vuitton'],
+    [/or[ée]al/i,'เครื่องสำอาง','cosmetics'], [/siemens/i,'เครื่องจักร, ระบบอัตโนมัติ','industrial automation'], [/astrazeneca|novartis|roche|novo nordisk|teva|sanofi/i,'ยา','pharmaceuticals'],
+    [/shell|petrobras|aramco|^ptt|adnoc|reliance/i,'น้ำมัน, ก๊าซ','oil & gas'], [/nestl/i,'อาหาร','food'], [/linde/i,'ก๊าซอุตสาหกรรม','industrial gases'], [/^arm/i,'ออกแบบชิป','chip designs'],
+    [/toyota/i,'รถยนต์','cars'], [/sony/i,'เกม PlayStation, เซนเซอร์กล้อง','PlayStation, camera sensors'], [/fast retailing/i,'เสื้อผ้า Uniqlo','Uniqlo clothing'], [/recruit/i,'เว็บหางาน Indeed','Indeed job site'],
+    [/tencent/i,'WeChat, เกม','WeChat, games'], [/naspers/i,'ถือหุ้น Tencent','owns a Tencent stake'], [/cxmt/i,'ชิปหน่วยความจำ','memory chips'], [/moutai/i,'เหล้าเหมาไถ','Moutai liquor'], [/catl/i,'แบตเตอรี่รถ EV','EV batteries'],
+    [/airtel|singtel|telecom|telkom|movil|advanced info|\bais\b/i,'มือถือ, อินเทอร์เน็ต','mobile, internet'], [/ma'aden|bhp|vale|grupo m[ée]xico|anglo/i,'เหมืองแร่','mining'],
+    [/gold fields|anglogold/i,'เหมืองทอง','gold mining'], [/nu holdings/i,'ธนาคารดิจิทัล','digital bank'], [/ambev/i,'เบียร์','beer'], [/shopify/i,'ระบบร้านค้าออนไลน์','online store platform'],
+    [/walmex/i,'Walmart เม็กซิโก','Walmart Mexico'], [/femsa/i,'ร้าน OXXO, เครื่องดื่ม','OXXO stores, drinks'], [/delta electronics/i,'อุปกรณ์ไฟฟ้าสำหรับศูนย์ข้อมูล','power gear for data centres'],
+    [/gulf/i,'โรงไฟฟ้า, ถือหุ้น AIS','power plants, AIS stake'], [/airports/i,'สนามบิน','airports'], [/^aia$/i,'ประกันชีวิต','life insurance'], [/chubb/i,'ประกันภัย','insurance'],
+    [/exchanges/i,'ตลาดหลักทรัพย์','stock exchange'], [/international holding/i,'บริษัทลงทุนของอาบูดาบี','Abu Dhabi holding company'], [/taqa|tenaga/i,'ไฟฟ้า, น้ำ','power & water'],
+    [/sea limited/i,'Shopee, เกม Garena','Shopee, Garena games'], [/vingroup/i,'อสังหาฯ, รถ VinFast','property, VinFast cars'], [/vinhomes/i,'อสังหาริมทรัพย์','property'], [/hoa phat/i,'เหล็ก','steel'],
+    [/elbit/i,'อาวุธ, กลาโหม','defence'], [/mediatek/i,'ชิปมือถือ','phone chips'], [/foxconn|hon hai/i,'ประกอบ iPhone, เซิร์ฟเวอร์ AI','assembles iPhones, AI servers'], [/ase group/i,'ประกอบและทดสอบชิป','chip packaging'],
+    [/dci indonesia/i,'ศูนย์ข้อมูล','data centres'], [/bayan/i,'ถ่านหิน','coal'], [/ihh/i,'โรงพยาบาล','hospitals'], [/abb/i,'ระบบไฟฟ้า, หุ่นยนต์','electrification, robotics'], [/swire|jardine/i,'กลุ่มธุรกิจหลายประเภท','conglomerate'],
+    [/bank|banco|hsbc|ufj|\bdbs\b|ocbc|\buob\b|cimb|banorte|firstrand|itaú|itau|bidv|vpbank|mizrahi|hapoalim|capitec/i,'ธนาคาร','banking']
+  ];
+  function cmBiz(name){
+    for(let i = 0; i < CM_BIZ.length; i++) if(CM_BIZ[i][0].test(name)) return tr(CM_BIZ[i][1], CM_BIZ[i][2]);
+    return '';
+  }
+  function cmShortName(name){
+    let n = String(name).replace(/\s+(PCL|Public Company|Company|Tbk|PJSC)\b.*$/i, '').replace(/\s{2,}/g, ' ').trim();
+    // ชื่อยาว: ตัดวงเล็บท้ายชื่อทิ้ง ยกเว้นเป็นชื่อย่อ เช่น (AIS)
+    if(n.length > 24) n = n.replace(/\s*\(([^)]*)\)\s*$/, function(m, inner){ return /^[A-Z0-9&.\- ]{2,6}$/.test(inner) ? m : ''; });
+    return n;
+  }
+  function cmPeople(code){
+    const live = cmProfiles && cmProfiles.people && cmProfiles.people[code] || {};
+    const f = CM_PEOPLE_FALLBACK[code] || [];
+    const pick = function(k, i){ return isValidNum(live[k]) ? live[k] : (f[i] == null ? null : f[i]); };
+    return { old65:pick('old65', 0), old65Year:live.old65Year, hci:pick('hci', 1), hciYear:live.hciYear, perHour:pick('perHour', 2), perHourYear:live.perHourYear,
+      priceLevel:pick('priceLevel', 3), priceYear:live.priceYear };
+  }
+  const cmYr = function(y){ return y ? tr(' (ปี ' + y + ')', ' (' + y + ')') : ''; };
   // แต่ละหัวข้อใน tooltip = [หัวข้อ, เนื้อหา (ขึ้นบรรทัดใหม่ด้วย \n)]
   function cmPeopleHint(code){
-    const p = CM_PEOPLE[code];
-    if(!p) return [];
+    if(!CM_PEOPLE_FALLBACK[code] && !(cmProfiles && cmProfiles.people && cmProfiles.people[code])) return [];
+    const p = cmPeople(code);
     const grade = function(v, hi, mid){ return v >= hi ? tr('สูง', 'High') : v >= mid ? tr('กลาง', 'Medium') : tr('ต่ำ', 'Low'); };
     const out = [];
-    const old = p[0] >= 42 ? tr(' · สังคมสูงวัย', ' · ageing') : p[0] <= 32 ? tr(' · คนหนุ่มสาวเยอะ', ' · young') : '';
-    out.push([tr('👥 ประชากร', '👥 People'), tr('อายุเฉลี่ย ' + Math.round(p[0]) + ' ปี', 'Median age ' + Math.round(p[0])) + old]);
-    out.push([tr('🎓 ทักษะแรงงาน', '🎓 Workforce skills') + (p[1] == null ? '' : ': ' + grade(p[1], 0.75, 0.6)),
-      p[1] == null ? tr('ไม่มีในข้อมูล World Bank\nคะแนนสอบนักเรียน (PISA) ติดกลุ่มท็อปของโลก', 'Not in World Bank data\nStudents rank near the top in PISA tests')
-        : tr('ดัชนีทุนมนุษย์ World Bank ' + p[1].toFixed(2) + ' จาก 1', 'World Bank Human Capital Index ' + p[1].toFixed(2) + ' of 1')]);
-    if(p[2] != null){
-      const cost = p[3] == null ? '' : (p[3] >= 0.85 ? tr('แพง', 'expensive') : p[3] >= 0.55 ? tr('ปานกลาง', 'moderate') : tr('ถูก', 'cheap'));
-      const costLine = p[3] == null ? '' : '\n' + (p[3] >= 1 ? tr('ค่าครองชีพ: ' + cost + ' (ฐานเทียบ)', 'Cost of living: ' + cost + ' (baseline)')
-        : tr('ค่าครองชีพ: ' + cost + ' (ของราคาราว ' + Math.round(p[3] * 100) + '% ของสหรัฐฯ)', 'Cost of living: ' + cost + ' (prices ~' + Math.round(p[3] * 100) + '% of the US)'));
-      out.push([tr('💵 รายได้ต่อชั่วโมง เทียบค่าครองชีพ: ', '💵 Earnings per hour vs cost of living: ') + grade(p[2], 60, 25),
-        tr('ทำงาน 1 ชม. ได้ของเท่ากับเงิน ~$' + p[2] + ' ที่อเมริกา\nเทียบ: สหรัฐฯ ~$97 · ไทย ~$17', '1 hour of work buys what ~$' + p[2] + ' buys in the US\nCompare: US ~$97 · Thailand ~$17') + costLine]);
+    if(p.old65 != null){
+      const tag = p.old65 >= 20 ? tr(' · สังคมสูงวัยเต็มขั้น', ' · super-aged') : p.old65 >= 14 ? tr(' · สังคมสูงวัย', ' · aged society') : p.old65 <= 8 ? tr(' · คนหนุ่มสาวเยอะ', ' · young') : '';
+      out.push([tr('👥 ประชากร', '👥 People'), tr('คนอายุ 65 ปีขึ้นไป ' + p.old65.toFixed(0) + '%', 'Aged 65+: ' + p.old65.toFixed(0) + '%') + tag + cmYr(p.old65Year)]);
+    }
+    out.push([tr('🎓 ทักษะแรงงาน', '🎓 Workforce skills') + (p.hci == null ? '' : ': ' + grade(p.hci, 0.75, 0.6)),
+      p.hci == null ? tr('ไม่มีในข้อมูล World Bank\nคะแนนสอบนักเรียน (PISA) ติดกลุ่มท็อปของโลก', 'Not in World Bank data\nStudents rank near the top in PISA tests')
+        : tr('ดัชนีทุนมนุษย์ World Bank ' + p.hci.toFixed(2) + ' จาก 1', 'World Bank Human Capital Index ' + p.hci.toFixed(2) + ' of 1') + cmYr(p.hciYear)]);
+    if(p.perHour != null){
+      const us = cmPeople('US').perHour, th = cmPeople('TH').perHour;
+      let body = tr('ทำงาน 1 ชม. ได้ของเท่ากับเงิน ~$' + Math.round(p.perHour) + ' ที่อเมริกา', '1 hour of work buys what ~$' + Math.round(p.perHour) + ' buys in the US') + cmYr(p.perHourYear)
+        + '\n' + tr('เทียบ: สหรัฐฯ ~$' + Math.round(us) + ' · ไทย ~$' + Math.round(th), 'Compare: US ~$' + Math.round(us) + ' · Thailand ~$' + Math.round(th));
+      if(p.priceLevel != null){
+        const cost = p.priceLevel >= 0.85 ? tr('แพง', 'expensive') : p.priceLevel >= 0.55 ? tr('ปานกลาง', 'moderate') : tr('ถูก', 'cheap');
+        body += '\n' + (code === 'US' ? tr('ค่าครองชีพ: ' + cost + ' (ฐานเทียบ)', 'Cost of living: ' + cost + ' (baseline)')
+          : tr('ค่าครองชีพ: ' + cost + ' (ของราคาราว ' + Math.round(p.priceLevel * 100) + '% ของสหรัฐฯ)', 'Cost of living: ' + cost + ' (prices ~' + Math.round(p.priceLevel * 100) + '% of the US)'));
+      }
+      out.push([tr('💵 รายได้ต่อชั่วโมง เทียบค่าครองชีพ: ', '💵 Earnings per hour vs cost of living: ') + grade(p.perHour, 60, 25), body]);
     }
     return out;
   }
   function cmRowHint(group, code, part){
     if(group === 'equities'){
-      const c = CM_CHAMPS[code];
+      const live = cmProfiles && cmProfiles.champs && cmProfiles.champs[code];
+      const names = Array.isArray(live) && live.length ? live.map(function(c){ return c[0]; }) : CM_CHAMPS_FALLBACK[code];
       const out = [];
       if(code === 'EU') out.push([tr('🗺️ รวมประเทศ', '🗺️ Includes'), tr('ยูโรโซน อังกฤษ สวิส และนอร์ดิก', 'Euro area, UK, Switzerland and the Nordics')]);
-      if(c) out.push([tr('🏆 บริษัทเด่น', '🏆 Champion stocks'), c.map(function(x){ return '• ' + x[0] + ' · ' + tr(x[1], x[2]); }).join('\n')]);
+      if(names) out.push([tr('🏆 บริษัทเด่น (ใหญ่สุดตามมูลค่าตลาด)', '🏆 Champion stocks (largest by market cap)'), names.map(function(n){ const b = cmBiz(n); return '• ' + cmShortName(n) + (b ? ' · ' + b : ''); }).join('\n')]);
       return out.concat(cmPeopleHint(code));
     }
     if(group !== 'crypto') return '';
@@ -3650,12 +3682,26 @@ window.setHeaderStamp();
         + ' · ตราสารหนี้: พันธบัตรรัฐบาลและหุ้นกู้ทุกประเภทที่ยังไม่ครบกำหนด มูลค่าที่ตราไว้ จาก BIS Debt securities statistics' + (b && b.countries ? ' (' + b.countries + ' ประเทศ' + (b.period ? ' ไตรมาส ' + b.period : '') + ')' : '') + ' ยูโรโซนคือรวมประเทศสมาชิก'
         + ' · ทองคำ: ราคาทองฟิวเจอร์ส (Yahoo GC=F, สำรอง PAXG จาก CoinGecko) × ปริมาณทองที่ขุดขึ้นมาแล้วทั้งโลก (World Gold Council สิ้นปี 2024 ราว 216,265 ตัน บวกการขุดปีละราว 3,661 ตัน)'
         + ' · คริปโต: มูลค่าตลาดรวมจาก CoinGecko (สำรอง CoinPaprika) แยก stablecoin ออกด้วยยอดรวมจาก DefiLlama · ไม่รวมอสังหาริมทรัพย์ เงินฝาก และอนุพันธ์ · อัปเดตทุก 15 นาที'
-        + ' · ปุ่ม i ของประเทศ: บริษัทเด่นเลือกจากหุ้นมูลค่าสูงสุด, อายุเฉลี่ยคืออายุมัธยฐานจาก UN World Population Prospects 2024, ทักษะแรงงานคือดัชนีทุนมนุษย์ (Human Capital Index) ของ World Bank ปี 2020 วัดจากจำนวนปีและคุณภาพการศึกษา (คะแนนสอบ) กับสุขภาพ ไม่ใช่วัดความฉลาดของคน, รายได้ต่อชั่วโมงคือ GDP ต่อชั่วโมงทำงาน (ILO) แปลงเป็นดอลลาร์แบบปรับค่าครองชีพ (PPP) แล้ว จึงบอกได้ว่าทำงาน 1 ชม. ซื้อของได้เท่าไหร่ ใช้แทนค่าแรงเฉลี่ยเพราะเทียบข้ามประเทศได้, ค่าครองชีพคือระดับราคาสินค้าเทียบสหรัฐฯ (World Bank price level ratio) ตัวเลขเหล่านี้เป็นค่าประมาณ',
+        + ' · ปุ่ม i ของประเทศ: อัปเดตเองเมื่อแหล่งข้อมูลออกตัวเลขใหม่ (เช็กทุก 6 ชม.) บริษัทเด่นคือ 4 บริษัทมูลค่าตลาดสูงสุดจาก companiesmarketcap.com, ประชากรคือสัดส่วนคนอายุ 65+ จาก World Bank, ทักษะแรงงานคือดัชนีทุนมนุษย์ (Human Capital Index) ของ World Bank วัดจากจำนวนปีและคุณภาพการศึกษา (คะแนนสอบ) กับสุขภาพ ไม่ใช่วัดความฉลาดของคน, รายได้ต่อชั่วโมงคือผลผลิตต่อชั่วโมงทำงาน (ILO modelled estimates) เป็นดอลลาร์แบบปรับค่าครองชีพ (PPP) แล้ว จึงบอกได้ว่าทำงาน 1 ชม. ซื้อของได้เท่าไหร่ ใช้แทนค่าแรงเฉลี่ยเพราะเทียบข้ามประเทศได้, ค่าครองชีพคือ GDP ต่อหัวตามอัตราแลกเปลี่ยน ÷ แบบ PPP จาก World Bank (สหรัฐฯ = 100%), ยุโรปคือค่าเฉลี่ยของเศรษฐกิจใหญ่ในยุโรป',
       'Stocks: total market cap of the listed companies companiesmarketcap.com tracks' + (e && e.countries ? ' (' + e.countries + ' countries)' : '') + ', by the country of the company\'s headquarters, prices delayed minutes to hours. China counts large companies only, so it reads below the exchanges\' own totals'
         + ' · Bonds: all government and corporate debt securities outstanding at face value, BIS debt securities statistics' + (b && b.countries ? ' (' + b.countries + ' countries' + (b.period ? ', ' + b.period : '') + ')' : '') + '. The euro area is the sum of its members'
         + ' · Gold: gold futures price (Yahoo GC=F, fallback PAXG from CoinGecko) × all gold ever mined (World Gold Council, ~216,265 t at end-2024 plus ~3,661 t of mine output a year)'
         + ' · Crypto: total market cap from CoinGecko (fallback CoinPaprika), stablecoins split out with the DefiLlama total · excludes real estate, deposits and derivatives · refreshed every 15 minutes'
-        + ' · Country i buttons: champion stocks are the largest listed companies; median age from UN World Population Prospects 2024; workforce skills are the World Bank Human Capital Index 2020, built from years and quality (test scores) of schooling plus health, not a measure of intelligence; earnings per hour is GDP per hour worked (ILO) in cost-of-living-adjusted (PPP) dollars, i.e. what an hour of work buys, a cross-country proxy for pay; cost of living is the price level relative to the US (World Bank price level ratio); all approximate');
+        + ' · Country i buttons: refreshed automatically when sources publish new figures (checked every 6 h); champion stocks are the 4 largest by market cap on companiesmarketcap.com; people is the World Bank share aged 65+; workforce skills are the World Bank Human Capital Index, built from years and quality (test scores) of schooling plus health, not a measure of intelligence; earnings per hour is output per hour worked (ILO modelled estimates) in cost-of-living-adjusted (PPP) dollars, i.e. what an hour of work buys, a cross-country proxy for pay; cost of living is GDP per head at market rates ÷ at PPP from the World Bank (US = 100%); Europe is the average of its big economies');
+  }
+  let cmLastJ = null, cmProfNextAt = 0;
+  async function fetchCountryProfiles(){
+    cmProfNextAt = Date.now() + 6 * 3600 * 1000;
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/country-profiles', 20000);
+      const j = await r.json();
+      if(!j || !j.parts) throw new Error(j && j.error || 'HTTP ' + r.status);
+      cmProfiles = j.parts;
+      if(cmLastJ) renderCapMarkets(cmLastJ);
+    }catch(e){
+      console.warn('[country-profiles]', e);
+      cmProfNextAt = Date.now() + 15 * 60 * 1000;
+    }
   }
   async function fetchCapMarkets(){
     cmNextAt = Date.now() + CM_POLL_MS;
@@ -3663,6 +3709,7 @@ window.setHeaderStamp();
       const r = await fetchWithTimeout('/.netlify/functions/capital-markets', 15000);
       const j = await r.json();
       if(!j || !j.parts) throw new Error(j && j.error || 'HTTP ' + r.status);
+      cmLastJ = j;
       renderCapMarkets(j);
       if(isValidNum(j.ttl) && j.ttl > 0) cmNextAt = Date.now() + Math.min(j.ttl * 1000, CM_POLL_MS);
     }catch(e){
@@ -3673,7 +3720,12 @@ window.setHeaderStamp();
   }
   window.__capTest = { capMarketRows, fmtCapT, renderCapMarkets };
   fetchCapMarkets();
-  setInterval(function(){ if(!document.hidden && Date.now() >= cmNextAt) fetchCapMarkets(); }, 60 * 1000);
+  fetchCountryProfiles();
+  setInterval(function(){
+    if(document.hidden) return;
+    if(Date.now() >= cmNextAt) fetchCapMarkets();
+    if(Date.now() >= cmProfNextAt) fetchCountryProfiles();
+  }, 60 * 1000);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden && Date.now() >= cmNextAt) fetchCapMarkets(); });
 
   // ---------- ตัวเลขเศรษฐกิจเพิ่มเติม: บ้าน · ดอกเบี้ยบ้าน · ค้าปลีก · ISM · Breakeven ----------
