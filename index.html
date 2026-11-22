@@ -569,6 +569,9 @@ body{margin:0}
   .tip-pop{display:none;position:absolute;z-index:20;left:-1px;right:-1px;top:34px;padding:12px 13px;border-radius:12px;background:var(--panel);border:1px solid var(--gold-line);box-shadow:0 10px 28px rgba(0,0,0,.55);font-size:12px;line-height:1.6;color:var(--text);letter-spacing:0;text-transform:none;font-weight:400}
   .tip-pop b{color:var(--accent-hi);font-weight:600}
   .tip-pop p{margin:0 0 6px}.tip-pop p:last-child{margin:0}
+  .legend-head{display:block}
+  .legend-line{display:block;padding-left:1.55em;text-indent:-1.55em}
+  .legend-line + .legend-line{margin-top:2px}
   .tip:hover .tip-pop,.tip.open .tip-pop{display:block}
   .tv-btn{align-self:flex-start;margin-top:auto;padding-top:8px;font-size:11px;color:var(--accent-hi);text-decoration:none;white-space:nowrap}
   .tv-btn span{display:inline-block;border:1px solid var(--gold-line);border-radius:999px;padding:2px 9px}
@@ -1044,12 +1047,12 @@ body{margin:0}
     <div class="i18n-th">
     <p><b>PPI (ดัชนีราคาผู้ผลิต)</b> วัดราคาที่ผู้ผลิตและผู้ขายส่งได้รับ หรือก็คือต้นทุนก่อนสินค้าจะถึงมือผู้บริโภค ประกาศโดย BLS ทุกเดือน</p>
     <p><b>อ่านค่า:</b> PPI มักขยับนำ CPI เพราะเมื่อต้นทุนสูงขึ้น ผู้ขายมักส่งต่อให้ผู้บริโภคในภายหลัง ตลาดและค่าคาดของ PPI ดู MoM (เทียบเดือนก่อน) เป็นหลัก</p>
-    <p><b>สีบนการ์ด (ผลต่อตลาด):</b> ดูจาก YoY: 🟢 ต่ำกว่า 2.5% = ต้นทุนผู้ผลิตนิ่ง · 🟡 2.5–4% = ต้นทุนเร่งขึ้น จับตาการส่งต่อไป CPI · 🔴 ตั้งแต่ 4% = ต้นทุนสูง เสี่ยงดัน CPI ขึ้น กดดันหุ้น/บอนด์ (ถ้าไม่มี YoY ใช้ MoM: 🟢 ไม่เกิน +0.2% · 🟡 ไม่เกิน +0.4% · 🔴 เกินกว่านั้น) · ผลเทียบค่าคาดอยู่ในกล่องวิเคราะห์ด้านล่าง · ตัวเลขใหญ่ใช้สีเดียวกับจุดสถานะ</p>
+    <p><b>สีบนการ์ด (ผลต่อตลาด) ดูจาก YoY:</b> 🟢 ต่ำกว่า 2.5% = ต้นทุนผู้ผลิตนิ่ง · 🟡 2.5–4% = ต้นทุนเร่งขึ้น จับตาการส่งต่อไป CPI · 🔴 ตั้งแต่ 4% = ต้นทุนสูง เสี่ยงดัน CPI ขึ้น กดดันหุ้น/บอนด์ (ถ้าไม่มี YoY ใช้ MoM: 🟢 ไม่เกิน +0.2% · 🟡 ไม่เกิน +0.4% · 🔴 เกินกว่านั้น) · ผลเทียบค่าคาดอยู่ในกล่องวิเคราะห์ด้านล่าง · ตัวเลขใหญ่ใช้สีเดียวกับจุดสถานะ</p>
     </div>
     <div class="i18n-en" lang="en">
     <p><b>PPI (Producer Price Index)</b> measures the prices producers and wholesalers receive, i.e. costs before goods reach consumers. Published monthly by the BLS.</p>
     <p><b>How to read it:</b> PPI tends to lead CPI, because higher costs are usually passed on to consumers later. Markets and the PPI forecast focus on MoM (vs the previous month).</p>
-    <p><b>Colours on the card (market effect):</b> by YoY: 🟢 below 2.5% = producer costs steady · 🟡 2.5–4% = costs picking up, watch pass-through to CPI · 🔴 4% and up = high costs, risk of pushing CPI up, pressure on stocks/bonds (without YoY, MoM: 🟢 up to +0.2% · 🟡 up to +0.4% · 🔴 above) · the beat/miss vs forecast is in the analysis box below · The big number uses the same colour as the status dot</p>
+    <p><b>Colours on the card (market effect), by YoY:</b> 🟢 below 2.5% = producer costs steady · 🟡 2.5–4% = costs picking up, watch pass-through to CPI · 🔴 4% and up = high costs, risk of pushing CPI up, pressure on stocks/bonds (without YoY, MoM: 🟢 up to +0.2% · 🟡 up to +0.4% · 🔴 above) · the beat/miss vs forecast is in the analysis box below · The big number uses the same colour as the status dot</p>
     </div>
   </div></div></div><div class="num" id="ppiHead">–</div><div class="next" id="ppiHeadZone"></div><div class="next" id="ppiYoy"></div><div class="next" id="nextPpi"></div><a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3APPIFIS" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
   <div class="metric"><div class="name">Unemployment Rate <div class="tip"><button type="button" class="tip-btn" aria-label="อัตราว่างงาน คืออะไร" data-en-aria="What is Unemployment Rate?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
@@ -4128,11 +4131,52 @@ window.setHeaderStamp();
       body += impact(ryV.accent === 'var(--bad)' ? tr('ลบต่อทองคำ BTC และหุ้นเทค (ทองมักวิ่งสวนเส้นนี้ชัดที่สุด)', 'negative for gold, BTC and tech (gold usually moves opposite this line most clearly)')
         : ryV.accent === 'var(--good)' ? tr('บวกต่อทองคำ BTC และหุ้นเทค', 'positive for gold, BTC and tech')
         : tr('กลาง ๆ ให้ดูทิศทางในสัปดาห์ถัดไป', 'neutral; watch the direction over the coming weeks'));
-      body += '<br><span style="opacity:.75;">' + tr('ℹ️ เกณฑ์: ดูทิศทางก่อน 🔴 ขึ้น +0.25 จุดขึ้นไปใน 1 เดือน · 🟢 ลง 0.25 จุดขึ้นไป · ถ้าไม่เคลื่อนแรง 🔴 ตั้งแต่ 2% · 🟢 ต่ำกว่า 1% · 🟡 1–2% · ข้อมูล FRED DFII10', 'ℹ️ Thresholds: direction first 🔴 up 0.25 pts or more in 1 month · 🟢 down 0.25 pts or more · otherwise 🔴 2% and up · 🟢 below 1% · 🟡 1–2% · data FRED DFII10') + '</span>';
+      body += '<span style="opacity:.75;display:block;margin-top:4px;">' + legendLines(tr('ℹ️ เกณฑ์: ดูทิศทาง 1 เดือนก่อน · 🔴 ขึ้น +0.25 จุดขึ้นไปใน 1 เดือน · 🟢 ลง 0.25 จุดขึ้นไป · ถ้าไม่เคลื่อนแรง ดูระดับ · 🟢 ต่ำกว่า 1% · 🟡 1–2% · 🔴 ตั้งแต่ 2% · ข้อมูล FRED DFII10', 'ℹ️ Thresholds: direction first · 🔴 up 0.25 pts or more in 1 month · 🟢 down 0.25 pts or more · otherwise by level · 🟢 below 1% · 🟡 1–2% · 🔴 2% and up · data FRED DFII10')) + '</span>';
       out.push(analysisCard(ryV.accent, tr('Real Yield 10 ปี — ', '10-year real yield — ') + ryV.dot + ' ' + ryV.label, body));
     }
     return out;
   }
+
+  // อ่านสี / Colours: แตกคำอธิบายสีให้ขึ้นบรรทัดละสี (เขียว บรรทัดถัดไปเหลือง แดง ...) ทั้งเว็บ
+  // แยกที่ " · " ที่ไม่ได้อยู่ในวงเล็บ ใช้เมื่อมีจุดสีอย่างน้อย 2 สี · การ์ดใหม่แค่เขียน <p><b>อ่านสี:</b> 🟢 … · 🟡 … · 🔴 …</p> ใน .tip-pop ก็ได้อัตโนมัติ
+  const LEGEND_DOT = /^(?:🟢|🟡|🟠|🔴|🔵|🟣|🟤|⚪|⚫)/u;
+  function splitLegendParts(html){
+    const parts = []; let depth = 0, cur = '';
+    for(let i = 0; i < html.length; i++){
+      const c = html[i];
+      if(c === '(') depth++; else if(c === ')') depth = Math.max(0, depth - 1);
+      if(depth === 0 && html.startsWith(' · ', i)){ parts.push(cur.trim()); cur = ''; i += 2; continue; }
+      cur += c;
+    }
+    parts.push(cur.trim());
+    return parts.filter(Boolean);
+  }
+  function legendLines(html){
+    const parts = splitLegendParts(String(html || ''));
+    const dots = parts.filter(function(x){ return LEGEND_DOT.test(x); }).length;
+    if(dots < 2) return null;
+    return parts.map(function(x){ return '<span class="legend-line">' + x + '</span>'; }).join('');
+  }
+  // <p><b>ป้ายชื่อ:</b> 🟢 … · 🟡 …</p> → ป้ายชื่อบรรทัดแรก แล้วบรรทัดละสี · คืน null ถ้าไม่ใช่คำอธิบายสี
+  function colorLegendHtml(inner){
+    if(String(inner).indexOf('legend-line') !== -1) return null;
+    const m = /^\s*(<b>[\s\S]*?<\/b>)\s*([\s\S]*)$/.exec(String(inner || ''));
+    if(!m) return null;
+    const lines = legendLines(m[2]);
+    return lines ? '<span class="legend-head">' + m[1] + '</span>' + lines : null;
+  }
+  function formatColorLegends(root){
+    const scope = root || document;
+    if(!scope || !scope.querySelectorAll) return;
+    scope.querySelectorAll('.tip-pop p').forEach(function(p){
+      const out = colorLegendHtml(p.innerHTML);
+      if(out){ p.innerHTML = out; p.classList.add('color-legend'); }
+    });
+  }
+  window.colorLegendHtml = colorLegendHtml; window.legendLines = legendLines;   // tests + การ์ดที่สร้างด้วย JS
+  // ปุ่ม (i) บางส่วนอยู่ใต้ script นี้ จึงรอให้หน้าโหลดครบก่อน
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ formatColorLegends(document); });
+  else formatColorLegends(document);
 
   // ⓘ คำอธิบายในการ์ดตลาด: บนคอมแค่ชี้ก็ขึ้น (CSS :hover) · บนมือถือแตะเพื่อเปิด/ปิด, แตะที่อื่นหรือกด Esc เพื่อปิด
   function closeTips(except){
