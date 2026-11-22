@@ -376,6 +376,7 @@ body{margin:0}
     --text:#ece6d8; --muted:#8d95a6; --sub:#8d95a6;
     --accent:#d4b26a; --accent-hi:#f0dba4; --amber:#d4b26a;
     --good:#5ac492; --green:#5ac492; --bad:#e46a72; --red:#e46a72; --warn:#e2b45a;
+    --cool:#5aa7e0;   /* 🔵 = ระดับที่ต่ำ/เย็นเกินไป หรือขั้นรองของฝั่งดี (ไม่ใช้เหลืองซ้ำสองความหมาย) */
     --sans:'Noto Sans Thai Looped',system-ui,-apple-system,'Segoe UI',sans-serif;
     --serif:var(--sans);   /* เดิมหัวข้อเป็นฟอนต์มีเชิง — ตอนนี้ใช้ฟอนต์เดียวกันทั้งหมด */
     --disp:var(--serif); --mono:var(--sans);
@@ -429,8 +430,8 @@ body{margin:0}
   .metric .name,#btcTab .sl-name{font-size:11px;font-weight:500;letter-spacing:.06em;color:var(--muted);text-transform:none}
   .metric .num{font-family:var(--sans);font-weight:600;font-size:26px;color:#f6f1e6}
   /* สีตัวเลขบนการ์ด = สีเดียวกับกล่องวิเคราะห์ด้านล่าง (ตั้งโดย toneNum() ใน renderFedAnalysis) */
-  .metric .num.tone-good{color:var(--good)}.metric .num.tone-bad{color:var(--bad)}.metric .num.tone-warn{color:var(--warn)}
-  .metric .zone.tone-good{color:var(--good)}.metric .zone.tone-bad{color:var(--bad)}.metric .zone.tone-warn{color:var(--warn)}
+  .metric .num.tone-good{color:var(--good)}.metric .num.tone-bad{color:var(--bad)}.metric .num.tone-warn{color:var(--warn)}.metric .num.tone-cool{color:var(--cool)}
+  .metric .zone.tone-good{color:var(--good)}.metric .zone.tone-bad{color:var(--bad)}.metric .zone.tone-warn{color:var(--warn)}.metric .zone.tone-cool{color:var(--cool)}
   .event .rank{color:var(--accent);font-weight:600;letter-spacing:.14em;font-size:10px;text-transform:uppercase}
   .event h3{font-family:var(--sans);font-weight:600;font-size:15px;line-height:1.5;color:#f3eee3}
   .impact{color:var(--accent-hi);font-weight:500;font-size:12px}
@@ -1183,13 +1184,13 @@ body{margin:0}
     <p><b>Breakeven</b> = เงินเฟ้อเฉลี่ยที่นักลงทุนในตลาดบอนด์ "เดิมพัน" ไว้สำหรับช่วงเวลานั้น คิดง่าย ๆ คือ <b>yield บอนด์รัฐบาลปกติ ลบ yield บอนด์ที่ป้องกันเงินเฟ้อ (TIPS)</b> ส่วนต่างนั้นคือเงินเฟ้อที่ตลาดคาด</p>
     <p><b>อ่านค่า:</b> 5 ปี = ตลาดคาดเงินเฟ้อเฉลี่ยใน 5 ปีข้างหน้าเท่านี้ · ใกล้ 2% = ตลาดเชื่อว่า Fed คุมเงินเฟ้ออยู่ · ขึ้นเร็ว = ตลาดเริ่มกลัวเงินเฟ้อกลับมา (มักหนุนทอง กดดันบอนด์)</p>
     <p><b>ผลต่อทอง/BTC:</b> Breakeven <b>ขึ้น</b> = มักดีกับทองและ BTC เพราะคนกลัวเงินเฟ้อ เลยหาสินทรัพย์ป้องกันค่าเงิน · Breakeven <b>ลง</b> = มักไม่ดี เงินเฟ้อที่คาดลดลง ความต้องการป้องกันเงินเฟ้อก็ลด · <b>ตัวตัดสินจริงคือ Real Yield:</b> ถ้า Breakeven ลงเพราะตลาดกลัวเศรษฐกิจชะลอ แล้ว Real Yield ลงตาม ทองยังได้ประโยชน์ได้ ดูคู่กับการ์ด Real Yield 10 ปี</p>
-    <p><b>สีบนการ์ด (ผลต่อตลาด):</b> 🟢 1.8–2.3% = สอดคล้องกับเป้า 2% Fed ไม่ต้องตึงเพิ่ม · 🟡 2.3–2.5% = ค่อนข้างสูงกว่าเป้า ต้องจับตา · 🔴 2.5% ขึ้นไป = ตลาดไม่เชื่อว่าเงินเฟ้อจะกลับไป 2% Fed อาจตึงนาน กดดันหุ้น/บอนด์ · 🟡 ต่ำกว่า 1.8% = ตลาดกังวลเศรษฐกิจชะลอ · สีตัวเลขใหญ่ = สีเดียวกับจุดสถานะ</p>
+    <p><b>สีบนการ์ด (ผลต่อตลาด):</b> 🔵 ต่ำกว่า 1.8% = ตลาดกังวลเศรษฐกิจชะลอ · 🟢 1.8–2.3% = สอดคล้องกับเป้า 2% Fed ไม่ต้องตึงเพิ่ม · 🟡 2.3–2.5% = ค่อนข้างสูงกว่าเป้า ต้องจับตา · 🔴 2.5% ขึ้นไป = ตลาดไม่เชื่อว่าเงินเฟ้อจะกลับไป 2% Fed อาจตึงนาน กดดันหุ้น/บอนด์ · สีตัวเลขใหญ่ = สีเดียวกับจุดสถานะ</p>
     </div>
     <div class="i18n-en" lang="en">
     <p><b>Breakeven</b> = the average inflation bond investors are pricing in for that period. Simply: <b>the normal Treasury yield minus the inflation-protected (TIPS) yield</b>. That gap is the inflation the market expects.</p>
     <p><b>How to read it:</b> the 5-year = expected average inflation over the next 5 years. Near 2% = the market trusts the Fed to keep inflation in check. A fast rise = inflation worries are back (often good for gold, bad for bonds).</p>
     <p><b>Effect on gold/BTC:</b> breakevens <b>rising</b> = usually good for gold and BTC, as fear of inflation sends people to assets that hedge the currency · breakevens <b>falling</b> = usually bad: lower expected inflation means less demand for inflation hedges · <b>The real yield decides:</b> if breakevens fall on growth fears and the real yield falls too, gold can still benefit. Read it together with the 10-year real yield card.</p>
-    <p><b>Colours on the card (market effect):</b> 🟢 1.8–2.3% = consistent with the 2% goal, no need for the Fed to tighten · 🟡 2.3–2.5% = a bit above target, worth watching · 🔴 2.5% and up = market doubts inflation returns to 2%, Fed may stay tight, pressure on stocks/bonds · 🟡 below 1.8% = market worried about a slowdown · The big number uses the same colour as the status dot</p>
+    <p><b>Colours on the card (market effect):</b> 🔵 below 1.8% = market worried about a slowdown · 🟢 1.8–2.3% = consistent with the 2% goal, no need for the Fed to tighten · 🟡 2.3–2.5% = a bit above target, worth watching · 🔴 2.5% and up = market doubts inflation returns to 2%, Fed may stay tight, pressure on stocks/bonds · The big number uses the same colour as the status dot</p>
     </div>
   </div></div></div><div class="num" id="be5">–</div><div class="spark" id="spBe5"></div><div class="next" id="be5Info"></div>
     <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3AT5YIE" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
@@ -1198,13 +1199,13 @@ body{margin:0}
     <p><b>Breakeven 10 ปี</b> = yield บอนด์รัฐบาล 10 ปี ลบ yield บอนด์ป้องกันเงินเฟ้อ (TIPS) 10 ปี = เงินเฟ้อเฉลี่ยที่ตลาดคาดใน 10 ปีข้างหน้า</p>
     <p><b>อ่านค่า:</b> ราว 2.0–2.3% ถือว่าสอดคล้องกับเป้า 2% ของ Fed (ตัวนี้อิง CPI ซึ่งปกติสูงกว่าเงินเฟ้อ PCE ที่ Fed ใช้นิดหน่อย) · ถ้า<b>ระยะยาวขึ้นไปเกิน ~2.5%</b> แปลว่าตลาด<b>เริ่มไม่เชื่อว่า Fed จะพาเงินเฟ้อกลับไป 2%</b> ได้ ซึ่ง Fed กังวลมาก</p>
     <p><b>ผลต่อทอง/BTC:</b> Breakeven <b>ขึ้น</b> = มักดีกับทองและ BTC เพราะคนกลัวเงินเฟ้อ เลยหาสินทรัพย์ป้องกันค่าเงิน · Breakeven <b>ลง</b> = มักไม่ดี เงินเฟ้อที่คาดลดลง ความต้องการป้องกันเงินเฟ้อก็ลด · <b>ตัวตัดสินจริงคือ Real Yield:</b> ถ้า Breakeven ลงเพราะตลาดกลัวเศรษฐกิจชะลอ แล้ว Real Yield ลงตาม ทองยังได้ประโยชน์ได้ ดูคู่กับการ์ด Real Yield 10 ปี</p>
-    <p><b>สีบนการ์ด (ผลต่อตลาด):</b> 🟢 1.8–2.3% = สอดคล้องกับเป้า 2% Fed ไม่ต้องตึงเพิ่ม · 🟡 2.3–2.5% = ค่อนข้างสูงกว่าเป้า ต้องจับตา · 🔴 2.5% ขึ้นไป = ตลาดไม่เชื่อว่าเงินเฟ้อจะกลับไป 2% Fed อาจตึงนาน กดดันหุ้น/บอนด์ · 🟡 ต่ำกว่า 1.8% = ตลาดกังวลเศรษฐกิจชะลอ · สีตัวเลขใหญ่ = สีเดียวกับจุดสถานะ</p>
+    <p><b>สีบนการ์ด (ผลต่อตลาด):</b> 🔵 ต่ำกว่า 1.8% = ตลาดกังวลเศรษฐกิจชะลอ · 🟢 1.8–2.3% = สอดคล้องกับเป้า 2% Fed ไม่ต้องตึงเพิ่ม · 🟡 2.3–2.5% = ค่อนข้างสูงกว่าเป้า ต้องจับตา · 🔴 2.5% ขึ้นไป = ตลาดไม่เชื่อว่าเงินเฟ้อจะกลับไป 2% Fed อาจตึงนาน กดดันหุ้น/บอนด์ · สีตัวเลขใหญ่ = สีเดียวกับจุดสถานะ</p>
     </div>
     <div class="i18n-en" lang="en">
     <p><b>10-year breakeven</b> = the 10-year Treasury yield minus the 10-year inflation-protected (TIPS) yield = the average inflation the market expects over the next 10 years.</p>
     <p><b>How to read it:</b> about 2.0–2.3% is consistent with the Fed's 2% goal (it is based on CPI, which normally runs a little above the PCE inflation the Fed targets). If this <b>long-term measure climbs above ~2.5%</b>, the market is <b>starting to doubt the Fed will get inflation back to 2%</b>, something the Fed worries about a lot.</p>
     <p><b>Effect on gold/BTC:</b> breakevens <b>rising</b> = usually good for gold and BTC, as fear of inflation sends people to assets that hedge the currency · breakevens <b>falling</b> = usually bad: lower expected inflation means less demand for inflation hedges · <b>The real yield decides:</b> if breakevens fall on growth fears and the real yield falls too, gold can still benefit. Read it together with the 10-year real yield card.</p>
-    <p><b>Colours on the card (market effect):</b> 🟢 1.8–2.3% = consistent with the 2% goal, no need for the Fed to tighten · 🟡 2.3–2.5% = a bit above target, worth watching · 🔴 2.5% and up = market doubts inflation returns to 2%, Fed may stay tight, pressure on stocks/bonds · 🟡 below 1.8% = market worried about a slowdown · The big number uses the same colour as the status dot</p>
+    <p><b>Colours on the card (market effect):</b> 🔵 below 1.8% = market worried about a slowdown · 🟢 1.8–2.3% = consistent with the 2% goal, no need for the Fed to tighten · 🟡 2.3–2.5% = a bit above target, worth watching · 🔴 2.5% and up = market doubts inflation returns to 2%, Fed may stay tight, pressure on stocks/bonds · The big number uses the same colour as the status dot</p>
     </div>
   </div></div></div><div class="num" id="be10">–</div><div class="spark" id="spBe10"></div><div class="next" id="be10Info"></div>
     <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3AT10YIE" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
@@ -2516,7 +2517,7 @@ window.setHeaderStamp();
     return isFinite(t) ? Math.round((Date.now() - t) / 86400000) : null;
   }
   // ระบายสีตัวเลขบนการ์ดด้วยสีเดียวกับกล่องวิเคราะห์ (เขียว = ดีกว่าคาด · แดง = แย่กว่าคาด · เหลือง = ใกล้เคียง · ไม่มีค่าคาด = สีปกติ)
-  const TONE_CLASS = { 'var(--good)': 'tone-good', 'var(--bad)': 'tone-bad', 'var(--warn)': 'tone-warn' };
+  const TONE_CLASS = { 'var(--good)': 'tone-good', 'var(--bad)': 'tone-bad', 'var(--warn)': 'tone-warn', 'var(--cool)': 'tone-cool' };
   function toneNum(id, accent){
     const n = el(id);
     if(!n) return;
@@ -3837,7 +3838,7 @@ window.setHeaderStamp();
   // สีตัวเลขใหญ่ จุดสี และกล่องวิเคราะห์ใช้ verdict เดียวกันนี้ทั้งหมด · ผลเทียบค่าคาด (สูง/ต่ำกว่าคาด) เป็นแค่ข้อความในวงเล็บ
   // ความหมายของแต่ละสีเขียนไว้ในปุ่ม (i) ของการ์ด
   function extraVerdict(dot, th, en){
-    return { accent: dot === '🟢' ? 'var(--good)' : dot === '🔴' ? 'var(--bad)' : 'var(--warn)', dot: dot, label: tr(th, en) };
+    return { accent: dot === '🟢' ? 'var(--good)' : dot === '🔴' ? 'var(--bad)' : dot === '🔵' ? 'var(--cool)' : 'var(--warn)', dot: dot, label: tr(th, en) };
   }
   function homeSalesVerdict(v){
     return v >= 4.8e6 ? extraVerdict('🟢', 'ปกติ/คึกคัก หนุนหุ้นอสังหาฯ', 'Normal to busy: supports housing stocks')
@@ -3866,7 +3867,7 @@ window.setHeaderStamp();
     return v >= 2.5 ? extraVerdict('🔴', 'สูง ตลาดไม่เชื่อว่าเงินเฟ้อจะกลับไป 2% Fed อาจตึงนาน กดดันหุ้น/บอนด์', 'High: market doubts inflation returns to 2%, Fed may stay tight, pressure on stocks/bonds')
       : v >= 2.3 ? extraVerdict('🟡', 'ค่อนข้างสูงกว่าเป้า ต้องจับตา', 'A bit above target: worth watching')
       : v >= 1.8 ? extraVerdict('🟢', 'สอดคล้องกับเป้า 2% ของ Fed ไม่ต้องตึงเพิ่ม', 'Consistent with the Fed\'s 2% goal: no need to tighten')
-      : extraVerdict('🟡', 'ต่ำ ตลาดกังวลเศรษฐกิจชะลอ', 'Low: market worried about a slowdown');
+      : extraVerdict('🔵', 'ต่ำ ตลาดกังวลเศรษฐกิจชะลอ', 'Low: market worried about a slowdown');
   }
   // ผลเทียบค่าคาด เป็นข้อความเท่านั้น (ไม่กำหนดสี)
   function surpriseWord(dev, near){
@@ -4131,7 +4132,7 @@ window.setHeaderStamp();
       body += impact(ryV.accent === 'var(--bad)' ? tr('ลบต่อทองคำ BTC และหุ้นเทค (ทองมักวิ่งสวนเส้นนี้ชัดที่สุด)', 'negative for gold, BTC and tech (gold usually moves opposite this line most clearly)')
         : ryV.accent === 'var(--good)' ? tr('บวกต่อทองคำ BTC และหุ้นเทค', 'positive for gold, BTC and tech')
         : tr('กลาง ๆ ให้ดูทิศทางในสัปดาห์ถัดไป', 'neutral; watch the direction over the coming weeks'));
-      body += '<span style="opacity:.75;display:block;margin-top:4px;">' + legendLines(tr('ℹ️ เกณฑ์: ดูทิศทาง 1 เดือนก่อน · 🔴 ขึ้น +0.25 จุดขึ้นไปใน 1 เดือน · 🟢 ลง 0.25 จุดขึ้นไป · ถ้าไม่เคลื่อนแรง ดูระดับ · 🟢 ต่ำกว่า 1% · 🟡 1–2% · 🔴 ตั้งแต่ 2% · ข้อมูล FRED DFII10', 'ℹ️ Thresholds: direction first · 🔴 up 0.25 pts or more in 1 month · 🟢 down 0.25 pts or more · otherwise by level · 🟢 below 1% · 🟡 1–2% · 🔴 2% and up · data FRED DFII10')) + '</span>';
+      body += '<span style="opacity:.75;display:block;margin-top:4px;">' + legendLines(tr('ℹ️ เกณฑ์ (ดูทิศทาง 1 เดือนก่อน แล้วค่อยดูระดับ) · 🟢 ลงเร็ว 0.25 จุดขึ้นไปใน 1 เดือน หรือต่ำกว่า 1% · 🟡 1–2% และไม่เคลื่อนแรง · 🔴 ขึ้นเร็ว +0.25 จุดขึ้นไปใน 1 เดือน หรือตั้งแต่ 2% · ข้อมูล FRED DFII10', 'ℹ️ Thresholds (1-month direction first, then level) · 🟢 down 0.25 pts or more in 1 month, or below 1% · 🟡 1–2% with no big move · 🔴 up 0.25 pts or more in 1 month, or 2% and up · data FRED DFII10')) + '</span>';
       out.push(analysisCard(ryV.accent, tr('Real Yield 10 ปี — ', '10-year real yield — ') + ryV.dot + ' ' + ryV.label, body));
     }
     return out;
@@ -4906,13 +4907,13 @@ window.setHeaderStamp();
           <div class="sl-name"><span data-en="BTC Spot ETF Flow (US, daily)">BTC Spot ETF Flow (สหรัฐฯ รายวัน)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ETF Flow คืออะไร" data-en-aria="What is ETF flow?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
             <div class="i18n-th">
             <p><b>คืออะไร:</b> เงินสุทธิที่ไหลเข้า (+) หรือออก (−) จากกองทุน Spot Bitcoin ETF ในสหรัฐฯ ทั้งหมด (IBIT, FBTC, GBTC, ARKB, BITB ฯลฯ) ในแต่ละวัน หน่วยล้านดอลลาร์ (US$m) เงินไหลเข้า = กองทุนต้องออกหน่วยใหม่และซื้อ BTC จริงมาเก็บ · ไหลออก = ไถ่ถอนแล้วขาย BTC ออก</p>
-            <p><b>อ่านค่า:</b> 🟢 +500 ขึ้นไป ไหลเข้าแรง · 🟢 +100 ถึง +500 ไหลเข้า · 🟡 −100 ถึง +100 ทรงตัว · 🟠 −100 ถึง −500 ไหลออก · 🔴 −500 ลงไป ไหลออกแรง · กราฟแท่งคือ 30 วันทำการล่าสุด (เขียว = เข้า แดง = ออก)</p>
+            <p><b>อ่านค่า:</b> 🟢 +500 ขึ้นไป ไหลเข้าแรง · 🔵 +100 ถึง +500 ไหลเข้า · 🟡 −100 ถึง +100 ทรงตัว · 🟠 −100 ถึง −500 ไหลออก · 🔴 −500 ลงไป ไหลออกแรง · กราฟแท่งคือ 30 วันทำการล่าสุด (เขียว = เข้า แดง = ออก)</p>
             <p><b>ทำไมสำคัญ:</b> เป็นตัวแทนแรงซื้อของสถาบันและนักลงทุนทั่วไปในสหรัฐฯ ไหลเข้าต่อเนื่องหลายวัน = แรงซื้อจริงช่วยหนุนราคา · ไหลออกติดกันหลายวัน = สถาบันลดพอร์ต ดูยอดรวม 5 วันประกอบ เพราะรายวันแกว่งได้มาก อ่านคู่กับ Funding Rate (แรงเก็งกำไร) และ Open Interest</p>
             <p><b>หมายเหตุ:</b> ข้อมูลรายวัน ไม่ใช่ real-time ออกหลังตลาดสหรัฐฯ ปิด (ราวเช้าตามเวลาไทย) บางกองทุนรายงานช้า ตัวเลขวันล่าสุดอาจถูกปรับภายหลัง · ข้อมูลจาก Farside Investors · ปุ่มด้านล่างเปิดตาราง flow รายกองทุกกองบน Farside</p>
             </div>
             <div class="i18n-en" lang="en">
             <p><b>What it is:</b> the net money flowing into (+) or out of (−) all US spot Bitcoin ETFs (IBIT, FBTC, GBTC, ARKB, BITB and others) each day, in US$ millions. An inflow means the funds issue new shares and buy real BTC to hold · an outflow means redemptions and BTC being sold.</p>
-            <p><b>How to read it:</b> 🟢 +500 and up strong inflow · 🟢 +100 to +500 inflow · 🟡 −100 to +100 flat · 🟠 −100 to −500 outflow · 🔴 −500 and below strong outflow · the bars show the last 30 trading days (green = in, red = out).</p>
+            <p><b>How to read it:</b> 🟢 +500 and up strong inflow · 🔵 +100 to +500 inflow · 🟡 −100 to +100 flat · 🟠 −100 to −500 outflow · 🔴 −500 and below strong outflow · the bars show the last 30 trading days (green = in, red = out).</p>
             <p><b>Why it matters:</b> it is a proxy for US institutional and retail spot demand. Several days of inflows = real buying that supports price · a run of outflows = institutions cutting exposure. Watch the 5-day sum, since single days are noisy. Read it with the Funding Rate (speculation) and Open Interest.</p>
             <p><b>Note:</b> daily data, not real-time: published after the US close, and some issuers report late, so the latest day can be revised · data from Farside Investors · the button below opens the full per-fund flow table on Farside.</p>
             </div>
@@ -6080,7 +6081,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   // ข้อมูลออกวันละครั้งหลังตลาดสหรัฐฯ ปิด ไม่ใช่ real-time
   function etfZone(v){
     return v >= 500 ? [tr('🟢 ไหลเข้าแรง', '🟢 Strong inflow'), 'var(--green)']
-      : v >= 100 ? [tr('🟢 ไหลเข้า', '🟢 Inflow'), 'var(--green)']
+      : v >= 100 ? [tr('🔵 ไหลเข้า', '🔵 Inflow'), 'var(--cool)']
       : v > -100 ? [tr('🟡 ทรงตัว', '🟡 Flat'), '']
       : v > -500 ? [tr('🟠 ไหลออก', '🟠 Outflow'), 'var(--amber)']
       : [tr('🔴 ไหลออกแรง', '🔴 Strong outflow'), 'var(--red)'];

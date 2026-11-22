@@ -332,6 +332,6 @@ test('econ-extra verdicts: big-number colour = status dot, one rule per card', a
   assert.equal(tone(V.ism(49.9)), '🔴 var(--bad)');
   assert.equal(tone(V.breakeven(2.18)), '🟢 var(--good)');
   assert.equal(tone(V.breakeven(2.4)), '🟡 var(--warn)');
-  assert.equal(tone(V.breakeven(1.6)), '🟡 var(--warn)');
+  assert.equal(tone(V.breakeven(1.6)), '🔵 var(--cool)');
   assert.match(V.breakeven(2.6).label, /กดดันหุ้น/);
 });
