@@ -96,8 +96,8 @@ test('card: four boxes, CoinGlass link, source note, wired into the Cloudflare a
   assert.equal(api.fmtRekt(1.57e9), '$1.57B');
   assert.equal(api.fmtRekt(36.59e6), '$36.59M');
   assert.equal(api.fmtRekt(757810), '$757.8K');
-  assert.equal(api.rektZone({ long: 80, short: 20, total: 100 })[0], '🔴');
+  assert.equal(api.rektZone({ long: 80, short: 20, total: 100 })[0], '🟢');
   assert.equal(api.rektZone({ long: 50, short: 50, total: 100 })[0], '🟡');
-  assert.equal(api.rektZone({ long: 20, short: 80, total: 100 })[0], '🟢');
+  assert.equal(api.rektZone({ long: 20, short: 80, total: 100 })[0], '🔴');
   assert.equal(api.rektZone({ long: 0, short: 0, total: 0 }), null);
 });

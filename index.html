@@ -335,18 +335,18 @@ body{margin:0}
   #btcTab .rekt-top{display:flex; justify-content:space-between; align-items:center; gap:6px;}
   #btcTab .rekt-lbl{font-size:12px; color:var(--sub);}
   #btcTab .rekt-tag{font-size:10px; padding:1px 7px; border-radius:999px; border:1px solid var(--line); color:var(--sub); white-space:nowrap;}
-  #btcTab .rekt-tag.l{color:var(--red); border-color:rgba(239,98,98,.45);}
-  #btcTab .rekt-tag.s{color:var(--green); border-color:rgba(80,200,140,.45);}
+  #btcTab .rekt-tag.l{color:var(--green); border-color:rgba(80,200,140,.45);}
+  #btcTab .rekt-tag.s{color:var(--red); border-color:rgba(239,98,98,.45);}
   #btcTab .rekt-big{font-size:26px; font-weight:700; line-height:1.15; margin-top:8px; font-variant-numeric:tabular-nums; color:var(--text);}
   #btcTab .rekt-big small{font-size:12px; font-weight:500; color:var(--sub); margin-left:4px;}
   @media (max-width:800px){ #btcTab .rekt-big{font-size:22px;} #btcTab .rekt-tag{display:none;} #btcTab .rekt-box{padding:11px 12px;} #btcTab .rekt-row{font-size:10.5px; white-space:nowrap; gap:4px;} }
   #btcTab .rekt-bar{display:flex; height:6px; border-radius:3px; overflow:hidden; margin-top:10px; background:var(--line); gap:2px;}
   #btcTab .rekt-bar i{display:block; height:100%;}
-  #btcTab .rekt-bar i.l{background:var(--red);}
-  #btcTab .rekt-bar i.s{background:var(--green);}
+  #btcTab .rekt-bar i.l{background:var(--green);}
+  #btcTab .rekt-bar i.s{background:var(--red);}
   #btcTab .rekt-row{display:flex; justify-content:space-between; gap:6px; font-size:11px; margin-top:6px; color:var(--sub); font-variant-numeric:tabular-nums;}
-  #btcTab .rekt-row .l{color:var(--red); font-weight:600;}
-  #btcTab .rekt-row .s{color:var(--green); font-weight:600;}
+  #btcTab .rekt-row .l{color:var(--green); font-weight:600;}
+  #btcTab .rekt-row .s{color:var(--red); font-weight:600;}
   #btcTab .rekt-live{display:inline-flex; align-items:center; gap:6px;}
   #btcTab .rekt-live::before{content:""; width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 0 0 rgba(80,200,140,.6); animation:rektPulse 2s infinite;}
   #btcTab .rekt-live.off::before{background:var(--muted); animation:none;}
@@ -5007,14 +5007,14 @@ window.setHeaderStamp();
         <h2 style="margin-bottom:0;"><span data-en="BTC Liquidations: long vs short">สัดส่วนล้างพอร์ต BTC Long/Short</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ยอดล้างพอร์ตคืออะไร" data-en-aria="What are liquidations?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
           <div class="i18n-th">
           <p><b>คืออะไร:</b> สถานะ BTC futures ที่โดนตลาดบังคับปิด (liquidate) เพราะขาดทุนจนหลักประกันไม่พอ ในช่วง 1, 4, 12 และ 24 ชั่วโมงล่าสุด เป็นฝั่ง long กี่ % และ short กี่ % · ตัวเลขใหญ่ในแต่ละกล่องคือฝั่งที่โดนล้างมากกว่า · อัปเดตเองทุกนาทีขณะเปิดแท็บนี้ · "Rekt" ในเว็บอย่าง CoinGlass คือศัพท์แสลงของการโดนล้าง เช่น 4h Rekt = ยอดที่โดนล้างใน 4 ชั่วโมงล่าสุด</p>
-          <p><b>Long / Short:</b> Long = คนที่เดิมพันว่าราคาขึ้นแล้วราคาลงจนโดนล้าง (ตลาดต้องขายออกให้) · Short = คนที่เดิมพันว่าราคาลงแล้วราคาขึ้นจนโดนล้าง (ตลาดต้องซื้อคืนให้) · แถบแดง = long, แถบเขียว = short</p>
-          <p><b>อ่านสี:</b> 🔴 long โดนล้าง 65% ขึ้นไป = ราคาหักลงจนคน long โดนขายทิ้งยกแผง · 🟡 long 35–65% = โดนล้างพอ ๆ กันทั้งสองฝั่ง (ราคาแกว่งทั้งขึ้นและลง) · 🟢 short โดนล้าง 65% ขึ้นไป = ราคาพุ่งจน short ต้องซื้อคืน (short squeeze)</p>
+          <p><b>Long / Short:</b> Long = คนที่เดิมพันว่าราคาขึ้นแล้วราคาลงจนโดนล้าง (ตลาดต้องขายออกให้) · Short = คนที่เดิมพันว่าราคาลงแล้วราคาขึ้นจนโดนล้าง (ตลาดต้องซื้อคืนให้) · แถบเขียว = long, แถบแดง = short (แบบเดียวกับ CoinGlass)</p>
+          <p><b>อ่านสี:</b> 🟢 long โดนล้าง 65% ขึ้นไป = ราคาหักลงจนคน long โดนขายทิ้งยกแผง · 🟡 long 35–65% = โดนล้างพอ ๆ กันทั้งสองฝั่ง (ราคาแกว่งทั้งขึ้นและลง) · 🔴 short โดนล้าง 65% ขึ้นไป = ราคาพุ่งจน short ต้องซื้อคืน (short squeeze)</p>
           <p><b>ทำไมสำคัญ:</b> ฝั่งที่โดนล้างหนัก = เลเวอเรจฝั่งนั้นถูกกวาดออกจากตลาด หลังล้างหนัก ๆ ราคามักนิ่งลงหรือเด้งกลับ เพราะคนที่ถูกบังคับขาย/ซื้อหมดไปแล้ว · ถ้ากล่อง 1 ชม. หรือ 4 ชม. เอียงไปคนละฝั่งกับ 24 ชม. = ทิศทางเพิ่งกลับ · อ่านคู่กับ Liquidation Heatmap ด้านบน (จุดที่ยังรอโดนล้าง) และ Open Interest</p>
           </div>
           <div class="i18n-en" lang="en">
           <p><b>What it is:</b> of the BTC futures positions force-closed (liquidated) because losses ate their margin, the share that were longs vs shorts over the last 1, 4, 12 and 24 hours · the big number in each box is the side hit harder · refreshes itself every minute while this tab is open · "Rekt" on sites like CoinGlass is slang for being liquidated, so 4h Rekt = what was liquidated in the last 4 hours.</p>
-          <p><b>Long / Short:</b> Long = traders betting on a rise who got wiped out as price fell (the exchange sells for them) · Short = traders betting on a fall who got wiped out as price rose (the exchange buys back for them) · red bar = longs, green bar = shorts.</p>
-          <p><b>Colours:</b> 🔴 longs 65% or more of liquidations = price dropped hard and longs were dumped en masse · 🟡 longs 35–65% = both sides hit about equally (price whipsawed) · 🟢 shorts 65% or more = price spiked and shorts had to buy back (short squeeze)</p>
+          <p><b>Long / Short:</b> Long = traders betting on a rise who got wiped out as price fell (the exchange sells for them) · Short = traders betting on a fall who got wiped out as price rose (the exchange buys back for them) · green bar = longs, red bar = shorts (same as CoinGlass).</p>
+          <p><b>Colours:</b> 🟢 longs 65% or more of liquidations = price dropped hard and longs were dumped en masse · 🟡 longs 35–65% = both sides hit about equally (price whipsawed) · 🔴 shorts 65% or more = price spiked and shorts had to buy back (short squeeze)</p>
           <p><b>Why it matters:</b> the side hit hardest = that side's leverage flushed out; after a heavy flush price often calms or bounces because the forced sellers or buyers are gone · if the 1h or 4h box leans the other way from 24h, the direction just turned · read it with the Liquidation Heatmap above (where liquidations are still waiting) and Open Interest.</p>
           </div>
         </div></div></h2>
@@ -6106,8 +6106,8 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   function rektZone(w){
     if(!w || !(w.total > 0)) return null;
     const lp = w.long / w.total;
-    return lp >= 0.65 ? ['🔴', tr('long โดนล้างเป็นหลัก (' + Math.round(lp * 100) + '%) ราคาหักลงจนคนเปิด long โดนบังคับขาย', 'mostly longs liquidated (' + Math.round(lp * 100) + '%): price dropped and leveraged longs were force-sold')]
-      : lp <= 0.35 ? ['🟢', tr('short โดนล้างเป็นหลัก (' + Math.round((1 - lp) * 100) + '%) ราคาพุ่งจนคนเปิด short ต้องซื้อคืน (short squeeze)', 'mostly shorts liquidated (' + Math.round((1 - lp) * 100) + '%): price spiked and shorts had to buy back (short squeeze)')]
+    return lp >= 0.65 ? ['🟢', tr('long โดนล้างเป็นหลัก (' + Math.round(lp * 100) + '%) ราคาหักลงจนคนเปิด long โดนบังคับขาย', 'mostly longs liquidated (' + Math.round(lp * 100) + '%): price dropped and leveraged longs were force-sold')]
+      : lp <= 0.35 ? ['🔴', tr('short โดนล้างเป็นหลัก (' + Math.round((1 - lp) * 100) + '%) ราคาพุ่งจนคนเปิด short ต้องซื้อคืน (short squeeze)', 'mostly shorts liquidated (' + Math.round((1 - lp) * 100) + '%): price spiked and shorts had to buy back (short squeeze)')]
       : ['🟡', tr('โดนล้างพอ ๆ กันทั้งสองฝั่ง (long ' + Math.round(lp * 100) + '%) ราคาแกว่งทั้งขึ้นและลง', 'both sides hit about equally (longs ' + Math.round(lp * 100) + '%): price whipsawed')];
   }
   function rektBar(w){
@@ -6127,7 +6127,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       tag.textContent = ok ? (longSide ? tr('long โดนหนัก', 'longs hit') : tr('short โดนหนัก', 'shorts hit')) : tr('แทบไม่มี', 'quiet');
       const big = box.querySelector('.rekt-big');
       big.innerHTML = ok ? (longSide ? lp : sp).toFixed(1) + '%<small>' + (longSide ? 'Long' : 'Short') + '</small>' : '–';
-      big.style.color = ok ? (longSide ? 'var(--red)' : 'var(--green)') : '';
+      big.style.color = ok ? (longSide ? 'var(--green)' : 'var(--red)') : '';
       box.querySelector('.rekt-bar').innerHTML = rektBar(w);
       box.querySelector('b.l').textContent = ok ? lp.toFixed(1) + '%' : '–';
       box.querySelector('b.s').textContent = ok ? sp.toFixed(1) + '%' : '–';
