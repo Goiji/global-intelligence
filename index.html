@@ -3555,12 +3555,13 @@ window.setHeaderStamp();
     VN:[['Vingroup','อสังหาฯ, รถ VinFast','property, VinFast cars'],['Vietcombank','ธนาคาร','banking']]
   };
   // คนในประเทศ: [อายุมัธยฐานของประชากร (UN World Population Prospects 2024, ปี), ดัชนีทุนมนุษย์ World Bank HCI 2020 (0–1),
-  //   ผลผลิตต่อชั่วโมงทำงาน (GDP per hour worked, ILO modelled estimates ปีล่าสุด, ดอลลาร์ PPP โดยประมาณ)]
+  //   ผลผลิตต่อชั่วโมงทำงาน (GDP per hour worked, ILO modelled estimates ปีล่าสุด, ดอลลาร์ PPP โดยประมาณ),
+  //   ระดับค่าครองชีพเทียบสหรัฐฯ (World Bank price level ratio, PPP ÷ อัตราแลกเปลี่ยน, สหรัฐฯ = 1, โดยประมาณ)]
   // HCI = เด็กที่เกิดวันนี้ เมื่อโตเป็นแรงงานจะทำงานได้กี่ % ของศักยภาพเต็ม ดูจากจำนวนปีและคุณภาพการศึกษา (คะแนนสอบ) กับสุขภาพ · ไต้หวันไม่อยู่ในข้อมูล World Bank
   const CM_PEOPLE = {
-    US:[38.5,0.70,97], EU:[44,0.75,70], CN:[39.5,0.65,16], JP:[49,0.80,50], IN:[28.8,0.49,9], CA:[41,0.80,68], TW:[44,null,62], KR:[45,0.80,50],
-    SA:[30,0.58,62], AU:[38,0.77,72], HK:[46,0.81,62], AE:[33,0.67,58], BR:[34,0.55,20], SG:[42,0.88,80], MX:[30,0.61,22], IL:[30,0.73,60],
-    ZA:[28,0.43,25], ID:[30,0.54,14], MY:[31,0.61,30], TH:[40,0.61,17], VN:[33,0.69,10]
+    US:[38.5,0.70,97,1], EU:[44,0.75,70,0.75], CN:[39.5,0.65,16,0.55], JP:[49,0.80,50,0.65], IN:[28.8,0.49,9,0.25], CA:[41,0.80,68,0.85], TW:[44,null,62,0.45], KR:[45,0.80,50,0.65],
+    SA:[30,0.58,62,0.5], AU:[38,0.77,72,0.9], HK:[46,0.81,62,0.75], AE:[33,0.67,58,0.6], BR:[34,0.55,20,0.45], SG:[42,0.88,80,0.65], MX:[30,0.61,22,0.55], IL:[30,0.73,60,0.95],
+    ZA:[28,0.43,25,0.4], ID:[30,0.54,14,0.3], MY:[31,0.61,30,0.35], TH:[40,0.61,17,0.35], VN:[33,0.69,10,0.3]
   };
   // แต่ละหัวข้อใน tooltip = [หัวข้อ, เนื้อหา (ขึ้นบรรทัดใหม่ด้วย \n)]
   function cmPeopleHint(code){
@@ -3573,8 +3574,13 @@ window.setHeaderStamp();
     out.push([tr('🎓 ทักษะแรงงาน', '🎓 Workforce skills') + (p[1] == null ? '' : ': ' + grade(p[1], 0.75, 0.6)),
       p[1] == null ? tr('ไม่มีในข้อมูล World Bank\nคะแนนสอบนักเรียน (PISA) ติดกลุ่มท็อปของโลก', 'Not in World Bank data\nStudents rank near the top in PISA tests')
         : tr('ดัชนีทุนมนุษย์ World Bank ' + p[1].toFixed(2) + ' จาก 1', 'World Bank Human Capital Index ' + p[1].toFixed(2) + ' of 1')]);
-    if(p[2] != null) out.push([tr('💵 รายได้ต่อชั่วโมง: ', '💵 Earnings per hour: ') + grade(p[2], 60, 25),
-      tr('ผลผลิตต่อชั่วโมงทำงาน ~$' + p[2] + ' (ปรับค่าครองชีพ)\nเทียบ: สหรัฐฯ ~$97 · ไทย ~$17', 'Output per hour worked ~$' + p[2] + ' (PPP)\nCompare: US ~$97 · Thailand ~$17')]);
+    if(p[2] != null){
+      const cost = p[3] == null ? '' : (p[3] >= 0.85 ? tr('แพง', 'expensive') : p[3] >= 0.55 ? tr('ปานกลาง', 'moderate') : tr('ถูก', 'cheap'));
+      const costLine = p[3] == null ? '' : '\n' + (p[3] >= 1 ? tr('ค่าครองชีพ: ' + cost + ' (ฐานเทียบ)', 'Cost of living: ' + cost + ' (baseline)')
+        : tr('ค่าครองชีพ: ' + cost + ' (ของราคาราว ' + Math.round(p[3] * 100) + '% ของสหรัฐฯ)', 'Cost of living: ' + cost + ' (prices ~' + Math.round(p[3] * 100) + '% of the US)'));
+      out.push([tr('💵 รายได้ต่อชั่วโมง เทียบค่าครองชีพ: ', '💵 Earnings per hour vs cost of living: ') + grade(p[2], 60, 25),
+        tr('ทำงาน 1 ชม. ได้ของเท่ากับเงิน ~$' + p[2] + ' ที่อเมริกา\nเทียบ: สหรัฐฯ ~$97 · ไทย ~$17', '1 hour of work buys what ~$' + p[2] + ' buys in the US\nCompare: US ~$97 · Thailand ~$17') + costLine]);
+    }
     return out;
   }
   function cmRowHint(group, code, part){
@@ -3644,12 +3650,12 @@ window.setHeaderStamp();
         + ' · ตราสารหนี้: พันธบัตรรัฐบาลและหุ้นกู้ทุกประเภทที่ยังไม่ครบกำหนด มูลค่าที่ตราไว้ จาก BIS Debt securities statistics' + (b && b.countries ? ' (' + b.countries + ' ประเทศ' + (b.period ? ' ไตรมาส ' + b.period : '') + ')' : '') + ' ยูโรโซนคือรวมประเทศสมาชิก'
         + ' · ทองคำ: ราคาทองฟิวเจอร์ส (Yahoo GC=F, สำรอง PAXG จาก CoinGecko) × ปริมาณทองที่ขุดขึ้นมาแล้วทั้งโลก (World Gold Council สิ้นปี 2024 ราว 216,265 ตัน บวกการขุดปีละราว 3,661 ตัน)'
         + ' · คริปโต: มูลค่าตลาดรวมจาก CoinGecko (สำรอง CoinPaprika) แยก stablecoin ออกด้วยยอดรวมจาก DefiLlama · ไม่รวมอสังหาริมทรัพย์ เงินฝาก และอนุพันธ์ · อัปเดตทุก 15 นาที'
-        + ' · ปุ่ม i ของประเทศ: บริษัทเด่นเลือกจากหุ้นมูลค่าสูงสุด, อายุเฉลี่ยคืออายุมัธยฐานจาก UN World Population Prospects 2024, ทักษะแรงงานคือดัชนีทุนมนุษย์ (Human Capital Index) ของ World Bank ปี 2020 วัดจากจำนวนปีและคุณภาพการศึกษา (คะแนนสอบ) กับสุขภาพ ไม่ใช่วัดความฉลาดของคน, รายได้ต่อชั่วโมงคือ GDP ต่อชั่วโมงทำงาน (ILO, ดอลลาร์ปรับค่าครองชีพ PPP โดยประมาณ) ใช้แทนค่าแรงเฉลี่ยเพราะเทียบข้ามประเทศได้',
+        + ' · ปุ่ม i ของประเทศ: บริษัทเด่นเลือกจากหุ้นมูลค่าสูงสุด, อายุเฉลี่ยคืออายุมัธยฐานจาก UN World Population Prospects 2024, ทักษะแรงงานคือดัชนีทุนมนุษย์ (Human Capital Index) ของ World Bank ปี 2020 วัดจากจำนวนปีและคุณภาพการศึกษา (คะแนนสอบ) กับสุขภาพ ไม่ใช่วัดความฉลาดของคน, รายได้ต่อชั่วโมงคือ GDP ต่อชั่วโมงทำงาน (ILO) แปลงเป็นดอลลาร์แบบปรับค่าครองชีพ (PPP) แล้ว จึงบอกได้ว่าทำงาน 1 ชม. ซื้อของได้เท่าไหร่ ใช้แทนค่าแรงเฉลี่ยเพราะเทียบข้ามประเทศได้, ค่าครองชีพคือระดับราคาสินค้าเทียบสหรัฐฯ (World Bank price level ratio) ตัวเลขเหล่านี้เป็นค่าประมาณ',
       'Stocks: total market cap of the listed companies companiesmarketcap.com tracks' + (e && e.countries ? ' (' + e.countries + ' countries)' : '') + ', by the country of the company\'s headquarters, prices delayed minutes to hours. China counts large companies only, so it reads below the exchanges\' own totals'
         + ' · Bonds: all government and corporate debt securities outstanding at face value, BIS debt securities statistics' + (b && b.countries ? ' (' + b.countries + ' countries' + (b.period ? ', ' + b.period : '') + ')' : '') + '. The euro area is the sum of its members'
         + ' · Gold: gold futures price (Yahoo GC=F, fallback PAXG from CoinGecko) × all gold ever mined (World Gold Council, ~216,265 t at end-2024 plus ~3,661 t of mine output a year)'
         + ' · Crypto: total market cap from CoinGecko (fallback CoinPaprika), stablecoins split out with the DefiLlama total · excludes real estate, deposits and derivatives · refreshed every 15 minutes'
-        + ' · Country i buttons: champion stocks are the largest listed companies; median age from UN World Population Prospects 2024; workforce skills are the World Bank Human Capital Index 2020, built from years and quality (test scores) of schooling plus health, not a measure of intelligence; earnings per hour is GDP per hour worked (ILO, approximate PPP dollars), a cross-country proxy for pay');
+        + ' · Country i buttons: champion stocks are the largest listed companies; median age from UN World Population Prospects 2024; workforce skills are the World Bank Human Capital Index 2020, built from years and quality (test scores) of schooling plus health, not a measure of intelligence; earnings per hour is GDP per hour worked (ILO) in cost-of-living-adjusted (PPP) dollars, i.e. what an hour of work buys, a cross-country proxy for pay; cost of living is the price level relative to the US (World Bank price level ratio); all approximate');
   }
   async function fetchCapMarkets(){
     cmNextAt = Date.now() + CM_POLL_MS;

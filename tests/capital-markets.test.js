@@ -218,7 +218,7 @@ test('page: rows sorted largest first, "others" last, bars on one scale, values 
   assert.match(rows, /<span class="cm-tip-sec"><b>🏆 บริษัทเด่น<\/b>• Nvidia · ชิป AI\n• Apple · iPhone/, 'i button on US equities lists champion stocks under a heading');
   assert.match(rows, /<b>👥 ประชากร<\/b>อายุเฉลี่ย 39 ปี/, 'US tooltip has a people section');
   assert.match(rows, /<b>🎓 ทักษะแรงงาน: กลาง<\/b>ดัชนีทุนมนุษย์ World Bank 0.70 จาก 1/, 'US tooltip has a skills section');
-  assert.match(rows, /<b>💵 รายได้ต่อชั่วโมง: สูง<\/b>ผลผลิตต่อชั่วโมงทำงาน ~\$97/, 'US tooltip has an earnings section');
+  assert.match(rows, /<b>💵 รายได้ต่อชั่วโมง เทียบค่าครองชีพ: สูง<\/b>ทำงาน 1 ชม. ได้ของเท่ากับเงิน ~\$97 ที่อเมริกา[^<]*ค่าครองชีพ: แพง \(ฐานเทียบ\)/, 'US tooltip has an earnings section');
 
   // many countries: 16 biggest per box, Thailand always kept, the rest folded into "other countries"
   const many = { equities: { total: 100, byKey: { TH: 0.4 } } };
