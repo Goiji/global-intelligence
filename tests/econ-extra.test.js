@@ -204,13 +204,15 @@ test('markup: 9 cards, each with an (i) explainer in Thai and English', () => {
   assert.match(m[1], /Direction matters more than level/);
 });
 
-test('every US Markets card links to TradingView (the Shiller PE card to multpl, which TradingView does not carry)', () => {
+test('every US Markets card links to TradingView (Shiller PE to multpl and Buffett Indicator to FRED, which TradingView does not carry)', () => {
   const m = HTML.match(/<div class="mkt-grid" id="mktGrid">([\s\S]*?)<div id="mktNote"|<div class="mkt-grid" id="mktGrid">([\s\S]*?)<\/section>/);
   const block = m[1] || m[2];
   const cards = block.split(/<div class="metric mkt"[^>]*>/).slice(1);
-  assert.equal(cards.length, 14);
+  assert.equal(cards.length, 15);
   cards.forEach((c, i) => assert.match(c, /Shiller PE/.test(c.slice(0, 200))
     ? /class="tv-btn" href="https:\/\/www\.multpl\.com\/shiller-pe"/
+    : /Buffett Indicator/.test(c.slice(0, 200))
+    ? /class="tv-btn" href="https:\/\/fred\.stlouisfed\.org\/series\/NCBEILQ027S"/
     : /class="tv-btn" href="https:\/\/www\.tradingview\.com\/chart\/\?symbol=/, 'card ' + i + ' has a chart link'));
 });
 
