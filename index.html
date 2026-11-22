@@ -3525,6 +3525,18 @@ window.setHeaderStamp();
     });
     return { rows:rows, grand:grand };
   }
+  // ข้อความเมื่อชี้เมาส์ที่แถวคริปโต: บอกว่าในก้อนนั้นมีเหรียญอะไร (ตัวเลขสดจาก CoinGecko ถ้ามี)
+  function cmRowHint(group, code, part){
+    if(group !== 'crypto') return '';
+    if(code === 'STABLE') return tr('เหรียญที่ผูกค่ากับดอลลาร์ ก้อนใหญ่สุดคือ USDT (Tether) รองลงมาคือ USDC แล้วก็ USDe, DAI และอื่นๆ เป็นเงินที่จอดรอในโลกคริปโต',
+      'Coins pegged to the dollar: USDT (Tether) is the biggest, then USDC, USDe, DAI and others. Cash parked inside crypto');
+    if(code !== 'OTHER') return '';
+    const top = (part && Array.isArray(part.top) ? part.top : []).filter(function(t){ return t && isValidNum(t[1]); });
+    const NAMES = { ETH:'Ethereum', XRP:'XRP', BNB:'BNB', SOL:'Solana', DOGE:'Dogecoin', TRX:'TRON', ADA:'Cardano', STETH:'Lido stETH' };
+    const list = top.length ? top.map(function(t){ return (NAMES[t[0]] || t[0]) + ' ' + fmtCapT(t[1]); }).join(', ') : 'Ethereum, XRP, BNB, Solana';
+    return tr('ก้อนใหญ่สุดคือ ' + list + ' และเหรียญเล็กอีกหลายพันตัว (ไม่รวม Bitcoin และ stablecoin)',
+      'Biggest: ' + list + ', plus thousands of smaller coins (excluding Bitcoin and stablecoins)');
+  }
   function cmAsOf(key, p){
     if(!p) return '';
     const stale = p.stale ? tr(' (ข้อมูลเก่า)', ' (stale)') : '';
@@ -3552,7 +3564,7 @@ window.setHeaderStamp();
       const top = subs.length ? Math.max.apply(null, subs.map(function(x){ return x.value; })) : 1;
       const rows = subs.map(function(x){
         const code = x.key.split(':')[1];
-        return '<div class="cm-row' + (code === 'OTHER' ? ' other' : '') + (code === 'TH' ? ' th' : '') + '" title="' + esc(x.label + ' · ' + x.share.toFixed(1) + tr('% ของกลุ่มนี้', '% of this group')) + '">'
+        return '<div class="cm-row' + (code === 'OTHER' ? ' other' : '') + (code === 'TH' ? ' th' : '') + '" title="' + esc(cmRowHint(m.key, code, m.part) || (x.label + ' · ' + x.share.toFixed(1) + tr('% ของกลุ่มนี้', '% of this group'))) + '">'
           + '<span class="cm-name">' + esc(x.label) + '</span>'
           + '<div class="cm-track"><div class="cm-fill" style="width:' + Math.max(0.6, x.value / top * 100).toFixed(2) + '%"></div></div>'
           + '<span class="cm-val">' + esc(fmtCapT(x.value)) + '<small>' + (x.share < 1 ? x.share.toFixed(1) : x.share.toFixed(0)) + '%</small></span></div>';

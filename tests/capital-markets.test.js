@@ -19,7 +19,7 @@ const BIS_CSV = 'FREQ,ADJUSTMENT,REF_AREA,COUNTERPART_AREA,REF_SECTOR,COUNTERPAR
      ['GB', '2026-Q1', 6833], ['DE', '2026-Q1', 5237], ['MT', '2025-Q4', 21.7], ['XX', 'bad', 5]]
     .map(([a, p, v]) => `Q,N,${a},XW,S1,S1,N,L,LE,F3,T,_Z,USD,_T,N,V,N,_T,${p},${v}`).join('\n');
 
-const CG_GLOBAL = JSON.stringify({ data: { total_market_cap: { usd: 2.08e12 }, market_cap_percentage: { btc: 57.8 }, updated_at: 1795313622 } });
+const CG_GLOBAL = JSON.stringify({ data: { total_market_cap: { usd: 2.08e12 }, market_cap_percentage: { btc: 57.8, eth: 10, usdt: 8, xrp: 4, bnb: 3.5, usdc: 3, sol: 3 }, updated_at: 1795313622 } });
 const YAHOO_GOLD = JSON.stringify({ chart: { result: [{ meta: { regularMarketPrice: 4000 } }] } });
 
 function fakeFetch(overrides = {}) {
@@ -88,6 +88,8 @@ test('quarterEnd, goldPart, cryptoPart', () => {
   const c = T.cryptoPart(CG_GLOBAL);
   assert.equal(c.total, 2.08);
   assert.equal(c.byKey.BTC, Math.round(2.08 * 0.578 * 1000) / 1000);
+  assert.deepEqual(c.top.map((x) => x[0]), ['ETH', 'XRP', 'BNB', 'SOL'], 'biggest coins, no BTC, no stablecoins');
+  assert.equal(c.top[0][1], 0.208);
   assert.throws(() => T.cryptoPart('{"data":{}}'), /implausible/);
 });
 
@@ -212,6 +214,7 @@ test('page: rows sorted largest first, "others" last, bars on one scale, values 
   assert.match(rows, /เหรียญอื่น/, 'crypto "others" says other coins');
   assert.match(rows, /ประเทศอื่น/, 'stocks/bonds "others" says other countries');
   assert.doesNotMatch(rows, />· อื่นๆ</);
+  assert.match(rows, /title="ก้อนใหญ่สุดคือ Ethereum \$208 พันล้าน, XRP/, 'hover on other coins names the biggest ones');
 
   // many countries: 16 biggest per box, Thailand always kept, the rest folded into "other countries"
   const many = { equities: { total: 100, byKey: { TH: 0.4 } } };

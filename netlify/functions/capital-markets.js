@@ -198,8 +198,14 @@ function cryptoPart(json) {
   const total = usd / 1e12;
   const byKey = {};
   if (btcPct > 0 && btcPct < 100) { byKey.BTC = r3(total * btcPct / 100); byKey.OTHER = r3(total - byKey.BTC); }
+  // biggest non-BTC, non-stablecoin coins with their US$ tn, for the "other coins" tooltip (CoinGecko lists the top ~10)
+  const STABLES = new Set(['usdt', 'usdc', 'dai', 'usde', 'usds', 'fdusd', 'tusd', 'pyusd', 'usd1', 'busd']);
+  const top = Object.entries(d.market_cap_percentage || {})
+    .filter(([k, v]) => k !== 'btc' && !STABLES.has(k) && Number(v) > 0)
+    .sort((a, b) => b[1] - a[1]).slice(0, 5)
+    .map(([k, v]) => [k.toUpperCase(), r3(total * Number(v) / 100)]);
   const at = Number(d.updated_at);
-  return { total: r3(total), byKey, asOf: new Date(at > 1e9 ? at * 1000 : Date.now()).toISOString(), cadence: 'live', source: 'CoinGecko' };
+  return { total: r3(total), byKey, top, asOf: new Date(at > 1e9 ? at * 1000 : Date.now()).toISOString(), cadence: 'live', source: 'CoinGecko' };
 }
 
 // CoinPaprika /v1/global → same shape as cryptoPart
