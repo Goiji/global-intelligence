@@ -31,6 +31,7 @@ function fakeFetch(overrides = {}) {
       : url === T.URLS.BIS_DSS ? BIS_CSV
       : url === T.URLS.COINGECKO_GLOBAL ? CG_GLOBAL
       : url === T.URLS.YAHOO_GOLD ? YAHOO_GOLD
+      : url === T.URLS.COINPAPRIKA_GLOBAL ? JSON.stringify({ market_cap_usd: 2.15e12, bitcoin_dominance_percentage: 56, last_updated: 1795313964 })
       : url === T.URLS.COINGECKO_PAXG ? JSON.stringify({ 'pax-gold': { usd: 3990 } })
       : null;
     if (body == null) return { ok: false, status: 503, text: async () => '' };
@@ -97,13 +98,22 @@ test('handler: all four parts, memory cache, gold falls back to PAXG, a dead sou
   body = JSON.parse((await cm.handler({})).body);
   assert.equal(body.cached, true);
 
-  // fresh instance: Yahoo down → PAXG; CoinGecko global down → crypto missing, no last good yet
+  // fresh instance: Yahoo down → PAXG; CoinGecko rate-limited (429 on Cloudflare) → CoinPaprika
   T._clearCache();
   global.fetch = fakeFetch({ [T.URLS.YAHOO_GOLD]: null, [T.URLS.COINGECKO_GLOBAL]: null });
   body = JSON.parse((await cm.handler({})).body);
   assert.equal(body.parts.gold.price, 3990);
+  assert.equal(body.parts.crypto.source, 'CoinPaprika');
+  assert.equal(body.parts.crypto.total, 2.15);
+  assert.equal(body.parts.crypto.byKey.BTC, 1.204);
+
+  // both crypto sources down, no last good yet → crypto missing, the rest still served
+  T._clearCache();
+  global.fetch = fakeFetch({ [T.URLS.COINGECKO_GLOBAL]: null, [T.URLS.COINPAPRIKA_GLOBAL]: null });
+  body = JSON.parse((await cm.handler({})).body);
   assert.ok(body.errors.crypto);
   assert.equal(body.parts.crypto, undefined);
+  assert.ok(body.parts.equities);
 });
 
 test('handler: a part that fails later is served from the last good copy (staleParts)', async (t) => {

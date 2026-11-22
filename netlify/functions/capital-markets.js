@@ -16,7 +16,8 @@
 //              as its own bar but not added again).
 //   gold     — gold price (Yahoo GC=F → CoinGecko PAX Gold) × above-ground gold stock. The stock is the
 //              World Gold Council's end-2024 figure grown by one year of mine output per year since.
-//   crypto   — CoinGecko /global: total crypto market cap and Bitcoin's share (live). No key.
+//   crypto   — CoinGecko /global: total crypto market cap and Bitcoin's share (live). No key. CoinGecko
+//              rate-limits shared Cloudflare IPs (HTTP 429), so CoinPaprika /v1/global is the fallback.
 //
 // Answers from memory/CDN for 15 min (the BIS file for 12 h). A source that fails is filled from the
 // last good copy (memory, then Cloudflare KV / Netlify Blobs), so one hiccup never blanks a bar.
@@ -30,6 +31,7 @@ const CMC_COUNTRIES = 'https://companiesmarketcap.com/all-countries/';
 const BIS_DSS = 'https://stats.bis.org/api/v1/data/WS_NA_SEC_DSS/Q.N..XW.S1.S1.N.L.LE.F3.T._Z.USD._T.N.V.N._T/all?lastNObservations=1&format=csv&detail=dataonly';
 const COINGECKO_GLOBAL = 'https://api.coingecko.com/api/v3/global';
 const YAHOO_GOLD = 'https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?interval=1d&range=5d';
+const COINPAPRIKA_GLOBAL = 'https://api.coinpaprika.com/v1/global';
 const COINGECKO_PAXG = 'https://api.coingecko.com/api/v3/simple/price?ids=pax-gold&vs_currencies=usd';
 
 // World Gold Council, "Above-ground stocks": 216,265 t at end-2024; mine production 2024 ≈ 3,661 t.
@@ -185,12 +187,22 @@ function cryptoPart(json) {
   return { total: r3(total), byKey, asOf: new Date(at > 1e9 ? at * 1000 : Date.now()).toISOString(), cadence: 'live', source: 'CoinGecko' };
 }
 
+// CoinPaprika /v1/global → same shape as cryptoPart
+function cryptoFromPaprika(json) {
+  const d = typeof json === 'string' ? JSON.parse(json) : json || {};
+  const p = cryptoPart({ data: { total_market_cap: { usd: Number(d.market_cap_usd) }, market_cap_percentage: { btc: Number(d.bitcoin_dominance_percentage) }, updated_at: Number(d.last_updated) } });
+  return { ...p, source: 'CoinPaprika' };
+}
+
 async function buildPayload() {
   const jobs = {
     equities: async () => equitiesPart(parseCmcCountries(await fetchText(CMC_COUNTRIES, 'text/html'))),
     bonds: loadBonds,
     gold: loadGold,
-    crypto: async () => cryptoPart(await fetchText(COINGECKO_GLOBAL, 'application/json'))
+    crypto: async () => {
+      try { return cryptoPart(await fetchText(COINGECKO_GLOBAL, 'application/json')); }
+      catch (e) { return cryptoFromPaprika(await fetchText(COINPAPRIKA_GLOBAL, 'application/json')); }
+    }
   };
   const keys = Object.keys(jobs);
   const settled = await Promise.allSettled(keys.map((k) => jobs[k]()));
@@ -245,7 +257,7 @@ exports.handler = async function (event) {
 };
 
 module.exports.__test = {
-  parseCmcCountries, equitiesPart, parseBisDss, bondsPart, quarterEnd, goldPart, goldTonnes, cryptoPart, buildPayload,
-  URLS: { CMC_COUNTRIES, BIS_DSS, COINGECKO_GLOBAL, YAHOO_GOLD, COINGECKO_PAXG },
+  parseCmcCountries, equitiesPart, parseBisDss, bondsPart, quarterEnd, goldPart, goldTonnes, cryptoPart, cryptoFromPaprika, buildPayload,
+  URLS: { CMC_COUNTRIES, BIS_DSS, COINGECKO_GLOBAL, COINPAPRIKA_GLOBAL, YAHOO_GOLD, COINGECKO_PAXG },
   _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; bisCache = { data: null, expiresAt: 0 }; }
 };

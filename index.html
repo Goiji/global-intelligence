@@ -3318,11 +3318,11 @@ window.setHeaderStamp();
       'หุ้น: มูลค่าตลาดรวมของบริษัทจดทะเบียนที่ companiesmarketcap.com ติดตาม' + (e && e.countries ? ' (' + e.countries + ' ประเทศ)' : '') + ' นับตามประเทศที่ตั้งบริษัท ราคาช้าไม่กี่นาทีถึงไม่กี่ชั่วโมง จีนนับเฉพาะบริษัทใหญ่ จึงต่ำกว่าตัวเลขรวมของตลาดหลักทรัพย์จีน'
         + ' · ตราสารหนี้: พันธบัตรรัฐบาลและหุ้นกู้ทุกประเภทที่ยังไม่ครบกำหนด มูลค่าที่ตราไว้ จาก BIS Debt securities statistics' + (b && b.countries ? ' (' + b.countries + ' ประเทศ' + (b.period ? ' ไตรมาส ' + b.period : '') + ')' : '') + ' ยูโรโซนคือรวมประเทศสมาชิก'
         + ' · ทองคำ: ราคาทองฟิวเจอร์ส (Yahoo GC=F, สำรอง PAXG จาก CoinGecko) × ปริมาณทองที่ขุดขึ้นมาแล้วทั้งโลก (World Gold Council สิ้นปี 2024 ราว 216,265 ตัน บวกการขุดปีละราว 3,661 ตัน)'
-        + ' · คริปโต: มูลค่าตลาดรวมจาก CoinGecko · ไม่รวมอสังหาริมทรัพย์ เงินฝาก และอนุพันธ์ · อัปเดตทุก 15 นาที',
+        + ' · คริปโต: มูลค่าตลาดรวมจาก CoinGecko (สำรอง CoinPaprika) · ไม่รวมอสังหาริมทรัพย์ เงินฝาก และอนุพันธ์ · อัปเดตทุก 15 นาที',
       'Stocks: total market cap of the listed companies companiesmarketcap.com tracks' + (e && e.countries ? ' (' + e.countries + ' countries)' : '') + ', by the country of the company\'s headquarters, prices delayed minutes to hours. China counts large companies only, so it reads below the exchanges\' own totals'
         + ' · Bonds: all government and corporate debt securities outstanding at face value, BIS debt securities statistics' + (b && b.countries ? ' (' + b.countries + ' countries' + (b.period ? ', ' + b.period : '') + ')' : '') + '. The euro area is the sum of its members'
         + ' · Gold: gold futures price (Yahoo GC=F, fallback PAXG from CoinGecko) × all gold ever mined (World Gold Council, ~216,265 t at end-2024 plus ~3,661 t of mine output a year)'
-        + ' · Crypto: total market cap from CoinGecko · excludes real estate, deposits and derivatives · refreshed every 15 minutes');
+        + ' · Crypto: total market cap from CoinGecko (fallback CoinPaprika) · excludes real estate, deposits and derivatives · refreshed every 15 minutes');
   }
   async function fetchCapMarkets(){
     cmNextAt = Date.now() + CM_POLL_MS;
