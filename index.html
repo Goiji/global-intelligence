@@ -515,7 +515,8 @@ body{margin:0}
   .cm-group{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:16px 16px 12px;position:relative}
   .cm-group::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;border-radius:16px 0 0 16px;background:linear-gradient(180deg,var(--c1),var(--c2))}
   .cm-row{position:relative}
-  .cm-row .tip-pop{white-space:normal;font-weight:400}
+  .cm-row .tip-pop{white-space:pre-line;font-weight:400}
+  .cm-tip-sec{display:block;line-height:1.5}.cm-tip-sec+.cm-tip-sec{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}.cm-tip-sec b{display:block;color:var(--text);margin-bottom:2px}
   @media(min-width:801px){.cm-row .tip-pop{top:24px;left:0;right:0}}
   .cm-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
   .cm-title{font-size:14px;font-weight:750;color:var(--text)}
@@ -3553,11 +3554,36 @@ window.setHeaderStamp();
     TH:[['DELTA','อุปกรณ์ไฟฟ้าสำหรับศูนย์ข้อมูล, EV','power gear for data centres, EVs'],['Gulf','โรงไฟฟ้า, มือถือ AIS','power plants, AIS mobile'],['PTT','น้ำมัน, ก๊าซ','oil & gas'],['AOT','สนามบิน','airports']],
     VN:[['Vingroup','อสังหาฯ, รถ VinFast','property, VinFast cars'],['Vietcombank','ธนาคาร','banking']]
   };
+  // คนในประเทศ: [อายุมัธยฐานของประชากร (UN World Population Prospects 2024, ปี), ดัชนีทุนมนุษย์ World Bank HCI 2020 (0–1),
+  //   ผลผลิตต่อชั่วโมงทำงาน (GDP per hour worked, ILO modelled estimates ปีล่าสุด, ดอลลาร์ PPP โดยประมาณ)]
+  // HCI = เด็กที่เกิดวันนี้ เมื่อโตเป็นแรงงานจะทำงานได้กี่ % ของศักยภาพเต็ม ดูจากจำนวนปีและคุณภาพการศึกษา (คะแนนสอบ) กับสุขภาพ · ไต้หวันไม่อยู่ในข้อมูล World Bank
+  const CM_PEOPLE = {
+    US:[38.5,0.70,97], EU:[44,0.75,70], CN:[39.5,0.65,16], JP:[49,0.80,50], IN:[28.8,0.49,9], CA:[41,0.80,68], TW:[44,null,62], KR:[45,0.80,50],
+    SA:[30,0.58,62], AU:[38,0.77,72], HK:[46,0.81,62], AE:[33,0.67,58], BR:[34,0.55,20], SG:[42,0.88,80], MX:[30,0.61,22], IL:[30,0.73,60],
+    ZA:[28,0.43,25], ID:[30,0.54,14], MY:[31,0.61,30], TH:[40,0.61,17], VN:[33,0.69,10]
+  };
+  // แต่ละหัวข้อใน tooltip = [หัวข้อ, เนื้อหา (ขึ้นบรรทัดใหม่ด้วย \n)]
+  function cmPeopleHint(code){
+    const p = CM_PEOPLE[code];
+    if(!p) return [];
+    const grade = function(v, hi, mid){ return v >= hi ? tr('สูง', 'High') : v >= mid ? tr('กลาง', 'Medium') : tr('ต่ำ', 'Low'); };
+    const out = [];
+    const old = p[0] >= 42 ? tr(' · สังคมสูงวัย', ' · ageing') : p[0] <= 32 ? tr(' · คนหนุ่มสาวเยอะ', ' · young') : '';
+    out.push([tr('👥 ประชากร', '👥 People'), tr('อายุเฉลี่ย ' + Math.round(p[0]) + ' ปี', 'Median age ' + Math.round(p[0])) + old]);
+    out.push([tr('🎓 ทักษะแรงงาน', '🎓 Workforce skills') + (p[1] == null ? '' : ': ' + grade(p[1], 0.75, 0.6)),
+      p[1] == null ? tr('ไม่มีในข้อมูล World Bank\nคะแนนสอบนักเรียน (PISA) ติดกลุ่มท็อปของโลก', 'Not in World Bank data\nStudents rank near the top in PISA tests')
+        : tr('ดัชนีทุนมนุษย์ World Bank ' + p[1].toFixed(2) + ' จาก 1', 'World Bank Human Capital Index ' + p[1].toFixed(2) + ' of 1')]);
+    if(p[2] != null) out.push([tr('💵 รายได้ต่อชั่วโมง: ', '💵 Earnings per hour: ') + grade(p[2], 60, 25),
+      tr('ผลผลิตต่อชั่วโมงทำงาน ~$' + p[2] + ' (ปรับค่าครองชีพ)\nเทียบ: สหรัฐฯ ~$97 · ไทย ~$17', 'Output per hour worked ~$' + p[2] + ' (PPP)\nCompare: US ~$97 · Thailand ~$17')]);
+    return out;
+  }
   function cmRowHint(group, code, part){
     if(group === 'equities'){
       const c = CM_CHAMPS[code];
-      if(!c) return '';
-      return (code === 'EU' ? tr('รวมอังกฤษ สวิส และนอร์ดิก · ', 'Incl. UK, Switzerland and the Nordics · ') : '') + tr('บริษัทเด่น: ', 'Champion stocks: ') + c.map(function(x){ return x[0] + ' (' + tr(x[1], x[2]) + ')'; }).join(' · ');
+      const out = [];
+      if(code === 'EU') out.push([tr('🗺️ รวมประเทศ', '🗺️ Includes'), tr('ยูโรโซน อังกฤษ สวิส และนอร์ดิก', 'Euro area, UK, Switzerland and the Nordics')]);
+      if(c) out.push([tr('🏆 บริษัทเด่น', '🏆 Champion stocks'), c.map(function(x){ return '• ' + x[0] + ' · ' + tr(x[1], x[2]); }).join('\n')]);
+      return out.concat(cmPeopleHint(code));
     }
     if(group !== 'crypto') return '';
     if(code === 'STABLE') return tr('เหรียญที่ผูกค่ากับดอลลาร์ ก้อนใหญ่สุดคือ USDT (Tether) รองลงมาคือ USDC แล้วก็ USDe, DAI และอื่นๆ เป็นเงินที่จอดรอในโลกคริปโต',
@@ -3597,8 +3623,9 @@ window.setHeaderStamp();
       const rows = subs.map(function(x){
         const code = x.key.split(':')[1];
         // แถวที่มีคำอธิบาย (เหรียญอื่น / Stablecoin) ใช้ปุ่ม i แบบเดียวกับการ์ดอื่น ชี้หรือแตะแล้วขึ้น (มือถือแตะได้)
-        const hint = cmRowHint(m.key, code, m.part);
-        const tip = hint ? ' <span class="tip"><button type="button" class="tip-btn" aria-expanded="false" aria-label="' + esc(tr('รายละเอียด ', 'About ') + x.label) + '">i</button><span class="tip-pop" role="tooltip">' + esc(hint) + '</span></span>' : '';
+        const hint0 = cmRowHint(m.key, code, m.part);
+        const hint = Array.isArray(hint0) && !hint0.length ? '' : hint0;
+        const tip = hint ? ' <span class="tip"><button type="button" class="tip-btn" aria-expanded="false" aria-label="' + esc(tr('รายละเอียด ', 'About ') + x.label) + '">i</button><span class="tip-pop" role="tooltip">' + (Array.isArray(hint) ? hint.map(function(h){ return '<span class="cm-tip-sec"><b>' + esc(h[0]) + '</b>' + esc(h[1]) + '</span>'; }).join('') : esc(hint)) + '</span></span>' : '';
         return '<div class="cm-row' + (code === 'OTHER' ? ' other' : '') + (code === 'TH' ? ' th' : '') + '"' + (hint ? '' : ' title="' + esc(x.label + ' · ' + x.share.toFixed(1) + tr('% ของกลุ่มนี้', '% of this group')) + '"') + '>'
           + '<span class="cm-name">' + esc(x.label) + tip + '</span>'
           + '<div class="cm-track"><div class="cm-fill" style="width:' + Math.max(0.6, x.value / top * 100).toFixed(2) + '%"></div></div>'
@@ -3616,11 +3643,13 @@ window.setHeaderStamp();
       'หุ้น: มูลค่าตลาดรวมของบริษัทจดทะเบียนที่ companiesmarketcap.com ติดตาม' + (e && e.countries ? ' (' + e.countries + ' ประเทศ)' : '') + ' นับตามประเทศที่ตั้งบริษัท ราคาช้าไม่กี่นาทีถึงไม่กี่ชั่วโมง จีนนับเฉพาะบริษัทใหญ่ จึงต่ำกว่าตัวเลขรวมของตลาดหลักทรัพย์จีน'
         + ' · ตราสารหนี้: พันธบัตรรัฐบาลและหุ้นกู้ทุกประเภทที่ยังไม่ครบกำหนด มูลค่าที่ตราไว้ จาก BIS Debt securities statistics' + (b && b.countries ? ' (' + b.countries + ' ประเทศ' + (b.period ? ' ไตรมาส ' + b.period : '') + ')' : '') + ' ยูโรโซนคือรวมประเทศสมาชิก'
         + ' · ทองคำ: ราคาทองฟิวเจอร์ส (Yahoo GC=F, สำรอง PAXG จาก CoinGecko) × ปริมาณทองที่ขุดขึ้นมาแล้วทั้งโลก (World Gold Council สิ้นปี 2024 ราว 216,265 ตัน บวกการขุดปีละราว 3,661 ตัน)'
-        + ' · คริปโต: มูลค่าตลาดรวมจาก CoinGecko (สำรอง CoinPaprika) แยก stablecoin ออกด้วยยอดรวมจาก DefiLlama · ไม่รวมอสังหาริมทรัพย์ เงินฝาก และอนุพันธ์ · อัปเดตทุก 15 นาที',
+        + ' · คริปโต: มูลค่าตลาดรวมจาก CoinGecko (สำรอง CoinPaprika) แยก stablecoin ออกด้วยยอดรวมจาก DefiLlama · ไม่รวมอสังหาริมทรัพย์ เงินฝาก และอนุพันธ์ · อัปเดตทุก 15 นาที'
+        + ' · ปุ่ม i ของประเทศ: บริษัทเด่นเลือกจากหุ้นมูลค่าสูงสุด, อายุเฉลี่ยคืออายุมัธยฐานจาก UN World Population Prospects 2024, ทักษะแรงงานคือดัชนีทุนมนุษย์ (Human Capital Index) ของ World Bank ปี 2020 วัดจากจำนวนปีและคุณภาพการศึกษา (คะแนนสอบ) กับสุขภาพ ไม่ใช่วัดความฉลาดของคน, รายได้ต่อชั่วโมงคือ GDP ต่อชั่วโมงทำงาน (ILO, ดอลลาร์ปรับค่าครองชีพ PPP โดยประมาณ) ใช้แทนค่าแรงเฉลี่ยเพราะเทียบข้ามประเทศได้',
       'Stocks: total market cap of the listed companies companiesmarketcap.com tracks' + (e && e.countries ? ' (' + e.countries + ' countries)' : '') + ', by the country of the company\'s headquarters, prices delayed minutes to hours. China counts large companies only, so it reads below the exchanges\' own totals'
         + ' · Bonds: all government and corporate debt securities outstanding at face value, BIS debt securities statistics' + (b && b.countries ? ' (' + b.countries + ' countries' + (b.period ? ', ' + b.period : '') + ')' : '') + '. The euro area is the sum of its members'
         + ' · Gold: gold futures price (Yahoo GC=F, fallback PAXG from CoinGecko) × all gold ever mined (World Gold Council, ~216,265 t at end-2024 plus ~3,661 t of mine output a year)'
-        + ' · Crypto: total market cap from CoinGecko (fallback CoinPaprika), stablecoins split out with the DefiLlama total · excludes real estate, deposits and derivatives · refreshed every 15 minutes');
+        + ' · Crypto: total market cap from CoinGecko (fallback CoinPaprika), stablecoins split out with the DefiLlama total · excludes real estate, deposits and derivatives · refreshed every 15 minutes'
+        + ' · Country i buttons: champion stocks are the largest listed companies; median age from UN World Population Prospects 2024; workforce skills are the World Bank Human Capital Index 2020, built from years and quality (test scores) of schooling plus health, not a measure of intelligence; earnings per hour is GDP per hour worked (ILO, approximate PPP dollars), a cross-country proxy for pay');
   }
   async function fetchCapMarkets(){
     cmNextAt = Date.now() + CM_POLL_MS;
