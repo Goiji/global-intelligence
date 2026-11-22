@@ -115,7 +115,7 @@ test('markets: cache is 15 min on release days and only the remaining time is ad
   global.fetch = async () => ({ ok: true, status: 200, text: async () => 'observation_date,X\n2026-09-01,3.0\n2026-10-01,3.1\n' });
   t.after(() => { global.fetch = realFetch; });
   markets._clearCache();
-  // This mock leaves MOVE, SPXEW, Shiller PE, CFTC and the US-Japan spreads blank, so the answer is partial and is
+  // This mock leaves MOVE, SPXEW, Shiller PE, Buffett, CFTC and the US-Japan spreads blank, so the answer is partial and is
   // cached for 2 min (retry soon) instead of the release-day 15 min.
   const first = await handler();
   assert.equal(JSON.parse(first.body).ttl, 2 * 60);
@@ -127,13 +127,13 @@ test('markets: cache is 15 min on release days and only the remaining time is ad
   // once those tiles have a last good copy, a repeat failure is filled and capped at 15 min
   t.mock.timers.tick(2 * 60 * 1000);
   const good = JSON.parse(second.body);
-  for (const k of ['move', 'spxew', 'cape', 'levShort', 'usjp2y', 'usjp10y']) good.series[k] = { latest: 1, hist: [] };
+  for (const k of ['move', 'spxew', 'cape', 'buffett', 'levShort', 'usjp2y', 'usjp10y']) good.series[k] = { latest: 1, hist: [] };
   markets._clearCache();
   const store = new Map([['markets:lastGood', JSON.stringify({ at: Date.now(), data: good })]]);
   const kv = { get: async (k) => JSON.parse(store.get(k) || 'null'), put: async (k, v) => store.set(k, v) };
   const third = JSON.parse((await handler({ cloudflare: { kv } })).body);
   assert.equal(third.series.move.latest, 1);
-  assert.deepEqual(third.staleSeries.sort(), ['cape', 'levShort', 'move', 'spxew', 'usjp10y', 'usjp2y']);
+  assert.deepEqual(third.staleSeries.sort(), ['buffett', 'cape', 'levShort', 'move', 'spxew', 'usjp10y', 'usjp2y']);
   assert.equal(third.ttl, 15 * 60);
 });
 

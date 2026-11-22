@@ -55,6 +55,14 @@
 // (not hard-coded), hist = last 10 years monthly for the sparkline. The page is ~700 KB, so the
 // parsed rows are kept in memory for 3 h. Same KV entry as everything else (markets:lastGood).
 //
+// Buffett Indicator (buffett) = US stock market value ÷ US GDP, in %. Both from FRED (full history,
+// fetched whole): NCBEILQ027S = market value of nonfinancial corporate equities (Fed Z.1, $ millions,
+// end of quarter, ~10 weeks late) and GDP (BEA, $ billions, annual rate). FRED dates a quarter by its
+// first day, so the equity level belongs to that quarter's last day. To keep the card current between
+// Z.1 releases, the last quarter's equity value is moved with the S&P 500 (same series as the S&P
+// tile) from that quarter end to today, over the latest GDP. History = the quarterly ratio; long-run
+// mean / median / peak / percentile come from it. Same KV entry (markets:lastGood).
+//
 // Caching: memory + CDN for 1 h, but only 15 min on CPI / jobs / FOMC days (same calendar as
 // fred-data.js) so the CPI / unemployment / Fed sparklines don't trail the cards for hours after a
 // release. If every source fails we serve the last good payload marked stale instead of an error.
@@ -108,6 +116,7 @@ const SERIES = {
   ovx:      { id: 'OVXCLS',   label: 'OVX', unit: '', cadence: 'daily' },
   move:     { id: '^MOVE',    label: 'MOVE', unit: '', cadence: 'daily', loader: 'yahoo' },
   cape:     { id: 'CAPE',     label: 'Shiller PE (CAPE)', unit: '', cadence: 'monthly', loader: 'cape' },
+  buffett:  { id: 'NCBEILQ027S/GDP', label: 'Buffett Indicator (market cap ÷ GDP)', unit: '%', cadence: 'quarterly', loader: 'buffett' },
   spxew:    { id: '^SPXEW',   label: 'S&P 500 Equal Weight', unit: '', cadence: 'daily', loader: 'spxew' },
   sofrSpread: { id: 'SOFR-IORB', label: 'SOFR − IORB', unit: 'bp', cadence: 'daily', loader: 'sofrSpread' },
   levShort: { id: 'CFTC-TFF-UST', label: 'Leveraged funds net short, UST futures', unit: '$bn', cadence: 'weekly', loader: 'cftc' },
@@ -496,6 +505,95 @@ async function loadCape(now = Date.now()) {
   return capeSummary(capeCache.rows);
 }
 
+// Whole FRED history of one series id (API with key first, then the public CSV), oldest first.
+async function fetchFredAll(id, apiKey) {
+  const errors = [];
+  if (apiKey) {
+    try {
+      const obs = parseApiJson(await fetchText(`${FRED_API}?series_id=${id}&api_key=${encodeURIComponent(apiKey)}&file_type=json`));
+      if (obs.length) return obs;
+      errors.push('fred-api: no observations');
+    } catch (e) { errors.push('fred-api: ' + e.message); }
+  }
+  try {
+    const obs = parseCsv(await fetchText(`${FRED_CSV}?id=${id}`));
+    if (obs.length) return obs;
+    errors.push('fred-csv: no observations');
+  } catch (e) { errors.push('fred-csv: ' + e.message); }
+  throw new Error(id + ': ' + errors.join(' | '));
+}
+
+async function loadBuffett(apiKey, raw) {
+  const [eq, gdp] = await Promise.all([fetchFredAll('NCBEILQ027S', apiKey), fetchFredAll('GDP', apiKey)]);
+  raw.buffettEq = eq;
+  raw.buffettGdp = gdp;
+  return buffettSummary(eq, gdp, null);
+}
+
+// Last day of the quarter that starts on `iso` (FRED's quarterly date).
+function quarterEnd(iso) {
+  const d = new Date(iso + 'T00:00:00Z');
+  return isoDay(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 3, 0)));
+}
+
+// eq ($ millions, quarterly) + gdp ($ billions, quarterly) [+ S&P 500 daily closes] → card payload.
+function buffettSummary(eqObs, gdpObs, spxObs) {
+  const r1 = (v) => Math.round(v * 10) / 10;
+  const gdp = new Map((gdpObs || []).filter((o) => o.value > 0).map((o) => [o.date, o.value]));
+  const q = (eqObs || []).filter((o) => o.value > 0 && gdp.has(o.date))
+    .map((o) => ({ date: o.date, end: quarterEnd(o.date), value: o.value / 1000 / gdp.get(o.date) * 100 }));
+  if (q.length < 8) throw new Error('buffett: too few quarters');
+  const lastQ = q[q.length - 1];
+  const eqLast = eqObs.filter((o) => o.date === lastQ.date)[0].value / 1000;   // $ bn
+  const gdpDates = [...gdp.keys()].sort();
+  const gdpDate = gdpDates[gdpDates.length - 1];
+  const gdpNow = gdp.get(gdpDate);
+  const out = {
+    label: SERIES.buffett.label,
+    unit: '%',
+    quarter: lastQ.date,
+    quarterEnd: lastQ.end,
+    quarterValue: r1(lastQ.value),
+    prevQuarterValue: r1(q[q.length - 2].value),
+    gdp: Math.round(gdpNow),
+    gdpDate,
+    marketCap: Math.round(eqLast),
+    latest: r1(lastQ.value),
+    date: lastQ.end,
+    estimated: false
+  };
+  // move the last quarter's equity value with the S&P 500 up to today (needs a close on/before the quarter end)
+  const spx = (spxObs || []).filter((o) => o.value > 0);
+  const base = spx.filter((o) => o.date <= lastQ.end).pop();
+  const now = spx[spx.length - 1];
+  if (base && now && now.date > lastQ.end && Date.parse(lastQ.end) - Date.parse(base.date) <= 7 * 86400000) {
+    out.marketCap = Math.round(eqLast * now.value / base.value);
+    out.latest = r1(out.marketCap / gdpNow * 100);
+    out.date = now.date;
+    out.estimated = true;
+    out.spxMove = Math.round((now.value / base.value - 1) * 10000) / 100;
+  }
+  const vals = q.map((o) => o.value).sort((a, b) => a - b);
+  const mid = vals.length >> 1;
+  const peak = q.reduce((a, b) => (b.value > a.value ? b : a));
+  const tenYrsAgo = `${Number(out.date.slice(0, 4)) - 10}${out.date.slice(4)}`;
+  const hist = q.filter((o) => o.end >= tenYrsAgo).map((o) => [o.end, r1(o.value)]);
+  if (out.estimated) hist.push([out.date, out.latest]);
+  return Object.assign(out, {
+    prev: out.estimated ? r1(lastQ.value) : r1(q[q.length - 2].value),
+    change: r1(out.latest - (out.estimated ? lastQ.value : q[q.length - 2].value)),
+    mean: r1(vals.reduce((a, b) => a + b, 0) / vals.length),
+    median: r1(vals.length % 2 ? vals[mid] : (vals[mid - 1] + vals[mid]) / 2),
+    peak: r1(Math.max(peak.value, out.latest)),
+    peakDate: out.latest > peak.value ? out.date : peak.end,
+    pctile: Math.round(vals.filter((v) => v < out.latest).length / vals.length * 1000) / 10,
+    since: q[0].end,
+    quarters: q.length,
+    hist,
+    source: 'fred'
+  });
+}
+
 // Daily % moves of two series on their shared dates, last `n` of them → largest gap in pp (null = too few).
 function maxDailyGap(aObs, bObs, n = EW_CHECK_DAYS) {
   const b = new Map((bObs || []).map((o) => [o.date, o.value]));
@@ -706,6 +804,7 @@ async function buildPayload(apiKey, event = null) {
       : SERIES[k].loader === 'yahoo' ? loadMove()
       : SERIES[k].loader === 'spxew' ? loadSpxew(raw)
       : SERIES[k].loader === 'cape' ? loadCape()
+      : SERIES[k].loader === 'buffett' ? loadBuffett(apiKey, raw)
       : SERIES[k].loader === 'sofrSpread' ? loadSofrSpread(apiKey)
       : SERIES[k].loader === 'cftc' ? loadLevShort()
       : loadSeries(k, apiKey, raw)))),
@@ -756,6 +855,11 @@ async function buildPayload(apiKey, event = null) {
       }
       Object.assign(series.spxew, b);
     } catch (e) { errors.spxewBreadth = e.message; }
+  }
+  // Buffett Indicator: carry the last Z.1 quarter forward with the S&P 500 (FRED closes + Cboe live).
+  if (series.buffett && raw.sp500 && series.sp500) {
+    try { series.buffett = buffettSummary(raw.buffettEq, raw.buffettGdp, withLatest(raw.sp500, series.sp500)); }
+    catch (e) { errors.buffettLive = e.message; }
   }
   // US − Japan spreads, after the overlays so they end on the same day as the US yield tiles.
   for (const k of Object.keys(SERIES).filter((x) => SERIES[x].loader === 'usjp')) {
@@ -834,4 +938,4 @@ exports.handler = async function (event) {
   }
 };
 
-module.exports.__test = { parseMultplTable, capeSummary, MULTPL_CAPE, breadthSummary, pctOver, maxDailyGap, parseMofCsv, mergeJgb, withLatest, joinUsJp, changeOver, usJpSummary, parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, parseCftcLevShort, SERIES, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; jgbHistCache = { rows: null, expiresAt: 0 }; capeCache = { rows: null, expiresAt: 0 }; } };
+module.exports.__test = { buffettSummary, quarterEnd, parseMultplTable, capeSummary, MULTPL_CAPE, breadthSummary, pctOver, maxDailyGap, parseMofCsv, mergeJgb, withLatest, joinUsJp, changeOver, usJpSummary, parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, parseCftcLevShort, SERIES, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; jgbHistCache = { rows: null, expiresAt: 0 }; capeCache = { rows: null, expiresAt: 0 }; } };

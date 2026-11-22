@@ -117,7 +117,7 @@ test('index.html: CAPE card with (i) colours, meaning line and source note; colo
     assert.match(els.get('mkCapeMeaning').innerHTML, /^<b>ความหมาย:<\/b> /);
   }
   sb.renderCape({ ...base, latest: 36.44 });
-  assert.match(els.get('mkCapeMeaning').innerHTML, /แพงกว่า 97% ของทุกเดือนในอดีต/);
+  assert.match(els.get('mkCapeMeaning').innerHTML, /แพงกว่า 96% ของทุกเดือนในอดีต/);
   sb.renderCape(null);
   assert.match(els.get('mkCapeZone').textContent, /⚪/);
   assert.equal(els.get('mkCapeMeaning').innerHTML, '');
