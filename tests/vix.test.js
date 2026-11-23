@@ -10,7 +10,7 @@ test('VIX bands: <20 hold, 20–30 caution, 30–40 buy in steps, 40+ crisis', a
   assert.match(sb.vixZone(19.99).label, /^🟢/);
   assert.match(sb.vixZone(20).label, /^🟡/);
   assert.match(sb.vixZone(29.9).label, /^🟡/);
-  assert.match(sb.vixZone(35.89).label, /^🟠.*ทยอยสะสม/);
+  assert.match(sb.vixZone(35.89).label, /^🟠.*แบ่งซื้อ/);
   assert.match(sb.vixZone(40).label, /^🔴/);
 });
 
