@@ -5213,21 +5213,28 @@ window.setHeaderStamp();
   #macroTab .mm-oddhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
   #macroTab .mm-oddhead a{color:var(--muted);font-size:12px;text-decoration:none;border:1px solid #2c3a60;border-radius:99px;padding:2px 9px}
   #macroTab .mm-oddhead a:hover{color:var(--text)}
-  #macroTab .mm-map{background:radial-gradient(ellipse 55% 45% at 50% 50%,rgba(212,178,106,.10),transparent 70%),radial-gradient(ellipse at 50% 50%,#141d36 0,#0c1326 75%);border-color:#243050;border-radius:18px}
+  #macroTab .mm-map{
+    background:radial-gradient(ellipse at 50% 49%,#20283a 0,#101827 52%,#0d1422 100%);
+    border-color:#303e55;
+    border-radius:16px;
+  }
+  #macroTab .mm-mapwrap .mm-legend{
+    gap:8px 16px;padding:12px 14px;border:1px solid #303e55;border-radius:12px;background:#131d2e;color:#c2cee1;
+  }
   #macroTab .mm-band{stroke:none}
-  #macroTab .mm-zl{font-size:12px;fill:#6f7ea3;letter-spacing:.16em;font-weight:800}
+  #macroTab .mm-zl{font-size:12px;fill:#9eafca;letter-spacing:.07em;font-weight:700}
   #macroTab .mm-edge{opacity:.42}
   #macroTab .mm-edge.on{opacity:1;filter:drop-shadow(0 0 4px currentColor)}
   #macroTab .mm-edge.dim{opacity:.06}
-  #macroTab .mm-node rect.box{fill:url(#mmNodeG);stroke:#2c3a60;stroke-width:1.2}
+  #macroTab .mm-node rect.box{fill:url(#mmNodeG);stroke:#3a4b66;stroke-width:1.2}
   #macroTab .mm-node:hover rect.box,#macroTab .mm-node.sel rect.box{stroke:#5a6a94;stroke-width:2}
-  #macroTab .mm-node .nl{font-size:15px;fill:#b4c0da}
-  #macroTab .mm-node .nv{font-size:27px}
-  #macroTab .mm-node .ns{font-size:12px;fill:#7d8bab}
+  #macroTab .mm-node .nl{font-size:15px;fill:#d2dcee}
+  #macroTab .mm-node .nv{font-size:27px;font-variant-numeric:tabular-nums}
+  #macroTab .mm-node .ns{font-size:12px;fill:#a5b5ce}
   #macroTab .mm-node .badge{font-size:11px;font-weight:800}
   #macroTab .mm-fed rect.box{fill:url(#mmFedG);stroke:var(--accent,#d4b26a);stroke-width:2}
   #macroTab .mm-fed:hover rect.box,#macroTab .mm-fed.sel rect.box{stroke:var(--accent,#d4b26a);stroke-width:2.6}
-  #macroTab .mm-fed{filter:drop-shadow(0 0 22px rgba(212,178,106,.28))}
+  #macroTab .mm-fed{filter:drop-shadow(0 6px 16px rgba(0,0,0,.35))}
   #macroTab .mm-fed .nv{font-size:32px;fill:#f6e3b4}
   #macroTab .mm-ring{fill:none;stroke:rgba(212,178,106,.16)}
   #macroTab .mm-panel{background:linear-gradient(170deg,#172140,#0f172b 60%);border-color:#27345a;border-radius:18px}
@@ -5515,14 +5522,13 @@ window.setHeaderStamp();
     const byId = {}; NODES.forEach((n) => { byId[n.id] = n; });
     let h = '<svg viewBox="0 0 1000 650" role="img" aria-label="' + esc(tr('แผนผังปัจจัยที่มีผลต่อการตัดสินใจของเฟด', 'Map of the forces behind Fed decisions')) + '"><defs>';
     ['hot', 'cool', 'ext'].forEach((k) => { h += `<marker id="mmA-${k}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--${k})"/></marker>`; });
-    h += '<linearGradient id="mmNodeG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2646"/><stop offset="1" stop-color="#111a31"/></linearGradient>'
+    h += '<linearGradient id="mmNodeG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#23314a"/><stop offset="1" stop-color="#172236"/></linearGradient>'
       + '<linearGradient id="mmFedG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2a35"/><stop offset=".5" stop-color="#1c2440"/><stop offset="1" stop-color="#151d36"/></linearGradient>'
-      + '<pattern id="mmDots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#ffffff10"/></pattern></defs>';
-    h += '<rect width="1000" height="650" fill="url(#mmDots)"/>';
+      + '</defs>';
     h += `<rect class="mm-band" x="14" y="10" width="972" height="120" rx="20" fill="rgba(179,157,219,.045)"/><text class="mm-zl" x="986" y="146" text-anchor="end">${esc(tr('แรงจากภายนอก', 'OUTSIDE FORCES'))}</text>`;
     h += `<path class="mm-band" d="M34,186 H226 a20,20 0 0 1 20,20 V522 H754 a20,20 0 0 1 20,20 V626 a20,20 0 0 1 -20,20 H34 a20,20 0 0 1 -20,-20 V206 a20,20 0 0 1 20,-20 Z" fill="rgba(76,201,240,.04)"/><text class="mm-zl" x="22" y="178">${esc(tr('ภารกิจของเฟด · ราคา + การจ้างงาน', 'THE MANDATE · PRICES + JOBS'))}</text>`;
     const F = byId.fed;
-    [80, 130, 190].forEach((r, i) => { h += `<ellipse class="mm-ring" cx="${F.x}" cy="${F.y}" rx="${r * 1.55}" ry="${r}" stroke-dasharray="${i ? '2 6' : ''}"/>`; });
+    h += `<ellipse class="mm-ring" cx="${F.x}" cy="${F.y}" rx="152" ry="75"/>`;
     EDGES.forEach((e, i) => {
       const a = byId[e[0]], b = byId[e[1]]; const k = e[2] === '+' ? 'hot' : e[2] === '-' ? 'cool' : 'ext';
       h += `<path class="mm-edge" data-i="${i}" d="${edgeGeom(a, b, e[7])}" stroke="${EDGE_COL[e[2]]}" style="color:${EDGE_COL[e[2]]}" stroke-width="${[0, 1.3, 2, 3][e[3]]}" ${e[3] === 1 || e[2] === '±' ? 'stroke-dasharray="3 5"' : ''} marker-end="url(#mmA-${k})"/>`;
@@ -5538,7 +5544,8 @@ window.setHeaderStamp();
       const x0 = n.x - n.w / 2, y0 = n.y - n.h / 2, pad = isFed ? 20 : 18;
       const vcol = isFed ? '' : sc == null ? (r ? '#d9c9f5' : '#6f7ea3') : sc > 0.25 ? 'var(--hot)' : sc < -0.25 ? 'var(--cool)' : '#eef3ff';
       h += `<g class="mm-node${isFed ? ' mm-fed' : ''}${n.id === selected ? ' sel' : ''}" data-id="${n.id}" tabindex="0" role="button" aria-label="${esc(tr(n.th, n.en) + ' ' + val)}">`
-        + `<rect class="box" x="${x0}" y="${y0}" width="${n.w}" height="${n.h}" rx="${isFed ? 22 : 16}"/>`
+        + `<title>${esc([tr(n.th, n.en), val, sub].filter(Boolean).join(" · "))}</title>`
+        + `<rect class="box" x="${x0}" y="${y0}" width="${n.w}" height="${n.h}" rx="${isFed ? 18 : 12}"/>`
         + (isFed ? '' : `<rect x="${x0}" y="${y0 + 14}" width="4" height="${n.h - 28}" rx="2" fill="${col}"/>`)
         + `<text class="nl" x="${x0 + pad}" y="${y0 + (isFed ? 28 : 25)}">${ICON[n.id] || ''} ${esc(tr(n.th, n.en))}</text>`
         + (badge ? `<text class="badge" x="${x0 + n.w - 14}" y="${y0 + 24}" text-anchor="end" fill="${col}">${badge}</text>` : '')
