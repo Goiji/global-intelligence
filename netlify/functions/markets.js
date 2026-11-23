@@ -810,7 +810,7 @@ async function loadLiveQuote(cboeUrl, yahooSymbol) {
 function loadVixLive() { return loadLiveQuote(CBOE_VIX, '^VIX'); }
 
 async function loadTnxLive() {
-  return tnxToPercent(parseCboeQuote(await fetchText(CBOE_TNX)));
+  return tnxToPercent(await loadLiveQuote(CBOE_TNX, '^TNX'));
 }
 
 // This month's curve; in the first days of a month it can be empty, so fall back to last month's.

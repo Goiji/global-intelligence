@@ -3551,8 +3551,8 @@ window.setHeaderStamp();
       if(S.unrate) setSpark('spUnrate', S.unrate, { upIsBad:true, dec:1 });
       patchSparksFromLive();
       marketsNextAt = Date.now() + Math.max(nextIn, 60 * 1000);
-      const yieldNote = (name, s) => !s ? '' : s.source === 'cboe' && s.time
-        ? name + tr(' จาก Cboe ', ' from Cboe ') + thDay(s.date).replace(/ \d{4}$/, '') + ' ' + s.time.slice(11, 16) + tr(' NY (ช้า ~15 นาที)', ' NY (~15 min delay)')
+      const yieldNote = (name, s) => !s ? '' : (s.source === 'cboe' || s.source === 'yahoo') && s.time
+        ? name + (s.source === 'yahoo' ? tr(' จาก Yahoo ', ' from Yahoo ') : tr(' จาก Cboe ', ' from Cboe ')) + thDay(s.date).replace(/ \d{4}$/, '') + ' ' + s.time.slice(11, 16) + tr(' NY (ช้า ~15 นาที)', ' NY (~15 min delay)')
         : s.source === 'treasury' ? name + tr(' ราคาปิด ', ' close ') + thDay(s.date) + tr(' (กระทรวงการคลังสหรัฐ)', ' (US Treasury)')
         : name + tr(' ราคาปิด ', ' close ') + thDay(s.date) + tr(' (FRED ช้ากว่าตลาดประมาณ 1 วันทำการ)', ' (FRED, about 1 business day behind the market)');
       el('mktWarn').textContent = '';
