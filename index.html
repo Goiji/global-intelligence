@@ -669,9 +669,9 @@ body{margin:0}
 <script>try{ if(/[?&]debug\b/.test(location.search)) document.body.classList.add('debug'); }catch(e){}</script>
 <nav class="tabbar">
   <button class="tabbtn active" data-tab="newsTab" data-en="🌍 World News & AI">🌍 ข่าวโลก & AI</button>
+  <button class="tabbtn" data-tab="macroTab" data-en="🧭 Macro Map">🧭 แผนผังมหภาค</button>
   <button class="tabbtn" data-tab="marketsTab" data-en="🌐 Capital Markets">🌐 ตลาดทุนโลก</button>
   <button class="tabbtn" data-tab="backtestTab" data-en="🧪 Backtest">🧪 Backtest</button>
-  <button class="tabbtn" data-tab="macroTab" data-en="🧭 Macro Map">🧭 แผนผังมหภาค</button>
   <button class="tabbtn" data-tab="btcTab">₿ BTC Buy Score</button>
   <div class="lang-toggle" role="group" aria-label="ภาษา / Language">
     <button type="button" data-lang="th" lang="th" aria-pressed="true" title="ภาษาไทย">ไทย</button>
@@ -7488,7 +7488,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
 (function(){
   const buttons = document.querySelectorAll('.tabbtn');
   const pages = document.querySelectorAll('.tabpage');
-  const TAB_IDS = ['newsTab', 'marketsTab', 'backtestTab', 'macroTab', 'btcTab'];
+  const TAB_IDS = ['newsTab', 'macroTab', 'marketsTab', 'backtestTab', 'btcTab'];
 
   function activate(tabId){
     buttons.forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
