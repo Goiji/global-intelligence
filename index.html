@@ -4908,22 +4908,90 @@ window.setHeaderStamp();
   @media(max-width:1000px){#macroTab .mm-mapwrap{grid-template-columns:minmax(0,1fr)}#macroTab .mm-hero{grid-template-columns:1fr 1fr}#macroTab .mm-hero .mm-tile:first-child{grid-column:1/-1}}
   @media(max-width:800px){#macroTab .mm-flow{grid-template-columns:minmax(0,1fr)}#macroTab .mm-arrow{transform:rotate(90deg);height:26px}#macroTab .mm-story{grid-template-columns:1fr}#macroTab .mm-scen button{min-width:calc(50% - 4px);flex:1}}
   @media(max-width:560px){#macroTab .mm-hero{grid-template-columns:1fr}#macroTab .mm-big{font-size:22px}}
+  /* ── visual refresh ── */
+  #macroTab .card{background:linear-gradient(180deg,rgba(22,31,54,.96),rgba(15,22,40,.96));border-color:#26324f}
+  #macroTab h2{font-size:19px;letter-spacing:-.01em}
+  #macroTab .mm-eyebrow{font-size:11px;letter-spacing:.18em;color:var(--accent,#d4b26a);font-weight:800;text-transform:uppercase;margin-bottom:6px}
+  #macroTab .mm-title{font-size:30px;font-weight:850;letter-spacing:-.02em;margin:0;line-height:1.15}
+  #macroTab .mm-title em{font-style:normal;background:linear-gradient(90deg,#f3d89a,#d4b26a 40%,#ff9f5a);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #macroTab .mm-tile{background:linear-gradient(160deg,#172140,#0f172b 70%);border:1px solid #27345a;border-radius:18px;padding:18px;position:relative;overflow:hidden}
+  #macroTab .mm-tile::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,transparent,var(--tile-accent,#d4b26a55),transparent)}
+  #macroTab .mm-hero{grid-template-columns:1.5fr 1fr 1fr;gap:16px}
+  #macroTab .mm-tiltwrap{display:grid;grid-template-columns:230px 1fr;gap:18px;align-items:center}
+  #macroTab .mm-dial svg{width:100%;height:auto;display:block}
+  #macroTab .mm-dial .lbl{font-size:11px;fill:var(--muted)}
+  #macroTab .mm-drivers li{padding:5px 0;border-top:1px solid #ffffff0d}
+  #macroTab .mm-drivers li:first-child{border-top:0}
+  #macroTab .mm-big{font-size:28px;letter-spacing:-.01em}
+  #macroTab .mm-odds{gap:16px}
+  #macroTab .mm-ladder{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:14px 0 6px}
+  #macroTab .mm-lc{display:flex;flex-direction:column;align-items:center;gap:6px}
+  #macroTab .mm-lk{position:relative;width:100%;max-width:58px;height:104px;border-bottom:1px solid #2c3a60}
+  #macroTab .mm-lb{position:absolute;left:0;right:0;bottom:0;border-radius:8px 8px 2px 2px;background:#26324f;transition:height .6s}
+  #macroTab .mm-lp{position:absolute;left:-10px;right:-10px;text-align:center;font-size:13px;font-weight:800;color:var(--muted)}
+  #macroTab .mm-lt .mm-lp{color:var(--text);font-size:17px}
+  #macroTab .mm-ln{font-size:10.5px;color:var(--muted);text-align:center;line-height:1.25}
+  #macroTab .mm-oddhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  #macroTab .mm-oddhead a{color:var(--muted);font-size:12px;text-decoration:none;border:1px solid #2c3a60;border-radius:99px;padding:2px 9px}
+  #macroTab .mm-oddhead a:hover{color:var(--text)}
+  #macroTab .mm-map{background:radial-gradient(ellipse 55% 45% at 50% 50%,rgba(212,178,106,.10),transparent 70%),radial-gradient(ellipse at 50% 50%,#141d36 0,#0c1326 75%);border-color:#243050;border-radius:18px}
+  #macroTab .mm-band{stroke:none}
+  #macroTab .mm-zl{font-size:12px;fill:#6f7ea3;letter-spacing:.16em;font-weight:800}
+  #macroTab .mm-edge{opacity:.42}
+  #macroTab .mm-edge.on{opacity:1;filter:drop-shadow(0 0 4px currentColor)}
+  #macroTab .mm-edge.dim{opacity:.06}
+  #macroTab .mm-node rect.box{fill:url(#mmNodeG);stroke:#2c3a60;stroke-width:1.2}
+  #macroTab .mm-node:hover rect.box,#macroTab .mm-node.sel rect.box{stroke:#5a6a94;stroke-width:2}
+  #macroTab .mm-node .nl{font-size:15px;fill:#b4c0da}
+  #macroTab .mm-node .nv{font-size:27px}
+  #macroTab .mm-node .ns{font-size:12px;fill:#7d8bab}
+  #macroTab .mm-node .badge{font-size:11px;font-weight:800}
+  #macroTab .mm-fed rect.box{fill:url(#mmFedG);stroke:var(--accent,#d4b26a);stroke-width:2}
+  #macroTab .mm-fed:hover rect.box,#macroTab .mm-fed.sel rect.box{stroke:var(--accent,#d4b26a);stroke-width:2.6}
+  #macroTab .mm-fed{filter:drop-shadow(0 0 22px rgba(212,178,106,.28))}
+  #macroTab .mm-fed .nv{font-size:32px;fill:#f6e3b4}
+  #macroTab .mm-ring{fill:none;stroke:rgba(212,178,106,.16)}
+  #macroTab .mm-panel{background:linear-gradient(170deg,#172140,#0f172b 60%);border-color:#27345a;border-radius:18px}
+  #macroTab .mm-legend i{width:22px;height:3px}
+  #macroTab .mm-scen button{border-radius:14px;padding:10px 14px;background:#121b33;border-color:#27345a;transition:border-color .2s,background .2s,transform .2s}
+  #macroTab .mm-scen button:hover{transform:translateY(-1px);border-color:#3a4a74}
+  #macroTab .mm-scen button.on{background:linear-gradient(160deg,rgba(212,178,106,.18),rgba(212,178,106,.04));border-color:var(--accent,#d4b26a)}
+  #macroTab .mm-scen button .bar i{background:linear-gradient(90deg,#d4b26a,#ff9f5a)}
+  #macroTab .mm-chain{display:grid;grid-template-columns:1fr 28px 1fr 28px 1.25fr;align-items:stretch;margin-bottom:16px}
+  #macroTab .mm-chain .step{background:linear-gradient(160deg,#172140,#101830);border:1px solid #27345a;border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6}
+  #macroTab .mm-chain .step.fed{border-color:rgba(212,178,106,.55);background:linear-gradient(160deg,rgba(212,178,106,.14),#101830)}
+  #macroTab .mm-chain .step b{font-size:15px}
+  #macroTab .mm-chain .to{display:flex;align-items:center;justify-content:center;color:#5d6a8a;font-size:18px}
+  #macroTab .mm-flow{grid-template-columns:1fr 40px 1fr}
+  #macroTab .mm-col h4{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8e9bb5}
+  #macroTab .mm-row{background:#111a31;border-color:#232f4d;border-radius:14px;padding:10px 12px;grid-template-columns:34px 1fr auto;transition:border-color .2s}
+  #macroTab .mm-row:hover{border-color:#3a4a74}
+  #macroTab .mm-row .d{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px}
+  #macroTab .mm-row .d.hot{background:rgba(255,159,90,.14)} #macroTab .mm-row .d.cool{background:rgba(76,201,240,.14)} #macroTab .mm-row .d.ext{background:rgba(179,157,219,.14)}
+  #macroTab .mm-row .act b{font-size:14px}
+  #macroTab .mm-row .vd{display:inline-flex;width:18px;height:18px;border-radius:50%;align-items:center;justify-content:center;font-size:11px;margin-left:6px;vertical-align:1px}
+  #macroTab .vd.ok{background:rgba(69,212,131,.16)} #macroTab .vd.no{background:rgba(255,101,119,.16)} #macroTab .vd.meh{background:rgba(255,202,88,.14)}
+  @media(max-width:1000px){#macroTab .mm-hero{grid-template-columns:1fr 1fr}#macroTab .mm-tiltwrap{grid-template-columns:200px 1fr}}
+  @media(max-width:800px){#macroTab .mm-chain{grid-template-columns:minmax(0,1fr)}#macroTab .mm-chain .to{transform:rotate(90deg);height:24px}#macroTab .mm-flow{grid-template-columns:minmax(0,1fr)}}
+  @media(max-width:560px){#macroTab .mm-tiltwrap{grid-template-columns:1fr}#macroTab .mm-dial{max-width:240px;margin:0 auto}#macroTab .mm-title{font-size:24px}#macroTab .mm-lk{height:92px}}
+  @media(max-width:700px){#macroTab .mm-hero{grid-template-columns:minmax(0,1fr)}#macroTab .mm-big{font-size:24px}}
 </style>
 <div class="wrap">
 <main class="grid">
 <section class="card full">
-<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline">
-<h2 style="margin:0">🧭 <span data-en="Macro Map: what moves the Fed, and what the Fed moves">แผนผังมหภาค: อะไรขยับเฟด และเฟดขยับอะไร</span></h2>
+<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">
+<div><div class="mm-eyebrow" data-en="Macro Map · live">Macro Map · ข้อมูลสด</div>
+<h2 class="mm-title"><span data-en="What moves the Fed,">อะไรขยับเฟด</span> <em data-en="and what the Fed moves">และเฟดขยับอะไร</em></h2></div>
 <span class="mm-live off" id="mmLive" data-en="loading…">กำลังโหลด…</span>
 </div>
 <p class="mm-lead" data-en="Live US data, scored the way the Fed reads it. Tap any box on the map for the details.">ข้อมูลสหรัฐฯ ล่าสุด ให้คะแนนตามมุมที่เฟดใช้มอง แตะกล่องไหนบนแผนผังก็ได้เพื่อดูรายละเอียด</p>
 <div class="mm-hero" style="margin-top:14px">
   <div class="mm-tile">
     <div class="mm-k" data-en="Where the data pushes the Fed">ข้อมูลตอนนี้ดันเฟดไปทางไหน</div>
-    <div class="mm-big" id="mmTiltLabel">—</div>
-    <div class="mm-gauge"><span class="pin" id="mmTiltPin"></span></div>
-    <div class="mm-gauge-l"><span data-en="◀ room to cut">◀ มีช่องให้ลด</span><span data-en="hold">คง</span><span data-en="pressure to stay high ▶">กดดันให้สูงต่อ ▶</span></div>
-    <ul class="mm-drivers" id="mmDrivers"></ul>
+    <div class="mm-tiltwrap">
+      <div class="mm-dial" id="mmDial"></div>
+      <div><div class="mm-big" id="mmTiltLabel">—</div><ul class="mm-drivers" id="mmDrivers"></ul></div>
+    </div>
   </div>
   <div class="mm-tile">
     <div class="mm-k" data-en="Fed funds target">ดอกเบี้ยนโยบายเฟด</div>
@@ -4936,7 +5004,7 @@ window.setHeaderStamp();
     <div class="mm-sub" id="mmBestSub"></div>
   </div>
 </div>
-<div class="mm-k" style="margin-top:18px" data-en="What bettors expect from the Fed (real-money prediction markets)">ตลาดพนันคาดว่าเฟดจะทำอะไร (เงินจริงในตลาดคาดการณ์)</div>
+<div class="mm-k" style="margin-top:22px" data-en="What bettors expect from the Fed (real-money prediction markets)">ตลาดพนันคาดว่าเฟดจะทำอะไร (เงินจริงในตลาดคาดการณ์)</div>
 <div class="mm-odds" id="mmOdds"><div class="mm-tile mm-sub" data-en="Loading odds…">กำลังโหลดโอกาส…</div></div>
 </section>
 
@@ -5119,7 +5187,7 @@ window.setHeaderStamp();
     },
     supply(){
       const d = it('mm', 'debt'); if(!d || !num(d.levelTn)) return null;
-      return { v: '$' + d.levelTn.toFixed(1) + (EN ? 'tn' : ' ล้านล้าน'), s: tr('หนี้รัฐบาลสหรัฐฯ', 'US federal debt') + (num(d.value) ? ' · YoY ' + sgn(d.value) + '%' : ''), score: null, src: 'US Treasury via FRED GFDEBTN',
+      return { v: '$' + d.levelTn.toFixed(1) + 'T', s: tr('หนี้รัฐบาลสหรัฐฯ', 'US federal debt') + (num(d.value) ? ' · YoY ' + sgn(d.value) + '%' : ''), score: null, src: 'US Treasury via FRED GFDEBTN',
         th: `หนี้เพิ่มปีละ ~${num(d.value) ? d.value.toFixed(0) : '?'}% ต้องออกพันธบัตรใหม่ต่อเนื่อง เป็นแรงดันยีลด์ยาวที่เฟดคุมไม่ได้`,
         en: `Debt growing ~${num(d.value) ? d.value.toFixed(0) : '?'}% a year means a steady flood of new bonds, a pressure on long yields the Fed does not control.` };
     },
@@ -5161,17 +5229,23 @@ window.setHeaderStamp();
   const EDGE_COL = { '+': 'var(--hot)', '-': 'var(--cool)', '±': 'var(--ext)' };
   let selected = 'fed', reads = {}, tiltInfo = null;
 
+  const ICON = { inflation: '🔥', expect: '🧠', labour: '👷', demand: '🛒', product: '⚙️', y10: '📈', oil: '🛢️', war: '⚔️', supply: '🏛️', ai: '🤖', fed: '🏦' };
   function drawMap(){
     const map = $('mmMap'); if(!map) return;
     const byId = {}; NODES.forEach((n) => { byId[n.id] = n; });
     let h = '<svg viewBox="0 0 1000 650" role="img" aria-label="' + esc(tr('แผนผังปัจจัยที่มีผลต่อการตัดสินใจของเฟด', 'Map of the forces behind Fed decisions')) + '"><defs>';
     ['hot', 'cool', 'ext'].forEach((k) => { h += `<marker id="mmA-${k}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--${k})"/></marker>`; });
-    h += '</defs>';
-    h += `<rect class="mm-zone" x="18" y="14" width="964" height="112" rx="16"/><text class="mm-zl" x="30" y="146">${esc(tr('แรงจากภายนอก', 'OUTSIDE FORCES'))}</text>`;
-    h += `<rect class="mm-zone" x="18" y="196" width="224" height="446" rx="16"/><rect class="mm-zone" x="242" y="536" width="526" height="106" rx="16"/><text class="mm-zl" x="30" y="190">${esc(tr('ภารกิจของเฟด: ราคา + การจ้างงาน', 'THE MANDATE: PRICES + JOBS'))}</text>`;
+    h += '<linearGradient id="mmNodeG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2646"/><stop offset="1" stop-color="#111a31"/></linearGradient>'
+      + '<linearGradient id="mmFedG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2a35"/><stop offset=".5" stop-color="#1c2440"/><stop offset="1" stop-color="#151d36"/></linearGradient>'
+      + '<pattern id="mmDots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#ffffff10"/></pattern></defs>';
+    h += '<rect width="1000" height="650" fill="url(#mmDots)"/>';
+    h += `<rect class="mm-band" x="14" y="10" width="972" height="120" rx="20" fill="rgba(179,157,219,.045)"/><text class="mm-zl" x="986" y="146" text-anchor="end">${esc(tr('แรงจากภายนอก', 'OUTSIDE FORCES'))}</text>`;
+    h += `<path class="mm-band" d="M34,186 H226 a20,20 0 0 1 20,20 V522 H754 a20,20 0 0 1 20,20 V626 a20,20 0 0 1 -20,20 H34 a20,20 0 0 1 -20,-20 V206 a20,20 0 0 1 20,-20 Z" fill="rgba(76,201,240,.04)"/><text class="mm-zl" x="22" y="178">${esc(tr('ภารกิจของเฟด · ราคา + การจ้างงาน', 'THE MANDATE · PRICES + JOBS'))}</text>`;
+    const F = byId.fed;
+    [80, 130, 190].forEach((r, i) => { h += `<ellipse class="mm-ring" cx="${F.x}" cy="${F.y}" rx="${r * 1.55}" ry="${r}" stroke-dasharray="${i ? '2 6' : ''}"/>`; });
     EDGES.forEach((e, i) => {
       const a = byId[e[0]], b = byId[e[1]]; const k = e[2] === '+' ? 'hot' : e[2] === '-' ? 'cool' : 'ext';
-      h += `<path class="mm-edge" data-i="${i}" d="${edgeGeom(a, b, e[7])}" stroke="${EDGE_COL[e[2]]}" stroke-width="${[0, 1.4, 2.2, 3.4][e[3]]}" ${e[3] === 1 || e[2] === '±' ? 'stroke-dasharray="3 5"' : ''} marker-end="url(#mmA-${k})"/>`;
+      h += `<path class="mm-edge" data-i="${i}" d="${edgeGeom(a, b, e[7])}" stroke="${EDGE_COL[e[2]]}" style="color:${EDGE_COL[e[2]]}" stroke-width="${[0, 1.3, 2, 3][e[3]]}" ${e[3] === 1 || e[2] === '±' ? 'stroke-dasharray="3 5"' : ''} marker-end="url(#mmA-${k})"/>`;
     });
     NODES.forEach((n) => {
       const r = reads[n.id];
@@ -5179,12 +5253,17 @@ window.setHeaderStamp();
       const col = isFed ? 'var(--accent,#d4b26a)' : toneColor(r && r.score);
       const val = isFed ? (fedRangeText() || '—') : (r ? r.v : '—');
       const sub = isFed ? (tiltInfo ? tiltLabel(tiltInfo.tilt) : '') : (r ? r.s : tr('ไม่มีข้อมูล', 'no data'));
-      const arrow = !isFed && r && num(r.score) ? (r.score > 0.25 ? ' ▲' : r.score < -0.25 ? ' ▼' : ' •') : '';
-      h += `<g class="mm-node${n.id === selected ? ' sel' : ''}" data-id="${n.id}" tabindex="0" role="button" aria-label="${esc(tr(n.th, n.en) + ' ' + val)}">`
-        + `<rect class="box" x="${n.x - n.w / 2}" y="${n.y - n.h / 2}" width="${n.w}" height="${n.h}" rx="14" stroke="${col}"${isFed ? ' fill="#1a2443"' : ''}/>`
-        + `<text class="nl" x="${n.x - n.w / 2 + 14}" y="${n.y - n.h / 2 + 22}">${esc(tr(n.th, n.en))}<tspan fill="${col}">${arrow}</tspan></text>`
-        + `<text class="nv" x="${n.x - n.w / 2 + 14}" y="${n.y + (isFed ? 12 : 9)}" ${isFed ? 'style="font-size:30px"' : ''}>${esc(val)}</text>`
-        + `<text class="ns" x="${n.x - n.w / 2 + 14}" y="${n.y + n.h / 2 - 12}">${esc(String(sub).length > 30 ? String(sub).slice(0, 29) + '…' : sub)}</text></g>`;
+      const sc = r && num(r.score) ? r.score : null;
+      const badge = isFed || sc == null ? '' : sc > 0.25 ? '▲' : sc < -0.25 ? '▼' : '●';
+      const x0 = n.x - n.w / 2, y0 = n.y - n.h / 2, pad = isFed ? 20 : 18;
+      const vcol = isFed ? '' : sc == null ? (r ? '#d9c9f5' : '#6f7ea3') : sc > 0.25 ? 'var(--hot)' : sc < -0.25 ? 'var(--cool)' : '#eef3ff';
+      h += `<g class="mm-node${isFed ? ' mm-fed' : ''}${n.id === selected ? ' sel' : ''}" data-id="${n.id}" tabindex="0" role="button" aria-label="${esc(tr(n.th, n.en) + ' ' + val)}">`
+        + `<rect class="box" x="${x0}" y="${y0}" width="${n.w}" height="${n.h}" rx="${isFed ? 22 : 16}"/>`
+        + (isFed ? '' : `<rect x="${x0}" y="${y0 + 14}" width="4" height="${n.h - 28}" rx="2" fill="${col}"/>`)
+        + `<text class="nl" x="${x0 + pad}" y="${y0 + (isFed ? 28 : 25)}">${ICON[n.id] || ''} ${esc(tr(n.th, n.en))}</text>`
+        + (badge ? `<text class="badge" x="${x0 + n.w - 14}" y="${y0 + 24}" text-anchor="end" fill="${col}">${badge}</text>` : '')
+        + `<text class="nv" x="${x0 + pad}" y="${n.y + (isFed ? 16 : 11)}"${vcol ? ` style="fill:${vcol}"` : ''}>${esc(val)}</text>`
+        + `<text class="ns" x="${x0 + pad}" y="${y0 + n.h - (isFed ? 16 : 13)}"${isFed ? ' style="fill:#d4b26a;font-weight:700"' : ''}>${esc(String(sub).length > 29 ? String(sub).slice(0, 28) + '…' : sub)}</text></g>`;
     });
     h += '</svg>';
     map.innerHTML = h;
@@ -5237,7 +5316,7 @@ window.setHeaderStamp();
         });
         h += '</ul>';
       }
-      h += `<div class="mm-h4">${esc(tr('ผลที่เฟดส่งออกไป', 'What the Fed moves'))}</div><ul class="mm-links">${out.map((e) => linkLi(e, true)).join('')}</ul>`;
+      h += `<div class="mm-sub" style="margin-top:6px">${esc(tr('แตะกล่องอื่นบนแผนผังเพื่อดูว่าแต่ละปัจจัยส่งผลต่ออะไร', 'Tap any other box to see what it affects'))}</div>`;
     } else {
       const r = reads[selected];
       h += `<div class="mm-k">${esc(tr({ mandate: 'ภารกิจของเฟด', market: 'ตลาดพันธบัตร', shock: 'แรงจากภายนอก' }[n.zone], { mandate: 'Mandate', market: 'Bond market', shock: 'Outside force' }[n.zone]))}</div>`
@@ -5341,22 +5420,24 @@ window.setHeaderStamp();
     }
     const s = SCEN.find((x) => x.id === scen);
     const story = $('mmStory');
-    if(story) story.innerHTML = `<div class="mm-trigger"><div class="mm-k">${esc(tr('จุดเริ่มต้น', 'Trigger'))}</div>${esc(tr(s.trig[0], s.trig[1]))}</div>`
-      + `<div class="mm-trigger"><div class="mm-k">${esc(tr('เคยเกิดจริง', 'When it happened'))}</div>${esc(tr(s.hist[0], s.hist[1]))}</div>`;
+    const fedAct = s.id === 'hfl' ? ['เฟดคงดอกเบี้ยสูง', 'Fed holds rates high'] : s.id === 'dis' ? ['เฟดเริ่มลดดอกเบี้ย', 'Fed starts cutting'] : s.id === 'credit' ? ['เฟดลดเร็ว + ปล่อยกู้ฉุกเฉิน', 'Fed cuts fast + emergency lending'] : s.id === 'oil' ? ['เฟดลังเล: เงินเฟ้อขึ้น แต่เศรษฐกิจชะลอ', 'Fed torn: inflation up, growth down'] : ['เฟดไม่ได้ทำอะไร ตลาดขยับเอง', 'Fed does nothing; the market moves on its own'];
+    if(story){
+      story.className = 'mm-chain';
+      story.innerHTML = `<div class="step"><div class="mm-k">① ${esc(tr('จุดเริ่มต้น', 'Trigger'))}</div>${esc(tr(s.trig[0], s.trig[1]))}</div><div class="to">➜</div>`
+        + `<div class="step fed"><div class="mm-k">② ${esc(tr('เฟดตอบสนอง', 'Fed response'))}</div><b>${esc(tr(fedAct[0], fedAct[1]))}</b><div class="mm-sub" style="margin-top:4px">${esc(tr('ตอนนี้ ', 'Now '))}${esc(fedRangeText() || '—')}</div></div><div class="to">➜</div>`
+        + `<div class="step"><div class="mm-k">📜 ${esc(tr('เคยเกิดจริง', 'When it happened'))}</div>${esc(tr(s.hist[0], s.hist[1]))}</div>`;
+    }
     const row = (k) => {
       const meta = ROWS.find((r) => r[0] === k); const [d, c, nth, nen] = s.r[k]; const a = A[k];
       const icon = d > 0 ? '<span class="d hot">▲</span>' : d < 0 ? '<span class="d cool">▼</span>' : '<span class="d ext">↕</span>';
-      const verdict = !a || !d ? '' : a.d === d ? ' <span class="ok">✓</span>' : a.d === 0 ? ' <span class="meh">–</span>' : ' <span class="no">✗</span>';
+      const verdict = !a || !d ? '' : a.d === d ? '<span class="vd ok">✓</span>' : a.d === 0 ? '<span class="vd meh">–</span>' : '<span class="vd no">✗</span>';
       return `<div class="mm-row">${icon}<div><div class="n">${esc(tr(meta[1], meta[2]))}${chip(c)}</div>${nth ? `<div class="why">${esc(tr(nth, nen))}</div>` : ''}</div>`
         + `<div class="act">${esc(tr('30 วัน', '30 days'))}<b>${a ? esc(a.txt) + verdict : '—'}</b></div></div>`;
     };
-    const fed = s.id === 'hfl' ? ['เฟดคงดอกเบี้ยสูง', 'Fed holds rates high'] : s.id === 'dis' ? ['เฟดเริ่มลดดอกเบี้ย', 'Fed starts cutting'] : s.id === 'credit' ? ['เฟดลดเร็ว + ปล่อยกู้ฉุกเฉิน', 'Fed cuts fast + emergency lending'] : s.id === 'oil' ? ['เฟดลังเล: เงินเฟ้อขึ้น แต่เศรษฐกิจชะลอ', 'Fed torn: inflation up, growth down'] : ['เฟดไม่ได้ทำอะไร ตลาดขยับเอง', 'Fed does nothing; the market moves on its own'];
     const flow = $('mmFlow');
-    if(flow) flow.innerHTML = `<div class="mm-col"><h4>1 · ${esc(tr('นโยบาย', 'Policy'))}</h4><div class="mm-trigger" style="height:calc(100% - 26px)"><b style="font-size:15px">${esc(tr(fed[0], fed[1]))}</b><div class="mm-sub" style="margin-top:6px">${esc(tr('ตอนนี้: ', 'Now: '))}${esc(fedRangeText() || '—')}</div></div></div>`
+    if(flow) flow.innerHTML = `<div class="mm-col"><h4>③ ${esc(tr('ช่องทาง: ดอกเบี้ย เงิน สินเชื่อ', 'Channels: rates, money, credit'))}</h4>${ROWS.filter((r) => r[3] === 1).map((r) => row(r[0])).join('')}</div>`
       + '<div class="mm-arrow">➜</div>'
-      + `<div class="mm-col"><h4>2 · ${esc(tr('ช่องทาง: ดอกเบี้ย เงิน และสินเชื่อ', 'Channels: rates, money, credit'))}</h4>${ROWS.filter((r) => r[3] === 1).map((r) => row(r[0])).join('')}</div>`
-      + '<div class="mm-arrow">➜</div>'
-      + `<div class="mm-col"><h4>3 · ${esc(tr('สินทรัพย์', 'Assets'))}</h4>${ROWS.filter((r) => r[3] === 2).map((r) => row(r[0])).join('')}</div>`;
+      + `<div class="mm-col"><h4>④ ${esc(tr('สินทรัพย์', 'Assets'))}</h4>${ROWS.filter((r) => r[3] === 2).map((r) => row(r[0])).join('')}</div>`;
     const bs = $('mmBestScen'), bsub = $('mmBestSub');
     if(bs && best >= 0){
       bs.textContent = tr(SCEN[best].th, SCEN[best].en) + ' · ' + Math.round(scores[best] * 100) + '%';
@@ -5384,14 +5465,32 @@ window.setHeaderStamp();
       const src = o[k]; if(!src || !src.meetings || !src.meetings.length) return `<div class="mm-tile"><div class="mm-k">${name}</div><div class="mm-sub">${esc(tr('ไม่มีข้อมูล', 'No data'))}</div></div>`;
       const m = src.meetings[0], sm = oddsSummary(m.odds);
       const link = k === 'polymarket' && m.slug ? 'https://polymarket.com/event/' + encodeURIComponent(m.slug) : url;
-      return `<div class="mm-tile"><div style="display:flex;justify-content:space-between;gap:8px"><div class="mm-k">${name} · ${esc(tr('ประชุม ', 'FOMC '))}${esc(dayOf(m.date))}</div><a class="mm-sub" href="${link}" target="_blank" rel="noopener">${esc(tr('ดูตลาด ↗', 'Market ↗'))}</a></div>`
-        + (sm ? `<div class="mm-big"><span style="color:${sm.top[3]}">${sm.p.toFixed(0)}%</span> <span style="font-size:16px">${esc(tr(sm.top[1], sm.top[2]))}</span></div>` : '')
-        + `<div class="mm-stack">${BUCKETS.map((b) => num(m.odds[b[0]]) && m.odds[b[0]] > 0 ? `<i style="width:${m.odds[b[0]]}%;background:${b[3]}" title="${esc(tr(b[1], b[2]))} ${m.odds[b[0]]}%"></i>` : '').join('')}</div>`
-        + `<div class="mm-okeys">${BUCKETS.map((b) => num(m.odds[b[0]]) ? `<span style="--c:${b[3]}">${esc(tr(b[1], b[2]))} <b>${m.odds[b[0]] < 1 && m.odds[b[0]] > 0 ? '<1' : m.odds[b[0]].toFixed(0)}%</b></span>` : '').join('')}</div>`
+      const pctTxt = (v) => !num(v) ? '—' : v > 0 && v < 1 ? '<1%' : v.toFixed(0) + '%';
+      return `<div class="mm-tile" style="--tile-accent:${sm ? sm.top[3] : '#d4b26a'}"><div class="mm-oddhead"><div class="mm-k">${name} · ${esc(tr('ประชุม ', 'FOMC '))}${esc(dayOf(m.date))}</div><a href="${link}" target="_blank" rel="noopener">${esc(tr('ดูตลาด ↗', 'Market ↗'))}</a></div>`
+        + (sm ? `<div class="mm-big" style="margin-top:8px"><span style="color:${sm.top[3]}">${sm.p.toFixed(0)}%</span> <span style="font-size:17px;font-weight:700">${esc(tr(sm.top[1], sm.top[2]))}</span></div>` : '')
+        + `<div class="mm-ladder">${BUCKETS.map((b) => { const v = m.odds[b[0]]; const isTop = sm && sm.top[0] === b[0];
+            const hh = num(v) ? Math.max(3, v * 0.8) : 3;
+            return `<div class="mm-lc${isTop ? ' mm-lt' : ''}"><span class="mm-lk"><span class="mm-lp" style="bottom:${hh + 4}px">${pctTxt(v)}</span><span class="mm-lb" style="height:${hh}px;${isTop ? `background:linear-gradient(180deg,${b[3]},${b[3]}88);box-shadow:0 0 18px ${b[3]}55` : num(v) && v >= 5 ? `background:${b[3]}66` : ''}"></span></span><span class="mm-ln">${esc(tr(b[1], b[2]))}</span></div>`; }).join('')}</div>`
         + (sm ? `<div class="mm-path">${esc(tr('ค่าคาดหมายถ่วงน้ำหนัก ', 'Probability-weighted move '))}<b style="color:var(--text)">${sgn(sm.exp, 0)} bp</b>${num(m.volume) && m.volume > 0 ? ' · ' + esc(tr('ปริมาณซื้อขาย ', 'volume ')) + '$' + (m.volume >= 1e6 ? (m.volume / 1e6).toFixed(1) + 'M' : Math.round(m.volume / 1e3) + 'K') : ''}`
           + src.meetings.slice(1).map((x) => { const q = oddsSummary(x.odds); return q ? `<br>${esc(dayOf(x.date))}: ${esc(tr(q.top[1], q.top[2]))} ${q.p.toFixed(0)}%` : ''; }).join('') + '</div>' : '')
         + '</div>';
     }).join('');
+  }
+
+  // half-circle dial: left = room to cut, right = pressure to stay high
+  function dialSvg(t){
+    const cx = 120, cy = 112, R = 92;
+    const pt = (a, r) => [cx + r * Math.cos(a), cy - r * Math.sin(a)];
+    const arc = (a0, a1, r) => { const p = pt(a0, r), q = pt(a1, r); return `M${p[0].toFixed(1)},${p[1].toFixed(1)} A${r},${r} 0 0 1 ${q[0].toFixed(1)},${q[1].toFixed(1)}`; };
+    const a = Math.PI / 2 - clamp(t) * Math.PI / 2 * 0.94;   // needle angle
+    const tip = pt(a, R - 18), b1 = pt(a + Math.PI / 2, 6), b2 = pt(a - Math.PI / 2, 6);
+    let h = `<svg viewBox="0 0 240 140" aria-hidden="true"><defs><linearGradient id="mmDialG" x1="0" x2="1"><stop offset="0" stop-color="#2b8fd6"/><stop offset=".3" stop-color="#4cc9f0"/><stop offset=".5" stop-color="#55627f"/><stop offset=".7" stop-color="#ff9f5a"/><stop offset="1" stop-color="#ff6577"/></linearGradient></defs>`;
+    h += `<path d="${arc(Math.PI, 0, R)}" stroke="#1d2744" stroke-width="18" fill="none" stroke-linecap="round"/>`;
+    h += `<path d="${arc(Math.PI, 0, R)}" stroke="url(#mmDialG)" stroke-width="12" fill="none" stroke-linecap="round" opacity=".95"/>`;
+    for(let i = 0; i <= 10; i++){ const aa = Math.PI - i * Math.PI / 10, p = pt(aa, R - 14), q = pt(aa, R - (i % 5 ? 19 : 24)); h += `<line x1="${p[0].toFixed(1)}" y1="${p[1].toFixed(1)}" x2="${q[0].toFixed(1)}" y2="${q[1].toFixed(1)}" stroke="#55627f" stroke-width="${i % 5 ? 1 : 1.6}"/>`; }
+    h += `<polygon points="${tip[0].toFixed(1)},${tip[1].toFixed(1)} ${b1[0].toFixed(1)},${b1[1].toFixed(1)} ${b2[0].toFixed(1)},${b2[1].toFixed(1)}" fill="#f3f6ff"/><circle cx="${cx}" cy="${cy}" r="9" fill="#f3f6ff"/><circle cx="${cx}" cy="${cy}" r="4" fill="#0b1020"/>`;
+    h += `<text class="lbl" x="18" y="136">${esc(tr('ลด', 'Cut'))}</text><text class="lbl" x="${cx}" y="14" text-anchor="middle">${esc(tr('คง', 'Hold'))}</text><text class="lbl" x="222" y="136" text-anchor="end">${esc(tr('คง/ขึ้น', 'High'))}</text>`;
+    return h + '</svg>';
   }
 
   function drawHero(){
@@ -5404,7 +5503,7 @@ window.setHeaderStamp();
     if($('mmFedSub')) $('mmFedSub').innerHTML = esc(bits.join(' · ')) + (effr && cp && num(effr.value) && num(cp.value) ? '<br>' + esc(effr.value - cp.value > 1 ? tr('สูงกว่าระดับกลางๆ (~0.5–1%) = ยังเข้มงวด', 'Above the ~0.5–1% neutral zone, so still restrictive') : effr.value - cp.value < 0.3 ? tr('ใกล้หรือต่ำกว่าระดับกลางๆ = ไม่ได้เข้มงวดแล้ว', 'At or below neutral, so no longer restrictive') : tr('อยู่ในโซนกลางๆ (~0.5–1%)', 'Inside the ~0.5–1% neutral zone')) : '');
     if(tiltInfo){
       if($('mmTiltLabel')){ $('mmTiltLabel').textContent = tiltLabel(tiltInfo.tilt); $('mmTiltLabel').className = 'mm-big ' + tone(tiltInfo.tilt); }
-      if($('mmTiltPin')) $('mmTiltPin').style.left = (50 + clamp(tiltInfo.tilt) * 48) + '%';
+      if($('mmDial')) $('mmDial').innerHTML = dialSvg(tiltInfo.tilt);
       if($('mmDrivers')) $('mmDrivers').innerHTML = tiltInfo.parts.slice(0, 3).map((q) => {
         const r = reads[q.id];
         return `<li><b class="${tone(q.score)}">${q.score > 0.25 ? '▲' : q.score < -0.25 ? '▼' : '•'} ${esc(nodeName(q.id))} ${esc(r.v)}</b> · ${esc(tr(r.th, r.en))}</li>`;
