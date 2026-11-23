@@ -175,11 +175,14 @@ test('Cloudflare adapter routes /.netlify/functions/capital-markets', () => {
   assert.match(src, /'capital-markets': capitalMarkets/);
 });
 
-test('page: card is the last one on the first tab (after Morning Brief), with a collapsible source note', () => {
+test('page: card has its own tab (🌐 ตลาดทุนโลก, #markets), with a collapsible source note', () => {
+  assert.match(HTML, /<button class="tabbtn" data-tab="marketsTab" data-en="🌐 Capital Markets">🌐 ตลาดทุนโลก<\/button>/);
+  const tab = HTML.indexOf('<section id="marketsTab" class="tabpage">');
   const i = HTML.indexOf('id="capMarketsCard"');
-  const end = HTML.indexOf('</main>', i);
-  assert.ok(i > HTML.indexOf('id="aiBrief"') && end > i && end < HTML.indexOf('id="newsStatus"'));
-  assert.equal(/<section class="card/.test(HTML.slice(i, end)), false, 'no card after it');
+  assert.ok(tab > 0 && i > tab && i < HTML.indexOf('<section id="btcTab"'), 'card lives in the markets tab');
+  assert.ok(i > HTML.indexOf('id="newsStatus"'), 'no longer on the news tab');
+  assert.match(HTML, /const TAB_IDS = \['newsTab', 'marketsTab', 'btcTab'\]/);
+  assert.match(HTML, /h === 'markets' \|\| h === 'marketstab'\) return 'marketsTab'/);
   assert.match(HTML, /<details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล<\/summary><div id="cmNote"/);
 });
 
