@@ -80,7 +80,7 @@ test('Polymarket: picks open fed-decision events by date and maps the group titl
     { groupItemTitle: 'No change', outcomePrices: '["0.06","0.94"]', bestBid: 0.059, bestAsk: 0.061 },
     { groupItemTitle: '25 bps increase', outcomePrices: '["0.915","0.085"]', bestBid: 0.91, bestAsk: 0.92 }
   ] });
-  assert.equal(ev.date, '2026-12-10');
+  assert.equal(ev.date, '2026-12-09'); // the 9 Dec ET meeting, not the UTC close date
   assert.ok(ev.odds.hike25 > 93 && ev.odds.hold < 7);
 });
 
