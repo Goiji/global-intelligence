@@ -36,3 +36,7 @@ test('unemployment peaks after the market bottom in the job-loss crises', async 
   const lags = S.crises.filter(r => r.urMax - r.urStart >= 1).map(r => [r.id, r.urLag]);
   assert.deepEqual(JSON.parse(JSON.stringify(lags)), [['dotcom', 9], ['gfc', 8], ['covid', 1]]);
 });
+
+test('backtest dates use the Gregorian year (ค.ศ.) like the chart', () => {
+  assert.match(HTML, /'-u-ca-gregory', \{ month: 'short', year: 'numeric' \}/);
+});
