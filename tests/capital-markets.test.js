@@ -181,7 +181,7 @@ test('page: card has its own tab (🌐 ตลาดทุนโลก, #markets)
   const i = HTML.indexOf('id="capMarketsCard"');
   assert.ok(tab > 0 && i > tab && i < HTML.indexOf('<section id="btcTab"'), 'card lives in the markets tab');
   assert.ok(i > HTML.indexOf('id="newsStatus"'), 'no longer on the news tab');
-  assert.match(HTML, /const TAB_IDS = \['newsTab', 'marketsTab', 'btcTab'\]/);
+  assert.match(HTML, /const TAB_IDS = \['newsTab', 'marketsTab', 'backtestTab', 'btcTab'\]/);
   assert.match(HTML, /h === 'markets' \|\| h === 'marketstab'\) return 'marketsTab'/);
   assert.match(HTML, /<details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล<\/summary><div id="cmNote"/);
 });
