@@ -4765,7 +4765,7 @@ window.setHeaderStamp();
   const tr = window.tr || ((th) => th);
   const pct = (x, d) => x == null ? '–' : (x > 0 ? '+' : '') + (x * 100).toFixed(d == null ? 0 : d) + '%';
   const cls = x => x == null ? '' : x < 0 ? 'neg' : 'pos';
-  const ym = s => { const [y, m] = s.split('-'); return new Date(+y, +m - 1, 1).toLocaleDateString(window.GI_LOCALE || 'th-TH', { month: 'short', year: 'numeric' }); };
+  const ym = s => { const [y, m] = s.split('-'); return new Date(+y, +m - 1, 1).toLocaleDateString((window.GI_LOCALE || 'th-TH') + '-u-ca-gregory', { month: 'short', year: 'numeric' }); };
 
   function render(){
     const S = btStats(BT_DATA, BT_CRISES);
