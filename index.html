@@ -5029,6 +5029,7 @@ window.setHeaderStamp();
 <section class="card full">
 <h2>🌊 <span data-en="How it reaches markets">เส้นทางส่งผ่านสู่ตลาด</span></h2>
 <p class="mm-lead" style="margin-bottom:12px" data-en="Pick a scenario to see the usual chain reaction. The right-hand figure in each row is what actually happened over the last 30 days: ✓ matches the scenario, ✗ goes against it. The % on each button is how well the last 30 days fit it.">เลือกฉากทัศน์เพื่อดูปฏิกิริยาลูกโซ่ที่มักเกิด ตัวเลขขวาสุดของแต่ละแถวคือสิ่งที่เกิดขึ้นจริงใน 30 วันล่าสุด ✓ = ตรงกับฉากทัศน์ ✗ = สวนทาง ส่วน % บนปุ่มคือความเข้ากันของ 30 วันล่าสุดกับฉากทัศน์นั้น</p>
+<div class="mm-legend" style="margin:0 0 12px"><span data-en="How often history went this way:">ป้ายบอกว่าในอดีตเป็นแบบนี้บ่อยแค่ไหน:</span> <span class="mm-chip c3" data-en="Almost always">เกิดแทบทุกครั้ง</span><span class="mm-chip c2" data-en="Usually">เกิดบ่อย</span><span class="mm-chip c1" data-en="Unreliable">ไม่แน่นอน</span><span data-en="(unreliable = history has gone both ways)">(ไม่แน่นอน = อดีตเคยไปได้ทั้งสองทาง)</span></div>
 <div class="mm-scen" id="mmScen" role="tablist"></div>
 <div class="mm-story" id="mmStory"></div>
 <div class="mm-flow" id="mmFlow"></div>
@@ -5210,7 +5211,7 @@ window.setHeaderStamp();
   const tone = (s) => !num(s) ? 'ext' : s > 0.25 ? 'hot' : s < -0.25 ? 'cool' : '';
   const toneColor = (s) => !num(s) ? 'var(--ext)' : s > 0.25 ? 'var(--hot)' : s < -0.25 ? 'var(--cool)' : '#55627f';
   const nodeName = (id) => { const n = NODES.find((x) => x.id === id); return n ? tr(n.th, n.en) : id; };
-  const CONF = { 3: ['ชัด', 'Reliable'], 2: ['มักเป็น', 'Usually'], 1: ['ไม่แน่นอน', 'Unreliable'] };
+  const CONF = { 3: ['เกิดแทบทุกครั้ง', 'Almost always'], 2: ['เกิดบ่อย', 'Usually'], 1: ['ไม่แน่นอน', 'Unreliable'] };
   const chip = (c) => `<span class="mm-chip c${c}">${tr(CONF[c][0], CONF[c][1])}</span>`;
 
   // ── SVG map ──────────────────────────────────────────────────────────────────────────────────
