@@ -84,7 +84,10 @@ function parsePolyEvent(ev) {
     try { const op = JSON.parse(m.outcomePrices || '[]'); if (op.length) last = op[0]; } catch (e) { /* keep lastTradePrice */ }
     raw[k] = price(m.bestBid, m.bestAsk, last);
   });
-  return { date: String(ev.endDate || '').slice(0, 10), slug: ev.slug, odds: normalise(raw), volume: Math.round(n(ev.volume) || 0) };
+  // endDate is just after midnight UTC the night of the decision (e.g. 2026-12-10T04:59Z for 9 Dec ET)
+  const end = Date.parse(ev.endDate);
+  const date = isFinite(end) ? new Date(end - 12 * 3600000).toISOString().slice(0, 10) : '';
+  return { date, slug: ev.slug, odds: normalise(raw), volume: Math.round(n(ev.volume) || 0) };
 }
 function pickPolyEvents(search, now = Date.now()) {
   return ((search && search.events) || [])
