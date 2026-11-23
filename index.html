@@ -5213,30 +5213,38 @@ window.setHeaderStamp();
   #macroTab .mm-oddhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
   #macroTab .mm-oddhead a{color:var(--muted);font-size:12px;text-decoration:none;border:1px solid #2c3a60;border-radius:99px;padding:2px 9px}
   #macroTab .mm-oddhead a:hover{color:var(--text)}
+  #macroTab .mm-mapwrap{
+    grid-template-columns:minmax(0,1fr);
+  }
+  #macroTab .mm-map,#macroTab .mm-mapwrap .mm-legend{
+    --hot:#a5401a;
+    --cool:#076b83;
+    --ext:#69509a;
+  }
   #macroTab .mm-map{
-    background:radial-gradient(ellipse at 50% 49%,#20283a 0,#101827 52%,#0d1422 100%);
-    border-color:#303e55;
+    background:#f3f6fb;
+    border-color:#d5deeb;
     border-radius:16px;
   }
   #macroTab .mm-mapwrap .mm-legend{
-    gap:8px 16px;padding:12px 14px;border:1px solid #303e55;border-radius:12px;background:#131d2e;color:#c2cee1;
+    gap:8px 16px;padding:12px 14px;border:1px solid #d5deeb;border-radius:12px;background:#f3f6fb;color:#33445d;
   }
   #macroTab .mm-band{stroke:none}
-  #macroTab .mm-zl{font-size:12px;fill:#9eafca;letter-spacing:.07em;font-weight:700}
-  #macroTab .mm-edge{opacity:.42}
+  #macroTab .mm-zl{font-size:12px;fill:#50627e;letter-spacing:.07em;font-weight:700}
+  #macroTab .mm-edge{opacity:.65}
   #macroTab .mm-edge.on{opacity:1;filter:drop-shadow(0 0 4px currentColor)}
   #macroTab .mm-edge.dim{opacity:.06}
-  #macroTab .mm-node rect.box{fill:url(#mmNodeG);stroke:#3a4b66;stroke-width:1.2}
+  #macroTab .mm-node rect.box{fill:url(#mmNodeG);stroke:#aab9cf;stroke-width:1.2}
   #macroTab .mm-node:hover rect.box,#macroTab .mm-node.sel rect.box{stroke:#5a6a94;stroke-width:2}
-  #macroTab .mm-node .nl{font-size:15px;fill:#d2dcee}
+  #macroTab .mm-node .nl{font-size:15px;fill:#23334c}
   #macroTab .mm-node .nv{font-size:27px;font-variant-numeric:tabular-nums}
-  #macroTab .mm-node .ns{font-size:12px;fill:#a5b5ce}
+  #macroTab .mm-node .ns{font-size:12px;fill:#52627b}
   #macroTab .mm-node .badge{font-size:11px;font-weight:800}
-  #macroTab .mm-fed rect.box{fill:url(#mmFedG);stroke:var(--accent,#d4b26a);stroke-width:2}
-  #macroTab .mm-fed:hover rect.box,#macroTab .mm-fed.sel rect.box{stroke:var(--accent,#d4b26a);stroke-width:2.6}
-  #macroTab .mm-fed{filter:drop-shadow(0 6px 16px rgba(0,0,0,.35))}
-  #macroTab .mm-fed .nv{font-size:32px;fill:#f6e3b4}
-  #macroTab .mm-ring{fill:none;stroke:rgba(212,178,106,.16)}
+  #macroTab .mm-fed rect.box{fill:url(#mmFedG);stroke:#98701d;stroke-width:2}
+  #macroTab .mm-fed:hover rect.box,#macroTab .mm-fed.sel rect.box{stroke:#98701d;stroke-width:2.6}
+  #macroTab .mm-fed{filter:drop-shadow(0 6px 12px rgba(101,75,23,.13))}
+  #macroTab .mm-fed .nv{font-size:32px;fill:#573902}
+  #macroTab .mm-ring{fill:none;stroke:#d8c38b}
   #macroTab .mm-panel{background:linear-gradient(170deg,#172140,#0f172b 60%);border-color:#27345a;border-radius:18px}
   #macroTab .mm-legend i{width:22px;height:3px}
   #macroTab .mm-scen button{border-radius:14px;padding:10px 14px;background:#121b33;border-color:#27345a;transition:border-color .2s,background .2s,transform .2s}
@@ -5522,11 +5530,11 @@ window.setHeaderStamp();
     const byId = {}; NODES.forEach((n) => { byId[n.id] = n; });
     let h = '<svg viewBox="0 0 1000 650" role="img" aria-label="' + esc(tr('แผนผังปัจจัยที่มีผลต่อการตัดสินใจของเฟด', 'Map of the forces behind Fed decisions')) + '"><defs>';
     ['hot', 'cool', 'ext'].forEach((k) => { h += `<marker id="mmA-${k}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--${k})"/></marker>`; });
-    h += '<linearGradient id="mmNodeG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#23314a"/><stop offset="1" stop-color="#172236"/></linearGradient>'
-      + '<linearGradient id="mmFedG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2a35"/><stop offset=".5" stop-color="#1c2440"/><stop offset="1" stop-color="#151d36"/></linearGradient>'
+    h += '<linearGradient id="mmNodeG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#edf2fa"/></linearGradient>'
+      + '<linearGradient id="mmFedG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff9e9"/><stop offset="1" stop-color="#f8e9bd"/></linearGradient>'
       + '</defs>';
-    h += `<rect class="mm-band" x="14" y="10" width="972" height="120" rx="20" fill="rgba(179,157,219,.045)"/><text class="mm-zl" x="986" y="146" text-anchor="end">${esc(tr('แรงจากภายนอก', 'OUTSIDE FORCES'))}</text>`;
-    h += `<path class="mm-band" d="M34,186 H226 a20,20 0 0 1 20,20 V522 H754 a20,20 0 0 1 20,20 V626 a20,20 0 0 1 -20,20 H34 a20,20 0 0 1 -20,-20 V206 a20,20 0 0 1 20,-20 Z" fill="rgba(76,201,240,.04)"/><text class="mm-zl" x="22" y="178">${esc(tr('ภารกิจของเฟด · ราคา + การจ้างงาน', 'THE MANDATE · PRICES + JOBS'))}</text>`;
+    h += `<rect class="mm-band" x="14" y="10" width="972" height="120" rx="20" fill="#eae6f5"/><text class="mm-zl" x="986" y="146" text-anchor="end">${esc(tr('แรงจากภายนอก', 'OUTSIDE FORCES'))}</text>`;
+    h += `<path class="mm-band" d="M34,186 H226 a20,20 0 0 1 20,20 V522 H754 a20,20 0 0 1 20,20 V626 a20,20 0 0 1 -20,20 H34 a20,20 0 0 1 -20,-20 V206 a20,20 0 0 1 20,-20 Z" fill="#e3ecf7"/><text class="mm-zl" x="22" y="178">${esc(tr('ภารกิจของเฟด · ราคา + การจ้างงาน', 'THE MANDATE · PRICES + JOBS'))}</text>`;
     const F = byId.fed;
     h += `<ellipse class="mm-ring" cx="${F.x}" cy="${F.y}" rx="152" ry="75"/>`;
     EDGES.forEach((e, i) => {
@@ -5542,15 +5550,15 @@ window.setHeaderStamp();
       const sc = r && num(r.score) ? r.score : null;
       const badge = isFed || sc == null ? '' : sc > 0.25 ? '▲' : sc < -0.25 ? '▼' : '●';
       const x0 = n.x - n.w / 2, y0 = n.y - n.h / 2, pad = isFed ? 20 : 18;
-      const vcol = isFed ? '' : sc == null ? (r ? '#d9c9f5' : '#6f7ea3') : sc > 0.25 ? 'var(--hot)' : sc < -0.25 ? 'var(--cool)' : '#eef3ff';
+      const vcol = isFed ? '' : sc == null ? (r ? 'var(--ext)' : '#52627b') : sc > 0.25 ? 'var(--hot)' : sc < -0.25 ? 'var(--cool)' : '#23334c';
       h += `<g class="mm-node${isFed ? ' mm-fed' : ''}${n.id === selected ? ' sel' : ''}" data-id="${n.id}" tabindex="0" role="button" aria-label="${esc(tr(n.th, n.en) + ' ' + val)}">`
         + `<title>${esc([tr(n.th, n.en), val, sub].filter(Boolean).join(" · "))}</title>`
         + `<rect class="box" x="${x0}" y="${y0}" width="${n.w}" height="${n.h}" rx="${isFed ? 18 : 12}"/>`
         + (isFed ? '' : `<rect x="${x0}" y="${y0 + 14}" width="4" height="${n.h - 28}" rx="2" fill="${col}"/>`)
         + `<text class="nl" x="${x0 + pad}" y="${y0 + (isFed ? 28 : 25)}">${ICON[n.id] || ''} ${esc(tr(n.th, n.en))}</text>`
-        + (badge ? `<text class="badge" x="${x0 + n.w - 14}" y="${y0 + 24}" text-anchor="end" fill="${col}">${badge}</text>` : '')
+        + (badge ? `<text class="badge" x="${x0 + n.w - 14}" y="${y0 + 24}" text-anchor="end" style="fill:${col}">${badge}</text>` : '')
         + `<text class="nv" x="${x0 + pad}" y="${n.y + (isFed ? 16 : 11)}"${vcol ? ` style="fill:${vcol}"` : ''}>${esc(val)}</text>`
-        + `<text class="ns" x="${x0 + pad}" y="${y0 + n.h - (isFed ? 16 : 13)}"${isFed ? ' style="fill:#d4b26a;font-weight:700"' : ''}>${esc(String(sub).length > 29 ? String(sub).slice(0, 28) + '…' : sub)}</text></g>`;
+        + `<text class="ns" x="${x0 + pad}" y="${y0 + n.h - (isFed ? 16 : 13)}"${isFed ? ' style="fill:#725011;font-weight:700"' : ''}>${esc(String(sub).length > 29 ? String(sub).slice(0, 28) + '…' : sub)}</text></g>`;
     });
     h += '</svg>';
     map.innerHTML = h;
