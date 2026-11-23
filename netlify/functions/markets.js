@@ -201,8 +201,17 @@ function summarize(key, obs) {
     date: last.date,
     prev: prev ? round(prev.value) : null,
     change: prev ? round(last.value - prev.value) : null,
-    hist: thinned.map((o) => [o.date, round(o.value)])
+    hist: thinned.map((o) => [o.date, round(o.value)]),
+    // VIX card's "fear past its peak" check needs the daily close ~1 month back (hist is weekly)
+    ...(key === 'vix' ? { monthAgo: monthAgoValue(obs, last.date, round) } : {})
   };
+}
+
+function monthAgoValue(obs, date, round) {
+  const cut = daysAgoIso(30, new Date(date + 'T00:00:00Z'));
+  let out = null;
+  for (const o of obs) { if (o.date <= cut) out = o.value; else break; }
+  return out == null ? null : round(out);
 }
 
 // Raw FRED observations (oldest first) for one series id: API with key first, then the public CSV.
@@ -744,7 +753,7 @@ function mergeLive(series, live, source = 'cboe') {
     prev,
     change: prev != null ? round(live.value - prev) : null,
     hist,
-    source
+    source: live.source || source
   };
 }
 
@@ -771,13 +780,34 @@ async function loadDxy() {
   return { ...summarize('dollar', parseDxySeries(await fetchText(url))), label: 'DXY', source: 'ecb-dxy' };
 }
 
-async function loadVixLive() {
-  return parseCboeQuote(await fetchText(CBOE_VIX));
+// Yahoo chart JSON → a quote shaped like parseCboeQuote's: last price, change vs the previous
+// daily close, and time as US Eastern wall-clock (exchange gmtoffset applied).
+function parseYahooQuote(text) {
+  const obs = parseYahooSeries(text);
+  const m = ((((JSON.parse(text) || {}).chart || {}).result || [])[0] || {}).meta || {};
+  const last = obs[obs.length - 1], prev = obs[obs.length - 2];
+  if (!last) throw new Error('yahoo: no quote');
+  const off = isFinite(m.gmtoffset) ? m.gmtoffset : 0;
+  const time = isFinite(m.regularMarketTime) ? new Date((m.regularMarketTime + off) * 1000).toISOString().slice(0, 19) : '';
+  return { value: last.value, change: prev ? last.value - prev.value : null,
+    date: last.date, time: time.slice(0, 10) === last.date ? time : '', source: 'yahoo' };
 }
 
-async function loadIndexLive(url) {
-  return parseCboeQuote(await fetchText(url));
+// Cboe's delayed quote and Yahoo's chart are read side by side and the newer one wins, so a blocked
+// or stale Cboe feed no longer leaves the card on FRED's close (which lags a trading day).
+async function loadLiveQuote(cboeUrl, yahooSymbol) {
+  const yUrl = YAHOO_CHART + encodeURIComponent(yahooSymbol) + '?interval=1d&range=5d';
+  const [c, y] = await Promise.allSettled([
+    fetchText(cboeUrl).then(parseCboeQuote),
+    fetchText(yUrl).then(parseYahooQuote)
+      .catch(() => fetchText(yUrl.replace('//query1.', '//query2.')).then(parseYahooQuote))
+  ]);
+  const ok = [c, y].filter((r) => r.status === 'fulfilled').map((r) => r.value);
+  if (!ok.length) throw new Error('cboe: ' + c.reason.message + ' | yahoo: ' + y.reason.message);
+  return ok.reduce((a, b) => ((b.date + b.time) > (a.date + a.time) ? b : a));
 }
+
+function loadVixLive() { return loadLiveQuote(CBOE_VIX, '^VIX'); }
 
 async function loadTnxLive() {
   return tnxToPercent(parseCboeQuote(await fetchText(CBOE_TNX)));
@@ -811,10 +841,10 @@ async function buildPayload(apiKey, event = null) {
     loadVixLive().catch((e) => ({ error: e.message })),
     loadTnxLive().catch((e) => ({ error: e.message })),
     loadTreasuryCurve().catch((e) => ({ error: e.message })),
-    loadIndexLive(CBOE_SPX).catch((e) => ({ error: e.message })),
-    loadIndexLive(CBOE_NDX).catch((e) => ({ error: e.message })),
+    loadLiveQuote(CBOE_SPX, '^GSPC').catch((e) => ({ error: e.message })),
+    loadLiveQuote(CBOE_NDX, '^NDX').catch((e) => ({ error: e.message })),
     loadJgb(Date.now(), event).catch((e) => ({ error: e.message })),
-    loadIndexLive(CBOE_OVX).catch((e) => ({ error: e.message }))
+    loadLiveQuote(CBOE_OVX, '^OVX').catch((e) => ({ error: e.message }))
   ]);
   const series = {}, errors = {};
   results.forEach((r, i) => {
@@ -938,4 +968,4 @@ exports.handler = async function (event) {
   }
 };
 
-module.exports.__test = { buffettSummary, quarterEnd, parseMultplTable, capeSummary, MULTPL_CAPE, breadthSummary, pctOver, maxDailyGap, parseMofCsv, mergeJgb, withLatest, joinUsJp, changeOver, usJpSummary, parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, parseCftcLevShort, SERIES, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; jgbHistCache = { rows: null, expiresAt: 0 }; capeCache = { rows: null, expiresAt: 0 }; } };
+module.exports.__test = { buffettSummary, quarterEnd, parseMultplTable, capeSummary, MULTPL_CAPE, breadthSummary, pctOver, maxDailyGap, parseMofCsv, mergeJgb, withLatest, joinUsJp, changeOver, usJpSummary, parseCsv, parseApiJson, weekly, summarize, parseCboeQuote, parseYahooQuote, loadLiveQuote, tnxToPercent, parseTreasuryCurve, mergeLive, dxyFromRates, parseDxySeries, joinSofrIorb, parseYahooSeries, parseCftcLevShort, SERIES, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; jgbHistCache = { rows: null, expiresAt: 0 }; capeCache = { rows: null, expiresAt: 0 }; } };
