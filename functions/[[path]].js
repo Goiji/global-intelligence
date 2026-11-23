@@ -17,6 +17,7 @@ import countryProfiles from '../netlify/functions/country-profiles.js';
 import cmcFearGreed from '../netlify/functions/cmc-fear-greed.js';
 import consensus from '../netlify/functions/consensus.js';
 import dvol from '../netlify/functions/dvol.js';
+import dvolHistory from '../netlify/functions/dvol-history.js';
 import econExtra from '../netlify/functions/econ-extra.js';
 import etfFlow from '../netlify/functions/etf-flow.js';
 import fedOdds from '../netlify/functions/fed-odds.js';
@@ -35,7 +36,7 @@ import wti from '../netlify/functions/wti.js';
 
 const HANDLERS = {
   calendar, 'capital-markets': capitalMarkets, 'cmc-fear-greed': cmcFearGreed, consensus, 'country-profiles': countryProfiles,
-  dvol, 'econ-extra': econExtra, 'etf-flow': etfFlow, 'fed-odds': fedOdds, 'fred-data': fredData, 'gold-th': goldTh, liquidations, 'macro-map': macroMap, markets,
+  dvol, 'dvol-history': dvolHistory, 'econ-extra': econExtra, 'etf-flow': etfFlow, 'fed-odds': fedOdds, 'fred-data': fredData, 'gold-th': goldTh, liquidations, 'macro-map': macroMap, markets,
   'news-feed': newsFeed, 'oil-price': oilPrice, onchain, stablecoins, usdjpy, visitors, wti,
 };
 
