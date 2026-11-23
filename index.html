@@ -108,7 +108,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai+Looped:wght@300;400;500;600;700;800&display=swap">
 <style>
 
-#newsTab{--bg:#0b1020;--panel:#121a2d;--panel2:#0e1628;--text:#eef3ff;--muted:#8e9bb5;--line:#24304a;--good:#45d483;--warn:#ffca58;--bad:#ff6577;--accent:var(--accent)}
+#newsTab,#marketsTab{--bg:#0b1020;--panel:#121a2d;--panel2:#0e1628;--text:#eef3ff;--muted:#8e9bb5;--line:#24304a;--good:#45d483;--warn:#ffca58;--bad:#ff6577;--accent:var(--accent)}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#0a0f1d,#0d1425);color:#eef3ff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .wrap{max-width:1180px;margin:auto;padding:28px 18px 50px}.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:24px}.eyebrow{font-size:12px;letter-spacing:.14em;color:var(--accent);font-weight:800}.title{font-size:32px;font-weight:850;margin:5px 0}.sub{color:var(--muted);font-size:14px}.date{background:var(--panel);border:1px solid var(--line);padding:12px 15px;border-radius:14px;text-align:right;color:var(--muted);font-size:12px}
 .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:16px}.card{background:rgba(18,26,45,.94);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 14px 40px #0004}.hero{display:flex;align-items:center;gap:24px}.score{font-size:68px;font-weight:900;line-height:1}.badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#ff657722;color:#ff8b98;font-size:12px;font-weight:800}.change{color:var(--bad);font-weight:750;margin-top:8px}.muted{color:var(--muted)}h2{font-size:17px;margin:0 0 15px}.bars{display:grid;gap:13px}.barrow{display:grid;grid-template-columns:125px 1fr 42px;gap:10px;align-items:center;font-size:13px}.track{height:9px;background:#202b42;border-radius:99px;overflow:hidden}.fill{height:100%;border-radius:99px}.green{background:var(--good)}.yellow{background:var(--warn)}.red{background:var(--bad)}.blue{background:var(--accent)}
@@ -396,7 +396,7 @@ body{margin:0}
      DESIGN LAYER — ธีมเดียวทั้งสองแท็บ: พื้นน้ำเงินเข้มเกือบดำ · ตัวอักษรสีงาช้าง · เส้นและไฮไลต์สีทองแชมเปญ
      ฟอนต์: Noto Sans Thai Looped ทั้งเว็บ (มีทั้งอักษรไทยและอังกฤษในตัว) — หัวข้อใช้น้ำหนัก 700–800
      ===================================================================================== */
-  :root, #newsTab, #btcTab{
+  :root, #newsTab, #marketsTab, #btcTab{
     --bg:#06080e; --panel:#0c1019; --panel2:#090d15; --panel-2:#090d15;
     --line:#1c2331; --line-soft:#151b27; --gold-line:rgba(212,178,106,.30);
     --text:#ece6d8; --muted:#8d95a6; --sub:#8d95a6;
@@ -669,6 +669,7 @@ body{margin:0}
 <script>try{ if(/[?&]debug\b/.test(location.search)) document.body.classList.add('debug'); }catch(e){}</script>
 <nav class="tabbar">
   <button class="tabbtn active" data-tab="newsTab" data-en="🌍 World News & AI">🌍 ข่าวโลก & AI</button>
+  <button class="tabbtn" data-tab="marketsTab" data-en="🌐 Capital Markets">🌐 ตลาดทุนโลก</button>
   <button class="tabbtn" data-tab="btcTab">₿ BTC Buy Score</button>
   <div class="lang-toggle" role="group" aria-label="ภาษา / Language">
     <button type="button" data-lang="th" lang="th" aria-pressed="true" title="ภาษาไทย">ไทย</button>
@@ -1282,16 +1283,6 @@ body{margin:0}
 <section class="card full">
 <h2>📋 <span data-en="Morning Brief">สรุปเช้านี้</span> <span class="h-en i18n-th">Morning Brief</span></h2>
 <div class="brief" id="aiBrief" data-en="Analysing the latest news…">กำลังวิเคราะห์ข่าวล่าสุด…</div>
-</section>
-
-<section class="card full" id="capMarketsCard">
-<h2>🌐 <span data-en="World Capital Markets">ขนาดตลาดทุนโลก</span> <span class="h-en" data-en="Where the money sits">เงินอยู่ที่ไหนบ้าง</span></h2>
-<div class="cm-total" id="cmTotal" data-en="Loading…">กำลังโหลด…</div>
-<div class="cm-stack" id="cmStack" aria-hidden="true"></div>
-<div class="cm-legend" id="cmLegend"></div>
-<div class="cm-rows" id="cmRows"></div>
-<div class="src-warn" id="cmWarn"></div>
-<details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div id="cmNote" class="muted"></div></details>
 </section>
 
 </main>
@@ -4669,6 +4660,22 @@ window.setHeaderStamp();
 
 </section>
 
+<section id="marketsTab" class="tabpage">
+<div class="wrap">
+<main class="grid">
+<section class="card full" id="capMarketsCard">
+<h2>🌐 <span data-en="World Capital Markets">ขนาดตลาดทุนโลก</span> <span class="h-en" data-en="Where the money sits">เงินอยู่ที่ไหนบ้าง</span></h2>
+<div class="cm-total" id="cmTotal" data-en="Loading…">กำลังโหลด…</div>
+<div class="cm-stack" id="cmStack" aria-hidden="true"></div>
+<div class="cm-legend" id="cmLegend"></div>
+<div class="cm-rows" id="cmRows"></div>
+<div class="src-warn" id="cmWarn"></div>
+<details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div id="cmNote" class="muted"></div></details>
+</section>
+</main>
+</div>
+</section>
+
 <section id="btcTab" class="tabpage">
 
 <div class="wrap">
@@ -6581,7 +6588,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
 (function(){
   const buttons = document.querySelectorAll('.tabbtn');
   const pages = document.querySelectorAll('.tabpage');
-  const TAB_IDS = ['newsTab', 'btcTab'];
+  const TAB_IDS = ['newsTab', 'marketsTab', 'btcTab'];
 
   function activate(tabId){
     buttons.forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
@@ -6597,6 +6604,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     const h = (location.hash || '').replace(/^#/, '').toLowerCase();
     if(h === 'btc' || h === 'btctab') return 'btcTab';
     if(h === 'news' || h === 'newstab') return 'newsTab';
+    if(h === 'markets' || h === 'marketstab') return 'marketsTab';
     return null;
   }
 
