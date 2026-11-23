@@ -4682,6 +4682,12 @@ window.setHeaderStamp();
 <style>
   #backtestTab .bt-lead{color:var(--muted);font-size:13px;line-height:1.7;margin:4px 0 0}
   #backtestTab .bt-chart svg{width:100%;height:auto;display:block}
+  #backtestTab .bt-chart{position:relative}
+  #backtestTab .bt-chart svg{cursor:crosshair;-webkit-tap-highlight-color:transparent}
+  #backtestTab .bt-tip{position:absolute;top:6px;pointer-events:none;background:rgba(11,16,32,.95);border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-size:12px;line-height:1.6;white-space:nowrap;z-index:2;display:none;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  #backtestTab .bt-tip .d{color:var(--muted);font-size:11px}
+  #backtestTab .bt-tip .cr{color:var(--bad);font-weight:700}
+  #backtestTab .bt-tip i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:0}
   #backtestTab .bt-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:8px}
   #backtestTab .bt-legend i{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
   #backtestTab .bt-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -4829,6 +4835,40 @@ window.setHeaderStamp();
     drawChart(el('btChart'), S);
   }
 
+  // Hover / tap on a backtest chart: vertical line, a dot per series, and a box with the date, the
+  // values and the name of the shaded period under the cursor. Shared by the S&P 500 and BTC charts.
+  function btHover(box, o){
+    const svg = box.querySelector('svg'); if(!svg || !svg.addEventListener) return;
+    const NS = 'http://www.w3.org/2000/svg', mk = (t, a) => { const e = document.createElementNS(NS, t); for(const k in a) e.setAttribute(k, a[k]); return e; };
+    const g = mk('g', { visibility: 'hidden' }), line = mk('line', { y1: o.T, y2: o.H - o.B, stroke: '#eef3ff', 'stroke-opacity': '.45', 'stroke-dasharray': '2 3' });
+    g.appendChild(line);
+    const dots = o.series.map(sr => { const c = mk('circle', { r: 4, fill: sr.color, stroke: '#0b1020', 'stroke-width': 1.5 }); g.appendChild(c); return c; });
+    svg.appendChild(g);
+    const tip = document.createElement('div'); tip.className = 'bt-tip'; box.appendChild(tip);
+    function show(ev){
+      const r = svg.getBoundingClientRect(); if(!r.width) return;
+      const sx = (ev.clientX - r.left) * o.W / r.width;
+      const i = Math.max(0, Math.min(o.n - 1, Math.round((sx - o.L) / (o.W - o.L - o.R) * (o.n - 1))));
+      const px = o.x(i);
+      line.setAttribute('x1', px); line.setAttribute('x2', px);
+      o.series.forEach((sr, k) => { const v = sr.values[i]; dots[k].setAttribute('visibility', v == null ? 'hidden' : 'visible'); if(v != null){ dots[k].setAttribute('cx', px); dots[k].setAttribute('cy', sr.y(v)); } });
+      g.setAttribute('visibility', 'visible');
+      const band = o.bands.filter(b => i >= b.from && i <= b.to)[0];
+      tip.innerHTML = '<div class="d">' + o.label(i) + '</div>' + (band ? '<div class="cr">' + band.name + '</div>' : '')
+        + o.series.map(sr => sr.values[i] == null ? '' : '<div><i style="background:' + sr.color + '"></i>' + sr.name + ' <b>' + sr.fmt(sr.values[i]) + '</b></div>').join('')
+        + (o.extra ? o.extra(i) : '');
+      tip.style.display = 'block';
+      const bx = box.getBoundingClientRect(), cx = ev.clientX - bx.left + box.scrollLeft, w = tip.offsetWidth;
+      tip.style.left = Math.max(box.scrollLeft + 4, cx + 14 + w > box.scrollLeft + bx.width ? cx - 14 - w : cx + 14) + 'px';
+    }
+    function hide(){ g.setAttribute('visibility', 'hidden'); tip.style.display = 'none'; }
+    svg.addEventListener('pointermove', show); svg.addEventListener('pointerdown', show);
+    // a finger lifting fires pointerleave, so on touch the box stays until a tap elsewhere
+    svg.addEventListener('pointerleave', ev => { if(ev.pointerType !== 'touch') hide(); });
+    document.addEventListener('pointerdown', ev => { if(!svg.contains(ev.target)) hide(); });
+  }
+  window.btHover = btHover;
+
   function drawChart(box, S){
     const d = BT_DATA, n = d.spx.length, W = 900, H = 300, L = 40, R = 40, T = 10, B = 22;
     const x = i => L + (W - L - R) * i / (n - 1);
@@ -4844,6 +4884,15 @@ window.setHeaderStamp();
     g += '<path d="' + path(d.va, yV) + '" fill="none" stroke="#ff6577" stroke-width="1.2" opacity=".85"/>';
     g += '<path d="' + path(d.spx, yS) + '" fill="none" stroke="#d4b26a" stroke-width="2"/>';
     box.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + tr('กราฟ S&P 500 และ VIX ตั้งแต่ 1990', 'S&P 500 and VIX since 1990') + '">' + g + '</svg>';
+    const t0 = +d.start.slice(0, 4) * 12 + (+d.start.slice(5, 7)) - 1, lab = i => Math.floor((t0 + i) / 12) + '-' + String((t0 + i) % 12 + 1).padStart(2, '0');
+    btHover(box, { W, H, L, R, T, B, n, x,
+      label: i => ym(lab(i)),
+      bands: S.crises.map(r => ({ from: idx(r.peak), to: idx(r.trough), name: tr(r.th, r.en) + ' · ' + pct(d.spx[idx(r.trough)] / d.spx[idx(r.peak)] - 1, 1) })),
+      series: [
+        { name: 'S&P 500', color: '#d4b26a', values: d.spx, y: yS, fmt: v => v.toLocaleString('en-US', { maximumFractionDigits: 0 }) },
+        { name: tr('VIX (เฉลี่ยเดือน)', 'VIX (month avg)'), color: '#ff6577', values: d.va, y: yV, fmt: v => v.toFixed(1) }
+      ],
+      extra: i => '<div class="d">' + tr('VIX สูงสุดในเดือน ', 'VIX month high ') + (d.vm[i] != null ? d.vm[i].toFixed(1) : '–') + (d.ur[i] != null ? ' · ' + tr('ว่างงาน ', 'unemployment ') + d.ur[i].toFixed(1) + '%' : '') + '</div>' });
   }
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render); else render();
@@ -5032,6 +5081,14 @@ window.setHeaderStamp();
     g += '<path d="' + path(D.dvol, yV) + '" fill="none" stroke="#4cc9f0" stroke-width="1.1" opacity=".85"/>';
     g += '<path d="' + path(D.btc, yP) + '" fill="none" stroke="#f7931a" stroke-width="1.8"/>';
     box.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + tr('กราฟ BTC และ DVOL รายวันตั้งแต่ 2021', 'Daily BTC and DVOL since 2021') + '">' + g + '</svg>';
+    if(window.btHover) window.btHover(box, { W, H, L, R, T, B, n, x,
+      label: i => dm(D.dates[i]),
+      bands: S.falls.map(r => ({ from: ix(r.peak), to: ix(r.trough), name: tr(r.th, r.en) + ' · ' + pct(r.fall, 1) })),
+      series: [
+        { name: 'BTC', color: '#f7931a', values: D.btc, y: yP, fmt: usd },
+        { name: 'DVOL', color: '#4cc9f0', values: D.dvol, y: yV, fmt: v => v.toFixed(1) }
+      ],
+      extra: i => '<div class="d">' + tr('คาดแกว่ง 30 วัน ±', '30-day implied ±') + (D.dvol[i] * Math.sqrt(30 / 365)).toFixed(1) + '%</div>' });
   }
 
   let started = false;

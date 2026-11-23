@@ -90,3 +90,10 @@ test('page renders the section from data and points use the computed numbers', a
   assert.match(html('bdvChart'), /<svg/);
   assert.equal((html('bdvPoints').match(/<li>/g) || []).length >= 5, true);
 });
+
+test('both backtest charts get the hover box (date, values, shaded period name)', () => {
+  assert.match(HTML, /function btHover\(box, o\)/);
+  assert.match(HTML, /btHover\(box, \{ W, H, L, R, T, B, n, x,\n      label: i => ym\(lab\(i\)\)/);
+  assert.match(HTML, /window\.btHover\(box, \{ W, H, L, R, T, B, n, x,\n      label: i => dm\(D\.dates\[i\]\)/);
+  assert.match(HTML, /ev\.pointerType !== 'touch'/);
+});
