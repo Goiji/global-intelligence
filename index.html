@@ -354,6 +354,48 @@ body{margin:0}
   @media (prefers-reduced-motion:reduce){ #btcTab .rekt-live::before{animation:none;} }
   #btcTab .rekt-meaning{font-size:12px; line-height:1.6; color:var(--text); margin-top:12px;}
   #btcTab .rekt-ex{font-size:11px; line-height:1.6; color:var(--sub); margin-top:4px;}
+  /* 25Δ risk reversal tile (spans 2 columns beside the stablecoin tile) */
+  #btcTab .sl-rr{display:flex; flex-direction:column; grid-column:span 2;}
+  #btcTab .sl-stable{grid-column:span 2;}
+  @media (max-width:800px){ #btcTab .sl-rr,#btcTab .sl-stable{grid-column:auto;} }
+  #btcTab .sl-rr .delta{font-size:12px; font-weight:600; margin-left:6px;}
+  #btcTab .sl-rr .unit{font-size:12px; font-weight:500; color:var(--sub); margin-left:4px; font-family:var(--mono);}
+  #btcTab .rr-cm{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:10px;}
+  #btcTab .rr-cm div{border:1px solid var(--line); border-radius:8px; padding:6px 8px; font-size:11px; color:var(--sub); font-variant-numeric:tabular-nums;}
+  #btcTab .rr-cm b{display:block; font-size:15px; margin-top:2px; color:var(--text);}
+  #btcTab .rr-term{margin-top:8px; position:relative;}
+  #btcTab .rr-term svg{display:block; width:100%; height:62px;}
+  #btcTab .rr-term .cap{font-size:10px; color:var(--muted); display:flex; justify-content:space-between; margin-top:2px;}
+  /* GEX + volume profile panels */
+  #btcTab .gex-stats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:12px;}
+  @media (max-width:800px){ #btcTab .gex-stats{grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;} }
+  #btcTab .gx{border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:rgba(255,255,255,.025); min-width:0;}
+  #btcTab .gx.zg{border-color:rgba(244,201,93,.45); background:rgba(244,201,93,.06);}
+  #btcTab .gx .k{display:block; font-size:11px; color:var(--sub);}
+  #btcTab .gx b{display:block; font-size:21px; font-weight:700; margin-top:4px; font-variant-numeric:tabular-nums; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  #btcTab .gx small{display:block; font-size:11px; color:var(--sub); margin-top:2px; line-height:1.45;}
+  @media (max-width:800px){ #btcTab .gx b{font-size:18px;} }
+  #btcTab .gex-meaning{font-size:12.5px; line-height:1.65; color:var(--text); margin:12px 0 10px; padding:10px 12px; border-radius:10px; background:rgba(255,255,255,.03); border-left:3px solid var(--line);}
+  #btcTab .gex-meaning.pos{border-left-color:var(--green);}
+  #btcTab .gex-meaning.neg{border-left-color:var(--red);}
+  #btcTab .gex-meaning.mid{border-left-color:#5aa7e0;}
+  #btcTab .gex-cols{display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); padding:0 4px 4px 62px;}
+  #btcTab .gex-cols span:last-child{width:34%; text-align:center;}
+  #btcTab .gex-wrap{position:relative; height:420px; border-radius:10px; background:#0a0e17; border:1px solid var(--line); touch-action:pan-y;}
+  #btcTab .vp-wrap{height:400px;}
+  @media (max-width:800px){ #btcTab .gex-wrap{height:380px;} #btcTab .gex-cols{padding-left:50px;} }
+  #btcTab .gex-svg,#btcTab .gex-svg svg{display:block; width:100%; height:100%;}
+  #btcTab .gex-svg text{font-family:var(--mono); font-size:10px;}
+  #btcTab .gex-legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:10.5px; color:var(--sub); margin-top:8px;}
+  #btcTab .gex-legend > span{display:inline-flex; align-items:center; gap:5px;}
+  #btcTab .gex-legend i{display:inline-block; width:12px; height:8px; border-radius:2px;}
+  #btcTab .gex-legend i.ln{height:0; border-top:2px solid; border-radius:0; width:16px;}
+  #btcTab .gex-legend i.ln.dash{border-top-style:dashed;}
+  #btcTab .gex-sub{font-size:13px; font-weight:600; color:var(--text); margin:16px 0 0;}
+  #btcTab .gex-flows{margin-top:8px;}
+  #btcTab .gex-flows .rekt-big{font-size:20px;}
+  #btcTab .gex-flows .buy{color:var(--green);} #btcTab .gex-flows .sell{color:var(--red);}
+  @media (max-width:800px){ #btcTab .gex-flows .rekt-big{font-size:17px;} }
   #btcTab .etf-bars svg{display:block; width:100%; height:64px;}
   #btcTab .etf-bars .spark-cap{font-size:10px; color:var(--muted); margin-top:2px; display:flex; justify-content:space-between;}
   #btcTab .sl-name{font-size:11px; color:var(--sub); letter-spacing:0.06em; text-transform:uppercase;}
@@ -6164,6 +6206,31 @@ window.setHeaderStamp();
           <div class="spark" id="spDvol"></div>
           <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=DERIBIT%3ADVOL" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a>
         </div>
+        <div class="sl-tile sl-rr">
+          <div class="sl-name"><span data-en="25Δ Risk Reversal (which insurance costs more)">25Δ Risk Reversal (ประกันฝั่งไหนแพง)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="25 delta risk reversal คืออะไร" data-en-aria="What is the 25-delta risk reversal?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+            <div class="i18n-th">
+            <p><b>คืออะไร:</b> เทียบราคา (เป็น implied volatility) ของ call กับ put ที่ห่างจากราคาปัจจุบันพอ ๆ กัน (delta 25% ทั้งคู่) บน Deribit = IV ของ call 25Δ ลบ IV ของ put 25Δ หน่วยเป็นจุด vol · put 25Δ คือ "ประกันขาลง" call 25Δ คือ "ตั๋วขาขึ้น"</p>
+            <p><b>ติดลบหรือบวก:</b> ติดลบ = put แพงกว่า call คนยอมจ่ายแพงเพื่อป้องกันราคาลง · เป็นบวก = call แพงกว่า คนไล่ซื้อขาขึ้น</p>
+            <p><b>อ่านสี:</b> 🔴 −6 ลงไป put แพงกว่ามาก · 🟠 −6 ถึง −2 put แพงกว่า · 🟡 −2 ถึง +2 พอ ๆ กัน · 🔵 +2 ถึง +6 call แพงกว่า · 🟢 +6 ขึ้นไป call แพงกว่ามาก</p>
+            <p><b>ดูทิศทาง:</b> ตัวเลขใหญ่คือ 30 วัน (คำนวณจากสองวันหมดอายุที่คร่อม 30 วัน) แถวล่างเทียบ 7 / 30 / 90 วัน ถ้า 7 วันติดลบลึกกว่า 90 วัน = ความกลัวเป็นเรื่องระยะสั้น · "เทียบ 24 ชม." บอกว่าคนเริ่มหันไปให้ค่า call (ค่าขยับขึ้น) หรือ put (ค่าขยับลง) · แท่งเล็กคือแต่ละวันหมดอายุ</p>
+            <p><b>ทำไมสำคัญ:</b> put แพงสุดขีดตอนราคาร่วงมักเป็นช่วงกลัวจนเกินเหตุ (สวนทางได้) · call แพงมากตอนราคาพุ่งมักเป็นช่วงไล่ราคา อ่านคู่กับ DVOL และ Funding Rate</p>
+            </div>
+            <div class="i18n-en" lang="en">
+            <p><b>What it is:</b> the price, as implied volatility, of a call against a put the same distance from spot (both 25 delta) on Deribit = 25Δ call IV minus 25Δ put IV, in vol points. The 25Δ put is downside insurance, the 25Δ call is an upside ticket.</p>
+            <p><b>Negative or positive:</b> negative = puts cost more than calls, people pay up to protect against a fall · positive = calls cost more, people chase the upside</p>
+            <p><b>Colours:</b> 🔴 −6 or lower puts much pricier · 🟠 −6 to −2 puts pricier · 🟡 −2 to +2 balanced · 🔵 +2 to +6 calls pricier · 🟢 +6 and up calls much pricier</p>
+            <p><b>Direction:</b> the big number is 30 days (interpolated between the two expiries around 30 days); the row below compares 7 / 30 / 90 days. If 7 days is more negative than 90 days, the fear is short-term · "vs 24h" shows whether people are turning toward calls (number rising) or puts (falling) · the small bars are each expiry.</p>
+            <p><b>Why it matters:</b> very expensive puts during a sell-off often mark fear that has gone too far (a contrarian sign) · very expensive calls during a rally often mark chasing. Read it with DVOL and the Funding Rate.</p>
+            </div>
+          </div></div></div>
+          <div class="sl-num" id="rrNum">–</div>
+          <div class="sl-sub" id="rrZone" data-en="Loading…">กำลังโหลด…</div>
+          <div class="sl-sub" id="rrLegs"></div>
+          <div class="rr-cm" id="rrCm"></div>
+          <div class="rr-term" id="rrTerm"></div>
+          <div class="spark" id="spRr"></div>
+          <a class="tv-btn" href="https://www.deribit.com/statistics/BTC/volatility" target="_blank" rel="noopener noreferrer"><span data-en="Deribit volatility stats ↗">สถิติ volatility บน Deribit ↗</span></a>
+        </div>
         <div class="sl-tile sl-stable">
           <div class="sl-name"><span data-en="Stablecoin Market Cap">Stablecoin Market Cap</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Stablecoin Market Cap คืออะไร" data-en-aria="What is the stablecoin market cap?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
             <div class="i18n-th">
@@ -6287,6 +6354,80 @@ window.setHeaderStamp();
       <div class="liq-foot">
         <details class="src-note" style="margin-top:0;"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div class="muted" id="rektNote" data-en="Coinalyze (free API), BTC perpetual futures on several exchanges, refreshed every minute">Coinalyze (API ฟรี) รวม BTC perpetual futures จากหลายตลาด อัปเดตทุกนาที</div></details>
         <a class="tv-btn" style="margin-top:0;" href="https://www.coinglass.com/LiquidationData" target="_blank" rel="noopener noreferrer"><span data-en="Open on CoinGlass ↗">ดูบน CoinGlass ↗</span></a>
+      </div>
+    </div>
+
+    <!-- DEALER GAMMA (GEX) from Deribit options; see /.netlify/functions/options-gex -->
+    <div class="panel chart-panel gex-panel">
+      <div class="liq-head">
+        <h2 style="margin-bottom:0;"><span data-en="BTC Dealer Gamma (GEX) and zero gamma">BTC Dealer Gamma (GEX) และจุด Zero Gamma</span> <div class="tip"><button type="button" class="tip-btn" aria-label="GEX คืออะไร" data-en-aria="What is GEX?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+          <div class="i18n-th">
+          <p><b>คืออะไร:</b> คนที่ขาย option (dealer / market maker) ต้องซื้อขาย BTC เพื่อป้องกันความเสี่ยงตลอดเวลา GEX ประมาณว่าถ้าราคาขยับ 1% dealer ทั้งตลาดต้องซื้อหรือขาย BTC มูลค่าเท่าไร คำนวณจาก open interest ของ option BTC ทุกตัวบน Deribit (ตลาด option คริปโตใหญ่สุด)</p>
+          <p><b>Zero gamma (จุดเปลี่ยนโหมด):</b> ราคาที่ GEX รวมเปลี่ยนเครื่องหมาย · ราคาอยู่ <b>เหนือ</b> จุดนี้ = gamma บวก dealer ขายตอนราคาขึ้น ซื้อตอนราคาลง ช่วยหน่วงการแกว่ง ราคามักวิ่งในกรอบ · ราคาอยู่ <b>ใต้</b> จุดนี้ = gamma ลบ dealer ต้องขายตามตอนราคาลง ซื้อตามตอนราคาขึ้น เร่งการแกว่ง ราคาวิ่งแรงและเป็นเทรนด์ง่าย</p>
+          <p><b>อ่านกราฟ:</b> ซ้าย = GEX แยกตาม strike (เขียว = call, แดง = put) · ขวา = ถ้าราคาไปอยู่ตรงนั้น GEX รวมจะเป็นเท่าไร (เส้นตัดศูนย์ = zero gamma) · Call wall = strike เหนือราคาที่ call gamma หนาสุด มักเป็นแนวต้าน · Put wall = strike ใต้ราคาที่ put gamma หนาสุด มักเป็นแนวรับ · กล่องด้านล่าง = ถ้าราคาขยับ ±5% / ±10% dealer ต้องซื้อหรือขาย BTC ประมาณเท่าไร</p>
+          <p><b>⚠️ เป็นแบบจำลอง:</b> ไม่มีใครรู้ว่า dealer ถืออะไรจริง ใช้สมมติฐานมาตรฐาน (SqueezeMetrics / SpotGamma) ว่าลูกค้าขาย call ซื้อ put dealer จึงถือ call ฝั่งซื้อและ put ฝั่งขาย · greeks จาก Black-76 กับ mark IV ของ Deribit · รวมทุกวันหมดอายุ (ยกเว้นที่จะหมดภายใน 1 ชม.) · ไม่รวม CME / OKX / Bybit · อัปเดตทุก 5 นาที</p>
+          </div>
+          <div class="i18n-en" lang="en">
+          <p><b>What it is:</b> option sellers (dealers / market makers) trade BTC all the time to stay hedged. GEX estimates how much BTC dealers as a whole must buy or sell for each 1% move, from the open interest of every BTC option on Deribit (the largest crypto options exchange).</p>
+          <p><b>Zero gamma (the flip):</b> the price where total GEX changes sign · <b>above</b> it = positive gamma: dealers sell rallies and buy dips, which damps moves and keeps price in a range · <b>below</b> it = negative gamma: dealers sell into falls and buy into rallies, which amplifies moves and lets trends run.</p>
+          <p><b>Reading the chart:</b> left = GEX by strike (green = calls, red = puts) · right = what total GEX would be if price were at that level (where it crosses zero is zero gamma) · Call wall = the strike above price with the most call gamma, often resistance · Put wall = the strike below price with the most put gamma, often support · the boxes below = roughly how much BTC dealers must buy or sell if price moves ±5% / ±10%.</p>
+          <p><b>⚠️ A model:</b> nobody knows dealers' real books. It uses the standard assumption (SqueezeMetrics / SpotGamma) that customers sell calls and buy puts, so dealers are long calls and short puts · greeks from Black-76 with Deribit mark IV · all expiries (except those within the hour) · CME / OKX / Bybit not included · refreshed every 5 minutes.</p>
+          </div>
+        </div></div></h2>
+        <div class="liq-ranges" id="gexRanges" role="group" aria-label="ช่วงราคา" data-en-aria="Price range">
+          <button type="button" data-band="0.1">±10%</button><button type="button" data-band="0.2" class="on">±20%</button><button type="button" data-band="0.3">±30%</button>
+        </div>
+      </div>
+      <div class="gex-stats" id="gexStats">
+        <div class="gx"><span class="k" data-en="BTC price">ราคา BTC</span><b id="gexSpot">–</b><small id="gexSpotSub"></small></div>
+        <div class="gx zg"><span class="k" data-en="Zero gamma (flip)">Zero gamma (จุดเปลี่ยน)</span><b id="gexZero">–</b><small id="gexZeroSub"></small></div>
+        <div class="gx"><span class="k" data-en="Net dealer gamma">Gamma รวมของ dealer</span><b id="gexTotal">–</b><small id="gexTotalSub"></small></div>
+        <div class="gx"><span class="k" data-en="Call wall / Put wall">Call wall / Put wall</span><b id="gexWalls">–</b><small id="gexWallsSub"></small></div>
+      </div>
+      <div class="gex-meaning" id="gexMeaning" data-en="Loading…">กำลังโหลด…</div>
+      <div class="gex-cols"><span data-en="GEX by strike ($ per 1% move)">GEX แยกตาม strike ($ ต่อราคาขยับ 1%)</span><span data-en="If price were here: total GEX">ถ้าราคาอยู่ตรงนี้: GEX รวม</span></div>
+      <div class="gex-wrap" id="gexWrap"><div class="gex-svg" id="gexChart"></div><div class="liq-hover" id="gexHover" hidden></div></div>
+      <div class="gex-legend"><span><i style="background:var(--green)"></i><span data-en="Call gamma">Call gamma</span></span><span><i style="background:var(--red)"></i><span data-en="Put gamma">Put gamma</span></span><span><i class="ln" style="border-color:#ece6d8"></i><span data-en="Price">ราคา</span></span><span><i class="ln dash" style="border-color:#f4c95d"></i>Zero gamma</span></div>
+      <h3 class="gex-sub" data-en="If BTC moves, dealers must hedge by…">ถ้าราคา BTC ขยับ dealer ต้องเทรดเพื่อป้องกันความเสี่ยง…</h3>
+      <div class="rekt-grid gex-flows" id="gexFlows"></div>
+      <div class="rekt-ex" id="gexExp"></div>
+      <div class="liq-foot">
+        <details class="src-note" style="margin-top:0;"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div class="muted" id="gexNote" data-en="Deribit public API (every listed BTC option: open interest, mark IV, forward price), greeks computed here with Black-76, refreshed every 5 minutes">Deribit public API (option BTC ทุกตัว: open interest, mark IV, ราคา forward) คำนวณ greeks เองด้วย Black-76 อัปเดตทุก 5 นาที</div></details>
+        <a class="tv-btn" style="margin-top:0;" href="https://www.deribit.com/statistics/BTC/options-open-interest" target="_blank" rel="noopener noreferrer"><span data-en="Open interest on Deribit ↗">ดู open interest บน Deribit ↗</span></a>
+      </div>
+    </div>
+
+    <!-- VOLUME PROFILE / VPOC from Binance perp candles (OKX, Deribit fallbacks); see fetchVpoc -->
+    <div class="panel chart-panel vp-panel">
+      <div class="liq-head">
+        <h2 style="margin-bottom:0;"><span data-en="BTC Volume Profile (VPOC)">BTC Volume Profile (VPOC)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="VPOC คืออะไร" data-en-aria="What is VPOC?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+          <div class="i18n-th">
+          <p><b>คืออะไร:</b> แจกปริมาณซื้อขายตามระดับราคาแทนตามเวลา แท่งยาว = ราคาที่มีการซื้อขายหนาแน่น · <b>VPOC</b> (Volume Point of Control) = ราคาที่มีการซื้อขายมากที่สุดในช่วงที่เลือก · <b>Value area</b> = ช่วงราคารอบ VPOC ที่รวม 70% ของ volume (ขอบบน VAH ขอบล่าง VAL)</p>
+          <p><b>อ่านยังไง:</b> VPOC มักเป็น "แม่เหล็ก" และแนวรับ/แนวต้านสำคัญ เพราะคนจำนวนมากมีต้นทุนแถวนั้น · ราคาอยู่ใน value area = ตลาดสมดุล มักแกว่งกลับไปหา VPOC · ราคาหลุดออกนอก value area แล้วยืนได้ = ตลาดยอมรับราคาใหม่ ขอบ VAH/VAL มักกลายเป็นแนวรับ/แนวต้าน · ช่วงที่แท่งสั้น (volume บาง) ราคามักวิ่งผ่านเร็ว</p>
+          <p><b>ข้อมูล:</b> แท่งเทียน BTCUSDT perpetual ของ Binance (สำรองด้วย OKX แล้ว Deribit) 1 วันใช้แท่ง 5 นาที 7 วันใช้ 15 นาที 30 วันใช้ 1 ชม. แต่ละแท่งเกลี่ย volume เท่า ๆ กันตลอดช่วง high–low ของแท่ง จึงเป็นค่าประมาณที่ละเอียดตามขนาดแท่ง · สีเขียว/แดงในแต่ละแถบ = สัดส่วนแรงซื้อ/ขาย (taker) · เส้นประเหลือง = zero gamma จากการ์ด GEX ด้านบน</p>
+          </div>
+          <div class="i18n-en" lang="en">
+          <p><b>What it is:</b> trading volume laid out by price instead of by time. Long bars = prices where a lot traded · <b>VPOC</b> (Volume Point of Control) = the single price with the most volume in the window · <b>Value area</b> = the range around the VPOC holding 70% of volume (top VAH, bottom VAL).</p>
+          <p><b>How to read it:</b> the VPOC often acts as a magnet and as key support/resistance, since many traders hold positions near it · price inside the value area = a balanced market that tends to rotate back to the VPOC · price breaking out of the value area and holding = the market accepting new prices; VAH/VAL often flip into support/resistance · thin-volume zones (short bars) tend to be crossed quickly.</p>
+          <p><b>Data:</b> Binance BTCUSDT perpetual candles (OKX, then Deribit, as backups): 5-minute candles for 1 day, 15-minute for 7 days, 1-hour for 30 days. Each candle's volume is spread evenly across its high–low range, so detail is limited by the candle size · green/red in each bar = taker buy/sell share · yellow dashed line = zero gamma from the GEX card above.</p>
+          </div>
+        </div></div></h2>
+        <div class="liq-ranges" id="vpRanges" role="group" aria-label="ช่วงเวลา" data-en-aria="Time range">
+          <button type="button" data-r="1d">1D</button><button type="button" data-r="7d" class="on">7D</button><button type="button" data-r="30d">30D</button>
+        </div>
+      </div>
+      <div class="gex-stats">
+        <div class="gx"><span class="k" data-en="BTC price">ราคา BTC</span><b id="vpPx">–</b><small id="vpPxSub"></small></div>
+        <div class="gx zg"><span class="k">VPOC</span><b id="vpPoc">–</b><small id="vpPocSub"></small></div>
+        <div class="gx"><span class="k" data-en="Value area high (VAH)">ขอบบน value area (VAH)</span><b id="vpVah">–</b><small id="vpVahSub"></small></div>
+        <div class="gx"><span class="k" data-en="Value area low (VAL)">ขอบล่าง value area (VAL)</span><b id="vpVal">–</b><small id="vpValSub"></small></div>
+      </div>
+      <div class="gex-meaning" id="vpMeaning" data-en="Loading…">กำลังโหลด…</div>
+      <div class="gex-wrap vp-wrap" id="vpWrap"><div class="gex-svg" id="vpChart"></div><div class="liq-hover" id="vpHover" hidden></div></div>
+      <div class="gex-legend"><span><i style="background:#f4c95d"></i>VPOC</span><span><i style="background:#5aa7e0"></i><span data-en="Value area (70%)">Value area (70%)</span></span><span><i style="background:#3a4356"></i><span data-en="Outside value area">นอก value area</span></span><span><i class="ln" style="border-color:#ece6d8"></i><span data-en="Price">ราคา</span></span><span><i class="ln dash" style="border-color:#f4c95d"></i>Zero gamma</span></div>
+      <div class="liq-foot">
+        <div class="sl-sub" id="vpSrc"></div>
+        <a class="tv-btn" style="margin-top:0;" href="https://www.tradingview.com/chart/?symbol=BINANCE%3ABTCUSDT.P" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a>
       </div>
     </div>
 
@@ -7460,6 +7601,376 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     if(window.giSetSpark) window.giSetSpark('spDvol', d, { upIsBad:true, dec:0 });
   }
 
+  // ---------- Options positioning (Deribit): 25Δ risk reversal tile + dealer gamma (GEX) panel ----------
+  // ทั้งสองมาจาก /.netlify/functions/options-gex (คำนวณจาก option BTC ทุกตัวบน Deribit แคช 5 นาที)
+  // ไม่มีตัวสำรองฝั่งหน้าเว็บ: ถ้าเซิร์ฟเวอร์ดึงไม่ได้ การ์ดจะบอกว่าดึงไม่สำเร็จ
+  const fmtPx = (v) => isNum(v) ? '$' + Math.round(v).toLocaleString('en-US') : '–';
+  const fmtSignPct = (v, dec) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v * 100).toFixed(dec == null ? 1 : dec) + '%';
+  const fmtVol = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1);
+  const escTxt = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  function fmtUsdBig(v){
+    if(!isNum(v)) return '–';
+    const a = Math.abs(v), s = v < 0 ? '−' : '';
+    return s + (a >= 1e9 ? '$' + (a / 1e9).toFixed(2) + 'B' : a >= 1e6 ? '$' + (a / 1e6).toFixed(1) + 'M' : a >= 1e3 ? '$' + (a / 1e3).toFixed(0) + 'K' : '$' + Math.round(a));
+  }
+  function rrZone(v){
+    return v <= -6 ? ['🔴', tr('put แพงกว่ามาก: คนจ่ายแพงเพื่อประกันขาลง', 'puts much pricier: people pay up for downside cover'), 'var(--red)']
+      : v <= -2 ? ['🟠', tr('put แพงกว่า: ตลาดเอียงไปทางกันขาลง', 'puts pricier: the market leans toward downside cover'), 'var(--amber)']
+      : v < 2 ? ['🟡', tr('พอ ๆ กัน: ไม่เอียงฝั่งไหนชัด', 'balanced: no clear lean'), '']
+      : v < 6 ? ['🔵', tr('call แพงกว่า: คนเริ่มไล่ซื้อขาขึ้น', 'calls pricier: people are reaching for upside'), 'var(--cool)']
+      : ['🟢', tr('call แพงกว่ามาก: ไล่ซื้อขาขึ้นแรง', 'calls much pricier: strong upside chasing'), 'var(--green)'];
+  }
+  // แท่ง RR ของแต่ละวันหมดอายุ (ลบ = แดงลงล่าง, บวก = เขียวขึ้นบน)
+  function rrTermSvg(rows){
+    if(!rows || rows.length < 2) return '';
+    const W = 300, H = 62, max = Math.max(2, ...rows.map(r => Math.abs(r.rr))), mid = H / 2, bw = W / rows.length;
+    let g = '<line x1="0" x2="' + W + '" y1="' + mid + '" y2="' + mid + '" stroke="var(--line)"/>';
+    rows.forEach(function(r, i){
+      const h = Math.max(1, Math.abs(r.rr) / max * (mid - 3));
+      g += '<rect x="' + (i * bw + bw * 0.18).toFixed(1) + '" y="' + (r.rr >= 0 ? mid - h : mid).toFixed(1) + '" width="' + (bw * 0.64).toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + (r.rr >= 0 ? 'var(--green)' : 'var(--red)') + '"><title>' + r.code + ' (' + Math.round(r.days) + tr(' วัน', ' days') + ') RR ' + fmtVol(r.rr) + ' · put ' + r.put25.toFixed(1) + ' / call ' + r.call25.toFixed(1) + '</title></rect>';
+    });
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' + tr('RR แต่ละวันหมดอายุ', 'RR by expiry') + '">' + g + '</svg>'
+      + '<div class="cap"><span>' + rows[0].code + '</span><span>' + tr('RR แต่ละวันหมดอายุ (ใกล้ → ไกล)', 'RR by expiry (near → far)') + '</span><span>' + rows[rows.length - 1].code + '</span></div>';
+  }
+  function renderRr(d){
+    const rr = d && d.rr, c30 = rr && rr.cm && rr.cm[30];
+    if(!c30 || !isNum(c30.rr)){ el('rrZone').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable'); return; }
+    const z = rrZone(c30.rr);
+    // เทียบกับจุดในประวัติที่ใกล้ 24 ชม. ก่อนที่สุด (เก็บทุก ~3 ชม.)
+    let ch = null;
+    const hist = (rr.hist || []).filter(p => Array.isArray(p) && isNum(p[1]));
+    const now = Date.parse(d.at) || Date.now();
+    const old = hist.filter(p => now - p[0] >= 18 * 3600000).pop();
+    if(old && now - old[0] <= 36 * 3600000) ch = c30.rr - old[1];
+    el('rrNum').innerHTML = fmtVol(c30.rr) + '<span class="unit">' + tr('จุด vol · 30 วัน', 'vol pts · 30d') + '</span>'
+      + (isNum(ch) ? '<span class="delta ' + (ch > 0 ? 'up' : ch < 0 ? 'down' : 'flat') + '" title="' + tr('เทียบ 24 ชม. ก่อน', 'vs 24h ago') + '">' + fmtVol(ch) + tr(' จาก 24 ชม.', ' vs 24h') + '</span>' : '');
+    el('rrNum').style.color = z[2];
+    el('rrZone').textContent = z[0] + ' ' + z[1] + (isNum(ch) && Math.abs(ch) >= 0.5 ? (ch > 0 ? tr(' · กำลังหันไปให้ค่า call มากขึ้น', ' · turning toward calls') : tr(' · กำลังหันไปให้ค่า put มากขึ้น', ' · turning toward puts')) : '');
+    el('rrLegs').innerHTML = tr('ประกันขาลง (put 25Δ) IV ', 'Downside cover (25Δ put) IV ') + '<b>' + c30.put25.toFixed(1) + '%</b> · ' + tr('ตั๋วขาขึ้น (call 25Δ) IV ', 'upside (25Δ call) IV ') + '<b>' + c30.call25.toFixed(1) + '%</b>' + (isNum(c30.atm) ? ' · ATM ' + c30.atm.toFixed(1) + '%' : '');
+    el('rrCm').innerHTML = [7, 30, 90].map(function(n){
+      const c = rr.cm[n];
+      if(!c || !isNum(c.rr)) return '';
+      return '<div>' + n + tr(' วัน', ' days') + '<b style="color:' + rrZone(c.rr)[2] + '">' + fmtVol(c.rr) + '</b></div>';
+    }).join('');
+    el('rrTerm').innerHTML = rrTermSvg(rr.expiries || []);
+    if(hist.length >= 4 && window.giSetSpark){
+      const days = Math.max(1, Math.round((hist[hist.length - 1][0] - hist[0][0]) / 86400000));
+      window.giSetSpark('spRr', { hist }, { dec: 1, color: 'var(--cool)', cap: tr('RR 30 วัน ย้อนหลัง ' + days + ' วัน', 'RR 30d, last ' + days + ' days') });
+    }
+    el('rrZone').title = 'Deribit · ' + (d.at || '') + (d.stale ? ' (stale)' : '');
+  }
+
+  const gexState = { data: null, band: 0.2, at: 0, loading: false };
+  function gexMeaning(g, spot){
+    const z = g.zeroGamma, pos = g.total >= 0;
+    const dist = isNum(z) ? z / spot - 1 : null;
+    const head = pos ? '🟢 <b>' + tr('Gamma บวก (โหมดหน่วงการแกว่ง)', 'Positive gamma (damping mode)') + '</b>: '
+      + tr('dealer ขายตอนราคาขึ้นและซื้อตอนราคาลง ราคามักวิ่งในกรอบและแกว่งน้อยลง', 'dealers sell rallies and buy dips, so price tends to stay in a range and swing less')
+      : '🔴 <b>' + tr('Gamma ลบ (โหมดเร่งการแกว่ง)', 'Negative gamma (amplifying mode)') + '</b>: '
+      + tr('dealer ต้องขายตามตอนราคาลงและซื้อตามตอนราคาขึ้น ราคาจึงวิ่งแรงและเป็นเทรนด์ได้ง่าย', 'dealers must sell into falls and buy into rallies, so moves get bigger and trends run more easily');
+    let flip = '';
+    if(isNum(z)){
+      flip = pos
+        ? tr(' · ถ้าราคาหลุดลงต่ำกว่า <b>' + fmtPx(z) + '</b> (' + fmtSignPct(dist) + ' จากตอนนี้) จะเปลี่ยนเป็นโหมดเร่งการแกว่ง', ' · if price falls below <b>' + fmtPx(z) + '</b> (' + fmtSignPct(dist) + ' from here) it flips to amplifying mode')
+        : tr(' · ต้องขึ้นไปยืนเหนือ <b>' + fmtPx(z) + '</b> (' + fmtSignPct(dist) + ' จากตอนนี้) dealer ถึงจะกลับมาช่วยหน่วงการแกว่ง', ' · price has to get back above <b>' + fmtPx(z) + '</b> (' + fmtSignPct(dist) + ' from here) before dealers start damping moves again');
+    }else flip = tr(' · ไม่มีจุดเปลี่ยนในช่วง ±30% จากราคาตอนนี้', ' · no flip within ±30% of the current price');
+    return [pos ? 'pos' : 'neg', head + flip];
+  }
+  function renderGexStats(d){
+    const g = d.gex, spot = d.spot;
+    el('gexSpot').textContent = fmtPx(spot);
+    el('gexSpotSub').textContent = tr('ดัชนี Deribit', 'Deribit index') + ' · ' + new Date(d.at).toLocaleTimeString(window.GI_LOCALE || 'th-TH', { hour: '2-digit', minute: '2-digit' }) + (d.stale ? tr(' (ค่าเก่า)', ' (stale)') : '');
+    el('gexZero').textContent = fmtPx(g.zeroGamma);
+    el('gexZeroSub').textContent = isNum(g.zeroGamma) ? fmtSignPct(g.zeroGamma / spot - 1) + tr(' จากราคาตอนนี้', ' from price') : tr('ไม่มีในช่วง ±30%', 'none within ±30%');
+    el('gexTotal').textContent = fmtUsdBig(g.total);
+    el('gexTotal').style.color = g.total >= 0 ? 'var(--green)' : 'var(--red)';
+    el('gexTotalSub').textContent = tr('ต่อราคาขยับ 1% · ', 'per 1% move · ') + (g.total >= 0 ? tr('บวก = หน่วง', 'positive = damping') : tr('ลบ = เร่ง', 'negative = amplifying'));
+    el('gexWalls').innerHTML = '<span style="color:var(--green)">' + fmtPx(g.callWall) + '</span> / <span style="color:var(--red)">' + fmtPx(g.putWall) + '</span>';
+    el('gexWallsSub').textContent = tr('แนวต้าน / แนวรับจาก option', 'option resistance / support');
+    const m = gexMeaning(g, spot);
+    el('gexMeaning').className = 'gex-meaning ' + m[0];
+    el('gexMeaning').innerHTML = m[1];
+    el('gexFlows').innerHTML = (g.flows || []).map(function(f){
+      const buy = f.btc >= 0;
+      return '<div class="rekt-box"><div class="rekt-top"><span class="rekt-lbl">' + (f.move < 0 ? tr('ราคาลง ', 'Price down ') : tr('ราคาขึ้น ', 'Price up ')) + Math.abs(f.move * 100) + '%</span><span class="rekt-tag">' + fmtPx(f.price) + '</span></div>'
+        + '<div class="rekt-big ' + (buy ? 'buy' : 'sell') + '">' + (buy ? tr('ซื้อ ', 'Buy ') : tr('ขาย ', 'Sell ')) + Math.abs(f.btc).toLocaleString('en-US') + '<small>BTC</small></div>'
+        + '<div class="rekt-row"><span>≈ ' + fmtUsdBig(Math.abs(f.usd)) + '</span><span>' + ((f.move < 0) === !buy ? tr('ตามทิศราคา', 'with the move') : tr('สวนทิศราคา', 'against the move')) + '</span></div></div>';
+    }).join('');
+    const ex = (g.expiries || []).slice(0, 4).map(e => e.code + ' ' + e.share + '%').join(' · ');
+    el('gexExp').textContent = tr('gamma มาจากวันหมดอายุไหนมากสุด: ', 'Where the gamma sits by expiry: ') + ex + tr(' · ตัวเลขซื้อ/ขายคือแรงป้องกันความเสี่ยงรวมของ dealer ตามแบบจำลอง ถ้าราคาไปถึงระดับนั้น (ราคาไปเร็ว dealer อาจเทรดไม่ทันทั้งหมด)', ' · buy/sell figures are the modelled total dealer hedge if price gets there (in a fast move dealers may not hedge it all)');
+  }
+  // แกนราคาแนวตั้ง ใช้ร่วมกันทั้ง GEX และ volume profile
+  function priceAxis(lo, hi, T, H){
+    const y = (p) => T + (hi - p) / (hi - lo) * H;
+    const raw = (hi - lo) / 8, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw) || raw;
+    const ticks = [];
+    for(let p = Math.ceil(lo / step) * step; p <= hi; p += step) ticks.push(p);
+    return { y, ticks };
+  }
+  const kLbl = (p) => p >= 1000 ? (p / 1000).toFixed(p % 1000 ? 1 : 0) + 'k' : String(Math.round(p));
+  function hLine(x1, x2, y, color, dash, label, side, W){
+    let s = '<line x1="' + x1 + '" x2="' + x2 + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="' + color + '" stroke-width="1.3"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') + '/>';
+    if(label){
+      const tw = label.length * 6.1 + 8, tx = side === 'r' ? x2 - tw - 2 : x1 + 2;
+      s += '<rect x="' + tx.toFixed(1) + '" y="' + (y - 8).toFixed(1) + '" width="' + tw.toFixed(1) + '" height="15" rx="3" fill="#0a0e17" stroke="' + color + '" stroke-width=".8" opacity=".95"/>'
+        + '<text x="' + (tx + 4).toFixed(1) + '" y="' + (y + 3.5).toFixed(1) + '" fill="' + color + '">' + label + '</text>';
+    }
+    return s;
+  }
+  function renderGexChart(){
+    const d = gexState.data, box = el('gexChart'), wrap = el('gexWrap');
+    if(!d || !box || !wrap) return;
+    const W = wrap.clientWidth, Hh = wrap.clientHeight;
+    if(!W || !Hh) return;
+    const g = d.gex, spot = d.spot, band = gexState.band;
+    const lo = spot * (1 - band), hi = spot * (1 + band);
+    const rows = (g.byStrike || []).filter(r => r.k >= lo && r.k <= hi);
+    const L = W < 520 ? 46 : 58, T = 10, B = 10, H = Hh - T - B;
+    const gap = 8, colB = Math.round((W - L) * 0.34), xA0 = L + 4, xA1 = W - colB - gap, xB0 = xA1 + gap, xB1 = W - 4;
+    const ax = priceAxis(lo, hi, T, H), y = ax.y;
+    let s = '';
+    ax.ticks.forEach(p => { s += '<line x1="' + L + '" x2="' + W + '" y1="' + y(p).toFixed(1) + '" y2="' + y(p).toFixed(1) + '" stroke="#161d2b"/><text x="' + (L - 6) + '" y="' + (y(p) + 3.5).toFixed(1) + '" fill="#8d95a6" text-anchor="end">' + kLbl(p) + '</text>'; });
+    // column A: strike bars, puts left of centre, calls right
+    const maxA = Math.max(1, ...rows.map(r => Math.max(r.call, -r.put)));
+    const cA = (xA0 + xA1) / 2, half = (xA1 - xA0) / 2 - 2;
+    const ks = rows.map(r => r.k).sort((a, b) => a - b);
+    let minGap = Infinity; for(let i = 1; i < ks.length; i++) minGap = Math.min(minGap, ks[i] - ks[i - 1]);
+    const bh = Math.max(1.5, Math.min(14, (isFinite(minGap) ? minGap : (hi - lo) / 40) / (hi - lo) * H * 0.8));
+    s += '<line x1="' + cA + '" x2="' + cA + '" y1="' + T + '" y2="' + (T + H) + '" stroke="#2a3346"/>';
+    rows.forEach(function(r){
+      const yy = y(r.k) - bh / 2, wc = r.call / maxA * half, wp = -r.put / maxA * half;
+      if(wp > 0.3) s += '<rect x="' + (cA - wp).toFixed(1) + '" y="' + yy.toFixed(1) + '" width="' + wp.toFixed(1) + '" height="' + bh.toFixed(1) + '" fill="var(--red)" opacity=".85"/>';
+      if(wc > 0.3) s += '<rect x="' + cA.toFixed(1) + '" y="' + yy.toFixed(1) + '" width="' + wc.toFixed(1) + '" height="' + bh.toFixed(1) + '" fill="var(--green)" opacity=".85"/>';
+    });
+    // column B: total GEX if spot were at each price (area left/right of a zero line)
+    const curve = (g.curve || []).filter(c => c[0] >= lo && c[0] <= hi);
+    const maxB = Math.max(1, ...curve.map(c => Math.abs(c[1])));
+    const cB = (xB0 + xB1) / 2, hb = (xB1 - xB0) / 2 - 2, xb = (v) => cB + v / maxB * hb;
+    s += '<rect x="' + xB0 + '" y="' + T + '" width="' + (xB1 - xB0) + '" height="' + H + '" fill="rgba(255,255,255,.02)" rx="4"/>';
+    s += '<line x1="' + cB + '" x2="' + cB + '" y1="' + T + '" y2="' + (T + H) + '" stroke="#2a3346"/>';
+    if(curve.length > 1){
+      const pts = curve.map(c => xb(c[1]).toFixed(1) + ',' + y(c[0]).toFixed(1));
+      const area = 'M' + cB + ',' + y(curve[0][0]).toFixed(1) + ' L' + pts.join(' L') + ' L' + cB + ',' + y(curve[curve.length - 1][0]).toFixed(1) + 'Z';
+      s += '<clipPath id="gexClipP"><rect x="' + cB + '" y="' + T + '" width="' + (xB1 - cB) + '" height="' + H + '"/></clipPath><clipPath id="gexClipN"><rect x="' + xB0 + '" y="' + T + '" width="' + (cB - xB0) + '" height="' + H + '"/></clipPath>';
+      s += '<path d="' + area + '" fill="var(--green)" opacity=".28" clip-path="url(#gexClipP)"/><path d="' + area + '" fill="var(--red)" opacity=".28" clip-path="url(#gexClipN)"/>';
+      s += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#cfd6e4" stroke-width="1.4"/>';
+      s += '<text x="' + (cB - 4) + '" y="' + (T + H - 4) + '" fill="#e46a72" text-anchor="end" font-size="9">' + tr('← เร่ง', '← amplify') + '</text><text x="' + (cB + 4) + '" y="' + (T + H - 4) + '" fill="#5ac492" font-size="9">' + tr('หน่วง →', 'damp →') + '</text>';
+    }
+    // reference lines
+    if(isNum(g.putWall) && g.putWall >= lo && g.putWall <= hi) s += hLine(L, xA1, y(g.putWall), '#e46a72', '2 3', 'Put wall ' + kLbl(g.putWall), 'r', W);
+    if(isNum(g.callWall) && g.callWall >= lo && g.callWall <= hi) s += hLine(L, xA1, y(g.callWall), '#5ac492', '2 3', 'Call wall ' + kLbl(g.callWall), 'r', W);
+    if(isNum(g.zeroGamma) && g.zeroGamma >= lo && g.zeroGamma <= hi) s += hLine(L, W, y(g.zeroGamma), '#f4c95d', '6 4', 'Zero γ ' + kLbl(g.zeroGamma), 'r', W);
+    s += hLine(L, W, y(spot), '#ece6d8', '', tr('ราคา ', 'Price ') + kLbl(spot), 'r', W);
+    if(!rows.length) s += '<text x="' + (W / 2) + '" y="' + (Hh / 2) + '" fill="#8d95a6" text-anchor="middle">' + tr('ไม่มี strike ในช่วงนี้', 'No strikes in this range') + '</text>';
+    box.innerHTML = '<svg width="' + W + '" height="' + Hh + '" viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="' + tr('GEX ของ dealer แยกตาม strike และจุด zero gamma', 'Dealer GEX by strike and the zero-gamma level') + '">' + s + '</svg>';
+    gexState.geo = { lo, hi, T, H, rows, curve, W, Hh };
+  }
+  function gexHover(cx, cy){
+    const st = gexState.geo, wrap = el('gexWrap'), tip = el('gexHover');
+    if(!st || !wrap || !tip) return;
+    const r = wrap.getBoundingClientRect(), py = cy - r.top, px = cx - r.left;
+    if(py < st.T || py > st.T + st.H){ tip.hidden = true; return; }
+    const price = st.hi - (py - st.T) / st.H * (st.hi - st.lo);
+    let best = null; st.rows.forEach(rw => { if(!best || Math.abs(rw.k - price) < Math.abs(best.k - price)) best = rw; });
+    let cv = null; st.curve.forEach(c => { if(!cv || Math.abs(c[0] - price) < Math.abs(cv[0] - price)) cv = c; });
+    let h = '';
+    if(best) h += '<b>Strike ' + fmtPx(best.k) + '</b><br><span style="color:var(--green)">Call ' + fmtUsdBig(best.call) + '</span> · OI ' + best.callOi.toLocaleString('en-US') + ' BTC<br><span style="color:var(--red)">Put ' + fmtUsdBig(best.put) + '</span> · OI ' + best.putOi.toLocaleString('en-US') + ' BTC<br>' + tr('สุทธิ ', 'Net ') + fmtUsdBig(best.net) + tr(' ต่อ 1%', ' per 1%');
+    if(cv) h += '<br><span style="color:var(--sub)">' + tr('ถ้าราคาอยู่ที่ ', 'If price were ') + fmtPx(cv[0]) + ': ' + tr('GEX รวม ', 'total GEX ') + '</span><b style="color:' + (cv[1] >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmtUsdBig(cv[1]) + '</b>';
+    tip.innerHTML = h; tip.hidden = false;
+    const tw = tip.offsetWidth || 200, th = tip.offsetHeight || 80;
+    tip.style.left = Math.max(4, Math.min(r.width - tw - 4, px + (px > r.width / 2 ? -tw - 12 : 12))) + 'px';
+    tip.style.top = Math.max(4, Math.min(r.height - th - 4, py - th / 2)) + 'px';
+  }
+  async function fetchOptionsGex(force){
+    if(gexState.loading) return;
+    if(!force && gexState.data && Date.now() - gexState.at < 4 * 60 * 1000) return;
+    gexState.loading = true;
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/options-gex', 12000);
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      if(!d || !d.gex || !isNum(d.spot)) throw new Error('bad payload');
+      gexState.data = d; gexState.at = Date.now();
+      renderGexStats(d); renderGexChart(); renderRr(d);
+      if(vpState.data) renderVp();
+    }catch(e){
+      if(!gexState.data){
+        el('gexMeaning').textContent = tr('ดึงข้อมูล option จาก Deribit ไม่สำเร็จ ลองใหม่ภายหลัง', 'Could not load Deribit option data. Try again later.');
+        el('rrZone').textContent = tr('ดึงไม่สำเร็จ', 'Unavailable');
+      }
+    }finally{ gexState.loading = false; }
+  }
+
+  // ---------- Volume profile / VPOC (Binance BTCUSDT perp, สำรองด้วย OKX แล้ว Deribit) ----------
+  const VP_RANGES = {
+    '1d': { binance: '5m', n: 288, okx: '5m', on: 288, deribit: 5, days: 1, th: '1 วัน', en: '1 day' },
+    '7d': { binance: '15m', n: 672, okx: '1H', on: 168, deribit: 15, days: 7, th: '7 วัน', en: '7 days' },
+    '30d': { binance: '1h', n: 720, okx: '4H', on: 180, deribit: 60, days: 30, th: '30 วัน', en: '30 days' }
+  };
+  const vpState = { r: '7d', cache: {}, data: null, loading: false };
+  function niceStep(raw){
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    return [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw) || raw;
+  }
+  // candles [{h,l,c,vol,buy}] → bins of equal price width; each candle's volume spread evenly over its high–low
+  function buildVolumeProfile(candles, target){
+    const cs = (candles || []).filter(k => k.h > 0 && k.l > 0 && k.h >= k.l && k.vol > 0);
+    if(cs.length < 10) return null;
+    let lo = Infinity, hi = -Infinity, tot = 0;
+    cs.forEach(k => { if(k.l < lo) lo = k.l; if(k.h > hi) hi = k.h; });
+    const step = niceStep((hi - lo) / (target || 70));
+    const base = Math.floor(lo / step) * step, n = Math.max(1, Math.ceil((hi - base) / step));
+    const bins = Array.from({ length: n }, (_, i) => ({ lo: base + i * step, hi: base + (i + 1) * step, vol: 0, buy: 0 }));
+    let buyKnown = false;
+    cs.forEach(function(k){
+      const bShare = isNum(k.buy) && k.vol > 0 ? Math.max(0, Math.min(1, k.buy / k.vol)) : null;
+      if(bShare != null) buyKnown = true;
+      const i0 = Math.min(n - 1, Math.floor((k.l - base) / step)), i1 = Math.min(n - 1, Math.floor((k.h - base) / step));
+      const span = k.h - k.l;
+      for(let i = i0; i <= i1; i++){
+        const part = span > 0 ? (Math.min(k.h, bins[i].hi) - Math.max(k.l, bins[i].lo)) / span : 1 / (i1 - i0 + 1);
+        if(part <= 0) continue;
+        const v = k.vol * part;
+        bins[i].vol += v; if(bShare != null) bins[i].buy += v * bShare;
+      }
+      tot += k.vol;
+    });
+    let poc = 0; bins.forEach((b, i) => { if(b.vol > bins[poc].vol) poc = i; });
+    // value area: grow from the POC toward whichever neighbour has more volume until 70% is inside
+    let a = poc, b = poc, inside = bins[poc].vol;
+    while(inside < tot * 0.7 && (a > 0 || b < n - 1)){
+      const up = b < n - 1 ? bins[b + 1].vol : -1, dn = a > 0 ? bins[a - 1].vol : -1;
+      if(up >= dn){ b++; inside += up; } else { a--; inside += dn; }
+    }
+    return { bins, step, poc: (bins[poc].lo + bins[poc].hi) / 2, pocIdx: poc, vaLo: a, vaHi: b, vah: bins[b].hi, val: bins[a].lo, total: tot, buyKnown, last: cs[cs.length - 1].c, from: cs[0].t, to: cs[cs.length - 1].t };
+  }
+  async function fetchVpCandles(r){
+    const c = VP_RANGES[r];
+    try{
+      const k = parseBinanceKlines(await liqJson('https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=' + c.binance + '&limit=' + c.n, 9000));
+      if(k.length >= 10) return { candles: k, src: 'Binance BTCUSDT perp · ' + c.binance };
+    }catch(e){}
+    try{
+      const o = parseOkxCandles(await liqJson('https://www.okx.com/api/v5/market/candles?instId=BTC-USDT-SWAP&bar=' + c.okx + '&limit=' + c.on, 9000));
+      if(o.length >= 10) return { candles: o, src: 'OKX BTC-USDT-SWAP · ' + c.okx };
+    }catch(e){}
+    const now = Date.now(), d = parseDeribitChart(await liqJson('https://www.deribit.com/api/v2/public/get_tradingview_chart_data?instrument_name=BTC-PERPETUAL&resolution=' + c.deribit + '&start_timestamp=' + (now - c.days * 86400000) + '&end_timestamp=' + now, 9000));
+    if(d.length < 10) throw new Error('no candles');
+    return { candles: d, src: 'Deribit BTC-PERPETUAL · ' + c.deribit + 'm' };
+  }
+  // Deribit chart data (column arrays; cost = USD volume) → the same candle shape as parseBinanceKlines
+  function parseDeribitChart(j){
+    const r = (j && j.result) || {};
+    return (r.ticks || []).map((t, i) => ({ t: +t, h: +r.high[i], l: +r.low[i], c: +r.close[i], vol: +(r.cost && r.cost[i]) || 0, buy: null }))
+      .filter((k) => k.h > 0 && k.l > 0 && k.c > 0 && isFinite(k.t));
+  }
+  function vpMeaning(p, px){
+    const toPoc = p.poc / px - 1;
+    if(px > p.vah) return ['pos', '🟢 <b>' + tr('ราคาอยู่เหนือ value area', 'Price is above the value area') + '</b>: ' + tr('ตลาดกำลังลองราคาที่สูงขึ้น ถ้ายืนเหนือ VAH ' + fmtPx(p.vah) + ' ได้ ขอบนี้มักกลายเป็นแนวรับ ถ้าหลุดกลับเข้ามา มักย้อนไปหา VPOC ' + fmtPx(p.poc) + ' (' + fmtSignPct(toPoc) + ')', 'the market is testing higher prices. If it holds above the VAH at ' + fmtPx(p.vah) + ', that edge often turns into support; if it slips back inside, it often rotates to the VPOC at ' + fmtPx(p.poc) + ' (' + fmtSignPct(toPoc) + ').')];
+    if(px < p.val) return ['neg', '🔴 <b>' + tr('ราคาอยู่ใต้ value area', 'Price is below the value area') + '</b>: ' + tr('ผู้ขายคุมเกม ตลาดกำลังลองราคาที่ต่ำลง VAL ' + fmtPx(p.val) + ' มักกลายเป็นแนวต้าน ถ้ากลับขึ้นไปยืนในกรอบได้ มักวิ่งไปหา VPOC ' + fmtPx(p.poc) + ' (' + fmtSignPct(toPoc) + ')', 'sellers are in control and the market is testing lower prices. The VAL at ' + fmtPx(p.val) + ' often becomes resistance; if price gets back inside, it often runs to the VPOC at ' + fmtPx(p.poc) + ' (' + fmtSignPct(toPoc) + ').')];
+    return ['mid', '🔵 <b>' + tr('ราคาอยู่ใน value area', 'Price is inside the value area') + '</b>: ' + tr('ตลาดสมดุล มักแกว่งระหว่าง VAL ' + fmtPx(p.val) + ' ถึง VAH ' + fmtPx(p.vah) + ' โดยมี VPOC ' + fmtPx(p.poc) + ' (' + fmtSignPct(toPoc) + ') เป็นแม่เหล็ก ถ้าหลุดขอบไหนแล้วยืนได้ มักวิ่งต่อไปทางนั้น', 'a balanced market that tends to rotate between the VAL at ' + fmtPx(p.val) + ' and the VAH at ' + fmtPx(p.vah) + ', with the VPOC at ' + fmtPx(p.poc) + ' (' + fmtSignPct(toPoc) + ') as the magnet. A break that holds outside either edge tends to keep going.')];
+  }
+  function renderVp(){
+    const st = vpState.data, box = el('vpChart'), wrap = el('vpWrap');
+    if(!st || !box || !wrap) return;
+    const p = st.p, px = p.last;
+    el('vpPx').textContent = fmtPx(px);
+    el('vpPxSub').textContent = tr(VP_RANGES[vpState.r].th + ' ล่าสุด', 'last ' + VP_RANGES[vpState.r].en);
+    el('vpPoc').textContent = fmtPx(p.poc); el('vpPocSub').textContent = fmtSignPct(p.poc / px - 1) + tr(' จากราคา', ' from price');
+    el('vpVah').textContent = fmtPx(p.vah); el('vpVahSub').textContent = fmtSignPct(p.vah / px - 1) + tr(' จากราคา', ' from price');
+    el('vpVal').textContent = fmtPx(p.val); el('vpValSub').textContent = fmtSignPct(p.val / px - 1) + tr(' จากราคา', ' from price');
+    const m = vpMeaning(p, px);
+    el('vpMeaning').className = 'gex-meaning ' + m[0]; el('vpMeaning').innerHTML = m[1];
+    el('vpSrc').textContent = st.src + ' · ' + tr('ช่องละ ', 'bin ') + fmtPx(p.step) + ' · ' + tr('volume รวม ', 'total volume ') + fmtUsdBig(p.total);
+    const W = wrap.clientWidth, Hh = wrap.clientHeight;
+    if(!W || !Hh) return;
+    const bins = p.bins, lo = bins[0].lo, hi = bins[bins.length - 1].hi;
+    const L = W < 520 ? 46 : 58, T = 10, B = 10, H = Hh - T - B, xR = W - (W < 520 ? 70 : 96);
+    const ax = priceAxis(lo, hi, T, H), y = ax.y, maxV = Math.max(...bins.map(b => b.vol)) || 1;
+    let s = '';
+    ax.ticks.forEach(t => { s += '<line x1="' + L + '" x2="' + W + '" y1="' + y(t).toFixed(1) + '" y2="' + y(t).toFixed(1) + '" stroke="#161d2b"/><text x="' + (L - 6) + '" y="' + (y(t) + 3.5).toFixed(1) + '" fill="#8d95a6" text-anchor="end">' + kLbl(t) + '</text>'; });
+    bins.forEach(function(b, i){
+      const y0 = y(b.hi) + 0.4, h = Math.max(0.8, y(b.lo) - y(b.hi) - 0.8), w = b.vol / maxV * (xR - L - 6);
+      const inVa = i >= p.vaLo && i <= p.vaHi, isPoc = i === p.pocIdx;
+      const col = isPoc ? '#f4c95d' : inVa ? '#5aa7e0' : '#3a4356';
+      if(p.buyKnown && b.vol > 0 && !isPoc){
+        const wb = w * (b.buy / b.vol);
+        s += '<rect x="' + (L + 2) + '" y="' + y0.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + col + '" opacity="' + (inVa ? .9 : .8) + '"/>'
+          + '<rect x="' + (L + 2) + '" y="' + (y0 + h - Math.max(1, h * 0.28)).toFixed(1) + '" width="' + wb.toFixed(1) + '" height="' + Math.max(1, h * 0.28).toFixed(1) + '" fill="var(--green)" opacity=".75"/>'
+          + '<rect x="' + (L + 2 + wb).toFixed(1) + '" y="' + (y0 + h - Math.max(1, h * 0.28)).toFixed(1) + '" width="' + (w - wb).toFixed(1) + '" height="' + Math.max(1, h * 0.28).toFixed(1) + '" fill="var(--red)" opacity=".6"/>';
+      }else s += '<rect x="' + (L + 2) + '" y="' + y0.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + col + '"/>';
+    });
+    s += '<rect x="' + L + '" y="' + y(p.vah).toFixed(1) + '" width="' + (W - L) + '" height="' + (y(p.val) - y(p.vah)).toFixed(1) + '" fill="rgba(90,167,224,.05)"/>';
+    s += hLine(L, W, y(p.vah), '#5aa7e0', '3 3', 'VAH ' + kLbl(p.vah), 'r', W);
+    s += hLine(L, W, y(p.val), '#5aa7e0', '3 3', 'VAL ' + kLbl(p.val), 'r', W);
+    const zg = gexState.data && gexState.data.gex && gexState.data.gex.zeroGamma;
+    if(isNum(zg) && zg >= lo && zg <= hi) s += hLine(L, W, y(zg), '#f4c95d', '6 4', 'Zero γ ' + kLbl(zg), 'r', W);
+    s += hLine(L, W, y(p.poc), '#f4c95d', '', 'VPOC ' + kLbl(p.poc), 'r', W);
+    s += hLine(L, W, y(px), '#ece6d8', '', tr('ราคา ', 'Price ') + kLbl(px), 'r', W);
+    box.innerHTML = '<svg width="' + W + '" height="' + Hh + '" viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="' + tr('Volume profile ของ BTC และ VPOC', 'BTC volume profile and VPOC') + '">' + s + '</svg>';
+    st.geo = { lo, hi, T, H };
+  }
+  function vpHover(cx, cy){
+    const st = vpState.data, wrap = el('vpWrap'), tip = el('vpHover');
+    if(!st || !st.geo || !wrap || !tip) return;
+    const r = wrap.getBoundingClientRect(), py = cy - r.top, px = cx - r.left, G = st.geo;
+    if(py < G.T || py > G.T + G.H){ tip.hidden = true; return; }
+    const price = G.hi - (py - G.T) / G.H * (G.hi - G.lo);
+    const b = st.p.bins.find(x => price >= x.lo && price < x.hi) || st.p.bins[st.p.bins.length - 1];
+    const share = b.vol / st.p.total;
+    tip.innerHTML = '<b>' + fmtPx(b.lo) + ' – ' + fmtPx(b.hi) + '</b><br>Volume ' + fmtUsdBig(b.vol) + ' (' + (share * 100).toFixed(1) + '%)'
+      + (st.p.buyKnown && b.vol > 0 ? '<br><span style="color:var(--green)">' + tr('ซื้อ ', 'Buy ') + Math.round(b.buy / b.vol * 100) + '%</span> · <span style="color:var(--red)">' + tr('ขาย ', 'Sell ') + Math.round(100 - b.buy / b.vol * 100) + '%</span>' : '');
+    tip.hidden = false;
+    const tw = tip.offsetWidth || 180, th = tip.offsetHeight || 60;
+    tip.style.left = Math.max(4, Math.min(r.width - tw - 4, px + (px > r.width / 2 ? -tw - 12 : 12))) + 'px';
+    tip.style.top = Math.max(4, Math.min(r.height - th - 4, py - th / 2)) + 'px';
+  }
+  async function fetchVpoc(force){
+    const r = vpState.r, hit = vpState.cache[r];
+    if(!force && hit && Date.now() - hit.at < 5 * 60000){ vpState.data = hit; renderVp(); return; }
+    if(vpState.loading) return;
+    vpState.loading = true;
+    try{
+      const got = await fetchVpCandles(r);
+      const p = buildVolumeProfile(got.candles, r === '1d' ? 60 : 75);
+      if(!p) throw new Error('too few candles');
+      vpState.cache[r] = { p, src: got.src, at: Date.now() };
+      if(vpState.r === r){ vpState.data = vpState.cache[r]; renderVp(); }
+    }catch(e){
+      if(!vpState.data) el('vpMeaning').textContent = tr('ดึงแท่งเทียนจาก Binance/OKX/Deribit ไม่สำเร็จ ลองใหม่ภายหลัง', 'Could not load candles from Binance, OKX or Deribit. Try again later.');
+    }finally{ vpState.loading = false; }
+  }
+  (function wireOptionsAndVp(){
+    function wireRanges(id, attr, fn){
+      const g = el(id); if(!g) return;
+      g.addEventListener('click', (ev) => {
+        const btn = ev.target && ev.target.closest ? ev.target.closest('button[' + attr + ']') : null;
+        if(!btn) return;
+        g.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === btn));
+        fn(btn.getAttribute(attr));
+      });
+    }
+    wireRanges('gexRanges', 'data-band', (v) => { gexState.band = parseFloat(v) || 0.2; renderGexChart(); });
+    wireRanges('vpRanges', 'data-r', (v) => { vpState.r = VP_RANGES[v] ? v : '7d'; fetchVpoc(false); });
+    [['gexWrap', 'gexHover', gexHover, renderGexChart], ['vpWrap', 'vpHover', vpHover, renderVp]].forEach(function(row){
+      const wrap = el(row[0]); if(!wrap) return;
+      const tip = () => el(row[1]);
+      wrap.addEventListener('mousemove', (ev) => row[2](ev.clientX, ev.clientY));
+      wrap.addEventListener('mouseleave', () => { tip().hidden = true; });
+      let hideT = 0;
+      const onTouch = (ev) => { const t = ev.touches && ev.touches[0]; if(t){ row[2](t.clientX, t.clientY); clearTimeout(hideT); hideT = setTimeout(() => { tip().hidden = true; }, 2500); } };
+      wrap.addEventListener('touchstart', onTouch, { passive: true });
+      wrap.addEventListener('touchmove', onTouch, { passive: true });
+      // the ₿ tab may be hidden when data lands (width 0) → draw again whenever the box gets a size
+      let lastW = 0;
+      if(typeof ResizeObserver === 'function') new ResizeObserver(() => { const w = wrap.clientWidth; if(w && w !== lastW){ lastW = w; row[3](); } }).observe(wrap);
+      else window.addEventListener('resize', () => row[3]());
+    });
+  })();
+  setInterval(() => { if(document.body.classList.contains('theme-btc') && !document.hidden){ fetchOptionsGex(false); fetchVpoc(false); } }, 5 * 60 * 1000);
+  if(typeof window !== 'undefined') window.__optTest = { buildVolumeProfile, parseDeribitChart, rrZone, gexMeaning, niceStep, gexState, vpState };
+
   // ---------- BTC Spot ETF Flow (สหรัฐฯ รายวัน, US$ ล้าน) ----------
   // มาจาก /.netlify/functions/etf-flow เท่านั้น (Farside ไม่มี CORS และกันบอท ต้องดึงฝั่งเซิร์ฟเวอร์)
   // ข้อมูลออกวันละครั้งหลังตลาดสหรัฐฯ ปิด ไม่ใช่ real-time
@@ -7654,7 +8165,8 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     statusEl.textContent = tr('กำลังอัปเดต…', 'Updating…');
     const priceOk = await fetchPrice(); // must resolve first: OI conversion below needs a live price
     fetchLiqHeatmap(force); // not awaited: heavier, and the status line should not wait for it
-    const [metricsOk] = await Promise.all([fetchOnChainMetrics(force), fetchSentimentLeverage(), fetchHalvingCountdown(), fetchDvol(), fetchEtfFlow(), fetchStablecoins(), fetchRekt()]);
+    fetchVpoc(force);
+    const [metricsOk] = await Promise.all([fetchOnChainMetrics(force), fetchSentimentLeverage(), fetchHalvingCountdown(), fetchDvol(), fetchEtfFlow(), fetchStablecoins(), fetchRekt(), fetchOptionsGex(force)]);
     recompute();
     save();
     // บอกให้ชัดเมื่อค่าที่ใช้คำนวณไม่ใช่ราคาสด (ผู้ใช้พิมพ์เอง) — ไม่งั้นจะเข้าใจผิดว่าคะแนนมาจากราคาตลาด
