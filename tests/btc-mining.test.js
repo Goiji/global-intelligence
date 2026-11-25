@@ -178,7 +178,7 @@ test('index.html: miners panel sits in the BTC tab, above the halving countdown'
   const btc = HTML.indexOf('<section id="btcTab"'), mine = HTML.indexOf('id="mineCost"'), halving = HTML.indexOf('id="halvingDays"');
   assert.ok(btc > 0 && btc < mine && mine < halving);
   assert.match(HTML, /fetchRekt\(\), fetchMining\(\)\]\)/);
-  assert.match(HTML, /country-profiles\|btc-mining\)/, 'browser keeps a last good copy');
+  assert.match(HTML, /country-profiles\|btc-mining[|)]/, 'browser keeps a last good copy');
   assert.match(HTML, /cryptoquant\.com\/asset\/btc\/chart\/miner-flows\/miner-reserve/);
 });
 
