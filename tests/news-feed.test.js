@@ -130,7 +130,7 @@ test('publisher RSS fallback: Google 503 → topic feeds merged newest-first, de
 
 test('every topic key used by the page has publisher feeds', () => {
   const fs = require('node:fs');
-  const html = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
+  const html = require('../tools/stamp.js').readPage();
   const keys = [...html.matchAll(/\{ key:'(\w+)',\s+label:tr\([^)]*\),\s+q:/g)].map((m) => m[1]);
   assert.ok(keys.length >= 5, 'found the feed list');
   for (const k of keys) assert.ok(require('../netlify/functions/news-feed.js').__test.CATEGORY_FEEDS[k], 'feeds for ' + k);

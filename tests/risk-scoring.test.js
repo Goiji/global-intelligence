@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const html = require('../tools/stamp.js').readPage();
 const i = html.indexOf('  const HIGH_RISK_TERMS'), j = html.indexOf('  function scoreCategory(titles)');
 // eslint-disable-next-line no-new-func
 const api = new Function(html.slice(i, j) + '\nreturn { scoreHeadline, scoreCategoryDetail, isOffTopic };')();

@@ -7,7 +7,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const ROOT = path.join(__dirname, '..');
-const HTML = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+// index.html with js/*.js put back inline (see tools/stamp.js), i.e. the page as the browser runs it
+const HTML = require('../tools/stamp.js').readPage();
 const SCRIPTS = [...HTML.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
 
 function makeElement(id) {
