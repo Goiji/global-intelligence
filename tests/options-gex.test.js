@@ -150,7 +150,7 @@ test('index.html: GEX panel, RR tile and VPOC panel on the BTC tab, wired to the
   assert.ok(btc > 0 && HTML.indexOf('id="dvolNum"') < HTML.indexOf('id="rrNum"') && HTML.indexOf('id="rrNum"') < HTML.indexOf('id="stableNum"'));
   assert.ok(HTML.indexOf('id="rektGrid"') < HTML.indexOf('id="gexChart"') && HTML.indexOf('id="gexChart"') < HTML.indexOf('id="vpChart"') && HTML.indexOf('id="vpChart"') < HTML.indexOf('id="halvingDays"'));
   assert.ok(btc < HTML.indexOf('id="gexChart"'));
-  assert.match(HTML, /fetchRekt\(\), fetchOptionsGex\(force\)\]/);
+  assert.match(HTML, /fetchOptionsGex\(force\), fetchRekt\(\), fetchMining\(\)\]/);
   assert.match(HTML, /fetchVpoc\(force\);/);
   assert.match(HTML, /\/\.netlify\/functions\/options-gex/);
   assert.match(HTML, /aria-label="GEX คืออะไร" data-en-aria="What is GEX\?"/);

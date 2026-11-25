@@ -46,7 +46,7 @@
 // เพราะพวกนั้นมีแหล่งสำรองสดของตัวเองที่ดีกว่าราคาเก่า และไม่ใช้กับ visitors (เขียนข้อมูล)
 (function(){
   if(typeof window === 'undefined' || typeof window.fetch !== 'function' || typeof Response !== 'function') return;
-  var CACHED = /^\/\.netlify\/functions\/(fred-data|markets|econ-extra|consensus|calendar|etf-flow|stablecoins|news-feed|capital-markets|country-profiles)\/?(\?|$)/;
+  var CACHED = /^\/\.netlify\/functions\/(fred-data|markets|econ-extra|consensus|calendar|etf-flow|stablecoins|news-feed|capital-markets|country-profiles|btc-mining|us-gainers)\/?(\?|$)/;
   var MAX_AGE = 3 * 86400000;
   var orig = window.fetch.bind(window);
   window.fetch = function(input, init){
@@ -402,6 +402,27 @@ body{margin:0}
   #btcTab .sl-num{font-family:var(--disp); font-size:26px; font-weight:700; margin-top:6px;}
   #btcTab .sl-sub{font-size:11px; color:var(--sub); margin-top:4px;}
 
+  /* ---------- miners: cost to mine 1 BTC + are miners selling? ---------- */
+  #btcTab .mine-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px;}
+  @media (max-width:800px){ #btcTab .mine-grid{grid-template-columns:minmax(0,1fr);} }
+  #btcTab .mine-tile{display:flex; flex-direction:column; min-width:0;}
+  #btcTab .mine-verdict{font-size:20px; line-height:1.3;}
+  #btcTab .mine-scale{position:relative; height:34px; margin:12px 0 2px;}
+  #btcTab .mine-scale .bar{position:absolute; left:0; right:0; top:8px; height:6px; border-radius:3px; background:linear-gradient(90deg,var(--red) 0 var(--e),#e8894a var(--e) var(--a),var(--green) var(--a) 100%); opacity:.55;}
+  #btcTab .mine-scale .pin{position:absolute; top:3px; width:3px; height:16px; border-radius:2px; transform:translateX(-50%); background:var(--text);}
+  #btcTab .mine-scale .pin.px{width:12px; height:12px; top:5px; border-radius:50%; border:2px solid #06080e; box-shadow:0 0 0 1px var(--text);}
+  #btcTab .mine-scale .lbl{position:absolute; top:21px; font-size:10px; color:var(--sub); white-space:nowrap; transform:translateX(-50%);}
+  #btcTab .mine-scale .lbl.l0{transform:none;} #btcTab .mine-scale .lbl.l1{transform:translateX(-100%);}
+  #btcTab .mine-inputs{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;}
+  #btcTab .mine-inputs label{display:flex; flex-direction:column; gap:3px; font-size:10px; color:var(--sub);}
+  #btcTab .mine-inputs input{width:96px; background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--text); font-family:var(--mono); font-size:13px; padding:5px 8px;}
+  #btcTab .mine-sigs{display:flex; flex-direction:column; gap:5px; margin-top:10px; font-size:12px;}
+  #btcTab .mine-sigs div{display:flex; justify-content:space-between; gap:10px; border-bottom:1px dashed var(--line); padding-bottom:4px;}
+  #btcTab .mine-sigs span{color:var(--sub);} #btcTab .mine-sigs b{font-weight:600; text-align:right;}
+  #btcTab .mine-ribbon{margin-top:10px;}
+  #btcTab .mine-ribbon svg{display:block; width:100%; height:56px;}
+  #btcTab .mine-ribbon .spark-cap{font-size:10px; color:var(--muted); margin-top:2px; display:flex; justify-content:space-between;}
+
   /* ---------- halving countdown ---------- */
   #btcTab .halving-panel{display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;}
   #btcTab .halving-days{font-family:var(--disp); font-size:56px; font-weight:700; line-height:1; color:var(--amber);}
@@ -572,6 +593,28 @@ body{margin:0}
   /* ขนาดตลาดทุนโลก: แถบสัดส่วนรวมด้านบน + กล่องละประเภท (หุ้น/ตราสารหนี้/ทอง/คริปโต) แต่ละกล่องมีแท่งรายประเทศ
      สีโทนเดียวกับเว็บ (กรมท่า + ทอง) ไล่เฉดอ่อน ๆ ต่อประเภท แท่งรายประเทศเทียบกับยอดรวมของกลุ่มตัวเอง */
   #capMarketsCard{--cm-bonds:#8ea2ff;--cm-bonds2:#b9c5ff;--cm-equities:#4cc9b0;--cm-equities2:#8fe3d2;--cm-gold:#d4b26a;--cm-gold2:#f1dba1;--cm-crypto:#ef9a62;--cm-crypto2:#f8c39d}
+  /* หุ้นสหรัฐบวกแรงสุด: ปุ่มช่วงเวลา + 2 คอลัมน์ (จอกว้าง) แต่ละแถว = อันดับ · ชื่อ · แท่งเทียบตัวที่บวกมากสุด · % */
+  #usGainCard{--ug-hi:#45d483;--ug-lo:#1f7a55}
+  .ug-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:-2px 0 12px}
+  .ug-sub{font-size:12px;color:var(--muted);line-height:1.5}
+  .ug-seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:3px;gap:2px}
+  .ug-seg button{background:none;border:0;color:var(--muted);font:inherit;font-size:12px;font-weight:700;padding:5px 12px;border-radius:99px;cursor:pointer}
+  .ug-seg button[aria-pressed="true"]{background:var(--ug-hi);color:#06261a}
+  .ug-seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .ug-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 28px;list-style:none;margin:0;padding:0;counter-reset:none}
+  .ug-row{display:grid;grid-template-columns:24px minmax(0,7.5em) minmax(0,1fr) 4.6em;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line-soft,rgba(255,255,255,.06))}
+  .ug-rank{font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+  .ug-row.ug-top .ug-rank{color:var(--ug-hi);font-weight:800}
+  .ug-id{min-width:0}
+  .ug-id b{display:block;font-size:13.5px;color:var(--text);letter-spacing:.01em}
+  .ug-id small{display:block;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ug-track{height:10px;border-radius:99px;background:rgba(255,255,255,.05);overflow:hidden}
+  .ug-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ug-lo),var(--ug-hi));min-width:2px}
+  .ug-row:not(.ug-top) .ug-fill{opacity:.62}
+  .ug-pct{text-align:right;font-weight:800;font-size:13.5px;color:var(--good,#45d483);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ug-pct.neg{color:var(--bad,#ff6577)}
+  .ug-row .ug-px{display:block;font-size:10.5px;font-weight:500;color:var(--muted)}
+  @media(max-width:800px){.ug-list{grid-template-columns:1fr}.ug-row{grid-template-columns:22px minmax(0,6.6em) minmax(0,1fr) 4.4em;gap:8px}}
   .cm-total{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:-4px 0 12px;color:var(--muted);font-size:12.5px}
   .cm-total b{color:var(--text);font-size:28px;font-weight:850;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
   .cm-stack{display:flex;gap:3px;height:14px;border-radius:99px;overflow:hidden;background:rgba(255,255,255,.04)}
@@ -911,6 +954,19 @@ body{margin:0}
     </div>
   </div></div></div><div class="num" id="mkOvx">–</div><div class="spark" id="spOvx"></div><div class="zone" id="mkOvxZone"></div>
     <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=CBOE%3AOVX" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
+  <div class="metric mkt"><div class="name"><span data-en="High-yield bond spread">ส่วนต่างหุ้นกู้ขยะ (HY)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="HY spread คืออะไร" data-en-aria="What is the high-yield spread?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+    <div class="i18n-th">
+    <p><b>ICE BofA US High Yield OAS</b> คือผลตอบแทนส่วนเพิ่มที่หุ้นกู้บริษัทสหรัฐฯ เกรดต่ำกว่าลงทุน (high yield หรือ "junk bond") ต้องจ่ายเหนือพันธบัตรรัฐบาลอายุเท่ากัน หลังปรับผลของสิทธิไถ่ถอนก่อนกำหนดแล้ว (option-adjusted) ข้อมูลจาก FRED ซีรีส์ BAMLH0A0HYM2 ราคาปิดรายวัน</p>
+    <p><b>อ่านค่า:</b> 🟢 ต่ำกว่า 3.5% สบาย · 🟡 3.5–5% ปกติ · 🟠 5–7% ตึงตัว · 🔴 7% ขึ้นไป วิกฤตสินเชื่อ (โควิด มี.ค. 2020 ราว 8.7% · วิกฤตการเงิน ธ.ค. 2008 เกิน 20%) ถ้าต่ำกว่า 3% แปลว่าตลาดแทบไม่คิดค่าความเสี่ยง ซึ่งมักเป็นช่วงที่นักลงทุนประมาท</p>
+    <p><b>ทำไมสำคัญ:</b> เป็นราคาความเสี่ยงผิดนัดชำระหนี้ที่นักลงทุนตราสารหนี้ให้จริง spread ถ่างเร็ว = เจ้าหนี้เริ่มกลัว บริษัทกู้ยากขึ้น มักมาก่อนหรือพร้อมกับหุ้นร่วงและ VIX พุ่ง ดูทิศทางสำคัญกว่าระดับ: ถ่างขึ้นเกิน 1 จุด (100 bp) ในเดือนเดียวคือสัญญาณเตือนชัด</p>
+    </div>
+    <div class="i18n-en" lang="en">
+    <p><b>ICE BofA US High Yield OAS</b> is the extra yield that US companies rated below investment grade ("junk bonds") pay over Treasuries of the same maturity, adjusted for call options (option-adjusted). From FRED series BAMLH0A0HYM2, daily close.</p>
+    <p><b>How to read it:</b> 🟢 below 3.5% easy · 🟡 3.5–5% normal · 🟠 5–7% tight · 🔴 7% and up credit stress (about 8.7% in the March 2020 Covid crash, above 20% in December 2008). Below 3% means the market is charging almost nothing for default risk, which tends to happen when investors are complacent.</p>
+    <p><b>Why it matters:</b> it is the price bond investors actually charge for default risk. A fast widening = lenders are getting scared and companies find it harder to borrow, which tends to come before or alongside falling stocks and a VIX spike. The direction matters more than the level: widening by more than 1 point (100 bp) in a month is a clear warning.</p>
+    </div>
+  </div></div></div><div class="num" id="mkHy">–</div><div class="spark" id="spHy"></div><div class="zone" id="mkHyZone"></div>
+    <a class="tv-btn" href="https://www.tradingview.com/chart/?symbol=FRED%3ABAMLH0A0HYM2" target="_blank" rel="noopener noreferrer"><span data-en="Open in TradingView ↗">เปิดใน TradingView ↗</span></a></div>
   <div class="metric mkt"><div class="name"><span data-en="SOFR − IORB (repo market)">SOFR − IORB (ตลาด repo)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="SOFR − IORB คืออะไร" data-en-aria="What is SOFR − IORB?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
     <div class="i18n-th">
     <p><b>SOFR</b> = ดอกเบี้ยกู้ข้ามคืนโดยเอาพันธบัตรสหรัฐฯ ค้ำ (ตลาด repo) คือต้นทุนเงินสดจริงในระบบ · <b>IORB</b> = ดอกเบี้ยที่ Fed จ่ายให้เงินสำรองที่ธนาคารฝากไว้</p>
@@ -3298,6 +3354,22 @@ window.setHeaderStamp();
     return out;
   }
   window.vixZone = vixZone; window.vixMonthAgo = vixMonthAgo;   // tests
+  // HY OAS (%): โซนสีเดียวกับคำอธิบายใน tooltip ของการ์ด
+  function hyZone(v){
+    if(v >= 7) return tr('🔴 วิกฤตสินเชื่อ', '🔴 Credit stress');
+    if(v >= 5) return tr('🟠 ตึงตัว', '🟠 Tight');
+    if(v >= 3.5) return tr('🟡 ปกติ', '🟡 Normal');
+    if(v < 3) return tr('🟢 แคบมาก · ตลาดอาจประมาท', '🟢 Very tight · possibly complacent');
+    return tr('🟢 สบาย', '🟢 Easy');
+  }
+  // ส่วนต่างเปลี่ยนไปเท่าไรใน ~1 เดือน (หน่วย %) จากจุดในกราฟที่ห่างจากวันล่าสุดราว 30 วัน
+  function hyChange1m(s){
+    if(!s || !s.hist || !s.hist.length || !s.date) return null;
+    const cut = new Date(new Date(s.date + 'T00:00:00Z').getTime() - 30 * 86400000).toISOString().slice(0, 10);
+    let ref = null;
+    for(const p of s.hist){ if(p[0] <= cut) ref = p; else break; }
+    return ref && isValidNum(ref[1]) ? s.latest - ref[1] : null;
+  }
   function setSpark(id, series, opts){
     const box = el(id);
     if(!box || !series || !series.hist) return;
@@ -3538,6 +3610,15 @@ window.setHeaderStamp();
         el('mkMove').innerHTML = esc(m.toFixed(2)) + (isValidNum(S.move.change) ? '<span class="delta ' + (S.move.change > 0 ? 'down' : S.move.change < 0 ? 'up' : 'flat') + '">' + (S.move.change > 0 ? '+' : '') + S.move.change.toFixed(2) + '</span>' : '');
         el('mkMoveZone').textContent = (m >= 140 ? tr('🔴 บอนด์ตึงเครียด', '🔴 Bond stress') : m >= 110 ? tr('🟠 กังวล', '🟠 Worried') : m >= 80 ? tr('🟡 ปกติ', '🟡 Normal') : tr('🟢 สงบ', '🟢 Calm')) + tr(' · ปิด ', ' · close ') + thDay(S.move.date);
         setSpark('spMove', S.move, { upIsBad:true, dec:0 });
+      }
+      // HY OAS: ส่วนต่างหุ้นกู้ขยะเหนือบอนด์รัฐบาล (ราคาความเสี่ยงผิดนัดชำระหนี้)
+      if(S.hyOas && isValidNum(S.hyOas.latest)){
+        const h = S.hyOas, z = hyZone(h.latest), m1 = hyChange1m(h);
+        el('mkHy').innerHTML = esc(h.latest.toFixed(2)) + '%' + (isValidNum(h.change) ? '<span class="delta ' + (h.change > 0 ? 'down' : h.change < 0 ? 'up' : 'flat') + '">' + (h.change > 0 ? '+' : '') + Math.round(h.change * 100) + ' bp</span>' : '');
+        el('mkHyZone').innerHTML = esc(z)
+          + (m1 == null ? '' : '<br>' + esc(tr('1 เดือน ', '1 month ') + (m1 > 0 ? '+' : '') + Math.round(m1 * 100) + ' bp' + (m1 >= 1 ? tr(' ⚠️ ถ่างเร็ว', ' ⚠️ widening fast') : '')))
+          + '<br>' + esc(tr('ปิด ', 'close ') + thDay(h.date));
+        setSpark('spHy', h, { upIsBad:true, dec:2 });
       }
       // OVX: ความผันผวนน้ำมัน (VIX ของน้ำมันดิบ WTI)
       if(S.ovx && isValidNum(S.ovx.latest)){
@@ -3880,6 +3961,68 @@ window.setHeaderStamp();
     if(Date.now() >= cmProfNextAt) fetchCountryProfiles();
   }, 60 * 1000);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden && Date.now() >= cmNextAt) fetchCapMarkets(); });
+
+  // ---------- หุ้นสหรัฐบวกแรงสุด 20 อันดับ (แท็บตลาดทุนโลก) ----------
+  // /.netlify/functions/us-gainers ส่ง % เปลี่ยนของทุกช่วงเวลามาในคำตอบเดียว หน้าเว็บจัดอันดับเองตามปุ่มที่เลือก
+  var ugData = null, ugPeriod = '1d', ugNextAt = 0;
+  const UG_POLL_MS = 15 * 60 * 1000;
+  const UG_LABEL = { '1d': tr('วันทำการล่าสุด', 'latest session'), '1w': tr('1 สัปดาห์', '1 week'), '1m': tr('1 เดือน', '1 month'), '3m': tr('3 เดือน', '3 months'), 'ytd': tr('ตั้งแต่ต้นปี', 'year to date') };
+  try{ const saved = localStorage.getItem('gi-ug-period'); if(saved && UG_LABEL[saved]) ugPeriod = saved; }catch(e){}
+
+  // แถวที่บวกมากสุด n ตัวของช่วงเวลา p (ข้ามหุ้นที่ยังเข้าตลาดไม่ถึงช่วงนั้น)
+  function usGainersTop(rows, p, n){
+    return (rows || []).filter((r) => r && r.r && isValidNum(r.r[p])).sort((a, b) => b.r[p] - a.r[p]).slice(0, n || 20);
+  }
+  function fmtUgPct(v){
+    const a = Math.abs(v), t = a >= 100 ? a.toFixed(0) : a.toFixed(1);
+    return (v > 0 ? '+' : v < 0 ? '−' : '') + t + '%';
+  }
+  function renderUsGainers(){
+    const j = ugData;
+    document.querySelectorAll('#ugSeg button').forEach(function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-p') === ugPeriod)); });
+    if(!j || !j.rows) return;
+    const top = usGainersTop(j.rows, ugPeriod, 20);
+    const max = Math.max.apply(null, top.map((r) => r.r[ugPeriod]).concat([0.0001]));
+    el('ugList').innerHTML = top.map(function(r, i){
+      const v = r.r[ugPeriod], w = v > 0 ? Math.max(1.5, v / max * 100) : 0;
+      return '<li class="ug-row' + (i < 3 ? ' ug-top' : '') + '"><span class="ug-rank">' + (i + 1) + '</span>'
+        + '<span class="ug-id"><b>' + esc(r.s) + '</b><small title="' + esc(r.n) + '">' + esc(r.n) + '</small></span>'
+        + '<span class="ug-track" aria-hidden="true"><span class="ug-fill" style="display:block;width:' + w.toFixed(1) + '%"></span></span>'
+        + '<span class="ug-pct' + (v < 0 ? ' neg' : '') + '">' + fmtUgPct(v) + (isValidNum(r.p) ? '<span class="ug-px">$' + esc(r.p.toLocaleString('en-US', { maximumFractionDigits: 2 })) + '</span>' : '') + '</span></li>';
+    }).join('');
+    const ranked = j.rows.filter((r) => r && r.r && isValidNum(r.r[ugPeriod])).length;
+    el('ugSub').textContent = tr('ผลตอบแทน', 'Return over ') + UG_LABEL[ugPeriod] + tr(' · ราคาถึง ', ' · prices to ') + thDay(j.asOf) + tr(' · จัดอันดับจาก ', ' · ranked from ') + ranked + tr(' หุ้น', ' stocks');
+    el('ugWarn').textContent = j.stale ? tr('⚠️ ดึงข้อมูลใหม่ไม่สำเร็จ แสดงข้อมูลล่าสุดที่มี', '⚠️ Could not refresh; showing the last data we have') : '';
+    el('ugNote').innerHTML = esc(tr(
+      'ราคาจาก Yahoo Finance (ราคาปิดรายวัน และราคาระหว่างวันช่วงตลาดเปิด ช้าราว 15 นาที) จัดอันดับจากหุ้นใหญ่และหุ้นยอดนิยมที่ซื้อขายในตลาดสหรัฐฯ ราว ' + (j.universe || 260) + ' ตัว (หุ้นใหญ่ใน S&P 500, Nasdaq, หุ้น AI/ชิป/คริปโต และหุ้นต่างชาติที่จดทะเบียนในสหรัฐฯ เช่น TSM) ไม่ใช่ทุกหุ้นในตลาด หุ้นเล็กที่ขึ้นแรงจึงไม่อยู่ในอันดับ · จุดเริ่มของแต่ละช่วง = ราคาปิดวันทำการสุดท้ายก่อนหรือตรงกับ 7 / 30 / 91 วันก่อน และวันทำการสุดท้ายของปีก่อนสำหรับ "ต้นปี" · หุ้นที่เพิ่งเข้าตลาดไม่ครบช่วงจะไม่ถูกนับในช่วงนั้น',
+      'Prices from Yahoo Finance (daily closes, plus the intraday price while the market is open, about 15 minutes delayed). Ranked from about ' + (j.universe || 260) + ' large and widely followed US-listed stocks (S&P 500 heavyweights, big Nasdaq names, AI, chip and crypto stocks, and foreign companies listed in the US such as TSM), not every stock in the market, so small caps that jump are not included. Each period starts at the last close on or before 7 / 30 / 91 days ago, and at the last trading day of last year for YTD. A stock listed after the start of a period is left out of that period.'));
+  }
+  async function fetchUsGainers(){
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/us-gainers', 15000);
+      const j = await r.json();
+      if(!j || !j.rows) throw new Error(j && j.error || 'HTTP ' + r.status);
+      ugData = j;
+      renderUsGainers();
+      ugNextAt = Date.now() + (isValidNum(j.ttl) && j.ttl > 0 ? Math.min(j.ttl * 1000, UG_POLL_MS) : UG_POLL_MS);
+    }catch(e){
+      console.warn('[us-gainers]', e);
+      if(!el('ugList').innerHTML) el('ugSub').textContent = tr('ดึงข้อมูลไม่สำเร็จ จะลองใหม่อัตโนมัติ', 'Unavailable right now. Retrying automatically.');
+      ugNextAt = Date.now() + 5 * 60 * 1000;
+    }
+  }
+  // สคริปต์นี้รันก่อนที่ markup ของแท็บตลาดทุนโลกจะมี จึงดักคลิกที่ document แทนการผูกกับปุ่มตรง ๆ
+  document.addEventListener('click', function(ev){
+    const b = ev.target && ev.target.closest ? ev.target.closest('#ugSeg button[data-p]') : null;
+    if(!b) return;
+    ugPeriod = b.getAttribute('data-p') || '1d';
+    try{ localStorage.setItem('gi-ug-period', ugPeriod); }catch(e){}
+    renderUsGainers();
+  });
+  window.__ugTest = { usGainersTop, fmtUgPct, renderUsGainers, setData: function(j, p){ ugData = j; if(p) ugPeriod = p; } };
+  renderUsGainers();
+  fetchUsGainers();
+  setInterval(function(){ if(!document.hidden && Date.now() >= ugNextAt) fetchUsGainers(); }, 60 * 1000);
 
   // ---------- ตัวเลขเศรษฐกิจเพิ่มเติม: บ้าน · ดอกเบี้ยบ้าน · ค้าปลีก · ISM · Breakeven ----------
   // ตัวเลขจริง + กราฟ 12 เดือนมาจาก /.netlify/functions/econ-extra (FRED + Investing.com + ISM)
@@ -4715,6 +4858,22 @@ window.setHeaderStamp();
 <div class="cm-rows" id="cmRows"></div>
 <div class="src-warn" id="cmWarn"></div>
 <details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div id="cmNote" class="muted"></div></details>
+</section>
+<section class="card full" id="usGainCard">
+<h2>🚀 <span data-en="Top 20 US stock gainers">หุ้นสหรัฐบวกแรงสุด 20 อันดับ</span> <span class="h-en" data-en="Biggest US-listed stocks">หุ้นใหญ่ที่ซื้อขายในสหรัฐฯ</span></h2>
+<div class="ug-head">
+  <div class="ug-sub" id="ugSub" data-en="Loading…">กำลังโหลด…</div>
+  <div class="ug-seg" id="ugSeg" role="group" aria-label="ช่วงเวลา" data-en-aria="Period">
+    <button type="button" data-p="1d" aria-pressed="true" title="1 วัน">1D</button>
+    <button type="button" data-p="1w" aria-pressed="false" title="1 สัปดาห์">1W</button>
+    <button type="button" data-p="1m" aria-pressed="false" title="1 เดือน">1M</button>
+    <button type="button" data-p="3m" aria-pressed="false" title="3 เดือน">3M</button>
+    <button type="button" data-p="ytd" aria-pressed="false" title="ต้นปี">YTD</button>
+  </div>
+</div>
+<ol class="ug-list" id="ugList"></ol>
+<div class="src-warn" id="ugWarn"></div>
+<details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div id="ugNote" class="muted"></div></details>
 </section>
 </main>
 </div>
@@ -6431,6 +6590,60 @@ window.setHeaderStamp();
       </div>
     </div>
 
+    <!-- MINERS: cost of production + are miners selling? (see fetchMining / netlify/functions/btc-mining.js) -->
+    <div class="panel chart-panel mine-panel">
+      <h2 data-en="Miners">นักขุด (Miners)</h2>
+      <div class="mine-grid">
+        <div class="sl-tile mine-tile">
+          <div class="sl-name"><span data-en="Cost to mine 1 BTC">ต้นทุนขุด 1 BTC</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ต้นทุนการขุดคืออะไร" data-en-aria="What is the cost of production?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+            <div class="i18n-th">
+            <p><b>คืออะไร:</b> ประมาณว่านักขุดทั้งเครือข่ายจ่ายเงินเท่าไรเพื่อได้ BTC มา 1 เหรียญ คิดจากค่า difficulty จริงตอนนี้ (ต้องคำนวณ hash กี่ครั้งต่อ 1 บล็อก) × ไฟที่เครื่องขุดกิน (J/TH) × ค่าไฟ ($/kWh) แล้วหารด้วยรางวัลต่อบล็อก (เหรียญใหม่ 3.125 BTC + ค่าธรรมเนียมเฉลี่ย 1 สัปดาห์)</p>
+            <p><b>สองตัวเลข:</b> ค่าไฟอย่างเดียว = ต้นทุนเงินสดขั้นต่ำ ถ้าราคาต่ำกว่านี้นักขุดส่วนใหญ่ขาดทุนทุกบล็อก · ต้นทุนรวม (ตัวเลขใหญ่) = ค่าไฟ ÷ 0.6 เพราะในรายงานของบริษัทขุดที่จดทะเบียน ค่าไฟมักเป็นราว 60% ของต้นทุนทั้งหมด ที่เหลือคือค่าเสื่อมเครื่อง ค่าพื้นที่ ค่าคน เป็นค่าประมาณคร่าว ๆ</p>
+            <p><b>อ่านสี:</b> 🟢 ราคาสูงกว่าต้นทุนรวม 25% ขึ้นไป = นักขุดกำไรดี · 🟡 ราคาเหนือต้นทุนรวมไม่ถึง 25% = กำไรบาง · 🟠 ราคาอยู่ระหว่างค่าไฟกับต้นทุนรวม = ขาดทุนเมื่อนับค่าเครื่อง · 🔴 ราคาต่ำกว่าค่าไฟ = ขาดทุนเงินสด เครื่องเก่าต้องปิด</p>
+            <p><b>ทำไมสำคัญ:</b> ในอดีตราคามักไม่อยู่ใต้ต้นทุนการขุดนาน เพราะนักขุดที่ขาดทุนจะปิดเครื่อง difficulty ลดลง ต้นทุนก็ลดตาม ช่วงที่ราคาแตะหรือหลุดต้นทุนจึงมักใกล้ก้นรอบ · ปรับค่าไฟและประสิทธิภาพเครื่องได้ในช่องด้านล่าง (ค่าเริ่มต้น $0.05/kWh และ 22 J/TH ใกล้ค่าเฉลี่ยทั้งเครือข่าย) · Hashprice = รายได้ต่อ 1 PH/s ต่อวัน · ข้อมูล mempool.space</p>
+            </div>
+            <div class="i18n-en" lang="en">
+            <p><b>What it is:</b> an estimate of what the whole network spends to earn 1 BTC: today's real difficulty (how many hashes one block takes) × the power a machine draws (J/TH) × the electricity price ($/kWh), divided by the reward per block (3.125 new BTC + the last week's average fees).</p>
+            <p><b>Two numbers:</b> electricity only = the minimum cash cost; below it most miners lose money on every block · all-in (the big number) = electricity ÷ 0.6, because listed mining companies usually report power as about 60% of total cost, the rest being machine wear, sites and staff. It is a rough estimate.</p>
+            <p><b>Colours:</b> 🟢 price 25% or more above all-in cost = healthy margins · 🟡 price above all-in cost by less than 25% = thin margins · 🟠 price between electricity and all-in cost = losing money once machines are counted · 🔴 price below electricity cost = losing cash, older machines switch off</p>
+            <p><b>Why it matters:</b> price has rarely stayed under the cost of mining for long: losing miners switch off, difficulty drops and the cost falls with it, so touching or breaking the cost has tended to happen near cycle lows · change the electricity price and machine efficiency in the boxes below (defaults $0.05/kWh and 22 J/TH, close to the network average) · Hashprice = revenue per 1 PH/s per day · data from mempool.space.</p>
+            </div>
+          </div></div></div>
+          <div class="sl-num" id="mineCost">–</div>
+          <div class="sl-sub" id="mineCostZone" data-en="Loading…">กำลังโหลด…</div>
+          <div class="mine-scale" id="mineScale"></div>
+          <div class="sl-sub" id="mineCostSub"></div>
+          <div class="mine-inputs">
+            <label><span data-en="Electricity $/kWh">ค่าไฟ $/kWh</span><input type="number" id="mineKwh" min="0.01" max="0.3" step="0.005" value="0.05" inputmode="decimal"></label>
+            <label><span data-en="Machine J/TH">เครื่อง J/TH</span><input type="number" id="mineEff" min="5" max="60" step="0.5" value="22" inputmode="decimal"></label>
+          </div>
+          <div class="sl-sub" id="mineNet"></div>
+          <a class="tv-btn" href="https://hashrateindex.com/hashprice" target="_blank" rel="noopener noreferrer"><span data-en="Hashprice on Hashrate Index ↗">ดู Hashprice บน Hashrate Index ↗</span></a>
+        </div>
+        <div class="sl-tile mine-tile">
+          <div class="sl-name"><span data-en="Are miners selling?">นักขุดกำลังขายหรือเก็บ?</span> <div class="tip"><button type="button" class="tip-btn" aria-label="พฤติกรรมนักขุดดูยังไง" data-en-aria="How is miner behaviour read?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+            <div class="i18n-th">
+            <p><b>คืออะไร:</b> นักขุดได้ BTC ใหม่วันละราว 450 เหรียญ และต้องขายบางส่วนจ่ายค่าไฟ ถ้าขายมากกว่าที่ขุดได้ = กดราคา ถ้าเก็บไว้ = แรงขายหาย · ยอดเงินในกระเป๋านักขุด (miner reserve / outflow) เป็นข้อมูลเสียเงิน (CryptoQuant, Glassnode) การ์ดนี้จึงอ่านจากสัญญาณฟรีสามตัวที่บอกว่านักขุด "ถูกบีบให้ขาย" หรือ "สบายพอจะเก็บ"</p>
+            <p><b>สัญญาณ:</b> Hash Ribbons = hashrate เฉลี่ย 30 วันเทียบ 60 วัน ถ้า 30 วันต่ำกว่า = นักขุดปิดเครื่อง (capitulation) มักต้องขายเหรียญเพื่ออยู่รอด และเมื่อตัดกลับขึ้นในอดีตมักเป็นจังหวะซื้อที่ดี · Puell Multiple = รายได้จากเหรียญใหม่วันนี้ ÷ ค่าเฉลี่ย 365 วัน ต่ำกว่า 0.5 = รายได้หดหนัก สูงกว่า 2 = รายได้ดีผิดปกติ มักขายทำกำไร · ราคาเทียบต้นทุน จากการ์ดซ้าย</p>
+            <p><b>อ่านสี:</b> 🟢 Hash Ribbons เพิ่งตัดขึ้น = ช่วงปิดเครื่องจบ แรงขายลดลง · 🔵 กำไรดีและไม่มีแรงกดดัน = มีแนวโน้มเก็บเหรียญ · 🟡 ปกติ = ขายราวเท่าที่ขุดได้ · 🟠 Puell 2 ขึ้นไป = ขายทำกำไรมากกว่าปกติ · 🔴 Hash Ribbons ตัดลง หรือราคาต่ำกว่าค่าไฟ หรือ Puell ต่ำกว่า 0.5 = ถูกบีบ มีแนวโน้มเทขาย</p>
+            <p><b>หมายเหตุ:</b> เป็นตัวแทน (proxy) ไม่ใช่ยอดโอนจริง ปุ่มด้านล่างเปิดกราฟ Miner Reserve บน CryptoQuant เพื่อเช็กยอดจริง · กราฟเล็กคือ hashrate เฉลี่ย 30 วัน (เส้นสี) กับ 60 วัน (เส้นเทา) ย้อนหลัง 6 เดือน หน่วย EH/s</p>
+            </div>
+            <div class="i18n-en" lang="en">
+            <p><b>What it is:</b> miners earn about 450 new BTC a day and sell part of it to pay for power. Selling more than they mine weighs on price; holding removes that supply · miner wallet balances and outflows are paid data (CryptoQuant, Glassnode), so this tile reads three free signals that show whether miners are "forced to sell" or "comfortable enough to hold".</p>
+            <p><b>Signals:</b> Hash Ribbons = 30-day vs 60-day average hashrate; 30-day below 60-day = miners switching machines off (capitulation), usually selling coins to survive, and the cross back up has often been a good time to buy · Puell Multiple = today's new-coin revenue ÷ its 365-day average; below 0.5 = revenue squeezed hard, above 2 = unusually rich, often sold for profit · price vs cost, from the left tile.</p>
+            <p><b>Colours:</b> 🟢 Hash Ribbons just crossed up = capitulation over, selling easing · 🔵 good margins and no pressure = likely holding coins · 🟡 normal = selling about what they mine · 🟠 Puell 2 or more = selling for profit more than usual · 🔴 Hash Ribbons crossed down, or price below electricity cost, or Puell below 0.5 = under stress, likely selling</p>
+            <p><b>Note:</b> this is a proxy, not actual wallet transfers; the button below opens the Miner Reserve chart on CryptoQuant to check the real flows · the small chart is 30-day average hashrate (coloured line) against 60-day (grey line) over 6 months, in EH/s.</p>
+            </div>
+          </div></div></div>
+          <div class="sl-num mine-verdict" id="mineVerdict">–</div>
+          <div class="sl-sub" id="mineWhy" data-en="Loading…">กำลังโหลด…</div>
+          <div class="mine-sigs" id="mineSigs"></div>
+          <div class="mine-ribbon" id="mineRibbon"></div>
+          <a class="tv-btn" href="https://cryptoquant.com/asset/btc/chart/miner-flows/miner-reserve" target="_blank" rel="noopener noreferrer"><span data-en="Miner Reserve on CryptoQuant ↗">ดู Miner Reserve บน CryptoQuant ↗</span></a>
+        </div>
+      </div>
+    </div>
+
     <!-- HALVING COUNTDOWN -->
     <div class="panel chart-panel halving-panel">
       <div>
@@ -6596,6 +6809,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   }
 
   function recompute(){
+    if(lastMining) renderMining();   // price moved → cost margin / miner verdict follow it
     const nupl = parseFloat(nuplNum.value);
     const z = parseFloat(zNum.value);
     const m = parseFloat(mNum.value);
@@ -8110,6 +8324,147 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   }
   if(typeof window !== 'undefined') window.__stableTest = { stableVerdict, stableFromLlama, fmtStableBn, fmtStableCh };
 
+  // ---------- Miners: cost to mine 1 BTC + are miners selling? ----------
+  // Raw inputs (difficulty, fees, Hash Ribbons, Puell) come from /.netlify/functions/btc-mining;
+  // the cost is worked out here so the visitor's own electricity price / machine efficiency apply.
+  // var, not let: recompute() calls renderMining() and can run before this line is reached.
+  var lastMining = null;
+  const MINE_TWO32 = 4294967296;
+  const MINE_ALLIN = 0.6;   // listed miners: power ≈ 60% of all-in cost (machines, sites, staff)
+  const MINE_DEFAULTS = { kwh: 0.05, eff: 22 };
+
+  // US$ per BTC. difficulty × 2^32 = hashes per block; × J/TH ÷ 1e12 = joules; ÷ 3.6e6 = kWh.
+  function mineCost(difficulty, subsidy, fee, kwh, eff){
+    if(!(difficulty > 0) || !(subsidy > 0) || !(kwh > 0) || !(eff > 0)) return null;
+    const kwhPerBlock = difficulty * MINE_TWO32 / 1e12 * eff / 3.6e6;
+    const reward = subsidy + (fee > 0 ? fee : 0);
+    const elec = kwhPerBlock * kwh / reward;
+    return { elec, allIn: elec / MINE_ALLIN, kwhPerBlock, reward };
+  }
+  // US$ earned per PH/s per day at this price
+  function mineHashprice(difficulty, reward, price){
+    if(!(difficulty > 0) || !(reward > 0) || !(price > 0)) return null;
+    return reward * price * 86400 * 1e15 / (difficulty * MINE_TWO32);
+  }
+  function mineMarginVerdict(price, c){
+    if(!(price > 0) || !c) return { key:'none', color:'', label:'' };
+    if(price < c.elec) return { key:'cash', color:'var(--red)', label:tr('ราคาต่ำกว่าค่าไฟ: นักขุดขาดทุนเงินสด', 'Price below electricity cost: miners losing cash') };
+    if(price < c.allIn) return { key:'loss', color:'#e8894a', label:tr('ราคาต่ำกว่าต้นทุนรวม: ขาดทุนเมื่อนับค่าเครื่อง', 'Price below all-in cost: losing once machines are counted') };
+    if(price < c.allIn * 1.25) return { key:'thin', color:'var(--amber)', label:tr('ราคาเหนือต้นทุนรวมเล็กน้อย: กำไรบาง', 'Price just above all-in cost: thin margins') };
+    return { key:'healthy', color:'var(--green)', label:tr('ราคาสูงกว่าต้นทุนรวมชัดเจน: นักขุดกำไรดี', 'Price well above all-in cost: healthy margins') };
+  }
+  // ribbon: 'capitulation' | 'recovery' | 'normal' | null; margin = price ÷ all-in − 1
+  function minerVerdict(ribbon, puell, margin, belowElec){
+    const why = [];
+    if(ribbon === 'capitulation') why.push(tr('Hash Ribbons ตัดลง (นักขุดปิดเครื่อง)', 'Hash Ribbons crossed down (machines switching off)'));
+    if(belowElec) why.push(tr('ราคาต่ำกว่าค่าไฟ', 'price below electricity cost'));
+    if(isNum(puell) && puell < 0.5) why.push(tr('Puell ต่ำกว่า 0.5 (รายได้หดหนัก)', 'Puell below 0.5 (revenue squeezed)'));
+    if(why.length) return { key:'stress', color:'var(--red)', label:tr('🔴 ถูกบีบ: มีแนวโน้มเทขาย', '🔴 Under stress: likely selling'), why };
+    if(isNum(puell) && puell >= 2) return { key:'profit', color:'#e8894a', label:tr('🟠 ขายทำกำไรมากกว่าปกติ', '🟠 Selling for profit more than usual'), why:[tr('Puell 2 ขึ้นไป รายได้ดีผิดปกติ', 'Puell 2 or more: unusually rich revenue')] };
+    if(ribbon === 'recovery') return { key:'recovery', color:'var(--green)', label:tr('🟢 ช่วงปิดเครื่องจบ: แรงขายลดลง', '🟢 Capitulation over: selling easing'), why:[tr('Hash Ribbons เพิ่งตัดขึ้น ในอดีตมักเป็นจังหวะซื้อที่ดี', 'Hash Ribbons just crossed up, historically a good time to buy')] };
+    if(isNum(margin) && margin >= 0.25 && (!isNum(puell) || puell < 1.2)) return { key:'hold', color:'var(--cool)', label:tr('🔵 กำไรดี ไม่มีแรงกดดัน: มีแนวโน้มเก็บเหรียญ', '🔵 Comfortable: likely holding coins'), why:[tr('กำไรเหนือต้นทุน 25% ขึ้นไป และ Puell ยังไม่สูง', 'margin 25%+ over cost and Puell not stretched')] };
+    return { key:'normal', color:'var(--amber)', label:tr('🟡 ปกติ: ขายราวเท่าที่ขุดได้', '🟡 Normal: selling about what they mine'), why:[tr('ไม่มีสัญญาณบีบหรือขายทำกำไร', 'no stress or profit-taking signal')] };
+  }
+  function mineUsd(v){ return isNum(v) ? '$' + (v >= 1000 ? (Math.round(v / 100) / 10).toLocaleString('en-US') + 'k' : Math.round(v).toLocaleString('en-US')) : '–'; }
+  function mineInputs(){
+    const k = parseFloat(el('mineKwh').value), e = parseFloat(el('mineEff').value);
+    return { kwh: k > 0 ? k : MINE_DEFAULTS.kwh, eff: e > 0 ? e : MINE_DEFAULTS.eff };
+  }
+  function ribbonSvg(hist){
+    if(!hist || hist.length < 2) return '';
+    const vals = hist.flatMap((r) => [r[1], r[2]]);
+    const lo = Math.min(...vals), hi = Math.max(...vals), span = (hi - lo) || 1, W = 300, H = 56;
+    const path = (j) => hist.map((r, i) => (i ? 'L' : 'M') + (i / (hist.length - 1) * W).toFixed(1) + ',' + (H - 3 - (r[j] - lo) / span * (H - 6)).toFixed(1)).join('');
+    const last = hist[hist.length - 1];
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true">'
+      + '<path d="' + path(2) + '" fill="none" stroke="var(--sub)" stroke-width="1.5" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>'
+      + '<path d="' + path(1) + '" fill="none" stroke="' + (last[1] < last[2] ? 'var(--red)' : 'var(--green)') + '" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>'
+      + '<div class="spark-cap"><span>' + tr('6 เดือน · 30 วัน / 60 วัน', '6 months · 30d / 60d') + '</span><span>' + last[1] + ' / ' + last[2] + ' EH/s</span></div>';
+  }
+
+  function renderMining(){
+    const d = lastMining;
+    if(!d || !el('mineCost')) return;
+    const inp = mineInputs();
+    const typed = parseFloat(priceInput.value);
+    const price = typed > 0 ? typed : d.price;
+    const c = mineCost(d.difficulty, d.subsidy, d.feePerBlock, inp.kwh, inp.eff);
+    const mv = mineMarginVerdict(price, c);
+    const margin = c && price > 0 ? price / c.allIn - 1 : null;
+    el('mineCost').textContent = c ? mineUsd(c.allIn) : '–';
+    el('mineCost').style.color = mv.color;
+    el('mineCost').dataset.verdict = mv.key;
+    el('mineCostZone').textContent = c ? (mv.label + (isNum(margin) ? ' (' + tr('ราคา ', 'price ') + (margin >= 0 ? '+' : '') + Math.round(margin * 100) + '%)' : '')) : tr('ดึงไม่สำเร็จ (ลองใหม่ภายหลัง)', 'Unavailable (try later)');
+    el('mineCostZone').dataset.verdict = mv.key;
+    if(c){
+      el('mineCostSub').textContent = tr('ค่าไฟอย่างเดียว ', 'Electricity only ') + mineUsd(c.elec) + tr(' · ต้นทุนรวม ', ' · all-in ') + mineUsd(c.allIn) + tr(' · ราคา ', ' · price ') + mineUsd(price);
+      // scale: electricity and all-in cost as ticks, price as a dot (range covers all three)
+      const lo = Math.min(c.elec, price || c.elec) * 0.8, hi = Math.max(c.allIn, price || c.allIn) * 1.15;
+      const pos = (v) => Math.max(0, Math.min(100, (v - lo) / (hi - lo) * 100));
+      const e = pos(c.elec), a = pos(c.allIn), p = price > 0 ? pos(price) : null;
+      el('mineScale').innerHTML = '<div class="bar" style="--e:' + e.toFixed(1) + '%; --a:' + a.toFixed(1) + '%;"></div>'
+        + '<i class="pin" style="left:' + e.toFixed(1) + '%"></i><i class="pin" style="left:' + a.toFixed(1) + '%"></i>'
+        + (p != null ? '<i class="pin px" style="left:' + p.toFixed(1) + '%; background:' + (mv.color || 'var(--text)') + '"></i>' : '')
+        + '<span class="lbl' + (e < 12 ? ' l0' : '') + '" style="left:' + e.toFixed(1) + '%">' + tr('ค่าไฟ', 'power') + '</span>'
+        + '<span class="lbl' + (a > 88 ? ' l1' : '') + '" style="left:' + a.toFixed(1) + '%">' + tr('ต้นทุนรวม', 'all-in') + '</span>';
+      const hp = mineHashprice(d.difficulty, c.reward, price);
+      const breakeven = price > 0 ? price * c.reward / c.kwhPerBlock * MINE_ALLIN : null;
+      el('mineNet').textContent = 'Hashprice ' + (isNum(hp) ? '$' + hp.toFixed(1) + tr('/PH/วัน', '/PH/day') : '–')
+        + ' · Hashrate ' + (isNum(d.hashrateEh) ? Math.round(d.hashrateEh).toLocaleString('en-US') + ' EH/s' : '–')
+        + (isNum(breakeven) ? tr(' · ค่าไฟคุ้มทุนรวมที่ราคานี้ ≤ $', ' · all-in break-even power ≤ $') + breakeven.toFixed(3) + '/kWh' : '')
+        + tr(' · ข้อมูลวันที่ ', ' · as of ') + (d.date || '–') + (d.stale ? tr(' (ข้อมูลเก่า)', ' (stale)') : '');
+    }
+    const rib = d.ribbon ? d.ribbon.state : null;
+    const v = minerVerdict(rib, d.puell, margin, !!(c && price > 0 && price < c.elec));
+    el('mineVerdict').textContent = v.label;
+    el('mineVerdict').style.color = v.color;
+    el('mineVerdict').dataset.verdict = v.key;
+    el('mineWhy').textContent = tr('เหตุผล: ', 'Why: ') + v.why.join(' · ');
+    const ribTxt = !d.ribbon ? '–' : (d.ribbon.state === 'capitulation' ? tr('🔴 30 วัน < 60 วัน ', '🔴 30d < 60d ') + tr('มา ', 'for ') + d.ribbon.days + tr(' วัน', ' days')
+      : d.ribbon.state === 'recovery' ? tr('🟢 เพิ่งตัดขึ้น ', '🟢 crossed up ') + d.ribbon.days + tr(' วันก่อน', ' days ago')
+      : tr('30 วัน > 60 วัน (ปกติ)', '30d > 60d (normal)'));
+    const puTxt = !isNum(d.puell) ? '–' : d.puell.toFixed(2) + (d.puell < 0.5 ? tr(' (ต่ำมาก)', ' (very low)') : d.puell >= 2 ? tr(' (สูง)', ' (high)') : d.puell < 0.8 ? tr(' (ต่ำ)', ' (low)') : tr(' (กลาง)', ' (mid)'));
+    const mTxt = isNum(margin) ? (margin >= 0 ? '+' : '') + Math.round(margin * 100) + tr('% เทียบต้นทุนรวม', '% vs all-in cost') : '–';
+    el('mineSigs').innerHTML = '<div><span>Hash Ribbons</span><b>' + ribTxt + '</b></div>'
+      + '<div><span>Puell Multiple</span><b>' + puTxt + '</b></div>'
+      + '<div><span>' + tr('ราคาเทียบต้นทุน', 'Price vs cost') + '</span><b>' + mTxt + '</b></div>';
+    el('mineRibbon').innerHTML = ribbonSvg(d.hist);
+  }
+
+  async function fetchMining(){
+    try{
+      const r = await fetchWithTimeout('/.netlify/functions/btc-mining', 20000);
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      if(!isNum(d.difficulty)) throw new Error('no difficulty');
+      lastMining = d;
+    }catch(e){
+      if(!lastMining){
+        el('mineCostZone').textContent = tr('ดึงไม่สำเร็จ (ลองใหม่ภายหลัง)', 'Unavailable (try later)');
+        el('mineWhy').textContent = tr('ดึงไม่สำเร็จ (ลองใหม่ภายหลัง)', 'Unavailable (try later)');
+        return;
+      }
+    }
+    renderMining();
+  }
+  // remember the visitor's electricity price / machine efficiency
+  (function(){
+    const k = el('mineKwh'), e = el('mineEff');
+    if(!k || !e) return;
+    try{
+      const saved = JSON.parse(localStorage.getItem('gi-mine-cost') || 'null');
+      if(saved && saved.kwh > 0) k.value = saved.kwh;
+      if(saved && saved.eff > 0) e.value = saved.eff;
+    }catch(err){}
+    const onChange = () => {
+      try{ localStorage.setItem('gi-mine-cost', JSON.stringify(mineInputs())); }catch(err){}
+      renderMining();
+    };
+    k.addEventListener('input', onChange);
+    e.addEventListener('input', onChange);
+  })();
+  if(typeof window !== 'undefined') window.__mineTest = { mineCost, mineHashprice, mineMarginVerdict, minerVerdict, ribbonSvg };
+
   // ---------- Bitcoin Halving Countdown ----------
   // Primary: pure date arithmetic, no network call, cannot hang or fail — based on the
   // widely-cited estimate (~Apr 17, 2028, block 1,050,000) that CoinGecko/mempool.space/
@@ -8166,7 +8521,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     const priceOk = await fetchPrice(); // must resolve first: OI conversion below needs a live price
     fetchLiqHeatmap(force); // not awaited: heavier, and the status line should not wait for it
     fetchVpoc(force);
-    const [metricsOk] = await Promise.all([fetchOnChainMetrics(force), fetchSentimentLeverage(), fetchHalvingCountdown(), fetchDvol(), fetchEtfFlow(), fetchStablecoins(), fetchRekt(), fetchOptionsGex(force)]);
+    const [metricsOk] = await Promise.all([fetchOnChainMetrics(force), fetchSentimentLeverage(), fetchHalvingCountdown(), fetchDvol(), fetchEtfFlow(), fetchStablecoins(), fetchOptionsGex(force), fetchRekt(), fetchMining()]);
     recompute();
     save();
     // บอกให้ชัดเมื่อค่าที่ใช้คำนวณไม่ใช่ราคาสด (ผู้ใช้พิมพ์เอง) — ไม่งั้นจะเข้าใจผิดว่าคะแนนมาจากราคาตลาด

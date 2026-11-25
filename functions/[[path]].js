@@ -11,6 +11,7 @@
 // _routes.json limits this to /.netlify/functions/* and the paths blocked below, so static
 // files are served straight from the CDN without invoking a function.
 
+import btcMining from '../netlify/functions/btc-mining.js';
 import calendar from '../netlify/functions/calendar.js';
 import capitalMarkets from '../netlify/functions/capital-markets.js';
 import countryProfiles from '../netlify/functions/country-profiles.js';
@@ -31,14 +32,15 @@ import oilPrice from '../netlify/functions/oil-price.js';
 import onchain from '../netlify/functions/onchain.js';
 import optionsGex from '../netlify/functions/options-gex.js';
 import stablecoins from '../netlify/functions/stablecoins.js';
+import usGainers from '../netlify/functions/us-gainers.js';
 import usdjpy from '../netlify/functions/usdjpy.js';
 import visitors from '../netlify/functions/visitors.js';
 import wti from '../netlify/functions/wti.js';
 
 const HANDLERS = {
-  calendar, 'capital-markets': capitalMarkets, 'cmc-fear-greed': cmcFearGreed, consensus, 'country-profiles': countryProfiles,
+  'btc-mining': btcMining, calendar, 'capital-markets': capitalMarkets, 'cmc-fear-greed': cmcFearGreed, consensus, 'country-profiles': countryProfiles,
   dvol, 'dvol-history': dvolHistory, 'econ-extra': econExtra, 'etf-flow': etfFlow, 'fed-odds': fedOdds, 'fred-data': fredData, 'gold-th': goldTh, liquidations, 'macro-map': macroMap, markets,
-  'news-feed': newsFeed, 'oil-price': oilPrice, onchain, 'options-gex': optionsGex, stablecoins, usdjpy, visitors, wti,
+  'news-feed': newsFeed, 'oil-price': oilPrice, onchain, 'options-gex': optionsGex, stablecoins, 'us-gainers': usGainers, usdjpy, visitors, wti,
 };
 
 // Same idea as _redirects on Netlify: the publish dir is the repo root, so keep source/notes private.
