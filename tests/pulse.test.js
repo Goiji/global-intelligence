@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { HTML, makeSandbox, runAllScripts } = require('./dom-stub.js');
 
+const sbCuts = (P) => P.cuts.vix;
 async function page() { const sb = makeSandbox(); await runAllScripts(sb); return sb; }
 const ser = (latest, change) => ({ latest, change });
 
@@ -10,14 +11,20 @@ test('levels follow each card\'s own bands', async () => {
   const { pulseLevel } = (await page()).__pulseTest;
   assert.equal(pulseLevel(14, [20, 30, 40]), 0);
   assert.equal(pulseLevel(26.4, [20, 30, 40]), 1);
+  const vix = sbCuts((await page()).__pulseTest);
+  assert.equal(pulseLevel(26.4, vix), 2, 'VIX 20–30 is what the VIX card calls nervous, not normal');
+  assert.equal(pulseLevel(17, vix), 1);
   assert.equal(pulseLevel(49.4, [25, 40, 60]), 2);
   assert.equal(pulseLevel(150, [80, 110, 140]), 3);
 });
 
-test('overall state is the average level', async () => {
+test('overall state: the average, but never hiding hot gauges', async () => {
   const { pulseState } = (await page()).__pulseTest;
   assert.equal(pulseState([0, 0, 0, 1]).i, 0);
   assert.equal(pulseState([1, 1, 1, 2]).i, 1);
+  assert.equal(pulseState([2, 1, 1, 2]).i, 2, 'two gauges worried → worried');
+  assert.equal(pulseState([2, 1, 1, 2]).label, 'กังวล');
+  assert.equal(pulseState([0, 0, 0, 3]).i, 2, 'one gauge in stress lifts the whole to at least worried');
   assert.equal(pulseState([2, 2, 2, 1]).i, 2);
   assert.equal(pulseState([3, 3, 2, 3]).i, 3);
   assert.equal(pulseState([]), null);
@@ -38,10 +45,12 @@ test('render fills the card from the markets payload', async () => {
   const sb = await page();
   sb.__pulseTest.renderPulse({ vix: ser(26.36, -0.27), move: ser(98.8, -2), hyOas: ser(3.2, 0), ovx: ser(49.4, 0.2), sp500: ser(7201, -36) });
   const g = (id) => sb.document.getElementById(id);
-  assert.equal(g('pulseState').dataset.level, '1');
-  assert.match(g('pulseState').innerHTML, /ปกติ/);
-  assert.match(g('pulseWhy').textContent, /OVX/);
-  assert.equal((g('pulseGauges').innerHTML.match(/class="pg"/g) || []).length, 4);
+  assert.equal(g('pulseState').dataset.level, '2', 'VIX 26 + OVX 49 is not a normal day');
+  assert.match(g('pulseState').innerHTML, /กังวล/);
+  assert.match(g('pulseWhy').textContent, /VIX[\s\S]*OVX/);
+  assert.match(g('pulseGauges').innerHTML, /data-go="mkHy"/, 'tiles open their full card');
+  for (const id of ['mkVix', 'mkMove', 'mkHy', 'mkOvx']) assert.match(HTML, new RegExp('id="' + id + '"'));
+  assert.equal((g('pulseGauges').innerHTML.match(/class="pg" /g) || []).length, 4);
   assert.match(g('pulseMoves').innerHTML, /ไม่มีตัวไหนขยับผิดปกติ/);
 });
 

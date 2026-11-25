@@ -619,6 +619,10 @@ body{margin:0}
   .pulse-why{font-size:12px;margin-top:8px;line-height:1.6}
   .pulse-gauges{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
   .pulse-gauges .pg{border:1px solid var(--line-soft);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.015);display:flex;flex-direction:column;gap:6px}
+  .pulse-gauges .pg[data-go]{cursor:pointer;transition:border-color .2s,background .2s}
+  .pulse-gauges .pg[data-go]:hover,.pulse-gauges .pg[data-go]:focus-visible{border-color:var(--gold-line);background:rgba(212,178,106,.06);outline:none}
+  .metric.flash{animation:cardFlash 1.6s ease-out}
+  @keyframes cardFlash{0%,30%{box-shadow:0 0 0 2px var(--accent)}100%{box-shadow:0 0 0 2px transparent}}
   .pulse-gauges .k{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em}
   .pulse-gauges .k small{font-weight:400;opacity:.8;letter-spacing:0}
   .pulse-gauges b{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums lining-nums}
@@ -917,7 +921,7 @@ body{margin:0}
   <div class="pulse-gauges" id="pulseGauges"></div>
 </div>
 <div class="pulse-moves" id="pulseMoves"></div>
-<div class="model-note" data-en="⚙️ Average of 4 volatility / credit gauges, each on its card's own bands (calm · normal · worried · stressed). Details and history are in the US Markets card below.">⚙️ เฉลี่ยจาก 4 มาตรวัดความผันผวนและสินเชื่อ แต่ละตัวใช้เกณฑ์เดียวกับการ์ดของมัน (สงบ · ปกติ · กังวล · ตึงเครียด) รายละเอียดและกราฟย้อนหลังอยู่ในการ์ดตลาดสหรัฐฯ ด้านล่าง</div>
+<div class="model-note" data-en="⚙️ 4 volatility / credit gauges, each in 4 bands (calm · normal · worried · stressed). The overall reading is their average, but never more than one band below the worst gauge, and two or more worried gauges make the whole worried. Tap a gauge to open its full card.">⚙️ ดูจาก 4 มาตรวัดความผันผวนและสินเชื่อ แต่ละตัวแบ่ง 4 ระดับ (สงบ · ปกติ · กังวล · ตึงเครียด) ภาพรวมคือค่าเฉลี่ย แต่จะไม่ต่ำกว่าตัวที่แย่ที่สุดเกิน 1 ขั้น และถ้ากังวลตั้งแต่ 2 ตัว ภาพรวมคือกังวล แตะมาตรวัดเพื่อดูการ์ดเต็มพร้อมกราฟย้อนหลัง</div>
 </section>
 
 <section class="card full" id="pricesCard">
@@ -1523,7 +1527,7 @@ window.setHeaderStamp = function(){
 };
 window.setHeaderStamp();
 </script>
-<script src="js/overview.js?v=7d9bebf865"></script>
+<script src="js/overview.js?v=bd4907182f"></script>
 
 </section>
 
