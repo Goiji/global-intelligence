@@ -6388,7 +6388,7 @@ window.setHeaderStamp();
           <div class="rr-cm" id="rrCm"></div>
           <div class="rr-term" id="rrTerm"></div>
           <div class="spark" id="spRr"></div>
-          <a class="tv-btn" href="https://www.deribit.com/statistics/BTC/volatility" target="_blank" rel="noopener noreferrer"><span data-en="Deribit volatility stats ↗">สถิติ volatility บน Deribit ↗</span></a>
+          <a class="tv-btn" href="https://www.deribit.com/statistics/BTC/volatility-index" target="_blank" rel="noopener noreferrer"><span data-en="Deribit volatility stats ↗">สถิติ volatility บน Deribit ↗</span></a>
         </div>
         <div class="sl-tile sl-stable">
           <div class="sl-name"><span data-en="Stablecoin Market Cap">Stablecoin Market Cap</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Stablecoin Market Cap คืออะไร" data-en-aria="What is the stablecoin market cap?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
@@ -6552,7 +6552,7 @@ window.setHeaderStamp();
       <div class="rekt-ex" id="gexExp"></div>
       <div class="liq-foot">
         <details class="src-note" style="margin-top:0;"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div class="muted" id="gexNote" data-en="Deribit public API (every listed BTC option: open interest, mark IV, forward price), greeks computed here with Black-76, refreshed every 5 minutes">Deribit public API (option BTC ทุกตัว: open interest, mark IV, ราคา forward) คำนวณ greeks เองด้วย Black-76 อัปเดตทุก 5 นาที</div></details>
-        <a class="tv-btn" style="margin-top:0;" href="https://www.deribit.com/statistics/BTC/options-open-interest" target="_blank" rel="noopener noreferrer"><span data-en="Open interest on Deribit ↗">ดู open interest บน Deribit ↗</span></a>
+        <a class="tv-btn" style="margin-top:0;" href="https://www.deribit.com/statistics/BTC/metrics/options" target="_blank" rel="noopener noreferrer"><span data-en="Open interest on Deribit ↗">ดู open interest บน Deribit ↗</span></a>
       </div>
     </div>
 
@@ -8350,7 +8350,9 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     const z = etfZone(d.net);
     el('etfNum').textContent = fmtFlow(d.net);
     el('etfNum').style.color = z[1];
-    el('etfZone').textContent = z[0] + tr(' · วันที่ ', ' · ') + d.date + (d.stale ? tr(' (ข้อมูลเก่า)', ' (stale)') : '');
+    const miss = d.partial && d.missing && d.missing.length ? d.missing.slice(0, 3).join(', ') + (d.missing.length > 3 ? ' +' + (d.missing.length - 3) : '') : '';
+    el('etfZone').textContent = z[0] + tr(' · วันที่ ', ' · ') + d.date + (d.stale ? tr(' (ข้อมูลเก่า)', ' (stale)') : '')
+      + (miss ? tr(' · ⏳ ยังรายงานไม่ครบ รอ ' + miss + ' ตัวเลขยังเปลี่ยนได้', ' · ⏳ incomplete, waiting for ' + miss + ', number may still change') : '');
     el('etfZone').title = (d.source || '') + ' · ' + (d.fetchedAt || '');
     const funds = (d.funds || []).map(f => f[0] + ' ' + fmtFlow(f[1])).join(' · ');
     el('etfSums').textContent = tr('รวม 5 วัน ', '5-day ') + fmtFlow(d.sum5) + tr(' · 30 วัน ', ' · 30-day ') + fmtFlow(d.sum30) + (funds ? ' · ' + funds : '');
@@ -8893,7 +8895,13 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   async function loadTreasury(){
     try{
       const d = await getJ('/.netlify/functions/btc-treasury', 12000);
-      if(d && d.strategy && d.strategy.holdings > 0 && Array.isArray(d.tx)) return d;
+      if(d && d.strategy && d.strategy.holdings > 0 && Array.isArray(d.tx)){
+        if(!d.tx.length){   // the server's history call was rate-limited: fetch the filings list from here
+          const h = await getJ(CG + 'public_treasury/strategy/transaction_history?per_page=250').catch(() => null);
+          if(h) try{ d.tx = ocShapeTreasury({ holdings: [{ coin_id: 'bitcoin', amount: d.strategy.holdings }] }, h, null).tx; }catch(e){}
+        }
+        return d;
+      }
       throw new Error('bad payload');
     }catch(e){
       const [a, b, c] = await Promise.all([getJ(CG + 'public_treasury/strategy'), getJ(CG + 'public_treasury/strategy/transaction_history?per_page=250').catch(() => null),

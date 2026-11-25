@@ -66,7 +66,9 @@ function shape(entity, history, list) {
 async function load() {
   const [entity, history, list] = await Promise.all([
     getJson(API + 'public_treasury/strategy'),
-    getJson(API + 'public_treasury/strategy/transaction_history?per_page=250').catch(() => null),
+    getJson(API + 'public_treasury/strategy/transaction_history?per_page=250')
+      .catch(() => new Promise((r) => setTimeout(r, 1500)).then(() => getJson(API + 'public_treasury/strategy/transaction_history')))
+      .catch(() => null),
     getJson(API + 'companies/public_treasury/bitcoin').catch(() => null)
   ]);
   return shape(entity, history, list);
@@ -87,9 +89,13 @@ exports.handler = async function (event) {
   }
   try {
     const data = { ...(await load()), source: 'coingecko', fetchedAt: new Date(now).toISOString() };
-    if (!data.tx.length && memCache.lastGood) data.tx = memCache.lastGood.tx;   // history call failed this time
-    memCache = { data, expiresAt: now + (data.tx.length ? TTL_S : 300) * 1000, lastGood: data };
-    await kvPutGood(event, KV_KEY, data);
+    if (!data.tx.length) {
+      // CoinGecko often rate-limits the history call from shared server IPs: reuse the last list that had one.
+      const prev = (memCache.lastGood && memCache.lastGood.tx.length && memCache.lastGood) || (await kvGetGood(event, KV_KEY, 30 * 86400000));
+      if (prev && Array.isArray(prev.tx) && prev.tx.length) data.tx = prev.tx;
+    }
+    memCache = { data, expiresAt: now + (data.tx.length ? TTL_S : 300) * 1000, lastGood: data.tx.length ? data : (memCache.lastGood || data) };
+    if (data.tx.length) await kvPutGood(event, KV_KEY, data);
     return { statusCode: 200, headers, body: JSON.stringify(data) };
   } catch (e) {
     const good = memCache.lastGood || (await kvGetGood(event, KV_KEY, 14 * 86400000));
@@ -98,4 +104,4 @@ exports.handler = async function (event) {
   }
 };
 
-module.exports.__test = { shape, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; } };
+module.exports.__test = { shape, _expire: () => { memCache.expiresAt = 0; }, _clearCache: () => { memCache = { data: null, expiresAt: 0, lastGood: null }; } };
