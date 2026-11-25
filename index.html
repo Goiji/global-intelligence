@@ -413,9 +413,6 @@ body{margin:0}
   #btcTab .mine-scale .pin.px{width:12px; height:12px; top:5px; border-radius:50%; border:2px solid #06080e; box-shadow:0 0 0 1px var(--text);}
   #btcTab .mine-scale .lbl{position:absolute; top:21px; font-size:10px; color:var(--sub); white-space:nowrap; transform:translateX(-50%);}
   #btcTab .mine-scale .lbl.l0{transform:none;} #btcTab .mine-scale .lbl.l1{transform:translateX(-100%);}
-  #btcTab .mine-inputs{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;}
-  #btcTab .mine-inputs label{display:flex; flex-direction:column; gap:3px; font-size:10px; color:var(--sub);}
-  #btcTab .mine-inputs input{width:96px; background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--text); font-family:var(--mono); font-size:13px; padding:5px 8px;}
   #btcTab .mine-sigs{display:flex; flex-direction:column; gap:5px; margin-top:10px; font-size:12px;}
   #btcTab .mine-sigs div{display:flex; justify-content:space-between; gap:10px; border-bottom:1px dashed var(--line); padding-bottom:4px;}
   #btcTab .mine-sigs span{color:var(--sub);} #btcTab .mine-sigs b{font-weight:600; text-align:right;}
@@ -6603,23 +6600,19 @@ window.setHeaderStamp();
             <p><b>คืออะไร:</b> ประมาณว่านักขุดทั้งเครือข่ายจ่ายเงินเท่าไรเพื่อได้ BTC มา 1 เหรียญ คิดจากค่า difficulty จริงตอนนี้ (ต้องคำนวณ hash กี่ครั้งต่อ 1 บล็อก) × ไฟที่เครื่องขุดกิน (J/TH) × ค่าไฟ ($/kWh) แล้วหารด้วยรางวัลต่อบล็อก (เหรียญใหม่ 3.125 BTC + ค่าธรรมเนียมเฉลี่ย 1 สัปดาห์)</p>
             <p><b>สองตัวเลข:</b> ค่าไฟอย่างเดียว = ต้นทุนเงินสดขั้นต่ำ ถ้าราคาต่ำกว่านี้นักขุดส่วนใหญ่ขาดทุนทุกบล็อก · ต้นทุนรวม (ตัวเลขใหญ่) = ค่าไฟ ÷ 0.6 เพราะในรายงานของบริษัทขุดที่จดทะเบียน ค่าไฟมักเป็นราว 60% ของต้นทุนทั้งหมด ที่เหลือคือค่าเสื่อมเครื่อง ค่าพื้นที่ ค่าคน เป็นค่าประมาณคร่าว ๆ</p>
             <p><b>อ่านสี:</b> 🟢 ราคาสูงกว่าต้นทุนรวม 25% ขึ้นไป = นักขุดกำไรดี · 🟡 ราคาเหนือต้นทุนรวมไม่ถึง 25% = กำไรบาง · 🟠 ราคาอยู่ระหว่างค่าไฟกับต้นทุนรวม = ขาดทุนเมื่อนับค่าเครื่อง · 🔴 ราคาต่ำกว่าค่าไฟ = ขาดทุนเงินสด เครื่องเก่าต้องปิด</p>
-            <p><b>ทำไมสำคัญ:</b> ในอดีตราคามักไม่อยู่ใต้ต้นทุนการขุดนาน เพราะนักขุดที่ขาดทุนจะปิดเครื่อง difficulty ลดลง ต้นทุนก็ลดตาม ช่วงที่ราคาแตะหรือหลุดต้นทุนจึงมักใกล้ก้นรอบ · ปรับค่าไฟและประสิทธิภาพเครื่องได้ในช่องด้านล่าง (ค่าเริ่มต้น $0.05/kWh และ 22 J/TH ใกล้ค่าเฉลี่ยทั้งเครือข่าย) · Hashprice = รายได้ต่อ 1 PH/s ต่อวัน · ข้อมูล mempool.space</p>
+            <p><b>ทำไมสำคัญ:</b> ในอดีตราคามักไม่อยู่ใต้ต้นทุนการขุดนาน เพราะนักขุดที่ขาดทุนจะปิดเครื่อง difficulty ลดลง ต้นทุนก็ลดตาม ช่วงที่ราคาแตะหรือหลุดต้นทุนจึงมักใกล้ก้นรอบ · สมมติค่าไฟ $0.05/kWh และเครื่อง 22 J/TH ซึ่งใกล้ค่าเฉลี่ยทั้งเครือข่าย · Hashprice = รายได้ต่อ 1 PH/s ต่อวัน · ข้อมูล mempool.space</p>
             </div>
             <div class="i18n-en" lang="en">
             <p><b>What it is:</b> an estimate of what the whole network spends to earn 1 BTC: today's real difficulty (how many hashes one block takes) × the power a machine draws (J/TH) × the electricity price ($/kWh), divided by the reward per block (3.125 new BTC + the last week's average fees).</p>
             <p><b>Two numbers:</b> electricity only = the minimum cash cost; below it most miners lose money on every block · all-in (the big number) = electricity ÷ 0.6, because listed mining companies usually report power as about 60% of total cost, the rest being machine wear, sites and staff. It is a rough estimate.</p>
             <p><b>Colours:</b> 🟢 price 25% or more above all-in cost = healthy margins · 🟡 price above all-in cost by less than 25% = thin margins · 🟠 price between electricity and all-in cost = losing money once machines are counted · 🔴 price below electricity cost = losing cash, older machines switch off</p>
-            <p><b>Why it matters:</b> price has rarely stayed under the cost of mining for long: losing miners switch off, difficulty drops and the cost falls with it, so touching or breaking the cost has tended to happen near cycle lows · change the electricity price and machine efficiency in the boxes below (defaults $0.05/kWh and 22 J/TH, close to the network average) · Hashprice = revenue per 1 PH/s per day · data from mempool.space.</p>
+            <p><b>Why it matters:</b> price has rarely stayed under the cost of mining for long: losing miners switch off, difficulty drops and the cost falls with it, so touching or breaking the cost has tended to happen near cycle lows · assumes $0.05/kWh electricity and 22 J/TH machines, close to the network average · Hashprice = revenue per 1 PH/s per day · data from mempool.space.</p>
             </div>
           </div></div></div>
           <div class="sl-num" id="mineCost">–</div>
           <div class="sl-sub" id="mineCostZone" data-en="Loading…">กำลังโหลด…</div>
           <div class="mine-scale" id="mineScale"></div>
           <div class="sl-sub" id="mineCostSub"></div>
-          <div class="mine-inputs">
-            <label><span data-en="Electricity $/kWh">ค่าไฟ $/kWh</span><input type="number" id="mineKwh" min="0.01" max="0.3" step="0.005" value="0.05" inputmode="decimal"></label>
-            <label><span data-en="Machine J/TH">เครื่อง J/TH</span><input type="number" id="mineEff" min="5" max="60" step="0.5" value="22" inputmode="decimal"></label>
-          </div>
           <div class="sl-sub" id="mineNet"></div>
           <a class="tv-btn" href="https://data.hashrateindex.com/bitcoin-compute-data/bitcoin-hashprice-index" target="_blank" rel="noopener noreferrer"><span data-en="Hashprice on Hashrate Index ↗">ดู Hashprice บน Hashrate Index ↗</span></a>
         </div>
@@ -8329,7 +8322,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
 
   // ---------- Miners: cost to mine 1 BTC + are miners selling? ----------
   // Raw inputs (difficulty, fees, Hash Ribbons, Puell) come from /.netlify/functions/btc-mining;
-  // the cost is worked out here so the visitor's own electricity price / machine efficiency apply.
+  // the cost is worked out here from fixed network-average assumptions (MINE_DEFAULTS).
   // var, not let: recompute() calls renderMining() and can run before this line is reached.
   var lastMining = null;
   const MINE_TWO32 = 4294967296;
@@ -8369,10 +8362,6 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     return { key:'normal', color:'var(--amber)', label:tr('🟡 ปกติ: ขายราวเท่าที่ขุดได้', '🟡 Normal: selling about what they mine'), why:[tr('ไม่มีสัญญาณบีบหรือขายทำกำไร', 'no stress or profit-taking signal')] };
   }
   function mineUsd(v){ return isNum(v) ? '$' + (v >= 1000 ? (Math.round(v / 100) / 10).toLocaleString('en-US') + 'k' : Math.round(v).toLocaleString('en-US')) : '–'; }
-  function mineInputs(){
-    const k = parseFloat(el('mineKwh').value), e = parseFloat(el('mineEff').value);
-    return { kwh: k > 0 ? k : MINE_DEFAULTS.kwh, eff: e > 0 ? e : MINE_DEFAULTS.eff };
-  }
   function ribbonSvg(hist){
     if(!hist || hist.length < 2) return '';
     const vals = hist.flatMap((r) => [r[1], r[2]]);
@@ -8388,7 +8377,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   function renderMining(){
     const d = lastMining;
     if(!d || !el('mineCost')) return;
-    const inp = mineInputs();
+    const inp = MINE_DEFAULTS;
     const typed = parseFloat(priceInput.value);
     const price = typed > 0 ? typed : d.price;
     const c = mineCost(d.difficulty, d.subsidy, d.feePerBlock, inp.kwh, inp.eff);
@@ -8450,22 +8439,6 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     }
     renderMining();
   }
-  // remember the visitor's electricity price / machine efficiency
-  (function(){
-    const k = el('mineKwh'), e = el('mineEff');
-    if(!k || !e) return;
-    try{
-      const saved = JSON.parse(localStorage.getItem('gi-mine-cost') || 'null');
-      if(saved && saved.kwh > 0) k.value = saved.kwh;
-      if(saved && saved.eff > 0) e.value = saved.eff;
-    }catch(err){}
-    const onChange = () => {
-      try{ localStorage.setItem('gi-mine-cost', JSON.stringify(mineInputs())); }catch(err){}
-      renderMining();
-    };
-    k.addEventListener('input', onChange);
-    e.addEventListener('input', onChange);
-  })();
   if(typeof window !== 'undefined') window.__mineTest = { mineCost, mineHashprice, mineMarginVerdict, minerVerdict, ribbonSvg };
 
   // ---------- Bitcoin Halving Countdown ----------
