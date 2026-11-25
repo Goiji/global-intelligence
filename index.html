@@ -585,6 +585,19 @@ body{margin:0}
   #btcTab .bs-bar{display:block;height:4px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden}
   #btcTab .bs-bar i{display:block;height:100%;border-radius:2px}
   #btcTab .breakdown .bs-foot{display:block;border-bottom:0;padding-top:8px;font-size:11px;line-height:1.6;color:var(--muted)}
+  /* มือถือ: พื้นที่กดอย่างน้อย ~40px และตัวอักษรไม่เล็กกว่า 11px (หน้าตาปุ่มเท่าเดิม ขยายแค่พื้นที่กด) */
+  @media (max-width:760px), (pointer:coarse){
+    .tip-btn,.tv-arrow,.metric-link{position:relative}
+    .tip-btn::after{content:'';position:absolute;inset:-12px;border-radius:50%}
+    .tv-arrow::after,.metric-link::after{content:'';position:absolute;inset:-12px -8px}
+    .tv-btn{min-height:38px;display:inline-flex;align-items:center}
+    .liq-ranges button,.ug-seg button,.oc-seg button,#ocCostMode button,#ocCostRange button,#ocHoldRange button,#ocPlAxis button,#ocPlRange button{min-height:34px}
+  }
+  @media (max-width:760px){
+    [style*="font-size:10px"],[style*="font-size: 10px"],[style*="font-size:9px"],[style*="font-size:10.5px"]{font-size:11px!important}
+    .h-en,.auto-badge,.metric-updated,.score-label,.rank,.chip,.lbl,.halving-label,.muted small,.sl-sub small{font-size:11px!important}
+    #btcTab .breakdown{font-size:13px}
+  }
   /* แถบลัดในแท็บ Bitcoin */
   .btc-subnav{position:sticky;top:var(--tabbar-h,60px);z-index:900;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
     margin:0 0 18px;padding:10px 2px;background:rgba(6,8,14,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line-soft)}
