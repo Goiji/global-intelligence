@@ -47,7 +47,7 @@ async function fetchText(url) {
     const r = await fetch(url, {
       signal: ctrl.signal,
       // BLS rejects requests without a descriptive User-Agent.
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; global-intelligence-dashboard; +https://global-intelligence-dashboard.netlify.app)', Accept: 'text/calendar, application/json, */*' }
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; global-intelligence-dashboard; +https://globalintelligence.pages.dev)', Accept: 'text/calendar, application/json, */*' }
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return await r.text();

@@ -85,13 +85,14 @@
 <meta property="og:title" content="Global Intelligence — World Risk, Macro &amp; BTC Dashboard">
 <meta property="og:description" content="ความเสี่ยงโลกจากข่าวสด · Fed / CPI / การจ้างงานสหรัฐฯ · ราคาทอง–น้ำมัน–ค่าเงิน · BTC Buy Score">
 <meta property="og:locale" content="th_TH">
-<meta property="og:url" content="https://global-intelligence-dashboard.netlify.app/">
-<meta property="og:image" content="https://global-intelligence-dashboard.netlify.app/og-image.png">
+<link rel="canonical" href="https://globalintelligence.pages.dev/">
+<meta property="og:url" content="https://globalintelligence.pages.dev/">
+<meta property="og:image" content="https://globalintelligence.pages.dev/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Daily World Dashboard — สรุปความเสี่ยงโลก ตลาด และเศรษฐกิจสหรัฐฯ ประจำวัน">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://global-intelligence-dashboard.netlify.app/og-image.png">
+<meta name="twitter:image" content="https://globalintelligence.pages.dev/og-image.png">
 <meta name="twitter:title" content="Global Intelligence — World Risk, Macro &amp; BTC Dashboard">
 <meta name="twitter:description" content="ความเสี่ยงโลกจากข่าวสด · Fed / CPI / การจ้างงานสหรัฐฯ · ราคาทอง–น้ำมัน–ค่าเงิน · BTC Buy Score">
 <!-- ไอคอนแอป: ม้าหมากรุกสีส้มหน้าลูกโลก (ต้นฉบับ icons/icon.svg) · apple-touch-icon คือไอคอนบนหน้าจอโฮม iPhone
@@ -577,6 +578,16 @@ body{margin:0}
   #btcTab .ath-bar{background:rgba(255,255,255,.05);border:0;height:6px}
   #btcTab .ath-bar-fill{background:linear-gradient(90deg,#9a7d43,var(--accent-hi))}
   #btcTab .breakdown div{border-bottom:1px solid var(--line-soft)}
+  #btcTab .breakdown .bs-row{display:grid;grid-template-columns:1fr 64px 52px;align-items:center;gap:10px;padding:7px 0}
+  #btcTab .breakdown .bs-row small{display:block;color:var(--muted);font-size:11px;opacity:.8;margin-top:1px}
+  #btcTab .breakdown .bs-row.off{opacity:.5}
+  #btcTab .breakdown .bs-row .v{text-align:right}
+  #btcTab .bs-bar{display:block;height:4px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden}
+  #btcTab .bs-bar i{display:block;height:100%;border-radius:2px}
+  #btcTab .breakdown .bs-foot{display:block;border-bottom:0;padding-top:8px;font-size:11px;line-height:1.6;color:var(--muted)}
+  /* ⚙️ สมมติฐานของแบบจำลอง — ต้องเห็นบนหน้าการ์ด ไม่ใช่ซ่อนไว้ใน (i) */
+  .model-note{margin:10px 0 0;padding:8px 12px;border-left:2px solid var(--gold-line);background:rgba(212,178,106,.05);border-radius:0 8px 8px 0;font-size:12px;line-height:1.6;color:var(--muted)}
+  .model-note:empty{display:none}
   #tv_chart_container{border-color:var(--line-soft);border-radius:12px}
   #btcTab .manual-toggle-btn{border-style:solid!important;font-size:11px!important}
 
@@ -821,11 +832,11 @@ body{margin:0}
 </section>
 
 <section class="card">
-<h2>📡 <span data-en="Market Prices">ราคาตลาด</span> <span class="h-en" data-en="Live · vs 24h">Live · เทียบ 24 ชม.</span></h2>
+<h2>📡 <span data-en="Market Prices">ราคาตลาด</span> <span class="h-en" data-en="Latest · each row shows its own timing">ล่าสุด · แต่ละแถวบอกเวลาของตัวเอง</span></h2>
 
 <div id="livePrices" style="display:flex; flex-direction:column; gap:12px;">
   <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed var(--line);">
-    <span><span data-en="🥇 Gold">🥇 ทองคำ</span> <span class="muted" style="font-size:10px;" data-en="(per oz)">(ต่อออนซ์)</span> <a class="tv-arrow" href="https://www.tradingview.com/chart/?symbol=TVC%3AGOLD" target="_blank" rel="noopener noreferrer" title="เปิด Gold ใน TradingView" data-en-title="Open Gold in TradingView" aria-label="เปิด Gold ใน TradingView" data-en-aria="Open Gold in TradingView">↗</a></span><b id="lpGold" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
+    <span><span data-en="🥇 Gold">🥇 ทองคำ</span> <span class="muted" style="font-size:10px;" data-en="(per oz · via PAXG token)">(ต่อออนซ์ · อ้างอิงโทเคน PAXG)</span> <a class="tv-arrow" href="https://www.tradingview.com/chart/?symbol=TVC%3AGOLD" target="_blank" rel="noopener noreferrer" title="เปิด Gold ใน TradingView" data-en-title="Open Gold in TradingView" aria-label="เปิด Gold ใน TradingView" data-en-aria="Open Gold in TradingView">↗</a></span><b id="lpGold" style="font-size:16px;" data-en="Loading…">กำลังโหลด…</b>
   </div>
   <div style="padding:10px 0; border-bottom:1px dashed var(--line);">
     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -915,22 +926,22 @@ body{margin:0}
     <div class="i18n-th">
     <p><b>VIX</b> (Cboe Volatility Index) หรือ "ดัชนีความกลัว" วัดความผันผวนที่ตลาดคาดของหุ้น S&amp;P 500 ใน 30 วันข้างหน้า คำนวณจากราคา option ของ S&amp;P 500 หน่วยเป็น % ต่อปี</p>
     <p><b>แปลงเป็นรายวัน:</b> VIX ÷ 16 ≈ ตลาดคาดว่าหุ้นแกว่งได้กี่ % ต่อวัน เช่น VIX 16 ≈ ±1% ต่อวัน</p>
-    <p><b>อ่านสี:</b> 🟢 ต่ำกว่า 20 = ตลาดนิ่ง ไม่ต้องรีบขาย · 🟡 20–30 = เริ่มกังวล ใจเย็นไว้ (ช่วงยี่สิบต้นๆ เป็นช่วงที่ซื้อแล้วได้ผลแย่สุดในอดีต) · 🟠 30–40 = กลัวหนัก แบ่งซื้อทีละน้อย · 🔴 40 ขึ้นไป = ตื่นตระหนก โอกาสมาพร้อมความเสี่ยงสูง</p>
+    <p><b>อ่านสี:</b> 🟢 ต่ำกว่า 20 = ตลาดนิ่ง · 🟡 20–30 = เริ่มกังวล (ในอดีตช่วงยี่สิบต้น ๆ หุ้นปีถัดไปให้ผลแย่สุด) · 🟠 30–40 = กลัวหนัก (ในอดีตหุ้นปีถัดไปมักให้ผลดี) · 🔴 40 ขึ้นไป = ตื่นตระหนก ผันผวนสูงมาก</p>
     <p><b>เกณฑ์มาจากไหน:</b> เทียบ VIX แต่ละช่วงกับผลของหุ้น S&amp;P 500 ในปีถัดมา (ข้อมูลปี 1990–2026) โดยรวมคือยิ่งตลาดกลัวมาก การซื้อระยะยาวยิ่งได้ผลดี แต่อดีตไม่ได้การันตีอนาคต</p>
     <p><b>📉 VIX เริ่มลงจากจุดพีค:</b> VIX ยังสูง (25 ขึ้นไป) แต่ต่ำกว่าเมื่อเดือนก่อนแล้ว มักเป็นภาพที่ดีกว่าตอนที่ยังพุ่งอยู่ แต่ไม่ได้แปลว่าตลาดถึงก้นแล้ว</p>
-    <p><b>VIX ต่ำ ไม่ต้องรีบขาย:</b> ตลาดนิ่งอยู่ได้นาน สิ่งที่ควรดูคือหุ้นแพงไปหรือยัง (Shiller PE, Buffett Indicator)</p>
-    <p><b>VIX สูง ค่อยๆ ซื้อ:</b> อย่าทุ่มหมดในรอบเดียวและเก็บเงินสดไว้บ้าง เพราะความกลัวลากยาวเป็นเดือนได้</p>
+    <p><b>VIX ต่ำ ไม่ได้แปลว่าตลาดจะลง:</b> ตลาดนิ่งอยู่ได้นาน สิ่งที่ควรดูคือหุ้นแพงไปหรือยัง (Shiller PE, Buffett Indicator)</p>
+    <p><b>VIX สูง ความกลัวลากยาวได้:</b> ในอดีตความกลัวลากยาวเป็นเดือนได้ ราคาจึงมักไม่ได้กลับตัวทันทีที่ VIX พุ่ง</p>
     <p><b>40 ขึ้นไป เกิดไม่บ่อย:</b> ในอดีตมีแค่ไม่กี่ช่วง (1998, 2008–09, 2011, 2020) และบางครั้งหุ้นยังลงต่ออีกพักก่อนฟื้น จึงใช้เป็นสูตรตายตัวไม่ได้</p>
     <p><b>อ่านคู่กับ:</b> MOVE (บอนด์) OVX (น้ำมัน) และ DVOL (BTC) · ค่าเฉลี่ยระยะยาวของ VIX ราว 19–20 · ช่วงวิกฤต 2008 และโควิด มี.ค. 2020 ขึ้นไปราว 80</p>
     </div>
     <div class="i18n-en" lang="en">
     <p><b>VIX</b> (Cboe Volatility Index), the "fear index", measures the volatility the market expects in the S&amp;P 500 over the next 30 days. It is derived from S&amp;P 500 option prices, in % per year.</p>
     <p><b>Per day:</b> VIX ÷ 16 ≈ the expected daily move in %, so VIX 16 ≈ ±1% a day.</p>
-    <p><b>Colours:</b> 🟢 below 20 = steady market, no need to sell · 🟡 20–30 = getting nervous, go slow (the low 20s have been the worst place to buy in the past) · 🟠 30–40 = heavy fear, buy a little at a time · 🔴 40 and up = panic, opportunity with high risk</p>
+    <p><b>Colours:</b> 🟢 below 20 = calm · 🟡 20–30 = getting nervous (the low 20s have had the weakest next-year stock returns) · 🟠 30–40 = heavy fear (next-year stock returns have usually been good) · 🔴 40 and up = panic, very high volatility</p>
     <p><b>Where the bands come from:</b> each VIX band compared with how the S&amp;P 500 did over the following year (data 1990–2026). Broadly, the more scared the market, the better long-term buying has worked, but the past is no guarantee.</p>
     <p><b>📉 VIX easing off its high:</b> VIX is still high (25 or more) but lower than a month ago. That has usually been a better sign than VIX still climbing, but it does not mean the market has bottomed.</p>
-    <p><b>Low VIX, no rush to sell:</b> calm markets can stay calm for a long time. What matters is whether stocks are already expensive (Shiller PE, Buffett Indicator).</p>
-    <p><b>High VIX, buy slowly:</b> don't go all in at once and keep some cash, because fear can drag on for months.</p>
+    <p><b>Low VIX does not mean a fall is coming:</b> calm markets can stay calm for a long time. What matters is whether stocks are already expensive (Shiller PE, Buffett Indicator).</p>
+    <p><b>High VIX, fear can last:</b> fear has dragged on for months before, so prices have rarely turned the moment VIX spiked.</p>
     <p><b>40 and up is rare:</b> only a handful of episodes (1998, 2008–09, 2011, 2020), and sometimes stocks kept falling for a while before recovering, so it is not a fixed rule.</p>
     <p><b>Read it with:</b> MOVE (bonds), OVX (oil) and DVOL (BTC) · the long-run VIX average is about 19–20 · it reached about 80 in 2008 and in March 2020.</p>
     </div>
@@ -3345,10 +3356,10 @@ window.setHeaderStamp();
   // VIX bands (S&P 500 12-month forward returns, 1990–2026): <20 hold · 20–30 caution · 30–40 buy in steps · ≥40 crisis.
   // pastPeak: VIX still ≥25 but below where it was a month ago (fear easing, not a confirmed bottom).
   function vixZone(v, monthAgo){
-    const label = v >= 40 ? tr('🔴 ตื่นตระหนก · โอกาสพร้อมความเสี่ยงสูง', '🔴 Panic · opportunity, high risk')
-      : v >= 30 ? tr('🟠 กลัวหนัก · แบ่งซื้อทีละน้อย', '🟠 Heavy fear · buy a little at a time')
-      : v >= 20 ? tr('🟡 เริ่มกังวล · ใจเย็นไว้', '🟡 Nervous · go slow')
-      : tr('🟢 ตลาดนิ่ง · ไม่ต้องรีบขาย', '🟢 Steady · no need to sell');
+    const label = v >= 40 ? tr('🔴 ตื่นตระหนก · ผันผวนสูงมาก', '🔴 Panic · very high volatility')
+      : v >= 30 ? tr('🟠 กลัวหนัก', '🟠 Heavy fear')
+      : v >= 20 ? tr('🟡 เริ่มกังวล', '🟡 Nervous')
+      : tr('🟢 ตลาดนิ่ง', '🟢 Calm');
     return { label, pastPeak: v >= 25 && isValidNum(monthAgo) && v < monthAgo };
   }
   // the close about one month (30 calendar days) before `date`, from [[date, value], ...] oldest first
@@ -4869,7 +4880,7 @@ window.setHeaderStamp();
 <div class="wrap">
 <main class="grid">
 <section class="card full" id="usGainCard">
-<h2>🚀 <span data-en="Top 20 US stock gainers">หุ้นสหรัฐบวกแรงสุด 20 อันดับ</span> <span class="h-en" data-en="Biggest US-listed stocks">หุ้นใหญ่ที่ซื้อขายในสหรัฐฯ</span></h2>
+<h2>🚀 <span data-en="Top 20 US stock gainers">หุ้นสหรัฐบวกแรงสุด 20 อันดับ</span> <span class="h-en" data-en="From ~260 large stocks we track, not the whole market">จากหุ้นใหญ่ราว 260 ตัวที่ติดตาม ไม่ใช่ทั้งตลาด</span></h2>
 <div class="ug-head">
   <div class="ug-sub" id="ugSub" data-en="Loading…">กำลังโหลด…</div>
   <div class="ug-seg" id="ugSeg" role="group" aria-label="ช่วงเวลา" data-en-aria="Period">
@@ -6134,7 +6145,7 @@ window.setHeaderStamp();
     <div class="panel gauge-panel">
       <h2 data-en="Buy score">คะแนนความน่าซื้อ</h2>
       <div class="score-number" id="scoreNumber">–</div>
-      <div class="score-label" data-en="/ 10 · most attractive = 10">/ 10 · น่าซื้อมากสุด = 10</div>
+      <div class="score-label" data-en="/ 10 · cheapest vs history = 10">/ 10 · ถูกสุดเมื่อเทียบประวัติ = 10</div>
       <div class="verdict" id="verdict" data-en="Enter the metrics on the right to calculate">กรอกค่าตัวชี้วัดด้านขวาเพื่อคำนวณ</div>
 
       <div class="breakdown" id="breakdown"></div>
@@ -6284,14 +6295,12 @@ window.setHeaderStamp();
         </div>
       </div>
       <div class="i18n-en" lang="en" style="flex-basis:100%; font-size:11px; color:var(--sub); line-height:1.6;">
-        Bonus rule: if the price is more than <span style="color:var(--text)">50%</span> below ATH you get +0.5 points,
-        and more than 65% below gives +0.75 points (the total is capped at 10). The bonus is small because a deep
-        drawdown already lowers NUPL and MVRV, so their scores rise anyway.
+        The drawdown from ATH is shown for context only and is not added to the score: a deep drawdown already
+        lowers MVRV, the short-term holder ratio and the power-law position, so adding it would count the same fall twice.
       </div>
       <div class="i18n-th" style="flex-basis:100%; font-size:11px; color:var(--sub); line-height:1.6;">
-        กติกาโบนัส: ถ้าราคาลงมามากกว่า <span style="color:var(--text)">50%</span> จาก ATH จะได้ +0.5 คะแนน,
-        และถ้าลงมากกว่า 65% ได้ +0.75 คะแนน (คะแนนรวมสูงสุดไม่เกิน 10) ให้โบนัสน้อยเพราะตอนราคาลงลึก
-        ค่า NUPL และ MVRV ก็ต่ำลงอยู่แล้ว คะแนนของสองตัวนี้จึงสูงขึ้นเองอยู่แล้ว
+        ระยะที่ราคาลงจาก ATH แสดงไว้ดูประกอบเท่านั้น ไม่ได้บวกเข้าคะแนน เพราะตอนราคาลงลึก MVRV, ราคาเทียบต้นทุนคนถือสั้น
+        และตำแหน่งเทียบ Power Law ก็สะท้อนการลงนั้นอยู่แล้ว ถ้าบวกเพิ่มจะนับการลงครั้งเดียวซ้ำสองรอบ
       </div>
     </div>
 
@@ -6562,6 +6571,7 @@ window.setHeaderStamp();
         <div class="gx"><span class="k" data-en="Call wall / Put wall">Call wall / Put wall</span><b id="gexWalls">–</b><small id="gexWallsSub"></small></div>
       </div>
       <div class="gex-meaning" id="gexMeaning" data-en="Loading…">กำลังโหลด…</div>
+      <div class="model-note" data-en="⚙️ Model, not a ledger: Deribit options only (most of the BTC options market, but not IBIT or CME), and it assumes dealers are long calls and short puts. Read the figures as rough size and direction.">⚙️ เป็นแบบจำลอง ไม่ใช่สถานะจริง: นับเฉพาะ option บน Deribit (ส่วนใหญ่ของตลาด option BTC แต่ไม่รวม IBIT และ CME) และสมมติว่า dealer ถือ call ยาว/put สั้น ตัวเลขจึงบอกได้แค่ขนาดและทิศทางคร่าว ๆ</div>
       <div class="gex-cols"><span data-en="GEX by strike ($ per 1% move)">GEX แยกตาม strike ($ ต่อราคาขยับ 1%)</span><span data-en="If price were here: total GEX">ถ้าราคาอยู่ตรงนี้: GEX รวม</span></div>
       <div class="gex-wrap" id="gexWrap"><div class="gex-svg" id="gexChart"></div><div class="liq-hover" id="gexHover" hidden></div></div>
       <div class="gex-legend"><span><i style="background:var(--green)"></i><span data-en="Call gamma">Call gamma</span></span><span><i style="background:var(--red)"></i><span data-en="Put gamma">Put gamma</span></span><span><i class="ln" style="border-color:#ece6d8"></i><span data-en="Price">ราคา</span></span><span><i class="ln dash" style="border-color:#f4c95d"></i>Zero gamma</span></div>
@@ -6632,6 +6642,7 @@ window.setHeaderStamp();
           <div class="mine-scale" id="mineScale"></div>
           <div class="sl-sub" id="mineCostSub"></div>
           <div class="sl-sub" id="mineNet"></div>
+          <div class="model-note" id="mineRange"></div>
           <a class="tv-btn" href="https://data.hashrateindex.com/bitcoin-compute-data/bitcoin-hashprice-index" target="_blank" rel="noopener noreferrer"><span data-en="Hashprice on Hashrate Index ↗">ดู Hashprice บน Hashrate Index ↗</span></a>
         </div>
         <div class="sl-tile mine-tile">
@@ -6827,6 +6838,13 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   const NUPL_POINTS = [[-0.5,10],[0,8.5],[0.25,7],[0.5,5],[0.75,3],[1.0,1]];
   const Z_POINTS     = [[-2,10],[0,8.5],[1,7],[3,5],[5,3],[7,1.5],[9,1]];
   const MVRV_POINTS  = [[0.8,10],[1,9],[1.5,7],[2,5.5],[2.5,4],[3.5,2],[4.5,1]];
+  // อีก 3 มุมที่ไม่ได้มาจาก Realized Cap ทั้งตลาดเหมือน NUPL/MVRV/MVRV-Z (สามตัวนั้นนับรวมเป็นมุมเดียว)
+  // ราคา ÷ ต้นทุนคนถือสั้น (STH): ต่ำกว่า 1 = คนซื้อช่วง ~5 เดือนล่าสุดขาดทุนเฉลี่ย
+  const STH_POINTS   = [[0.7,10],[0.85,8.5],[1,6.5],[1.2,4.5],[1.5,2.5],[2,1]];
+  // ตำแหน่งเทียบ Power Law (0 = ถูกสุดเทียบเส้นในอดีต, 1 = แพงสุด)
+  const PL_POINTS    = [[0,10],[0.1,9],[0.3,7],[0.5,5],[0.7,3],[0.9,1.5],[1,1]];
+  // Puell Multiple: รายได้นักขุดวันนี้ ÷ ค่าเฉลี่ย 365 วัน (ต่ำ = นักขุดลำบาก มักเป็นช่วงก้นรอบ)
+  const PUELL_POINTS = [[0.4,10],[0.6,8.5],[0.8,7],[1,5.5],[1.5,3.5],[2.5,1.5],[4,1]];
 
   function nuplZoneLabel(v){
     if(v<0) return tr('Capitulation — โซนตื่นตระหนก', 'Capitulation');
@@ -6857,13 +6875,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     return 'var(--red)';
   }
 
-  // Kept small on purpose: a deep drawdown already pushes NUPL and MVRV scores up,
-  // so a big bonus would count the same event twice.
-  function athBonus(ddPct){
-    if(ddPct>=65) return 0.75;
-    if(ddPct>=50) return 0.5;
-    return 0;
-  }
+  const isNum = (v) => typeof v === 'number' && isFinite(v);
 
   // ---------- elements ----------
   const el = id => document.getElementById(id);
@@ -6978,13 +6990,19 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       dd = Math.max(0, (1 - price/ath) * 100);
     }
 
-    let bonus = 0;
-    if(dd!=null) bonus = athBonus(dd);
-
+    // 4 มุมที่ไม่ซ้ำกัน ให้น้ำหนักเท่ากัน มุมไหนยังไม่มีข้อมูลก็ไม่นับ (ไม่เดาแทน)
+    // ไม่มีโบนัส ATH drawdown แล้ว: ราคาที่ลงลึกทำให้ MVRV/STH/Power Law ต่ำลงเองอยู่แล้ว ถ้าบวกอีกจะนับซ้ำ
+    const sig = window.giBtcSignals || {};
     const avg = (sNupl + sZ + sM) / 3;
-    const rawTotal = avg + bonus;
-    let final = rawTotal;
-    final = Math.min(10, Math.max(1, final)); // เพดาน 10 / พื้น 1
+    const pillars = [
+      { key: 'val', name: tr('มูลค่าเทียบต้นทุนทั้งตลาด', 'Value vs whole-market cost'), note: 'NUPL · MVRV · MVRV-Z', v: isNaN(avg) ? null : avg },
+      { key: 'sth', name: tr('ราคาเทียบต้นทุนคนถือสั้น', 'Price vs short-term holder cost'), note: isNum(sig.sthRatio) ? '× ' + sig.sthRatio.toFixed(2) : '', v: isNum(sig.sthRatio) ? interpScore(sig.sthRatio, STH_POINTS) : null },
+      { key: 'pl', name: tr('ตำแหน่งเทียบ Power Law', 'Position vs power law'), note: isNum(sig.plPos) ? Math.round(sig.plPos * 100) + '%' : '', v: isNum(sig.plPos) ? interpScore(sig.plPos, PL_POINTS) : null },
+      { key: 'puell', name: tr('รายได้นักขุด (Puell)', 'Miner revenue (Puell)'), note: isNum(sig.puell) ? sig.puell.toFixed(2) : '', v: isNum(sig.puell) ? interpScore(sig.puell, PUELL_POINTS) : null }
+    ];
+    const have = pillars.filter(p => isNum(p.v));
+    const rawTotal = have.length ? have.reduce((a, p) => a + p.v, 0) / have.length : NaN;
+    const final = Math.min(10, Math.max(1, rawTotal));
 
     // update price / dd UI
     pxDisplay.textContent = price ? fmtUSD(price) : '—';
@@ -6994,28 +7012,45 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     ddBar.style.width = dd!=null ? Math.min(100, dd) + '%' : '0%';
 
     // gauge needle removed — just color the big number
-    scoreNumber.textContent = final.toFixed(1);
-    scoreNumber.style.color = scoreColor(final);
+    scoreNumber.textContent = isNaN(final) ? '–' : final.toFixed(1);
+    scoreNumber.style.color = isNaN(final) ? '' : scoreColor(final);
 
     let verdictText, verdictColor;
-    if(final>=8){ verdictText=tr('โซนน่าซื้อมาก (Strong Buy Zone)', 'Strong Buy Zone'); verdictColor='var(--green)'; }
-    else if(final>=6.5){ verdictText=tr('น่าสนใจทยอยซื้อ (Accumulate)', 'Accumulate'); verdictColor='var(--green)'; }
-    else if(final>=4){ verdictText=tr('กลาง ๆ รอจังหวะ (Neutral)', 'Neutral, wait for a better entry'); verdictColor='var(--amber)'; }
-    else if(final>=2.5){ verdictText=tr('เริ่มแพง ระวัง (Caution)', 'Getting expensive (Caution)'); verdictColor='var(--red)'; }
-    else{ verdictText=tr('โซนความโลภสูง (Euphoria — เสี่ยงสูง)', 'Euphoria zone (high risk)'); verdictColor='var(--red)'; }
+    if(isNaN(final)){ verdictText=tr('รอข้อมูล…', 'Waiting for data…'); verdictColor='var(--sub)'; }
+    else if(final>=8){ verdictText=tr('ถูกมากเมื่อเทียบกับประวัติ', 'Historically very cheap'); verdictColor='var(--green)'; }
+    else if(final>=6.5){ verdictText=tr('ค่อนข้างถูกเมื่อเทียบกับประวัติ', 'Historically cheap'); verdictColor='var(--green)'; }
+    else if(final>=4){ verdictText=tr('กลาง ๆ เมื่อเทียบกับประวัติ', 'Around historical fair value'); verdictColor='var(--amber)'; }
+    else if(final>=2.5){ verdictText=tr('ค่อนข้างแพงเมื่อเทียบกับประวัติ', 'Historically expensive'); verdictColor='var(--red)'; }
+    else{ verdictText=tr('แพงมาก ใกล้โซนคึกคักเกินเหตุในอดีต', 'Very expensive, near past euphoria'); verdictColor='var(--red)'; }
     verdict.textContent = verdictText;
     verdict.style.borderColor = verdictColor;
     verdict.style.color = verdictColor;
 
-    breakdown.innerHTML = `
-      <div><span>NUPL score</span><span class="v">${sNupl.toFixed(1)}</span></div>
-      <div><span>MVRV Z-Score score</span><span class="v">${sZ.toFixed(1)}</span></div>
-      <div><span>MVRV Ratio score</span><span class="v">${sM.toFixed(1)}</span></div>
-      <div><span>${tr('ค่าเฉลี่ย 3 ตัวชี้วัด', 'Average of 3 metrics')}</span><span class="v">${avg.toFixed(1)}</span></div>
-      <div><span>${tr('โบนัส ATH drawdown', 'ATH drawdown bonus')}</span><span class="v">+${bonus.toFixed(2).replace(/0$/, '')}</span></div>
-      <div><span>${tr('รวมสุดท้าย', 'Final score')}</span><span class="v">${final.toFixed(1)} / 10${Math.abs(rawTotal - final) > 0.05 ? ' <span class="muted">(' + tr('ก่อนจำกัดเพดาน ', 'before cap ') + rawTotal.toFixed(1) + ')</span>' : ''}</span></div>
-    `;
+    const row = p => '<div class="bs-row' + (isNum(p.v) ? '' : ' off') + '"><span>' + p.name + (p.note ? ' <small>' + p.note + '</small>' : '') + '</span>'
+      + '<span class="bs-bar"><i style="width:' + (isNum(p.v) ? (p.v * 10).toFixed(0) : 0) + '%;background:' + (isNum(p.v) ? scoreColor(p.v) : 'transparent') + '"></i></span>'
+      + '<span class="v"' + (isNum(p.v) ? ' style="color:' + scoreColor(p.v) + '"' : '') + '>' + (isNum(p.v) ? p.v.toFixed(1) : tr('รอข้อมูล', 'loading')) + '</span></div>';
+    breakdown.innerHTML = pillars.map(row).join('')
+      + '<div class="bs-foot">' + tr('เฉลี่ย ' + have.length + ' จาก 4 มุมที่ไม่ซ้ำกัน · NUPL, MVRV และ MVRV-Z มาจากข้อมูลชุดเดียวกัน จึงนับรวมเป็นมุมเดียว · ใช้ดูว่าราคาถูกหรือแพงเทียบอดีต ไม่ใช่คำแนะนำการลงทุน',
+        'Average of ' + have.length + ' of 4 independent angles · NUPL, MVRV and MVRV-Z come from the same data, so they count as one · shows cheap vs expensive against history, not investment advice') + '</div>';
   }
+
+  // ค่า MVRV / NUPL ใช้ชุดเดียวกับการ์ดต้นทุนตลาดด้านล่าง (ราคาสด ÷ ต้นทุนเฉลี่ย) ตัวเลขทั้งแท็บจึงตรงกัน
+  // ถ้าผู้ใช้เปิดช่องกรอกเองอยู่ จะไม่ทับค่าที่พิมพ์
+  function applySharedValuation(){
+    const g = window.giBtcSignals || {};
+    if(isNum(g.mvrv) && el('mManualRow').style.display === 'none'){
+      mNum.value = g.mvrv.toFixed(2); mRange.value = Math.max(0.8, Math.min(4.5, g.mvrv));
+      setBadge('mAuto', true, Date.now());
+      el('mUpdated').textContent = tr('ราคาสด ÷ ต้นทุนเฉลี่ยทั้งตลาด (ชุดเดียวกับการ์ดต้นทุนด้านล่าง)', 'Live price ÷ market cost basis (same data as the cost card below)');
+    }
+    if(isNum(g.nupl) && el('nuplManualRow').style.display === 'none'){
+      nuplNum.value = g.nupl.toFixed(3); nuplRange.value = Math.max(-0.5, Math.min(1, g.nupl));
+      setBadge('nuplAuto', true, Date.now());
+      el('nuplUpdated').textContent = tr('= 1 − 1/MVRV (ข้อมูลชุดเดียวกับ MVRV)', '= 1 − 1/MVRV (same data as MVRV)');
+    }
+  }
+  window.addEventListener('gi-btc-signals', () => { applySharedValuation(); recompute(); });
+  window.__buyTest = { recompute, applySharedValuation };   // tests
 
   // ---------- persistence ----------
   let saveTimer=null;
@@ -7272,9 +7307,9 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     debugLog = [];
 
     const [nuplOk, zOk, mOk] = await Promise.all([
-      resolveMetric('nupl', BG_SLUGS.nupl, v => { nuplNum.value = v.toFixed(3); nuplRange.value = Math.max(-0.5,Math.min(1,v)); }, force),
+      resolveMetric('nupl', BG_SLUGS.nupl, v => { if(window.giBtcSignals && isNum(window.giBtcSignals.nupl)) return; nuplNum.value = v.toFixed(3); nuplRange.value = Math.max(-0.5,Math.min(1,v)); }, force),
       resolveMetric('z',    BG_SLUGS.z,    v => { zNum.value = v.toFixed(2); zRange.value = Math.max(-2,Math.min(9,v)); }, force),
-      resolveMetric('m',    BG_SLUGS.m,    v => { mNum.value = v.toFixed(2); mRange.value = Math.max(0.8,Math.min(4.5,v)); }, force)
+      resolveMetric('m',    BG_SLUGS.m,    v => { if(window.giBtcSignals && isNum(window.giBtcSignals.mvrv)) return; mNum.value = v.toFixed(2); mRange.value = Math.max(0.8,Math.min(4.5,v)); }, force)
     ]);
 
     renderDebugLog();
@@ -7909,7 +7944,6 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   // ---------- DVOL (Deribit BTC implied volatility, "VIX ของ BTC") ----------
   // ชั้นแรก: /.netlify/functions/dvol (แคช 5 นาที) · ถ้าเซิร์ฟเวอร์ล่ม ดึงตรงจาก Deribit public API
   // (ไม่ต้องใช้ key) แล้วแปลงแท่งเทียนรายวัน [ts, open, high, low, close] เป็นค่าปิดรายวันเอง
-  const isNum = (v) => typeof v === 'number' && isFinite(v);
   function dvolFromCandles(j){
     const rows = (j && j.result && j.result.data) || [];
     const byDay = {};
@@ -8054,6 +8088,15 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     }else flip = tr(' · ไม่มีจุดเปลี่ยนในช่วง ±30% จากราคาตอนนี้', ' · no flip within ±30% of the current price');
     return [pos ? 'pos' : 'neg', head + flip];
   }
+  // แบบจำลองนี้บอกได้แค่ "ขนาดคร่าว ๆ" (Deribit อย่างเดียว + สมมติว่า dealer ถือฝั่งไหน) จึงปัดเหลือ 2 หลักแรก
+  // ไม่ให้ตัวเลขอย่าง 20,389 BTC ดูแม่นกว่าที่โมเดลรู้จริง
+  function gexRoughBtc(v){
+    const a = Math.abs(v);
+    if(!isNum(a) || a === 0) return '0';
+    const mag = Math.pow(10, Math.max(0, Math.floor(Math.log10(a)) - 1));
+    const r = Math.round(a / mag) * mag;
+    return r >= 1000 ? (r / 1000).toLocaleString('en-US', { maximumFractionDigits: 1 }) + 'k' : String(r);
+  }
   function renderGexStats(d){
     const g = d.gex, spot = d.spot;
     el('gexSpot').textContent = fmtPx(spot);
@@ -8071,7 +8114,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     el('gexFlows').innerHTML = (g.flows || []).map(function(f){
       const buy = f.btc >= 0;
       return '<div class="rekt-box"><div class="rekt-top"><span class="rekt-lbl">' + (f.move < 0 ? tr('ราคาลง ', 'Price down ') : tr('ราคาขึ้น ', 'Price up ')) + Math.abs(f.move * 100) + '%</span><span class="rekt-tag">' + fmtPx(f.price) + '</span></div>'
-        + '<div class="rekt-big ' + (buy ? 'buy' : 'sell') + '">' + (buy ? tr('ซื้อ ', 'Buy ') : tr('ขาย ', 'Sell ')) + Math.abs(f.btc).toLocaleString('en-US') + '<small>BTC</small></div>'
+        + '<div class="rekt-big ' + (buy ? 'buy' : 'sell') + '">' + (buy ? tr('ซื้อ ~', 'Buy ~') : tr('ขาย ~', 'Sell ~')) + gexRoughBtc(f.btc) + '<small>BTC</small></div>'
         + '<div class="rekt-row"><span>≈ ' + fmtUsdBig(Math.abs(f.usd)) + '</span><span>' + ((f.move < 0) === !buy ? tr('ตามทิศราคา', 'with the move') : tr('สวนทิศราคา', 'against the move')) + '</span></div></div>';
     }).join('');
     const ex = (g.expiries || []).slice(0, 4).map(e => e.code + ' ' + e.share + '%').join(' · ');
@@ -8347,7 +8390,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     });
   })();
   setInterval(() => { if(document.body.classList.contains('theme-btc') && !document.hidden){ fetchOptionsGex(false); fetchVpoc(false); } }, 5 * 60 * 1000);
-  if(typeof window !== 'undefined') window.__optTest = { buildVolumeProfile, parseDeribitChart, rrZone, rrTipHtml, rrTermSvg, gexMeaning, niceStep, gexState, vpState };
+  if(typeof window !== 'undefined') window.__optTest = { gexRoughBtc, buildVolumeProfile, parseDeribitChart, rrZone, rrTipHtml, rrTermSvg, gexMeaning, niceStep, gexState, vpState };
 
   // ---------- BTC Spot ETF Flow (สหรัฐฯ รายวัน, US$ ล้าน) ----------
   // มาจาก /.netlify/functions/etf-flow เท่านั้น (Farside ไม่มี CORS และกันบอท ต้องดึงฝั่งเซิร์ฟเวอร์)
@@ -8496,7 +8539,10 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   // var, not let: recompute() calls renderMining() and can run before this line is reached.
   var lastMining = null;
   const MINE_TWO32 = 4294967296;
-  const MINE_DEFAULTS = { kwh: 0.05, eff: 22 };
+  // eff = J/TH ของเครื่องเฉลี่ยทั้งเครือข่าย ซึ่งไม่มีใครรู้แน่ จึงโชว์เป็นช่วง effLo–effHi ด้วย (คำตัดสินใช้ค่ากลาง)
+  const MINE_DEFAULTS = { kwh: 0.05, eff: 22, effLo: 18, effHi: 28 };
+  // Hash Ribbons ที่เพิ่งตัดลงไม่กี่วันมักกลับไปกลับมา ยังไม่นับเป็นสัญญาณ "ถูกบีบ" จนกว่าจะค้างครบ
+  const RIBBON_CONFIRM_DAYS = 3;
 
   // US$ per BTC. difficulty × 2^32 = hashes per block; × J/TH ÷ 1e12 = joules; ÷ 3.6e6 = kWh.
   function mineCost(difficulty, subsidy, fee, kwh, eff){
@@ -8519,11 +8565,14 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     return { key:'healthy', color:'var(--green)', label:tr('🟢 ราคาเหนือค่าไฟ 50% ขึ้นไป: นักขุดกำไรดี', '🟢 Price 50%+ above power: healthy margins') };
   }
   // ribbon: 'capitulation' | 'recovery' | 'normal' | null; margin = price ÷ power cost − 1
-  function minerVerdict(ribbon, puell, margin, belowElec){
+  function minerVerdict(ribbon, puell, margin, belowElec, ribbonDays){
     const why = [];
-    if(ribbon === 'capitulation') why.push(tr('Hash Ribbons ตัดลง (นักขุดปิดเครื่อง)', 'Hash Ribbons crossed down (machines switching off)'));
+    const early = ribbon === 'capitulation' && isNum(ribbonDays) && ribbonDays < RIBBON_CONFIRM_DAYS;
+    if(ribbon === 'capitulation' && !early) why.push(tr('Hash Ribbons ตัดลง (นักขุดปิดเครื่อง)', 'Hash Ribbons crossed down (machines switching off)'));
     if(belowElec) why.push(tr('ราคาต่ำกว่าค่าไฟ', 'price below electricity cost'));
     if(isNum(puell) && puell < 0.5) why.push(tr('Puell ต่ำกว่า 0.5 (รายได้หดหนัก)', 'Puell below 0.5 (revenue squeezed)'));
+    if(!why.length && early) return { key:'watch', color:'var(--amber)', label:tr('🟡 เริ่มมีสัญญาณ ยังไม่ยืนยัน', '🟡 Early sign, not confirmed'),
+      why:[tr('Hash Ribbons เพิ่งตัดลง ' + ribbonDays + ' วัน (ต้องค้างอย่างน้อย ' + RIBBON_CONFIRM_DAYS + ' วันถึงนับ)', 'Hash Ribbons crossed down ' + ribbonDays + ' day(s) ago (needs ' + RIBBON_CONFIRM_DAYS + '+ days to count)')] };
     if(why.length) return { key:'stress', color:'var(--red)', label:tr('🔴 ถูกบีบ: มีแนวโน้มเทขาย', '🔴 Under stress: likely selling'), why };
     if(isNum(puell) && puell >= 2) return { key:'profit', color:'#e8894a', label:tr('🟠 ขายทำกำไรมากกว่าปกติ', '🟠 Selling for profit more than usual'), why:[tr('Puell 2 ขึ้นไป รายได้ดีผิดปกติ', 'Puell 2 or more: unusually rich revenue')] };
     if(ribbon === 'recovery') return { key:'recovery', color:'var(--green)', label:tr('🟢 ช่วงปิดเครื่องจบ: แรงขายลดลง', '🟢 Capitulation over: selling easing'), why:[tr('Hash Ribbons เพิ่งตัดขึ้น ในอดีตมักเป็นจังหวะซื้อที่ดี', 'Hash Ribbons just crossed up, historically a good time to buy')] };
@@ -8553,6 +8602,11 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     const mv = mineMarginVerdict(price, c);
     const margin = c && price > 0 ? price / c.elec - 1 : null;
     el('mineCost').textContent = c ? mineUsd(c.elec) : '–';
+    const cLo = mineCost(d.difficulty, d.subsidy, d.feePerBlock, inp.kwh, inp.effLo), cHi = mineCost(d.difficulty, d.subsidy, d.feePerBlock, inp.kwh, inp.effHi);
+    if(el('mineRange')) el('mineRange').textContent = cLo && cHi
+      ? tr('ช่วงที่เป็นไปได้ ' + mineUsd(cLo.elec) + '–' + mineUsd(cHi.elec) + ' (เครื่อง ' + inp.effLo + '–' + inp.effHi + ' J/TH · ค่ากลาง ' + inp.eff + ') · ค่าไฟ $' + inp.kwh + '/kWh · ไม่รวมค่าเครื่องและค่าดำเนินการ',
+          'Plausible range ' + mineUsd(cLo.elec) + '–' + mineUsd(cHi.elec) + ' (machines ' + inp.effLo + '–' + inp.effHi + ' J/TH · midpoint ' + inp.eff + ') · power $' + inp.kwh + '/kWh · excludes machines and running costs')
+      : '';
     el('mineCost').style.color = mv.color;
     el('mineCost').dataset.verdict = mv.key;
     el('mineCostZone').textContent = c ? (mv.label + (isNum(margin) ? ' (' + tr('ราคา ', 'price ') + (margin >= 0 ? '+' : '') + Math.round(margin * 100) + '%)' : '')) : tr('ดึงไม่สำเร็จ (ลองใหม่ภายหลัง)', 'Unavailable (try later)');
@@ -8576,7 +8630,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
         + tr(' · ข้อมูลวันที่ ', ' · as of ') + (d.date || '–') + (d.stale ? tr(' (ข้อมูลเก่า)', ' (stale)') : '');
     }
     const rib = d.ribbon ? d.ribbon.state : null;
-    const v = minerVerdict(rib, d.puell, margin, !!(c && price > 0 && price < c.elec));
+    const v = minerVerdict(rib, d.puell, margin, !!(c && price > 0 && price < c.elec), d.ribbon ? d.ribbon.days : null);
     el('mineVerdict').textContent = v.label;
     el('mineVerdict').style.color = v.color;
     el('mineVerdict').dataset.verdict = v.key;
@@ -8599,6 +8653,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       const d = await r.json();
       if(!isNum(d.difficulty)) throw new Error('no difficulty');
       lastMining = d;
+      if(isNum(d.puell)){ window.giBtcSignals = Object.assign(window.giBtcSignals || {}, { puell: d.puell }); try{ window.dispatchEvent(new Event('gi-btc-signals')); }catch(e){} }
     }catch(e){
       if(!lastMining){
         el('mineCostZone').textContent = tr('ดึงไม่สำเร็จ (ลองใหม่ภายหลัง)', 'Unavailable (try later)');
@@ -9156,9 +9211,25 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   const rangeFrom = (D, days, firstOk) => Math.max(firstOk || 0, days ? D.lastP - days : 0);
   const firstIdx = a => { for(let i = 0; i < a.length; i++) if(a[i] != null) return i; return 0; };
 
+  // ---------- shared signals for the BTC Buy Score (one source of truth for MVRV / NUPL) ----------
+  // คะแนนความน่าซื้อด้านบนอ่านค่าจากตรงนี้ ตัวเลข MVRV ทั้งแท็บจึงตรงกัน (ราคาสด ÷ ต้นทุนเฉลี่ยชุดเดียวกัน)
+  function publishSignals(){
+    const D = S.D; if(!D) return;
+    const P = livePrice(); if(!(P > 0)) return;
+    const i = Math.min(lastIdx(D.rp), lastIdx(D.srp));
+    if(i < 0) return;
+    const rp = D.rp[i], srp = D.srp[i];
+    const sig = { price: P, asOf: D.t(i), mvrv: rp ? P / rp : null, sthRatio: srp ? P / srp : null,
+      plPos: S.pl ? S.pl.position(Date.now(), P) : null };
+    sig.nupl = sig.mvrv ? 1 - 1 / sig.mvrv : null;   // NUPL = 1 − Realized Cap ÷ Market Cap = 1 − 1/MVRV
+    window.giBtcSignals = Object.assign(window.giBtcSignals || {}, sig);
+    try{ window.dispatchEvent(new Event('gi-btc-signals')); }catch(e){}
+  }
+
   // ---------- 1) cost basis & MVRV ----------
   function costSummary(){
     const D = S.D; if(!D) return;
+    publishSignals();
     const P = livePrice();
     const i = Math.min(lastIdx(D.rp), lastIdx(D.lrp), lastIdx(D.srp));
     const rp = D.rp[i], lrp = D.lrp[i], srp = D.srp[i];
