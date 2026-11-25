@@ -56,7 +56,7 @@ test('index.html: MOVE and SOFR tiles have a Thai explainer and a TradingView bu
   }
   assert.match(HTML, /tradingview\.com\/chart\/\?symbol=TVC%3AMOVE/);
   assert.match(HTML, /tradingview\.com\/chart\/\?symbol=FRED%3ASOFR-FRED%3AIORB/);
-  assert.equal((HTML.match(/class="tip-btn"/g) || []).length, 50); // 1 capital-markets row template (other coins / stablecoin) + 16 US-market tiles (all of them, incl. HY spread) + 8 macro cards + 9 extra econ cards (incl. real yield) + 13 BTC tiles (F&G, funding, OI, DVOL, ETF flow, stablecoin cap, NUPL, MVRV Z, MVRV, liquidation heatmap, liquidations 1–24h, mining cost, miner selling) + 25Δ RR tile, GEX and VPOC panels (options-gex.test.js)
+  assert.equal((HTML.match(/class="tip-btn"/g) || []).length, 54); // 4 on-chain panels (cost basis, holders, power law, Strategy) + 1 capital-markets row template (other coins / stablecoin) + 16 US-market tiles (all of them, incl. HY spread) + 8 macro cards + 9 extra econ cards (incl. real yield) + 13 BTC tiles (F&G, funding, OI, DVOL, ETF flow, stablecoin cap, NUPL, MVRV Z, MVRV, liquidation heatmap, liquidations 1–24h, mining cost, miner selling) + 25Δ RR tile, GEX and VPOC panels (options-gex.test.js)
   assert.match(HTML, /haircut/);
 });
 
