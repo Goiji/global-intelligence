@@ -7,7 +7,7 @@ const vm = require('node:vm');
 const fn = require('../netlify/functions/visitors.js');
 const T = fn.__test;
 const { SCRIPTS, makeSandbox } = require('./dom-stub.js');
-const HTML = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const HTML = require('../tools/stamp.js').readPage();
 
 test('visitors: Bangkok date rolls over at 17:00 UTC', () => {
   assert.equal(T.bangkokDate(Date.UTC(2026, 10, 15, 16, 59)), '2026-11-15');

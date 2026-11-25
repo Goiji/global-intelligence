@@ -94,7 +94,7 @@ test('gold-th: an implausible or swapped price is rejected rather than shown', (
 
 // ---------------- risk scoring (index.html) ----------------
 test('risk scoring matches whole words only and separates calm from tense news', () => {
-  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const html = require('../tools/stamp.js').readPage();
   const i = html.indexOf('  const HIGH_RISK_TERMS'), j = html.indexOf('  function scoreCategory(titles)');
   assert.ok(i > 0 && j > i, 'scoring block not found');
   // eslint-disable-next-line no-new-func

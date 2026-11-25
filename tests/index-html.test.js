@@ -213,7 +213,7 @@ test('"new version available" check stays silent when the host sends no ETag/Las
 });
 
 test('source footers are collapsed behind an "ⓘ แหล่งข้อมูล" toggle, warnings stay visible', () => {
-  const H = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8');
+  const H = require('../tools/stamp.js').readPage();
   for (const id of ['livePricesNote', 'mktNote', 'fedAsOf', 'econExtraNote']) {
     const re = new RegExp('<details class="src-note"><summary data-en="ⓘ Sources">ⓘ แหล่งข้อมูล</summary><div[^>]*id="' + id + '"');
     assert.match(H, re, id + ' should sit inside a collapsed src-note');
