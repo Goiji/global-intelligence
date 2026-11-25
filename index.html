@@ -6595,17 +6595,17 @@ window.setHeaderStamp();
       <h2 data-en="Miners">นักขุด (Miners)</h2>
       <div class="mine-grid">
         <div class="sl-tile mine-tile">
-          <div class="sl-name"><span data-en="Cost to mine 1 BTC">ต้นทุนขุด 1 BTC</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ต้นทุนการขุดคืออะไร" data-en-aria="What is the cost of production?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
+          <div class="sl-name"><span data-en="Power cost to mine 1 BTC">ค่าไฟขุด 1 BTC</span> <div class="tip"><button type="button" class="tip-btn" aria-label="ต้นทุนการขุดคืออะไร" data-en-aria="What is the cost of production?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
             <div class="i18n-th">
             <p><b>คืออะไร:</b> ประมาณว่านักขุดทั้งเครือข่ายจ่ายเงินเท่าไรเพื่อได้ BTC มา 1 เหรียญ คิดจากค่า difficulty จริงตอนนี้ (ต้องคำนวณ hash กี่ครั้งต่อ 1 บล็อก) × ไฟที่เครื่องขุดกิน (J/TH) × ค่าไฟ ($/kWh) แล้วหารด้วยรางวัลต่อบล็อก (เหรียญใหม่ 3.125 BTC + ค่าธรรมเนียมเฉลี่ย 1 สัปดาห์)</p>
-            <p><b>สองตัวเลข:</b> ค่าไฟอย่างเดียว = ต้นทุนเงินสดขั้นต่ำ ถ้าราคาต่ำกว่านี้นักขุดส่วนใหญ่ขาดทุนทุกบล็อก · ต้นทุนรวม (ตัวเลขใหญ่) = ค่าไฟ ÷ 0.6 เพราะในรายงานของบริษัทขุดที่จดทะเบียน ค่าไฟมักเป็นราว 60% ของต้นทุนทั้งหมด ที่เหลือคือค่าเสื่อมเครื่อง ค่าพื้นที่ ค่าคน เป็นค่าประมาณคร่าว ๆ</p>
-            <p><b>อ่านสี:</b> 🟢 ราคาสูงกว่าต้นทุนรวม 25% ขึ้นไป = นักขุดกำไรดี · 🟡 ราคาเหนือต้นทุนรวมไม่ถึง 25% = กำไรบาง · 🟠 ราคาอยู่ระหว่างค่าไฟกับต้นทุนรวม = ขาดทุนเมื่อนับค่าเครื่อง · 🔴 ราคาต่ำกว่าค่าไฟ = ขาดทุนเงินสด เครื่องเก่าต้องปิด</p>
+            <p><b>ทำไมนับแค่ค่าไฟ:</b> ค่าไฟคือเงินที่นักขุดต้องจ่ายทุกวันเพื่อให้เครื่องเดินต่อ ส่วนค่าเครื่องจ่ายไปแล้ว และหลายรายคืนทุนไปนานแล้ว นักขุดจึงตัดสินใจปิดหรือเปิดเครื่องจากราคาเทียบค่าไฟเป็นหลัก ถ้าราคาต่ำกว่านี้ นักขุดส่วนใหญ่ขาดทุนทุกบล็อกที่ขุดได้</p>
+            <p><b>อ่านสี:</b> 🟢 ราคาสูงกว่าค่าไฟ 50% ขึ้นไป = นักขุดกำไรดี · 🟡 สูงกว่า 20–50% = พอไปได้ · 🟠 สูงกว่าไม่ถึง 20% = ถูกบีบ เครื่องรุ่นเก่าเริ่มขาดทุน · 🔴 ราคาต่ำกว่าค่าไฟ = ขาดทุนทุกบล็อก เครื่องจะเริ่มปิด</p>
             <p><b>ทำไมสำคัญ:</b> ในอดีตราคามักไม่อยู่ใต้ต้นทุนการขุดนาน เพราะนักขุดที่ขาดทุนจะปิดเครื่อง difficulty ลดลง ต้นทุนก็ลดตาม ช่วงที่ราคาแตะหรือหลุดต้นทุนจึงมักใกล้ก้นรอบ · สมมติค่าไฟ $0.05/kWh และเครื่อง 22 J/TH ซึ่งใกล้ค่าเฉลี่ยทั้งเครือข่าย · Hashprice = รายได้ต่อ 1 PH/s ต่อวัน · ข้อมูล mempool.space</p>
             </div>
             <div class="i18n-en" lang="en">
             <p><b>What it is:</b> an estimate of what the whole network spends to earn 1 BTC: today's real difficulty (how many hashes one block takes) × the power a machine draws (J/TH) × the electricity price ($/kWh), divided by the reward per block (3.125 new BTC + the last week's average fees).</p>
-            <p><b>Two numbers:</b> electricity only = the minimum cash cost; below it most miners lose money on every block · all-in (the big number) = electricity ÷ 0.6, because listed mining companies usually report power as about 60% of total cost, the rest being machine wear, sites and staff. It is a rough estimate.</p>
-            <p><b>Colours:</b> 🟢 price 25% or more above all-in cost = healthy margins · 🟡 price above all-in cost by less than 25% = thin margins · 🟠 price between electricity and all-in cost = losing money once machines are counted · 🔴 price below electricity cost = losing cash, older machines switch off</p>
+            <p><b>Why electricity only:</b> power is the bill miners pay every day to keep machines running. The machines are already paid for, and many have long since paid for themselves, so miners decide whether to switch off by comparing price with their power cost. Below this number most miners lose money on every block.</p>
+            <p><b>Colours:</b> 🟢 price 50% or more above the power cost = healthy margins · 🟡 20–50% above = getting by · 🟠 less than 20% above = squeezed, older machines start losing money · 🔴 price below the power cost = losing money on every block, machines start switching off</p>
             <p><b>Why it matters:</b> price has rarely stayed under the cost of mining for long: losing miners switch off, difficulty drops and the cost falls with it, so touching or breaking the cost has tended to happen near cycle lows · assumes $0.05/kWh electricity and 22 J/TH machines, close to the network average · Hashprice = revenue per 1 PH/s per day · data from mempool.space.</p>
             </div>
           </div></div></div>
@@ -8438,7 +8438,6 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   // var, not let: recompute() calls renderMining() and can run before this line is reached.
   var lastMining = null;
   const MINE_TWO32 = 4294967296;
-  const MINE_ALLIN = 0.6;   // listed miners: power ≈ 60% of all-in cost (machines, sites, staff)
   const MINE_DEFAULTS = { kwh: 0.05, eff: 22 };
 
   // US$ per BTC. difficulty × 2^32 = hashes per block; × J/TH ÷ 1e12 = joules; ÷ 3.6e6 = kWh.
@@ -8447,7 +8446,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     const kwhPerBlock = difficulty * MINE_TWO32 / 1e12 * eff / 3.6e6;
     const reward = subsidy + (fee > 0 ? fee : 0);
     const elec = kwhPerBlock * kwh / reward;
-    return { elec, allIn: elec / MINE_ALLIN, kwhPerBlock, reward };
+    return { elec, kwhPerBlock, reward };
   }
   // US$ earned per PH/s per day at this price
   function mineHashprice(difficulty, reward, price){
@@ -8456,12 +8455,12 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   }
   function mineMarginVerdict(price, c){
     if(!(price > 0) || !c) return { key:'none', color:'', label:'' };
-    if(price < c.elec) return { key:'cash', color:'var(--red)', label:tr('ราคาต่ำกว่าค่าไฟ: นักขุดขาดทุนเงินสด', 'Price below electricity cost: miners losing cash') };
-    if(price < c.allIn) return { key:'loss', color:'#e8894a', label:tr('ราคาต่ำกว่าต้นทุนรวม: ขาดทุนเมื่อนับค่าเครื่อง', 'Price below all-in cost: losing once machines are counted') };
-    if(price < c.allIn * 1.25) return { key:'thin', color:'var(--amber)', label:tr('ราคาเหนือต้นทุนรวมเล็กน้อย: กำไรบาง', 'Price just above all-in cost: thin margins') };
-    return { key:'healthy', color:'var(--green)', label:tr('ราคาสูงกว่าต้นทุนรวมชัดเจน: นักขุดกำไรดี', 'Price well above all-in cost: healthy margins') };
+    if(price < c.elec) return { key:'cash', color:'var(--red)', label:tr('🔴 ราคาต่ำกว่าค่าไฟ: นักขุดขาดทุนทุกบล็อก', '🔴 Price below the power cost: miners lose on every block') };
+    if(price < c.elec * 1.2) return { key:'squeeze', color:'#e8894a', label:tr('🟠 ราคาเหนือค่าไฟไม่ถึง 20%: นักขุดถูกบีบ', '🟠 Price less than 20% above power: miners squeezed') };
+    if(price < c.elec * 1.5) return { key:'thin', color:'var(--amber)', label:tr('🟡 ราคาเหนือค่าไฟ 20–50%: พอไปได้', '🟡 Price 20–50% above power: getting by') };
+    return { key:'healthy', color:'var(--green)', label:tr('🟢 ราคาเหนือค่าไฟ 50% ขึ้นไป: นักขุดกำไรดี', '🟢 Price 50%+ above power: healthy margins') };
   }
-  // ribbon: 'capitulation' | 'recovery' | 'normal' | null; margin = price ÷ all-in − 1
+  // ribbon: 'capitulation' | 'recovery' | 'normal' | null; margin = price ÷ power cost − 1
   function minerVerdict(ribbon, puell, margin, belowElec){
     const why = [];
     if(ribbon === 'capitulation') why.push(tr('Hash Ribbons ตัดลง (นักขุดปิดเครื่อง)', 'Hash Ribbons crossed down (machines switching off)'));
@@ -8470,7 +8469,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     if(why.length) return { key:'stress', color:'var(--red)', label:tr('🔴 ถูกบีบ: มีแนวโน้มเทขาย', '🔴 Under stress: likely selling'), why };
     if(isNum(puell) && puell >= 2) return { key:'profit', color:'#e8894a', label:tr('🟠 ขายทำกำไรมากกว่าปกติ', '🟠 Selling for profit more than usual'), why:[tr('Puell 2 ขึ้นไป รายได้ดีผิดปกติ', 'Puell 2 or more: unusually rich revenue')] };
     if(ribbon === 'recovery') return { key:'recovery', color:'var(--green)', label:tr('🟢 ช่วงปิดเครื่องจบ: แรงขายลดลง', '🟢 Capitulation over: selling easing'), why:[tr('Hash Ribbons เพิ่งตัดขึ้น ในอดีตมักเป็นจังหวะซื้อที่ดี', 'Hash Ribbons just crossed up, historically a good time to buy')] };
-    if(isNum(margin) && margin >= 0.25 && (!isNum(puell) || puell < 1.2)) return { key:'hold', color:'var(--cool)', label:tr('🔵 กำไรดี ไม่มีแรงกดดัน: มีแนวโน้มเก็บเหรียญ', '🔵 Comfortable: likely holding coins'), why:[tr('กำไรเหนือต้นทุน 25% ขึ้นไป และ Puell ยังไม่สูง', 'margin 25%+ over cost and Puell not stretched')] };
+    if(isNum(margin) && margin >= 0.5 && (!isNum(puell) || puell < 1.2)) return { key:'hold', color:'var(--cool)', label:tr('🔵 กำไรดี ไม่มีแรงกดดัน: มีแนวโน้มเก็บเหรียญ', '🔵 Comfortable: likely holding coins'), why:[tr('ราคาเหนือค่าไฟ 50% ขึ้นไป และ Puell ยังไม่สูง', 'price 50%+ over the power cost and Puell not stretched')] };
     return { key:'normal', color:'var(--amber)', label:tr('🟡 ปกติ: ขายราวเท่าที่ขุดได้', '🟡 Normal: selling about what they mine'), why:[tr('ไม่มีสัญญาณบีบหรือขายทำกำไร', 'no stress or profit-taking signal')] };
   }
   function mineUsd(v){ return isNum(v) ? '$' + (v >= 1000 ? (Math.round(v / 100) / 10).toLocaleString('en-US') + 'k' : Math.round(v).toLocaleString('en-US')) : '–'; }
@@ -8494,28 +8493,28 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     const price = typed > 0 ? typed : d.price;
     const c = mineCost(d.difficulty, d.subsidy, d.feePerBlock, inp.kwh, inp.eff);
     const mv = mineMarginVerdict(price, c);
-    const margin = c && price > 0 ? price / c.allIn - 1 : null;
-    el('mineCost').textContent = c ? mineUsd(c.allIn) : '–';
+    const margin = c && price > 0 ? price / c.elec - 1 : null;
+    el('mineCost').textContent = c ? mineUsd(c.elec) : '–';
     el('mineCost').style.color = mv.color;
     el('mineCost').dataset.verdict = mv.key;
     el('mineCostZone').textContent = c ? (mv.label + (isNum(margin) ? ' (' + tr('ราคา ', 'price ') + (margin >= 0 ? '+' : '') + Math.round(margin * 100) + '%)' : '')) : tr('ดึงไม่สำเร็จ (ลองใหม่ภายหลัง)', 'Unavailable (try later)');
     el('mineCostZone').dataset.verdict = mv.key;
     if(c){
-      el('mineCostSub').textContent = tr('ค่าไฟอย่างเดียว ', 'Electricity only ') + mineUsd(c.elec) + tr(' · ต้นทุนรวม ', ' · all-in ') + mineUsd(c.allIn) + tr(' · ราคา ', ' · price ') + mineUsd(price);
-      // scale: electricity and all-in cost as ticks, price as a dot (range covers all three)
-      const lo = Math.min(c.elec, price || c.elec) * 0.8, hi = Math.max(c.allIn, price || c.allIn) * 1.15;
+      el('mineCostSub').textContent = tr('ค่าไฟต่อ 1 BTC ', 'Power cost per BTC ') + mineUsd(c.elec) + tr(' · ราคา ', ' · price ') + mineUsd(price);
+      // scale: the power cost and 1.5× it (green from there) as ticks, price as a dot
+      const top = c.elec * 1.5, lo = Math.min(c.elec, price || c.elec) * 0.8, hi = Math.max(top, price || top) * 1.1;
       const pos = (v) => Math.max(0, Math.min(100, (v - lo) / (hi - lo) * 100));
-      const e = pos(c.elec), a = pos(c.allIn), p = price > 0 ? pos(price) : null;
+      const e = pos(c.elec), a = pos(top), p = price > 0 ? pos(price) : null;
       el('mineScale').innerHTML = '<div class="bar" style="--e:' + e.toFixed(1) + '%; --a:' + a.toFixed(1) + '%;"></div>'
         + '<i class="pin" style="left:' + e.toFixed(1) + '%"></i><i class="pin" style="left:' + a.toFixed(1) + '%"></i>'
         + (p != null ? '<i class="pin px" style="left:' + p.toFixed(1) + '%; background:' + (mv.color || 'var(--text)') + '"></i>' : '')
         + '<span class="lbl' + (e < 12 ? ' l0' : '') + '" style="left:' + e.toFixed(1) + '%">' + tr('ค่าไฟ', 'power') + '</span>'
-        + '<span class="lbl' + (a > 88 ? ' l1' : '') + '" style="left:' + a.toFixed(1) + '%">' + tr('ต้นทุนรวม', 'all-in') + '</span>';
+        + '<span class="lbl' + (a > 88 ? ' l1' : '') + '" style="left:' + a.toFixed(1) + '%">' + tr('ค่าไฟ +50%', 'power +50%') + '</span>';
       const hp = mineHashprice(d.difficulty, c.reward, price);
-      const breakeven = price > 0 ? price * c.reward / c.kwhPerBlock * MINE_ALLIN : null;
+      const breakeven = price > 0 ? price * c.reward / c.kwhPerBlock : null;
       el('mineNet').textContent = 'Hashprice ' + (isNum(hp) ? '$' + hp.toFixed(1) + tr('/PH/วัน', '/PH/day') : '–')
         + ' · Hashrate ' + (isNum(d.hashrateEh) ? Math.round(d.hashrateEh).toLocaleString('en-US') + ' EH/s' : '–')
-        + (isNum(breakeven) ? tr(' · ค่าไฟคุ้มทุนรวมที่ราคานี้ ≤ $', ' · all-in break-even power ≤ $') + breakeven.toFixed(3) + '/kWh' : '')
+        + (isNum(breakeven) ? tr(' · ค่าไฟคุ้มทุนที่ราคานี้ ≤ $', ' · break-even power price ≤ $') + breakeven.toFixed(3) + '/kWh' : '')
         + tr(' · ข้อมูลวันที่ ', ' · as of ') + (d.date || '–') + (d.stale ? tr(' (ข้อมูลเก่า)', ' (stale)') : '');
     }
     const rib = d.ribbon ? d.ribbon.state : null;
@@ -8528,7 +8527,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       : d.ribbon.state === 'recovery' ? tr('🟢 เพิ่งตัดขึ้น ', '🟢 crossed up ') + d.ribbon.days + tr(' วันก่อน', ' days ago')
       : tr('30 วัน > 60 วัน (ปกติ)', '30d > 60d (normal)'));
     const puTxt = !isNum(d.puell) ? '–' : d.puell.toFixed(2) + (d.puell < 0.5 ? tr(' (ต่ำมาก)', ' (very low)') : d.puell >= 2 ? tr(' (สูง)', ' (high)') : d.puell < 0.8 ? tr(' (ต่ำ)', ' (low)') : tr(' (กลาง)', ' (mid)'));
-    const mTxt = isNum(margin) ? (margin >= 0 ? '+' : '') + Math.round(margin * 100) + tr('% เทียบต้นทุนรวม', '% vs all-in cost') : '–';
+    const mTxt = isNum(margin) ? (margin >= 0 ? '+' : '') + Math.round(margin * 100) + tr('% เทียบค่าไฟ', '% vs power cost') : '–';
     el('mineSigs').innerHTML = '<div><span>Hash Ribbons</span><b>' + ribTxt + '</b></div>'
       + '<div><span>Puell Multiple</span><b>' + puTxt + '</b></div>'
       + '<div><span>' + tr('ราคาเทียบต้นทุน', 'Price vs cost') + '</span><b>' + mTxt + '</b></div>';

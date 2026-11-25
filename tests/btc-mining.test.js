@@ -130,7 +130,7 @@ test('cost model: realistic network numbers', async () => {
   const kwh = 150e12 * TWO32 / 1e12 * 22 / 3.6e6;
   assert.ok(Math.abs(c.elec - kwh * 0.05 / 3.145) < 1e-6);
   assert.ok(c.elec > 40000 && c.elec < 90000, String(c.elec));
-  assert.ok(Math.abs(c.allIn - c.elec / 0.6) < 1e-6);
+  assert.equal(c.allIn, undefined, 'only the power cost: machines are sunk / paid off');
   assert.equal(M.mineCost(0, 3.125, 0, 0.05, 22), null);
   const hp = M.mineHashprice(150e12, 3.145, 100000);
   assert.ok(hp > 30 && hp < 60, String(hp)); // US$/PH/day
@@ -139,19 +139,20 @@ test('cost model: realistic network numbers', async () => {
 test('margin and miner verdicts', async () => {
   const sb = await pageWith({});
   const M = sb.__mineTest;
-  const c = { elec: 60000, allIn: 100000 };
+  const c = { elec: 60000 };
   assert.equal(M.mineMarginVerdict(50000, c).key, 'cash');
-  assert.equal(M.mineMarginVerdict(80000, c).key, 'loss');
-  assert.equal(M.mineMarginVerdict(110000, c).key, 'thin');
-  assert.equal(M.mineMarginVerdict(130000, c).key, 'healthy');
+  assert.equal(M.mineMarginVerdict(65000, c).key, 'squeeze');
+  assert.equal(M.mineMarginVerdict(80000, c).key, 'thin');
+  assert.equal(M.mineMarginVerdict(95000, c).key, 'healthy');
   assert.equal(M.minerVerdict('capitulation', 1, 0.3, false).key, 'stress');
   assert.equal(M.minerVerdict('normal', 1, 0.3, true).key, 'stress');
   assert.equal(M.minerVerdict('normal', 0.4, 0.3, false).key, 'stress');
   assert.equal(M.minerVerdict('normal', 2.3, 0.6, false).key, 'profit');
   assert.equal(M.minerVerdict('recovery', 0.9, 0.1, false).key, 'recovery');
-  assert.equal(M.minerVerdict('normal', 0.9, 0.4, false).key, 'hold');
-  assert.equal(M.minerVerdict('normal', 1.4, 0.4, false).key, 'normal');
+  assert.equal(M.minerVerdict('normal', 0.9, 0.6, false).key, 'hold');
+  assert.equal(M.minerVerdict('normal', 1.4, 0.6, false).key, 'normal');
   assert.equal(M.minerVerdict('normal', 0.9, 0.1, false).key, 'normal');
+  assert.equal(M.minerVerdict('normal', 0.9, 0.4, false).key, 'normal', 'under 50% over power is not comfortable');
 });
 
 test('tiles render from the function, with the page BTC price and fixed cost assumptions', async () => {
@@ -161,7 +162,7 @@ test('tiles render from the function, with the page BTC price and fixed cost ass
   const g = (id) => sb.document.getElementById(id);
   await new Promise((r) => setImmediate(r));
   assert.match(g('mineCost').textContent, /^\$\d+(\.\d)?k$/);
-  assert.ok(['healthy', 'thin', 'loss', 'cash'].includes(g('mineCost').dataset.verdict));
+  assert.ok(['healthy', 'thin', 'squeeze', 'cash'].includes(g('mineCost').dataset.verdict));
   assert.equal(g('mineCost').dataset.verdict, g('mineCostZone').dataset.verdict, 'number and label agree');
   assert.match(g('mineCostSub').textContent, /\$120k/, 'uses the price on the page');
   assert.match(g('mineNet').textContent, /Hashprice \$\d/);
