@@ -606,6 +606,10 @@ body{margin:0}
     font-family:var(--sans);font-size:13px;cursor:pointer;white-space:nowrap;transition:color .2s,border-color .2s,background .2s}
   .btc-subnav button:hover{color:var(--text)}
   .btc-subnav button.on{color:var(--accent-hi);border-color:var(--gold-line);background:rgba(212,178,106,.10)}
+  /* ราคาตลาด: เต็มความกว้าง แสดง 2 คอลัมน์บนจอกว้าง */
+  @media (min-width:900px){
+    #pricesCard #livePrices{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:40px;row-gap:0!important}
+  }
   /* 🧭 ภาวะตลาดวันนี้ */
   .pulse-top{display:grid;grid-template-columns:minmax(180px,240px) 1fr;gap:22px;align-items:center}
   .pulse-state{display:flex;align-items:center;gap:12px;font-size:34px;font-weight:800;letter-spacing:-.01em;line-height:1.1}
@@ -914,7 +918,7 @@ body{margin:0}
 <div class="model-note" data-en="⚙️ Average of 4 volatility / credit gauges, each on its card's own bands (calm · normal · worried · stressed). Details and history are in the US Markets card below.">⚙️ เฉลี่ยจาก 4 มาตรวัดความผันผวนและสินเชื่อ แต่ละตัวใช้เกณฑ์เดียวกับการ์ดของมัน (สงบ · ปกติ · กังวล · ตึงเครียด) รายละเอียดและกราฟย้อนหลังอยู่ในการ์ดตลาดสหรัฐฯ ด้านล่าง</div>
 </section>
 
-<section class="card">
+<section class="card full" id="pricesCard">
 <h2>📡 <span data-en="Market Prices">ราคาตลาด</span> <span class="h-en" data-en="Latest · each row shows its own timing">ล่าสุด · แต่ละแถวบอกเวลาของตัวเอง</span></h2>
 
 <div id="livePrices" style="display:flex; flex-direction:column; gap:12px;">
