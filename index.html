@@ -585,6 +585,14 @@ body{margin:0}
   #btcTab .bs-bar{display:block;height:4px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden}
   #btcTab .bs-bar i{display:block;height:100%;border-radius:2px}
   #btcTab .breakdown .bs-foot{display:block;border-bottom:0;padding-top:8px;font-size:11px;line-height:1.6;color:var(--muted)}
+  /* แถบลัดในแท็บ Bitcoin */
+  .btc-subnav{position:sticky;top:var(--tabbar-h,60px);z-index:900;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
+    margin:0 0 18px;padding:10px 2px;background:rgba(6,8,14,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line-soft)}
+  .btc-subnav::-webkit-scrollbar{display:none}
+  .btc-subnav button{flex:none;min-height:36px;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);
+    font-family:var(--sans);font-size:13px;cursor:pointer;white-space:nowrap;transition:color .2s,border-color .2s,background .2s}
+  .btc-subnav button:hover{color:var(--text)}
+  .btc-subnav button.on{color:var(--accent-hi);border-color:var(--gold-line);background:rgba(212,178,106,.10)}
   /* 🧭 ภาวะตลาดวันนี้ */
   .pulse-top{display:grid;grid-template-columns:minmax(180px,240px) 1fr;gap:22px;align-items:center}
   .pulse-state{display:flex;align-items:center;gap:12px;font-size:34px;font-weight:800;letter-spacing:-.01em;line-height:1.1}
@@ -6232,7 +6240,7 @@ window.setHeaderStamp();
   <header>
     <div class="brand">
       <div class="eyebrow">Personal On-Chain Dashboard</div>
-      <h1><span class="dot"></span> BTC Buy Score</h1>
+      <h1><span class="dot"></span> Bitcoin</h1>
     </div>
     <div class="price-block">
       <div class="px" id="pxDisplay">— </div>
@@ -6240,10 +6248,21 @@ window.setHeaderStamp();
     </div>
   </header>
 
+  <nav class="btc-subnav" id="btcSubnav" aria-label="ส่วนต่าง ๆ ในแท็บ Bitcoin" data-en-aria="Sections in the Bitcoin tab">
+    <button type="button" data-sec="btcSecScore" data-en="Score">คะแนน</button>
+    <button type="button" data-sec="btcSecChart" data-en="Chart">กราฟ</button>
+    <button type="button" data-sec="btcSecDeriv" data-en="Sentiment &amp; leverage">อารมณ์ตลาด &amp; เลเวอเรจ</button>
+    <button type="button" data-sec="btcSecLiq" data-en="Liquidations">ล้างพอร์ต</button>
+    <button type="button" data-sec="btcSecOpt" data-en="Options">Options</button>
+    <button type="button" data-sec="btcSecMine" data-en="Miners">นักขุด</button>
+    <button type="button" data-sec="ocCostPanel" data-en="On-chain">On-chain</button>
+    <button type="button" data-sec="ocMstrPanel" data-en="Strategy">Strategy</button>
+  </nav>
+
   <div class="grid">
 
     <!-- SCORE -->
-    <div class="panel gauge-panel">
+    <div class="panel gauge-panel" id="btcSecScore">
       <h2 data-en="Buy score">คะแนนความน่าซื้อ</h2>
       <div class="score-number" id="scoreNumber">–</div>
       <div class="score-label" data-en="/ 10 · cheapest vs history = 10">/ 10 · ถูกสุดเมื่อเทียบประวัติ = 10</div>
@@ -6406,7 +6425,7 @@ window.setHeaderStamp();
     </div>
 
     <!-- CHART -->
-    <div class="panel chart-panel">
+    <div class="panel chart-panel" id="btcSecChart">
       <h2 data-en="BTC/USD chart (candlesticks)">กราฟ BTC/USD (แท่งเทียน)</h2>
       <div id="tv_chart_container"><div class="chart-loading" data-en="Loading chart…">กำลังโหลดกราฟ…</div></div>
       <div style="font-size:11px; color:var(--sub); line-height:1.6; margin-top:10px;">
@@ -6416,7 +6435,7 @@ window.setHeaderStamp();
     </div>
 
     <!-- SENTIMENT & LEVERAGE -->
-    <div class="panel chart-panel">
+    <div class="panel chart-panel" id="btcSecDeriv">
       <h2>Sentiment & Leverage</h2>
       <div class="sl-grid">
         <div class="sl-tile">
@@ -6576,7 +6595,7 @@ window.setHeaderStamp();
     </div>
 
     <!-- LIQUIDATION HEATMAP (estimated from public OI + candles; see fetchLiqHeatmap) -->
-    <div class="panel chart-panel liq-panel">
+    <div class="panel chart-panel liq-panel" id="btcSecLiq">
       <div class="liq-head">
         <h2 style="margin-bottom:0;"><span data-en="BTC Liquidation Heatmap (estimate)">BTC Liquidation Heatmap (ประมาณการ)</span> <div class="tip"><button type="button" class="tip-btn" aria-label="Liquidation Heatmap คืออะไร" data-en-aria="What is the liquidation heatmap?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
           <div class="i18n-th">
@@ -6645,7 +6664,7 @@ window.setHeaderStamp();
     </div>
 
     <!-- DEALER GAMMA (GEX) from Deribit options; see /.netlify/functions/options-gex -->
-    <div class="panel chart-panel gex-panel">
+    <div class="panel chart-panel gex-panel" id="btcSecOpt">
       <div class="liq-head">
         <h2 style="margin-bottom:0;"><span data-en="BTC Dealer Gamma (GEX) and zero gamma">BTC Dealer Gamma (GEX) และจุด Zero Gamma</span> <div class="tip"><button type="button" class="tip-btn" aria-label="GEX คืออะไร" data-en-aria="What is GEX?" aria-expanded="false">i</button><div class="tip-pop" role="tooltip">
           <div class="i18n-th">
@@ -6720,7 +6739,7 @@ window.setHeaderStamp();
     </div>
 
     <!-- MINERS: cost of production + are miners selling? (see fetchMining / netlify/functions/btc-mining.js) -->
-    <div class="panel chart-panel mine-panel">
+    <div class="panel chart-panel mine-panel" id="btcSecMine">
       <h2 data-en="Miners">นักขุด (Miners)</h2>
       <div class="mine-grid">
         <div class="sl-tile mine-tile">
@@ -9558,6 +9577,48 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
 </script>
 
 </section>
+
+<script>
+// แถบลัดในแท็บ Bitcoin: กดแล้วเลื่อนไปส่วนนั้น และไฮไลต์ส่วนที่กำลังอ่านอยู่
+(function(){
+  const nav = document.getElementById('btcSubnav');
+  if(!nav || !nav.querySelectorAll) return;
+  const bar = document.querySelector('.tabbar');
+  const btns = Array.prototype.slice.call(nav.querySelectorAll('button'));
+  function setOffset(){
+    const h = bar && bar.offsetHeight ? bar.offsetHeight : 60;
+    const st = document.documentElement.style;
+    if(st && st.setProperty) st.setProperty('--tabbar-h', h + 'px');
+    return h;
+  }
+  setOffset();
+  window.addEventListener('resize', setOffset);
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){
+      const t = document.getElementById(b.dataset.sec);
+      if(!t || !t.getBoundingClientRect) return;
+      const y = window.scrollY + t.getBoundingClientRect().top - setOffset() - (nav.offsetHeight || 44) - 10;
+      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+    });
+  });
+  let ticking = false;
+  window.addEventListener('scroll', function(){
+    if(ticking || !document.body.classList.contains('theme-btc')) return;
+    ticking = true;
+    requestAnimationFrame(function(){
+      ticking = false;
+      const line = setOffset() + (nav.offsetHeight || 44) + 40;
+      let cur = btns[0];
+      btns.forEach(function(b){ const t = document.getElementById(b.dataset.sec); if(t && t.getBoundingClientRect().top <= line) cur = b; });
+      btns.forEach(function(b){ b.classList.toggle('on', b === cur); });
+      if(cur && cur.scrollIntoView && nav.scrollWidth > nav.clientWidth){
+        const l = cur.offsetLeft - 16, r = cur.offsetLeft + cur.offsetWidth + 16;
+        if(l < nav.scrollLeft || r > nav.scrollLeft + nav.clientWidth) nav.scrollTo({ left: l, behavior: 'smooth' });
+      }
+    });
+  }, { passive: true });
+})();
+</script>
 
 <script>
 (function(){
