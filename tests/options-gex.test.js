@@ -130,6 +130,21 @@ test('volume profile: VPOC at the busiest price, value area holds ≥70% around 
   assert.equal(buildVolumeProfile(cs.slice(0, 5)), null);
 });
 
+test('RR term bars: a hover box per expiry with RR, put/call IV and what it means', async () => {
+  const { rrTipHtml, rrTermSvg } = await page();
+  const rows = [{ code: '27NOV26', days: 2.4, rr: -10.8, put25: 55.4, call25: 44.6 }, { code: '24SEP27', days: 303, rr: 1, put25: 48, call25: 49 }];
+  const svg = rrTermSvg(rows);
+  assert.equal((svg.match(/<rect /g) || []).length, 2);
+  assert.ok(!/<title>/.test(svg), 'native title replaced by the hover box');
+  assert.match(svg, /<div class="etf-tip" hidden><\/div>/);
+  const h = rrTipHtml(rows[0]);
+  assert.match(h, /<b>27NOV26<\/b> · อีก 2 วัน/);
+  assert.match(h, /RR <b style="color:var\(--red\)">−10\.8<\/b>/);
+  assert.match(h, /put 25Δ IV 55\.4% · call 25Δ IV 44\.6%/);
+  assert.match(h, /🔴 put แพงกว่ามาก/);
+  assert.ok(!/IV/.test(rrTipHtml({ code: 'X', days: 1, rr: 0 })), 'no IV line when the legs are missing');
+});
+
 test('RR zones and GEX meaning read the right way round', async () => {
   const { rrZone, gexMeaning } = await page();
   assert.equal(rrZone(-9)[0], '🔴');

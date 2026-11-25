@@ -365,6 +365,10 @@ body{margin:0}
   #btcTab .rr-cm b{display:block; font-size:15px; margin-top:2px; color:var(--text);}
   #btcTab .rr-term{margin-top:8px; position:relative;}
   #btcTab .rr-term svg{display:block; width:100%; height:62px;}
+  #btcTab .rr-term svg{cursor:crosshair; touch-action:pan-y;}
+  #btcTab .rr-term rect.hl{opacity:.6;}
+  #btcTab .rr-term .etf-tip{top:-4px; white-space:normal; width:max-content; max-width:240px; line-height:1.45; padding:5px 9px;}
+  #btcTab .rr-term .etf-tip small{display:block; color:var(--muted);}
   #btcTab .rr-term .cap{font-size:10px; color:var(--muted); display:flex; justify-content:space-between; margin-top:2px;}
   /* GEX + volume profile panels */
   #btcTab .gex-stats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:12px;}
@@ -7971,10 +7975,39 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     let g = '<line x1="0" x2="' + W + '" y1="' + mid + '" y2="' + mid + '" stroke="var(--line)"/>';
     rows.forEach(function(r, i){
       const h = Math.max(1, Math.abs(r.rr) / max * (mid - 3));
-      g += '<rect x="' + (i * bw + bw * 0.18).toFixed(1) + '" y="' + (r.rr >= 0 ? mid - h : mid).toFixed(1) + '" width="' + (bw * 0.64).toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + (r.rr >= 0 ? 'var(--green)' : 'var(--red)') + '"><title>' + r.code + ' (' + Math.round(r.days) + tr(' วัน', ' days') + ') RR ' + fmtVol(r.rr) + ' · put ' + r.put25.toFixed(1) + ' / call ' + r.call25.toFixed(1) + '</title></rect>';
+      g += '<rect x="' + (i * bw + bw * 0.18).toFixed(1) + '" y="' + (r.rr >= 0 ? mid - h : mid).toFixed(1) + '" width="' + (bw * 0.64).toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + (r.rr >= 0 ? 'var(--green)' : 'var(--red)') + '"></rect>';
     });
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' + tr('RR แต่ละวันหมดอายุ', 'RR by expiry') + '">' + g + '</svg>'
+      + '<div class="etf-tip" hidden></div>'
       + '<div class="cap"><span>' + rows[0].code + '</span><span>' + tr('RR แต่ละวันหมดอายุ (ใกล้ → ไกล)', 'RR by expiry (near → far)') + '</span><span>' + rows[rows.length - 1].code + '</span></div>';
+  }
+  // ชี้เมาส์ / แตะแท่ง → วันหมดอายุ, RR, IV ของ put/call และความหมาย
+  function rrTipHtml(r){
+    const z = rrZone(r.rr);
+    return '<b>' + escTxt(r.code) + '</b> · ' + tr('อีก ', 'in ') + Math.round(r.days) + tr(' วัน', ' days')
+      + '<br>RR <b style="color:' + (z[2] || 'inherit') + '">' + fmtVol(r.rr) + '</b> ' + tr('จุด vol', 'vol pts')
+      + (isNum(r.put25) && isNum(r.call25) ? '<small>' + tr('put 25Δ IV ', '25Δ put IV ') + r.put25.toFixed(1) + '% · ' + tr('call 25Δ IV ', '25Δ call IV ') + r.call25.toFixed(1) + '%</small>' : '')
+      + '<small>' + z[0] + ' ' + z[1] + '</small>';
+  }
+  function bindRrTip(box, rows){
+    const svg = box.querySelector('svg'), tip = box.querySelector('.etf-tip');
+    if(!svg || !tip || !rows.length) return;
+    const rects = svg.querySelectorAll('rect');
+    function show(ev){
+      const r = svg.getBoundingClientRect();
+      if(!r.width) return;
+      const i = Math.max(0, Math.min(rows.length - 1, Math.floor((ev.clientX - r.left) / r.width * rows.length)));
+      tip.innerHTML = rrTipHtml(rows[i]);
+      tip.hidden = false;
+      const x = (i + 0.5) / rows.length * r.width + (r.left - box.getBoundingClientRect().left), half = tip.offsetWidth / 2 + 4;
+      tip.style.left = Math.max(half, Math.min(box.clientWidth - half, x)) + 'px';
+      rects.forEach((el2, k) => el2.classList.toggle('hl', k === i));
+    }
+    function hide(){ tip.hidden = true; rects.forEach(el2 => el2.classList.remove('hl')); }
+    svg.addEventListener('pointermove', show);
+    svg.addEventListener('pointerdown', show);
+    svg.addEventListener('pointerleave', function(ev){ if(ev.pointerType === 'mouse') hide(); });
+    document.addEventListener('pointerdown', function(ev){ if(!svg.contains(ev.target)) hide(); });
   }
   function renderRr(d){
     const rr = d && d.rr, c30 = rr && rr.cm && rr.cm[30];
@@ -7997,6 +8030,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       return '<div>' + n + tr(' วัน', ' days') + '<b style="color:' + rrZone(c.rr)[2] + '">' + fmtVol(c.rr) + '</b></div>';
     }).join('');
     el('rrTerm').innerHTML = rrTermSvg(rr.expiries || []);
+    bindRrTip(el('rrTerm'), rr.expiries || []);
     if(hist.length >= 4 && window.giSetSpark){
       const days = Math.max(1, Math.round((hist[hist.length - 1][0] - hist[0][0]) / 86400000));
       window.giSetSpark('spRr', { hist }, { dec: 1, color: 'var(--cool)', cap: tr('RR 30 วัน ย้อนหลัง ' + days + ' วัน', 'RR 30d, last ' + days + ' days') });
@@ -8313,7 +8347,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     });
   })();
   setInterval(() => { if(document.body.classList.contains('theme-btc') && !document.hidden){ fetchOptionsGex(false); fetchVpoc(false); } }, 5 * 60 * 1000);
-  if(typeof window !== 'undefined') window.__optTest = { buildVolumeProfile, parseDeribitChart, rrZone, gexMeaning, niceStep, gexState, vpState };
+  if(typeof window !== 'undefined') window.__optTest = { buildVolumeProfile, parseDeribitChart, rrZone, rrTipHtml, rrTermSvg, gexMeaning, niceStep, gexState, vpState };
 
   // ---------- BTC Spot ETF Flow (สหรัฐฯ รายวัน, US$ ล้าน) ----------
   // มาจาก /.netlify/functions/etf-flow เท่านั้น (Farside ไม่มี CORS และกันบอท ต้องดึงฝั่งเซิร์ฟเวอร์)
