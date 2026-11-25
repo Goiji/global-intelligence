@@ -122,11 +122,14 @@ test('page: top-gainers card sits in the Capital Markets tab and ranks by the ch
   assert.equal(U.fmtUgPct(12.345), '+12.3%');
   assert.equal(U.fmtUgPct(-3), '−3.0%');
   assert.equal(U.fmtUgPct(668.4), '+668%');
+  payload.rows[24].d = ['ชิปทดสอบ', 'Test chips'];
   U.setData(payload, 'ytd');
   U.renderUsGainers();
   const list = sb.__elements.get('ugList').innerHTML;
   assert.equal((list.match(/class="ug-row/g) || []).length, 20);
-  assert.match(list, /^<li class="ug-row ug-top"><span class="ug-rank">1<\/span><a class="ug-id" href="https:\/\/www\.tradingview\.com\/chart\/\?symbol=S24" target="_blank" rel="noopener noreferrer"[^>]*><b>S24/);
+  assert.match(list, /^<li class="ug-row ug-top"><span class="ug-rank">1<\/span><span class="ug-idw"><a class="ug-id" href="https:\/\/www\.tradingview\.com\/chart\/\?symbol=S24" target="_blank" rel="noopener noreferrer"[^>]*><b>S24/);
+  assert.match(list, /<button type="button" class="tip-btn" aria-label="S24 ทำธุรกิจอะไร"[^>]*>i<\/button><span class="tip-pop" role="tooltip"><b>Stock 24<\/b> · ชิปทดสอบ<\/span>/);
+  assert.equal((list.match(/class="tip-btn"/g) || []).length, 1, 'rows without a description get no button');
   assert.equal(U.ugTvUrl('BRK-B'), 'https://www.tradingview.com/chart/?symbol=BRK.B');
   assert.match(list, /\+240%/);
   assert.match(sb.__elements.get('ugSub').textContent, /ตั้งแต่ต้นปี/);
@@ -153,4 +156,17 @@ test('HY spread: tile in the US Markets grid, FRED BAMLH0A0HYM2 in the markets f
   const zone = sb.__elements.get('mkHyZone').innerHTML;
   assert.match(zone, /🟡 ปกติ/);
   assert.match(zone, /1 เดือน \+120 bp ⚠️ ถ่างเร็ว/, '1-month change vs the point ~30 days back (2026-10-20: 3.1%)');
+});
+
+test('us-gainers: every ticker in the universe has a short Thai and English description', () => {
+  const { UNIVERSE } = require('../netlify/functions/us-gainers.js').__test;
+  const DESC = require('../netlify/lib/us-stock-desc.js');
+  for (const [s] of UNIVERSE) {
+    const d = DESC[s];
+    assert.ok(Array.isArray(d) && d.length === 2, 'no description for ' + s);
+    assert.match(d[0], /[\u0E00-\u0E7F]/, s + ': first entry should be Thai');
+    assert.ok(d[0].length <= 60 && d[1].length <= 60, s + ': keep it short');
+  }
+  const syms = new Set(UNIVERSE.map((u) => u[0]));
+  assert.deepEqual(Object.keys(DESC).filter((k) => !syms.has(k)), [], 'descriptions for tickers not in the universe');
 });

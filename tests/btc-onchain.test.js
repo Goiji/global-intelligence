@@ -96,6 +96,33 @@ test('btc-treasury handler: asks for the full filing history; 502 when CoinGecko
   assert.equal((await treasury.handler({})).statusCode, 502);
 });
 
+test('btc-treasury handler: a rate-limited history call keeps the last filings list instead of blanking it', async (t) => {
+  const realFetch = global.fetch;
+  t.after(() => { global.fetch = realFetch; treasury.__test._clearCache(); });
+  let limited = false;
+  global.fetch = async (url) => {
+    if (limited && url.includes('transaction_history')) return { ok: false, status: 429 };
+    const body = url.includes('transaction_history') ? CG.history : url.includes('companies/') ? CG.list : CG.entity;
+    return { ok: true, status: 200, text: async () => JSON.stringify(body) };
+  };
+  treasury.__test._clearCache();
+  assert.equal(JSON.parse((await treasury.handler({})).body).tx.length, 3);
+  limited = true;
+  treasury.__test._expire();
+  const r = JSON.parse((await treasury.handler({})).body);
+  assert.equal(r.tx.length, 3, 'filings from the previous good answer');
+  // a short page that misses the early buys is not used either
+  limited = false;
+  const full = CG.history;
+  CG.history = { transactions: full.transactions.slice(0, 2) };
+  t.after(() => { CG.history = full; });
+  treasury.__test._expire();
+  assert.equal(JSON.parse((await treasury.handler({})).body).tx.length, 3);
+  CG.history = full;
+  assert.equal(treasury.__test.complete([{ btc: 457, balance: 851305 }]), false);
+  assert.equal(treasury.__test.complete([{ btc: 21454, balance: 21454 }]), true);
+});
+
 async function page(lang) {
   const raw = rawFiles();
   const payload = holders.__test.build(raw);

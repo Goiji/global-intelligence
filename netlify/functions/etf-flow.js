@@ -14,6 +14,7 @@
 
 const TIMEOUT_MS = 8000;
 const TTL_S = 1800;
+const PARTIAL_TTL_S = 600;
 const STALE_MS = 3 * 86400000;
 const KV_KEY = 'etf-flow:lastGood';
 const { kvGetGood, kvPutGood } = require('../lib/last-good.js'); // throttled: KV writes are metered
@@ -62,16 +63,18 @@ function parseFarside(html) {
   for (const tr of String(html).match(/<tr[\s\S]*?<\/tr>/gi) || []) {
     const cells = (tr.match(/<t[hd][^>]*>[\s\S]*?<\/t[hd]>/gi) || []).map(decode);
     if (cells.length < 3) continue;
-    if (!tickers && /^total$/i.test(cells[cells.length - 1]) && cells.slice(1, -1).some((c) => /^[A-Z]{3,5}$/.test(c))) { tickers = cells; continue; }
+    // ticker row: "", IBIT, FBTC, … and a last column that is the total ("Total" may sit in the row above instead)
+    if (!tickers && !isoDate(cells[0]) && cells.slice(1, -1).filter((c) => /^[A-Z]{2,5}$/.test(c)).length >= 3) { tickers = cells; continue; }
     const date = isoDate(cells[0]);
     if (!date) continue;
     const vals = cells.slice(1).map(num);
     const total = vals[vals.length - 1];
     if (total == null || Math.abs(total) > 20000) continue; // blank (not reported yet) or garbage
-    const funds = tickers && tickers.length === cells.length
-      ? tickers.slice(1, -1).map((t, i) => [t, vals[i]]).filter((f) => f[1] != null && f[1] !== 0)
-      : [];
-    rows.push({ date, net: Math.round(total * 10) / 10, funds });
+    const named = tickers && tickers.length === cells.length ? tickers.slice(1, -1).map((t, i) => [t, vals[i]]) : [];
+    const funds = named.filter((f) => f[1] != null && f[1] !== 0);
+    // "-" = that fund has not reported the day yet, so the total so far is incomplete (often IBIT, which reports last)
+    const missing = named.filter((f) => f[1] == null).map((f) => f[0]);
+    rows.push({ date, net: Math.round(total * 10) / 10, funds, missing });
   }
   if (!rows.length) throw new Error(/challenge|cf-chl|Just a moment/i.test(html) ? 'cloudflare challenge' : 'no flow rows');
   return build(rows);
@@ -103,7 +106,9 @@ function build(rows) {
     sum5: sum(5),
     sum30: sum(30),
     hist: days.slice(-30).map((d) => [d.date, d.net]),
-    funds: last.funds.slice().sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 4)
+    funds: last.funds.slice().sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 4),
+    partial: !!(last.missing && last.missing.length),
+    missing: last.missing || []
   };
 }
 
@@ -128,9 +133,11 @@ exports.handler = async function (event) {
   for (const s of sources) {
     try {
       const data = { ...s.parse(await fetchText(s.url, s.headers)), source: s.name, fetchedAt: new Date(now).toISOString() };
-      memCache = { data, expiresAt: now + TTL_S * 1000, lastGood: data };
+      const ttl = data.partial ? PARTIAL_TTL_S : TTL_S;   // a half-reported day fills in within the hour
+      memCache = { data, expiresAt: now + ttl * 1000, lastGood: data };
       await kvPutGood(event, KV_KEY, data);
-      return { statusCode: 200, headers, body: JSON.stringify(data) };
+      const h = data.partial ? { ...headers, 'Cache-Control': `public, max-age=${ttl}, s-maxage=${ttl}` } : headers;
+      return { statusCode: 200, headers: h, body: JSON.stringify(data) };
     } catch (e) { errors[s.name] = e.message; }
   }
   let good = memCache.lastGood;

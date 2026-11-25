@@ -100,3 +100,21 @@ test('index.html: ETF flow tile on the BTC tab with explainer, bars and a Farsid
   assert.match(HTML, /class="etf-tip" hidden/);
   assert.match(HTML, /\/\.netlify\/functions\/etf-flow/);
 });
+
+test('parseFarside: live layout (Total in the row above the tickers) and a day still waiting for IBIT', () => {
+  const html = `<table class="etf">
+<tr><th></th><th></th><th></th><th></th><th>Total</th></tr>
+<tr><th></th><th>IBIT</th><th>FBTC</th><th>GBTC</th><th></th></tr>
+<tr><th>Fee</th><th>0.25%</th><th>0.25%</th><th>1.50%</th><th></th></tr>
+<tr><td>23 Nov 2026</td><td>(509.3)</td><td>13.3</td><td>0.0</td><td>(496.0)</td></tr>
+<tr><td>24 Nov 2026</td><td>-</td><td>(44.0)</td><td>4.0</td><td>(40.0)</td></tr>
+</table>`;
+  const d = T.parseFarside(html);
+  assert.equal(d.date, '2026-11-24');
+  assert.equal(d.partial, true);
+  assert.deepEqual(d.missing, ['IBIT']);
+  assert.deepEqual(d.funds, [['FBTC', -44], ['GBTC', 4]]);
+  const full = T.parseFarside(html.replace('<td>-</td>', '<td>(175.3)</td>'));
+  assert.equal(full.partial, false);
+  assert.deepEqual(full.missing, []);
+});
