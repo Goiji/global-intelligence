@@ -9332,7 +9332,13 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     tp.then(() => { try{ mstrSummary(); }catch(e){} status(); });
     Promise.all([hp, tp]).then(() => { try{ mstrSummary(); mstrCharts(); }catch(e){} status(); });
     // the live price moves the "now" numbers; charts stay as they are
-    setInterval(() => { if(!document.hidden && document.body.classList.contains('theme-btc')){ try{ costSummary(); plSummary(); mstrSummary(); }catch(e){} } }, 30000);
+    let shownP = 0, shownAt = 0;
+    setInterval(() => {
+      if(document.hidden || !document.body.classList.contains('theme-btc')) return;
+      const p = livePrice(); if(!p || (Math.abs(p / (shownP || 1) - 1) < 0.001 && Date.now() - shownAt < 30000)) return;
+      shownP = p; shownAt = Date.now();
+      try{ costSummary(); plSummary(); mstrSummary(); }catch(e){}
+    }, 5000);
     let rz = null, lastW = window.innerWidth;
     window.addEventListener('resize', () => { if(window.innerWidth === lastW) return; lastW = window.innerWidth; clearTimeout(rz); rz = setTimeout(() => { if(document.body.classList.contains('theme-btc')) renderAll(); else S.dirty = true; }, 250); });
     window.ocRedraw = () => { if(S.dirty){ S.dirty = false; renderAll(); } };
