@@ -154,7 +154,7 @@ test('margin and miner verdicts', async () => {
   assert.equal(M.minerVerdict('normal', 0.9, 0.1, false).key, 'normal');
 });
 
-test('tiles render from the function, with the page's BTC price and fixed cost assumptions', async () => {
+test('tiles render from the function, with the page BTC price and fixed cost assumptions', async () => {
   const mining = { height: 976007, date: '2026-11-24', difficulty: 150e12, hashrateEh: 1074, subsidy: 3.125, feePerBlock: 0.02, price: 90000, puell: 0.9,
     ribbon: { state: 'capitulation', days: 12, sma30: 1050, sma60: 1080 }, hist: [['2026-11-23', 1060, 1080], ['2026-11-24', 1050, 1080]] };
   const sb = await pageWith(mining, 120000);
