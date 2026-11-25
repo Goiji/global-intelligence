@@ -111,6 +111,16 @@ test('btc-treasury handler: a rate-limited history call keeps the last filings l
   treasury.__test._expire();
   const r = JSON.parse((await treasury.handler({})).body);
   assert.equal(r.tx.length, 3, 'filings from the previous good answer');
+  // a short page that misses the early buys is not used either
+  limited = false;
+  const full = CG.history;
+  CG.history = { transactions: full.transactions.slice(0, 2) };
+  t.after(() => { CG.history = full; });
+  treasury.__test._expire();
+  assert.equal(JSON.parse((await treasury.handler({})).body).tx.length, 3);
+  CG.history = full;
+  assert.equal(treasury.__test.complete([{ btc: 457, balance: 851305 }]), false);
+  assert.equal(treasury.__test.complete([{ btc: 21454, balance: 21454 }]), true);
 });
 
 async function page(lang) {

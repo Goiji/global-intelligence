@@ -8909,9 +8909,9 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     try{
       const d = await getJ('/.netlify/functions/btc-treasury', 12000);
       if(d && d.strategy && d.strategy.holdings > 0 && Array.isArray(d.tx)){
-        if(!d.tx.length){   // the server's history call was rate-limited: fetch the filings list from here
+        if(!d.tx.length || Math.abs((d.tx[0].balance || 0) - d.tx[0].btc) >= 1){   // server's history was rate-limited or truncated: fetch it from here
           const h = await getJ(CG + 'public_treasury/strategy/transaction_history?per_page=250').catch(() => null);
-          if(h) try{ d.tx = ocShapeTreasury({ holdings: [{ coin_id: 'bitcoin', amount: d.strategy.holdings }] }, h, null).tx; }catch(e){}
+          if(h) try{ const tx = ocShapeTreasury({ holdings: [{ coin_id: 'bitcoin', amount: d.strategy.holdings }] }, h, null).tx; if(tx.length >= d.tx.length) d.tx = tx; }catch(e){}
         }
         return d;
       }
