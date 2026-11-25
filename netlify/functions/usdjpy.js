@@ -32,7 +32,7 @@ async function fetchText(url) {
   try {
     const r = await fetch(url, {
       signal: ctrl.signal,
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; global-intelligence-dashboard; +https://global-intelligence-dashboard.netlify.app)', Accept: 'application/json' }
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; global-intelligence-dashboard; +https://globalintelligence.pages.dev)', Accept: 'application/json' }
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return await r.text();
