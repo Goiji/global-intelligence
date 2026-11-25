@@ -105,6 +105,7 @@ test('us-gainers universe: unique tickers, every one with a name', () => {
 test('page: top-gainers card sits in the Capital Markets tab and ranks by the chosen period', async () => {
   const markets = HTML.slice(HTML.indexOf('<section id="marketsTab"'), HTML.indexOf('<section id="backtestTab"'));
   assert.match(markets, /id="usGainCard"/);
+  assert.ok(markets.indexOf('id="usGainCard"') < markets.indexOf('id="capMarketsCard"'), 'top gainers sits above World Capital Markets');
   for (const p of ['1d', '1w', '1m', '3m', 'ytd']) assert.match(markets, new RegExp(`data-p="${p}"`));
   const payload = {
     periods: ['1d', '1w', '1m', '3m', 'ytd'], asOf: '2026-11-24', universe: 25,
