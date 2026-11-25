@@ -154,7 +154,7 @@ test('margin and miner verdicts', async () => {
   assert.equal(M.minerVerdict('normal', 0.9, 0.1, false).key, 'normal');
 });
 
-test('tiles render from the function, with the visitor price and saved inputs', async () => {
+test('tiles render from the function, with the page BTC price and fixed cost assumptions', async () => {
   const mining = { height: 976007, date: '2026-11-24', difficulty: 150e12, hashrateEh: 1074, subsidy: 3.125, feePerBlock: 0.02, price: 90000, puell: 0.9,
     ribbon: { state: 'capitulation', days: 12, sma30: 1050, sma60: 1080 }, hist: [['2026-11-23', 1060, 1080], ['2026-11-24', 1050, 1080]] };
   const sb = await pageWith(mining, 120000);
@@ -172,7 +172,8 @@ test('tiles render from the function, with the visitor price and saved inputs', 
 });
 
 test('index.html: miners panel sits in the BTC tab, above the halving countdown', () => {
-  for (const id of ['mineCost', 'mineCostZone', 'mineScale', 'mineCostSub', 'mineKwh', 'mineEff', 'mineNet', 'mineVerdict', 'mineWhy', 'mineSigs', 'mineRibbon']) {
+  assert.doesNotMatch(HTML, /id="mineKwh"|id="mineEff"/, 'no visitor inputs: fixed network-average assumptions');
+  for (const id of ['mineCost', 'mineCostZone', 'mineScale', 'mineCostSub', 'mineNet', 'mineVerdict', 'mineWhy', 'mineSigs', 'mineRibbon']) {
     assert.match(HTML, new RegExp(`id="${id}"`), `missing #${id}`);
   }
   const btc = HTML.indexOf('<section id="btcTab"'), mine = HTML.indexOf('id="mineCost"'), halving = HTML.indexOf('id="halvingDays"');
