@@ -22,6 +22,8 @@ const TTL_S = 15 * 60;
 const PERIODS = ['1d', '1w', '1m', '3m', 'ytd'];
 const LOOKBACK_DAYS = { '1w': 7, '1m': 30, '3m': 91 };
 
+const DESC = require('../lib/us-stock-desc.js');   // [Thai, English] one-liners for the ⓘ tooltip
+
 const UNIVERSE = [
   ['AAPL', 'Apple'], ['MSFT', 'Microsoft'], ['NVDA', 'Nvidia'], ['AMZN', 'Amazon'], ['GOOGL', 'Alphabet'],
   ['META', 'Meta'], ['TSLA', 'Tesla'], ['AVGO', 'Broadcom'], ['BRK-B', 'Berkshire Hathaway'],
@@ -176,7 +178,7 @@ function buildRows(entries, universe = UNIVERSE) {
     const x = e ? stockReturns(e) : null;
     if (!x || (x.r['1d'] == null && x.r['1w'] == null)) { missing.push(s); continue; }
     if (x.date > asOf) asOf = x.date;
-    rows.push({ s, n, p: x.p, r: x.r, date: x.date });
+    rows.push({ s, n, p: x.p, r: x.r, date: x.date, ...(DESC[s] ? { d: DESC[s] } : {}) });
   }
   // a ticker that stopped trading (delisted / bought out) keeps its last bar forever: drop it
   const floor = asOf ? isoDay(new Date(new Date(asOf + 'T00:00:00Z').getTime() - 7 * 86400000)) : '';
