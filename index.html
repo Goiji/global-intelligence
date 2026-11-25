@@ -609,6 +609,8 @@ body{margin:0}
   /* ราคาตลาด: เต็มความกว้าง แสดง 2 คอลัมน์บนจอกว้าง */
   @media (min-width:900px){
     #pricesCard #livePrices{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:40px;row-gap:0!important}
+    /* แถวที่ไม่มีบรรทัดย่อยถูกยืดสูงเท่าแถวข้าง ๆ: ดันเนื้อหาขึ้นบน ให้ชื่อและราคาอยู่ระดับเดียวกันทั้งสองคอลัมน์ */
+    #pricesCard #livePrices>div[style*="display:flex"]{flex-wrap:wrap;align-content:flex-start}
   }
   /* 🧭 ภาวะตลาดวันนี้ */
   .pulse-top{display:grid;grid-template-columns:minmax(180px,240px) 1fr;gap:22px;align-items:center}
