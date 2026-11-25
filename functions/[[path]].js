@@ -50,12 +50,33 @@ const BLOCKED = /^\/(netlify|functions|tools|tests)(\/|$)|^\/(package(-lock)?\.j
 
 const notFound = () => new Response('Not found', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 
-export async function onRequest({ request, env }) {
+// Edge cache: Netlify's CDN honoured each function's `s-maxage`, Cloudflare Pages Functions do not
+// (every visitor ran the function again, e.g. ~7 s per news feed). So a GET answer that says
+// `public, s-maxage=N` is kept in this data centre's cache for N seconds and served from there.
+// Anything no-store / private / without s-maxage / non-200 is never cached.
+function edgeTtl(res) {
+  const cc = String((res.headers && (res.headers['Cache-Control'] || res.headers['cache-control'])) || '');
+  if ((res.statusCode || 200) !== 200 || !/\bpublic\b/i.test(cc) || /no-store|private/i.test(cc)) return 0;
+  const m = cc.match(/s-maxage=(\d+)/i);
+  return m ? Math.min(+m[1], 86400) : 0;
+}
+
+export async function onRequest(context) {
+  const { request, env } = context;
   const url = new URL(request.url);
   const m = url.pathname.match(/^\/\.netlify\/functions\/([a-z0-9-]+)\/?$/);
   if (!m) return notFound(); // only BLOCKED paths reach here besides functions (see _routes.json)
   const mod = HANDLERS[m[1]];
   if (!mod || typeof mod.handler !== 'function') return notFound();
+
+  const cache = request.method === 'GET' && typeof caches !== 'undefined' && caches.default ? caches.default : null;
+  const cacheKey = cache ? new Request(url.toString(), { method: 'GET' }) : null;
+  if (cache) {
+    try {
+      const hit = await cache.match(cacheKey);
+      if (hit) { const h = new Response(hit.body, hit); h.headers.set('X-Edge-Cache', 'HIT'); return h; }
+    } catch (e) { /* cache unavailable: just run the function */ }
+  }
 
   // The functions read process.env; on Cloudflare, env vars arrive as bindings instead.
   // (Works with or without the nodejs_compat flag: without it there is no global `process`.)
@@ -88,5 +109,16 @@ export async function onRequest({ request, env }) {
   const status = res.statusCode || 200;
   const body = status === 204 || status === 304 ? null
     : res.isBase64Encoded ? Uint8Array.from(atob(res.body || ''), (c) => c.charCodeAt(0)) : (res.body ?? '');
-  return new Response(body, { status, headers: res.headers || {} });
+  const out = new Response(body, { status, headers: res.headers || {} });
+  const ttl = cache ? edgeTtl(res) : 0;
+  if (ttl > 0) {
+    const stored = out.clone();
+    stored.headers.set('Cache-Control', 'public, max-age=' + ttl);
+    const put = cache.put(cacheKey, stored).catch(() => {});
+    if (typeof context.waitUntil === 'function') context.waitUntil(put);
+    out.headers.set('X-Edge-Cache', 'MISS');
+  }
+  return out;
 }
+
+export const __test = { edgeTtl };
