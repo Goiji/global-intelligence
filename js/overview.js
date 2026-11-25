@@ -2137,20 +2137,24 @@
 
   // ---------- 🧭 ภาวะตลาดวันนี้ (Market Pulse) ----------
   // อ่านจากราคาตลาดจริง 4 ตัว (VIX หุ้น · MOVE บอนด์ · HY สินเชื่อ · OVX น้ำมัน) แทนการนับคำในพาดหัวข่าว
-  // แต่ละตัวมี 4 ระดับตามเกณฑ์เดียวกับการ์ดของมัน: 0 สงบ · 1 ปกติ · 2 กังวล · 3 ตึงเครียด
+  // แต่ละตัวมี 4 ระดับ: 0 สงบ · 1 ปกติ · 2 กังวล · 3 ตึงเครียด
+  // VIX: การ์ดเรียก 20–30 ว่า "เริ่มกังวล" และ ≥30 "กลัวหนัก" จึงตัดที่ 15 / 20 / 30 (ค่ากลางระยะยาวราว 17–19)
   const PULSE_GAUGES = [
-    { key: 'vix', name: 'VIX', what: tr('หุ้น', 'stocks'), cuts: [20, 30, 40], fmt: v => v.toFixed(1) },
-    { key: 'move', name: 'MOVE', what: tr('บอนด์', 'bonds'), cuts: [80, 110, 140], fmt: v => v.toFixed(0) },
-    { key: 'hyOas', name: 'HY', what: tr('หุ้นกู้', 'credit'), cuts: [3.5, 5, 7], fmt: v => v.toFixed(2) + '%' },
-    { key: 'ovx', name: 'OVX', what: tr('น้ำมัน', 'oil'), cuts: [25, 40, 60], fmt: v => v.toFixed(0) }
+    { key: 'vix', name: 'VIX', what: tr('หุ้น', 'stocks'), cuts: [15, 20, 30], fmt: v => v.toFixed(1), go: 'mkVix' },
+    { key: 'move', name: 'MOVE', what: tr('บอนด์', 'bonds'), cuts: [80, 110, 140], fmt: v => v.toFixed(0), go: 'mkMove' },
+    { key: 'hyOas', name: 'HY', what: tr('หุ้นกู้', 'credit'), cuts: [3.5, 5, 7], fmt: v => v.toFixed(2) + '%', go: 'mkHy' },
+    { key: 'ovx', name: 'OVX', what: tr('น้ำมัน', 'oil'), cuts: [25, 40, 60], fmt: v => v.toFixed(0), go: 'mkOvx' }
   ];
   const PULSE_COLORS = ['var(--good)', 'var(--accent)', '#e8894a', 'var(--bad)'];
   function pulseLevel(v, cuts){ let l = 0; cuts.forEach(c => { if(v >= c) l++; }); return l; }
   function pulseState(levels){
     if(!levels.length) return null;
     const avg = levels.reduce((a, b) => a + b, 0) / levels.length;
-    const i = avg < 0.75 ? 0 : avg < 1.5 ? 1 : avg < 2.25 ? 2 : 3;
-    return { i, avg, label: [tr('สงบ', 'Calm'), tr('ปกติ', 'Normal'), tr('ตึงตัว', 'Tense'), tr('ตึงเครียด', 'Stressed')][i] };
+    let i = avg < 0.75 ? 0 : avg < 1.5 ? 1 : avg < 2.25 ? 2 : 3;
+    // ค่าเฉลี่ยอย่างเดียวกลบตัวที่ร้อน: ไม่ต่ำกว่าตัวที่แย่ที่สุดเกิน 1 ขั้น และถ้ากังวลตั้งแต่ 2 ตัวขึ้นไป ภาพรวมคือกังวล
+    const max = Math.max.apply(null, levels), hot = levels.filter(l => l >= 2).length;
+    i = Math.max(i, max - 1, hot >= 2 ? 2 : 0);
+    return { i, avg, label: [tr('สงบ', 'Calm'), tr('ปกติ', 'Normal'), tr('กังวล', 'Worried'), tr('ตึงเครียด', 'Stressed')][i] };
   }
   // ตัวที่ขยับแรงผิดปกติในวันล่าสุด (เกณฑ์ราว ๆ 1–2 เท่าของการขยับรายวันทั่วไป)
   function pulseMoves(S){
@@ -2179,14 +2183,26 @@
     el('pulseWhy').textContent = hot.length
       ? tr('อยู่ในโซนกังวลขึ้นไป: ', 'In the worried zone or worse: ') + hot.map(r => r.name + ' (' + r.what + ')').join(', ')
       : tr('ทั้ง ' + rows.length + ' มาตรวัดยังอยู่ในโซนสงบหรือปกติ', 'All ' + rows.length + ' gauges are calm or normal');
-    box.innerHTML = rows.map(r => '<div class="pg" data-level="' + r.l + '"><span class="k">' + r.name + ' <small>' + esc(r.what) + '</small></span>'
+    box.innerHTML = rows.map(r => '<div class="pg" role="link" tabindex="0" data-go="' + r.go + '" title="' + esc(tr('ดูการ์ด ', 'Open the ') + r.name + tr('', ' card')) + '" data-level="' + r.l + '"><span class="k">' + r.name + ' <small>' + esc(r.what) + '</small></span>'
       + '<b>' + esc(r.fmt(r.v)) + '</b><span class="lv">' + [0, 1, 2, 3].map(i => '<i' + (i <= r.l ? ' style="background:' + PULSE_COLORS[r.l] + '"' : '') + '></i>').join('') + '</span></div>').join('');
     const mv = pulseMoves(S);
     el('pulseMoves').innerHTML = '<span class="k">' + esc(tr('ขยับแรงในวันล่าสุด', 'Big moves, latest day')) + '</span>'
       + (mv.length ? mv.map(m => '<span class="mv' + (m.bad === true ? ' bad' : m.bad === false ? ' good' : '') + '">' + esc(m.txt) + '</span>').join('')
         : '<span class="mv none">' + esc(tr('ไม่มีตัวไหนขยับผิดปกติ', 'Nothing unusual')) + '</span>');
   }
-  window.__pulseTest = { pulseLevel, pulseState, pulseMoves, renderPulse };
+  // แตะมาตรวัดแล้วเลื่อนไปการ์ดเต็มของมันในตลาดสหรัฐฯ
+  (function(){
+    const box = el('pulseGauges'); if(!box || !box.addEventListener) return;
+    const go = function(e){
+      const t = e.target && e.target.closest ? e.target.closest('.pg[data-go]') : null; if(!t) return;
+      if(e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+      const n = el(t.dataset.go), card = n && n.closest ? n.closest('.metric') : null; if(!card) return;
+      e.preventDefault(); card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('flash'); setTimeout(function(){ card.classList.remove('flash'); }, 1600);
+    };
+    box.addEventListener('click', go); box.addEventListener('keydown', go);
+  })();
+  window.__pulseTest = { cuts: { vix: PULSE_GAUGES[0].cuts }, pulseLevel, pulseState, pulseMoves, renderPulse };
 
   async function fetchMarkets(){
     try{
