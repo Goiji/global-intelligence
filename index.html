@@ -605,7 +605,8 @@ body{margin:0}
   .ug-idw{display:flex;align-items:flex-start;gap:2px;min-width:0}
   .ug-id{min-width:0;color:inherit;text-decoration:none}
   .ug-idw .tip{margin:1px 0 0 2px;flex:none}
-  @media(min-width:801px){.ug-row .tip-pop{top:100%;margin-top:2px}}
+  @media(min-width:801px){.ug-row .tip-pop{top:100%;margin-top:2px;left:30px;right:auto;width:max-content;max-width:calc(100% - 30px);padding:8px 12px}}
+  @media(max-width:800px){.ug-row .tip-pop{right:auto;width:max-content;max-width:calc(100vw - 32px)}}
   .ug-row .tip-pop b{display:inline;color:var(--accent-hi)}
   .ug-id:hover b,.ug-id:focus-visible b{color:var(--accent-hi);text-decoration:underline}
   .ug-id b{display:block;font-size:13.5px;color:var(--text);letter-spacing:.01em}
