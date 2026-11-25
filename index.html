@@ -4683,6 +4683,29 @@ window.setHeaderStamp();
   #backtestTab .bt-lead{color:var(--muted);font-size:13px;line-height:1.7;margin:4px 0 0}
   #backtestTab .bt-chart svg{width:100%;height:auto;display:block}
   #backtestTab .bt-chart{position:relative}
+  #backtestTab .bt-what{margin:6px 0 8px;padding:0;list-style:none;counter-reset:w;display:grid;gap:6px}
+  #backtestTab .bt-what li{counter-increment:w;position:relative;padding:8px 12px 8px 38px;border-radius:10px;background:rgba(255,255,255,.035);border:1px solid var(--line);font-size:13px;line-height:1.6;color:#d9e0ef}
+  #backtestTab .bt-what li::before{content:counter(w);position:absolute;left:10px;top:9px;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;background:var(--line);color:var(--text)}
+  #backtestTab .bt-g.spx .bt-what li::before{background:#d4b26a;color:#0b1020}
+  #backtestTab .bt-g.btc .bt-what li::before{background:#f7931a;color:#0b1020}
+  #backtestTab .bt-nav{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  #backtestTab .bt-nav button{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;text-align:left;font:inherit;color:var(--text);cursor:pointer;border-radius:14px;padding:12px 14px;background:var(--panel2);border:1px solid var(--line);transition:transform .15s,border-color .15s}
+  #backtestTab .bt-nav button:hover{transform:translateY(-1px)}
+  #backtestTab .bt-nav button span{grid-row:span 2;font-size:22px;line-height:1}
+  #backtestTab .bt-nav button b{font-size:14px}
+  #backtestTab .bt-nav button small{color:var(--muted);font-size:11px}
+  #backtestTab .bt-nav .spx{border-color:rgba(212,178,106,.5);background:linear-gradient(135deg,rgba(212,178,106,.16),rgba(212,178,106,.03))}
+  #backtestTab .bt-nav .btc{border-color:rgba(247,147,26,.5);background:linear-gradient(135deg,rgba(247,147,26,.16),rgba(247,147,26,.03))}
+  #backtestTab .bt-band{grid-column:1/-1;display:flex;gap:14px;align-items:center;padding:14px 18px;border-radius:16px;scroll-margin-top:70px}
+  #backtestTab .bt-band .ico{font-size:28px;line-height:1}
+  #backtestTab .bt-band b{display:block;font-size:19px;font-weight:800}
+  #backtestTab .bt-band small{color:var(--muted);font-size:12px}
+  #backtestTab .bt-band.spx{background:linear-gradient(90deg,rgba(212,178,106,.24),rgba(212,178,106,.03) 70%);border:1px solid rgba(212,178,106,.45)}
+  #backtestTab .bt-band.spx b{color:#e7c98a}
+  #backtestTab .bt-band.btc{margin-top:22px;background:linear-gradient(90deg,rgba(247,147,26,.24),rgba(247,147,26,.03) 70%);border:1px solid rgba(247,147,26,.45)}
+  #backtestTab .bt-band.btc b{color:#ffb766}
+  #backtestTab .bt-g.spx{border-left:4px solid #d4b26a;background:linear-gradient(90deg,rgba(212,178,106,.06),transparent 35%),rgba(18,26,45,.94)}
+  #backtestTab .bt-g.btc{border-left:4px solid #f7931a;background:linear-gradient(90deg,rgba(247,147,26,.06),transparent 35%),rgba(18,26,45,.94)}
   #backtestTab .bt-chart svg{cursor:crosshair;-webkit-tap-highlight-color:transparent}
   #backtestTab .bt-tip{position:absolute;top:6px;pointer-events:none;background:rgba(11,16,32,.95);border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-size:12px;line-height:1.6;white-space:nowrap;z-index:2;display:none;box-shadow:0 6px 18px rgba(0,0,0,.35)}
   #backtestTab .bt-tip .d{color:var(--muted);font-size:11px}
@@ -4704,44 +4727,56 @@ window.setHeaderStamp();
 </style>
 <div class="wrap">
 <main class="grid">
-<section class="card full">
-<h2>🧪 <span data-en="Backtest: crises vs normal times">Backtest: ช่วงวิกฤต เทียบช่วงปกติ</span></h2>
-<p class="bt-lead" data-en="VIX, US unemployment and the S&amp;P 500, month by month since 1990: what they looked like in each big sell-off, and what the market did afterwards.">ดูย้อนหลังรายเดือนตั้งแต่ปี 1990 ว่า VIX, อัตราว่างงานสหรัฐ และ S&amp;P 500 เป็นอย่างไรในแต่ละช่วงตลาดพัง และหลังจากนั้นตลาดไปทางไหน</p>
+<nav class="bt-nav" aria-label="Backtest sections"><button type="button" class="spx" data-go="btGrpSpx"><span>📈</span><b data-en="US stocks · VIX">หุ้นสหรัฐ · VIX</b><small data-en="monthly since 1990">รายเดือน ตั้งแต่ 1990</small></button><button type="button" class="btc" data-go="btGrpBtc"><span>₿</span><b data-en="Bitcoin · DVOL">บิตคอยน์ · DVOL</b><small data-en="daily since 2021">รายวัน ตั้งแต่ 2021</small></button></nav>
+<div class="bt-band spx" id="btGrpSpx"><span class="ico">📈</span><div><b data-en="US stocks: S&amp;P 500 and VIX">หุ้นสหรัฐ: S&amp;P 500 กับ VIX</b><small data-en="Monthly data, 1990 to today · from FRED">ข้อมูลรายเดือน 1990 – ปัจจุบัน · จาก FRED</small></div></div>
+<section class="card full bt-g spx">
+<h2>🧪 <span data-en="Backtest: stock-market crises vs normal times">Backtest: หุ้นสหรัฐช่วงวิกฤต เทียบช่วงปกติ</span></h2>
+<ol class="bt-what">
+<li><b data-en="Crisis vs normal:">ช่วงวิกฤต เทียบ ช่วงปกติ:</b> <span data-en="the 4 big falls (S&amp;P 500 from peak to bottom) against every other month. How different were VIX, unemployment and the S&amp;P 500 12 months later?">4 ครั้งที่ S&amp;P 500 ลงจากยอดถึงก้น เทียบกับเดือนอื่นทั้งหมด ว่า VIX, อัตราว่างงาน และ S&amp;P 500 อีก 12 เดือนต่อมา ต่างกันแค่ไหน</span></li>
+<li><b data-en="VIX level vs what came next:">ระดับ VIX เทียบ ผลตอบแทนหลังจากนั้น:</b> <span data-en="months grouped by their average VIX, against the S&amp;P 500 12 months later.">แบ่งเดือนตามค่า VIX เฉลี่ย แล้วดูว่า S&amp;P 500 อีก 12 เดือนต่อมาเป็นอย่างไร</span></li>
+</ol>
+<p class="bt-lead" data-en="Monthly data since 1990.">ข้อมูลรายเดือนตั้งแต่ปี 1990</p>
 <div class="bt-chart bt-scroll" id="btChart"></div>
 <div class="bt-legend"><span><i style="background:#d4b26a"></i>S&amp;P 500 (log)</span><span><i style="background:#ff6577"></i><span data-en="VIX (monthly average)">VIX (เฉลี่ยรายเดือน)</span></span><span><i style="background:rgba(255,101,119,.25);height:10px"></i><span data-en="Crisis (peak to bottom)">ช่วงวิกฤต (ยอด→ก้น)</span></span></div>
 </section>
-<section class="card full">
+<section class="card full bt-g spx">
 <h2>📉 <span data-en="Each crisis, peak to bottom">แต่ละวิกฤต จากยอดถึงก้น</span></h2>
 <div class="bt-scroll"><table id="btCrisis"></table></div>
 </section>
-<section class="card full">
+<section class="card full bt-g spx">
 <h2>🌡️ <span data-en="VIX level vs the S&amp;P 500 a year later">ระดับ VIX กับ S&amp;P 500 อีก 12 เดือนต่อมา</span></h2>
 <div class="bt-scroll"><table id="btZones"></table></div>
 </section>
-<section class="card full">
+<section class="card full bt-g spx">
 <h2>💡 <span data-en="What stands out">สิ่งที่เห็นจากข้อมูล</span></h2>
 <ul class="bt-points" id="btPoints"></ul>
 <details class="src-note"><summary data-en="ⓘ Sources and limits">ⓘ แหล่งข้อมูลและข้อจำกัด</summary><div class="muted" id="btNote"></div></details>
 </section>
-<section class="card full" id="bdv">
-<h2>₿ <span data-en="Backtest: BTC and DVOL">Backtest: BTC กับ DVOL</span></h2>
-<p class="bt-lead" data-en="DVOL is the 30-day volatility the options market expects for BTC (the &quot;VIX of bitcoin&quot;). Daily data since it started in March 2021: what DVOL looked like before and during each big BTC fall, and what BTC did next.">DVOL คือความผันผวนที่ตลาดออปชันคาดไว้สำหรับ BTC ใน 30 วันข้างหน้า (เหมือน VIX ของบิตคอยน์) ดูข้อมูลรายวันตั้งแต่เริ่มมี DVOL ในเดือนมีนาคม 2021 ว่าก่อนและระหว่างที่ BTC ลงแรงแต่ละรอบ DVOL เป็นอย่างไร และหลังจากนั้นราคาไปทางไหน</p>
+<div class="bt-band btc" id="btGrpBtc"><span class="ico">₿</span><div><b data-en="Bitcoin: BTC and DVOL">บิตคอยน์: BTC กับ DVOL</b><small data-en="Daily data, March 2021 to today · from Deribit">ข้อมูลรายวัน มี.ค. 2021 – ปัจจุบัน · จาก Deribit</small></div></div>
+<section class="card full bt-g btc" id="bdv">
+<h2>₿ <span data-en="Backtest: DVOL vs the BTC price">Backtest: DVOL เทียบกับราคา BTC</span></h2>
+<p class="bt-lead" data-en="DVOL is the 30-day volatility the options market expects for BTC (the &quot;VIX of bitcoin&quot;). Daily data since it started in March 2021.">DVOL คือความผันผวนที่ตลาดออปชันคาดไว้สำหรับ BTC ใน 30 วันข้างหน้า (เหมือน VIX ของบิตคอยน์) ใช้ข้อมูลรายวันตั้งแต่เริ่มมี DVOL ในเดือนมีนาคม 2021</p>
+<ol class="bt-what">
+<li><b data-en="Each big BTC fall:">BTC ลงแรงแต่ละรอบ:</b> <span data-en="DVOL at the peak, at its highest during the fall and at the bottom, and what BTC did 30 and 90 days later.">DVOL ตอนราคาขึ้นยอด ตอนพุ่งสูงสุดระหว่างทาง และตอนราคาถึงก้น แล้ว BTC อีก 30 และ 90 วันต่อมาเป็นอย่างไร</span></li>
+<li><b data-en="DVOL level vs what came next:">ระดับ DVOL เทียบ ผลตอบแทนหลังจากนั้น:</b> <span data-en="days grouped by DVOL, against BTC 30 and 90 days later.">แบ่งวันตามค่า DVOL แล้วดูว่า BTC อีก 30 และ 90 วันต่อมาเป็นอย่างไร</span></li>
+<li><b data-en="Expected swing vs actual swing:">แกว่งที่คาด เทียบ แกว่งจริง:</b> <span data-en="the range DVOL implied against how far BTC really moved.">กรอบที่ DVOL บอกไว้ เทียบกับที่ราคา BTC ขยับจริง</span></li>
+</ol>
 <div class="bt-chart bt-scroll" id="bdvChart"><p class="muted" id="bdvStatus" data-en="Loading Deribit data…">กำลังโหลดข้อมูลจาก Deribit…</p></div>
 <div class="bt-legend"><span><i style="background:#f7931a"></i><span data-en="BTC (log)">BTC (log)</span></span><span><i style="background:#4cc9f0"></i>DVOL</span><span><i style="background:rgba(255,101,119,.25);height:10px"></i><span data-en="BTC fall (peak to bottom)">ช่วงราคาลง (ยอด→ก้น)</span></span></div>
 </section>
-<section class="card full">
+<section class="card full bt-g btc">
 <h2>📉 <span data-en="Each big BTC fall, and DVOL along the way">BTC ลงแรงแต่ละรอบ กับ DVOL ระหว่างทาง</span></h2>
 <div class="bt-scroll"><table id="bdvFalls"></table></div>
 </section>
-<section class="card full">
+<section class="card full bt-g btc">
 <h2>🌡️ <span data-en="DVOL level vs BTC 30 and 90 days later">ระดับ DVOL กับ BTC อีก 30 และ 90 วันต่อมา</span></h2>
 <div class="bt-scroll"><table id="bdvZones"></table></div>
 </section>
-<section class="card full">
+<section class="card full bt-g btc">
 <h2>📏 <span data-en="Did DVOL get the size of the move right?">DVOL บอกขนาดการแกว่งได้ตรงไหม</span></h2>
 <div class="bt-scroll"><table id="bdvSwing"></table></div>
 </section>
-<section class="card full">
+<section class="card full bt-g btc">
 <h2>💡 <span data-en="What stands out for BTC">สิ่งที่เห็นจากข้อมูล BTC</span></h2>
 <ul class="bt-points" id="bdvPoints"></ul>
 <details class="src-note"><summary data-en="ⓘ Sources and limits">ⓘ แหล่งข้อมูลและข้อจำกัด</summary><div class="muted" id="bdvNote"></div></details>
@@ -4868,6 +4903,9 @@ window.setHeaderStamp();
     document.addEventListener('pointerdown', ev => { if(!svg.contains(ev.target)) hide(); });
   }
   window.btHover = btHover;
+  document.querySelectorAll('#backtestTab .bt-nav button').forEach(btn => btn.addEventListener('click', () => {
+    const t = document.getElementById(btn.dataset.go); if(t && t.scrollIntoView) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
 
   function drawChart(box, S){
     const d = BT_DATA, n = d.spx.length, W = 900, H = 300, L = 40, R = 40, T = 10, B = 22;
