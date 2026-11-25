@@ -126,7 +126,8 @@ test('page: top-gainers card sits in the Capital Markets tab and ranks by the ch
   U.renderUsGainers();
   const list = sb.__elements.get('ugList').innerHTML;
   assert.equal((list.match(/class="ug-row/g) || []).length, 20);
-  assert.match(list, /^<li class="ug-row ug-top"><span class="ug-rank">1<\/span><span class="ug-id"><b>S24<\/b>/);
+  assert.match(list, /^<li class="ug-row ug-top"><span class="ug-rank">1<\/span><a class="ug-id" href="https:\/\/www\.tradingview\.com\/chart\/\?symbol=S24" target="_blank" rel="noopener noreferrer"[^>]*><b>S24/);
+  assert.equal(U.ugTvUrl('BRK-B'), 'https://www.tradingview.com/chart/?symbol=BRK.B');
   assert.match(list, /\+240%/);
   assert.match(sb.__elements.get('ugSub').textContent, /ตั้งแต่ต้นปี/);
 });

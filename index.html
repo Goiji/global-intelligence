@@ -563,7 +563,8 @@ body{margin:0}
   .ug-row{display:grid;grid-template-columns:24px minmax(0,7.5em) minmax(0,1fr) 4.6em;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line-soft,rgba(255,255,255,.06))}
   .ug-rank{font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
   .ug-row.ug-top .ug-rank{color:var(--ug-hi);font-weight:800}
-  .ug-id{min-width:0}
+  .ug-id{min-width:0;color:inherit;text-decoration:none}
+  .ug-id:hover b,.ug-id:focus-visible b{color:var(--accent-hi);text-decoration:underline}
   .ug-id b{display:block;font-size:13.5px;color:var(--text);letter-spacing:.01em}
   .ug-id small{display:block;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ug-track{height:10px;border-radius:99px;background:rgba(255,255,255,.05);overflow:hidden}
@@ -3931,6 +3932,8 @@ window.setHeaderStamp();
   function usGainersTop(rows, p, n){
     return (rows || []).filter((r) => r && r.r && isValidNum(r.r[p])).sort((a, b) => b.r[p] - a.r[p]).slice(0, n || 20);
   }
+  // กราฟ TradingView ของหุ้นตัวนั้น (TradingView หาตลาดเอง · BRK-B ของ Yahoo = BRK.B)
+  function ugTvUrl(sym){ return 'https://www.tradingview.com/chart/?symbol=' + encodeURIComponent(String(sym).replace(/-/g, '.')); }
   function fmtUgPct(v){
     const a = Math.abs(v), t = a >= 100 ? a.toFixed(0) : a.toFixed(1);
     return (v > 0 ? '+' : v < 0 ? '−' : '') + t + '%';
@@ -3944,7 +3947,7 @@ window.setHeaderStamp();
     el('ugList').innerHTML = top.map(function(r, i){
       const v = r.r[ugPeriod], w = v > 0 ? Math.max(1.5, v / max * 100) : 0;
       return '<li class="ug-row' + (i < 3 ? ' ug-top' : '') + '"><span class="ug-rank">' + (i + 1) + '</span>'
-        + '<span class="ug-id"><b>' + esc(r.s) + '</b><small title="' + esc(r.n) + '">' + esc(r.n) + '</small></span>'
+        + '<a class="ug-id" href="' + ugTvUrl(r.s) + '" target="_blank" rel="noopener noreferrer" title="' + esc(tr('เปิด ' + r.s + ' ใน TradingView', 'Open ' + r.s + ' in TradingView')) + '"><b>' + esc(r.s) + '<span class="tv-arrow" aria-hidden="true">↗</span></b><small>' + esc(r.n) + '</small></a>'
         + '<span class="ug-track" aria-hidden="true"><span class="ug-fill" style="display:block;width:' + w.toFixed(1) + '%"></span></span>'
         + '<span class="ug-pct' + (v < 0 ? ' neg' : '') + '">' + fmtUgPct(v) + (isValidNum(r.p) ? '<span class="ug-px">$' + esc(r.p.toLocaleString('en-US', { maximumFractionDigits: 2 })) + '</span>' : '') + '</span></li>';
     }).join('');
@@ -3977,7 +3980,7 @@ window.setHeaderStamp();
     try{ localStorage.setItem('gi-ug-period', ugPeriod); }catch(e){}
     renderUsGainers();
   });
-  window.__ugTest = { usGainersTop, fmtUgPct, renderUsGainers, setData: function(j, p){ ugData = j; if(p) ugPeriod = p; } };
+  window.__ugTest = { usGainersTop, fmtUgPct, ugTvUrl, renderUsGainers, setData: function(j, p){ ugData = j; if(p) ugPeriod = p; } };
   renderUsGainers();
   fetchUsGainers();
   setInterval(function(){ if(!document.hidden && Date.now() >= ugNextAt) fetchUsGainers(); }, 60 * 1000);
