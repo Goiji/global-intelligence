@@ -208,7 +208,7 @@ test('every US Markets card links to TradingView (Shiller PE to multpl and Buffe
   const m = HTML.match(/<div class="mkt-grid" id="mktGrid">([\s\S]*?)<div id="mktNote"|<div class="mkt-grid" id="mktGrid">([\s\S]*?)<\/section>/);
   const block = m[1] || m[2];
   const cards = block.split(/<div class="metric mkt"[^>]*>/).slice(1);
-  assert.equal(cards.length, 15);
+  assert.equal(cards.length, 16);
   cards.forEach((c, i) => assert.match(c, /Shiller PE/.test(c.slice(0, 200))
     ? /class="tv-btn" href="https:\/\/www\.multpl\.com\/shiller-pe"/
     : /Buffett Indicator/.test(c.slice(0, 200))

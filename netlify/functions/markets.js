@@ -1,7 +1,7 @@
 // Netlify Function: US market snapshot + 12-month histories for the dashboard's sparklines.
 //
 //   GET /.netlify/functions/markets
-//   → { series: { sp500, nasdaq100, cape, us10y, us2y, vix, ovx, move, sofrSpread, levShort, dollar, cpi, unrate, fedUpper }, asOf, ttl }
+//   → { series: { sp500, nasdaq100, cape, us10y, us2y, vix, ovx, hyOas, move, sofrSpread, levShort, dollar, cpi, unrate, fedUpper }, asOf, ttl }
 //     each series: { label, unit, latest, date, prev, change, hist: [[isoDate, value], ...] }
 //
 // Every series comes from FRED. The public graph CSV needs no key; FRED_API_KEY (optional, the
@@ -16,6 +16,9 @@
 // The dollar is the ICE DXY formula applied to the ECB's daily reference rates (via Frankfurter,
 // out the same afternoon in Europe) — FRED's broad index (DTWEXBGS) is published once a week and
 // ran up to a week behind. FRED's broad index is the fallback if Frankfurter fails.
+// hyOas = ICE BofA US High Yield Index option-adjusted spread (FRED BAMLH0A0HYM2, %, daily close,
+// filed the next morning): the extra yield junk bonds pay over Treasuries, i.e. the credit market's
+// price of default risk. Plain FRED series, same path as VIX / OVX.
 // Funding-stress gauges (proxies for repo haircuts, which have no public daily number):
 //   • sofrSpread = SOFR − IORB in basis points, both from FRED, joined by date (IORB carried forward
 //     to each SOFR day). Positive and widening = cash is scarce and repo is tight. The payload also
@@ -114,6 +117,7 @@ const SERIES = {
   us2y:     { id: 'DGS2',     label: 'US 2Y', unit: '%', cadence: 'daily' },
   vix:      { id: 'VIXCLS',   label: 'VIX', unit: '', cadence: 'daily' },
   ovx:      { id: 'OVXCLS',   label: 'OVX', unit: '', cadence: 'daily' },
+  hyOas:    { id: 'BAMLH0A0HYM2', label: 'ICE BofA US High Yield OAS', unit: '%', cadence: 'daily' },
   move:     { id: '^MOVE',    label: 'MOVE', unit: '', cadence: 'daily', loader: 'yahoo' },
   cape:     { id: 'CAPE',     label: 'Shiller PE (CAPE)', unit: '', cadence: 'monthly', loader: 'cape' },
   buffett:  { id: 'NCBEILQ027S/GDP', label: 'Buffett Indicator (market cap ÷ GDP)', unit: '%', cadence: 'quarterly', loader: 'buffett' },
