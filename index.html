@@ -858,20 +858,6 @@ body{margin:0}
 </header>
 <main class="grid">
 <section class="card full">
-<h2>🔥 <span data-en="Top Events">ข่าวสำคัญ</span> <span class="h-en i18n-th">Top Events</span></h2>
-<div class="events" id="topEvents">
-<div class="event"><div class="rank" data-en="Loading…">กำลังโหลด…</div></div>
-</div>
-</section>
-
-<section class="card full">
-<h2>🗞️ <span data-en="Latest News">ข่าวล่าสุด</span> <span class="h-en" data-en="Last 48 hours">Latest News · 48 ชม.</span></h2>
-<div class="news-filters" id="newsFilters"></div>
-<div class="news-list" id="newsList"><div class="muted" style="font-size:12px;" data-en="Loading news…">กำลังโหลดข่าว…</div></div>
-<button type="button" class="news-more" id="newsMoreBtn" style="display:none;" data-en="More news">ดูข่าวเพิ่ม</button>
-</section>
-
-<section class="card full">
 <h2>🌍 <span data-en="World Risk Score">ดัชนีความเสี่ยงโลก</span> <span class="h-en i18n-th">World Risk Score</span></h2>
 <div class="hero"><div class="score" id="riskScore">–</div><div><span class="badge" id="riskBadge">–</span><div class="change" id="riskChange"></div><div class="muted" id="riskConfidence"></div></div></div>
 <div class="risk-scale" aria-hidden="true"><div class="bar"><div class="pin" id="riskPin" style="left:0%; display:none;"></div></div><div class="ticks"><span style="left:0">0</span><span style="left:40%">40</span><span style="left:60%">60</span><span style="left:75%">75</span><span style="left:100%">100</span></div></div>
@@ -885,6 +871,20 @@ body{margin:0}
 </div>
 <details class="why" id="riskWhyBox" style="display:none;"><summary data-en="ℹ️ Which headlines drive the score">ℹ️ คะแนนมาจากข่าวไหน</summary><div id="riskWhy"></div></details>
 <div class="model-note" data-en="⚙️ Read from headlines, not prices: the 5 newest Google News headlines per topic, scored by risk words (e.g. strike, tariff, recession). It moves with the news cycle, so use the Market Pulse on the Overview tab for how markets are actually behaving.">⚙️ อ่านจากพาดหัวข่าว ไม่ใช่ราคา: นับคำบ่งชี้ความเสี่ยง (เช่น โจมตี ภาษีนำเข้า ถดถอย) ในพาดหัว Google News 5 เรื่องล่าสุดของแต่ละหมวด คะแนนจึงขึ้นลงตามกระแสข่าว ถ้าอยากรู้ว่าตลาดตึงจริงแค่ไหน ดู "ภาวะตลาดวันนี้" ในแท็บภาพรวม</div>
+</section>
+
+<section class="card full">
+<h2>🔥 <span data-en="Top Events">ข่าวสำคัญ</span> <span class="h-en i18n-th">Top Events</span></h2>
+<div class="events" id="topEvents">
+<div class="event"><div class="rank" data-en="Loading…">กำลังโหลด…</div></div>
+</div>
+</section>
+
+<section class="card full">
+<h2>🗞️ <span data-en="Latest News">ข่าวล่าสุด</span> <span class="h-en" data-en="Last 48 hours">Latest News · 48 ชม.</span></h2>
+<div class="news-filters" id="newsFilters"></div>
+<div class="news-list" id="newsList"><div class="muted" style="font-size:12px;" data-en="Loading news…">กำลังโหลดข่าว…</div></div>
+<button type="button" class="news-more" id="newsMoreBtn" style="display:none;" data-en="More news">ดูข่าวเพิ่ม</button>
 </section>
 
 <section class="card">

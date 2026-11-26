@@ -59,6 +59,6 @@ test('layout: Overview leads with the pulse; headline scores live in the News ta
   const feed = HTML.slice(HTML.indexOf('<section id="feedTab"'), HTML.indexOf('<section id="newsTab"'));
   assert.ok(over.indexOf('id="pulseCard"') > -1 && over.indexOf('id="pulseCard"') < over.indexOf('data-en="Market Prices"'));
   assert.doesNotMatch(over, /data-en="World Risk Score"|data-en="News Outlook"/);
-  assert.match(feed, /data-en="Top Events"[\s\S]*data-en="Latest News"[\s\S]*data-en="World Risk Score"[\s\S]*อ่านจากพาดหัวข่าว ไม่ใช่ราคา[\s\S]*data-en="News Outlook"[\s\S]*คิดต่อจาก World Risk Score/);
+  assert.match(feed, /data-en="World Risk Score"[\s\S]*อ่านจากพาดหัวข่าว ไม่ใช่ราคา[\s\S]*data-en="Top Events"[\s\S]*data-en="Latest News"[\s\S]*data-en="News Outlook"[\s\S]*คิดต่อจาก World Risk Score/);
   assert.match(HTML, /data-tab="newsTab" data-en="🏠 Overview">🏠 ภาพรวม<[\s\S]*data-tab="feedTab"[\s\S]*data-tab="btcTab">₿ Bitcoin<[\s\S]*data-tab="backtestTab"/);
 });
