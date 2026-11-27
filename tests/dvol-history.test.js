@@ -101,7 +101,7 @@ test('both backtest charts get the hover box (date, values, shaded period name)'
 test('backtest tab is split into a stocks/VIX group and a bitcoin/DVOL group, each saying what it compares', () => {
   assert.match(HTML, /<nav class="bt-nav"[\s\S]*data-go="btGrpSpx"[\s\S]*data-go="btGrpBtc"/);
   assert.ok(HTML.indexOf('id="btGrpSpx"') < HTML.indexOf('id="btChart"') && HTML.indexOf('id="btGrpBtc"') < HTML.indexOf('id="bdvChart"'));
-  assert.equal((HTML.match(/<ol class="bt-what">/g) || []).length, 2);
+  assert.equal((HTML.match(/<ol class="bt-what">/g) || []).length, 3);
   assert.equal((HTML.match(/class="card full bt-g spx"/g) || []).length, 4);
   assert.equal((HTML.match(/class="card full bt-g btc"/g) || []).length, 5);
 });

@@ -26,6 +26,7 @@ import etfFlow from '../netlify/functions/etf-flow.js';
 import fedOdds from '../netlify/functions/fed-odds.js';
 import fredData from '../netlify/functions/fred-data.js';
 import goldTh from '../netlify/functions/gold-th.js';
+import hashHistory from '../netlify/functions/hash-history.js';
 import liquidations from '../netlify/functions/liquidations.js';
 import macroMap from '../netlify/functions/macro-map.js';
 import markets from '../netlify/functions/markets.js';
@@ -41,7 +42,7 @@ import wti from '../netlify/functions/wti.js';
 
 const HANDLERS = {
   'btc-holders': btcHolders, 'btc-mining': btcMining, 'btc-treasury': btcTreasury, calendar, 'capital-markets': capitalMarkets, 'cmc-fear-greed': cmcFearGreed, consensus, 'country-profiles': countryProfiles,
-  dvol, 'dvol-history': dvolHistory, 'econ-extra': econExtra, 'etf-flow': etfFlow, 'fed-odds': fedOdds, 'fred-data': fredData, 'gold-th': goldTh, liquidations, 'macro-map': macroMap, markets,
+  dvol, 'dvol-history': dvolHistory, 'econ-extra': econExtra, 'etf-flow': etfFlow, 'fed-odds': fedOdds, 'fred-data': fredData, 'gold-th': goldTh, 'hash-history': hashHistory, liquidations, 'macro-map': macroMap, markets,
   'news-feed': newsFeed, 'oil-price': oilPrice, onchain, 'options-gex': optionsGex, stablecoins, 'us-gainers': usGainers, usdjpy, visitors, wti,
 };
 
