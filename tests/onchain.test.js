@@ -36,13 +36,12 @@ test('extractValue returns null for junk instead of NaN', () => {
 });
 
 test('only whitelisted metric slugs exist (the query string can never pick the upstream path)', () => {
-  assert.deepEqual(Object.keys(METRICS).sort(), ['mvrv', 'mvrv-zscore', 'nupl', 'reserve-risk']);
+  assert.deepEqual(Object.keys(METRICS).sort(), ['mvrv', 'mvrv-zscore', 'nupl']);
   assert.ok(METRICS.nupl.every((s) => /^[a-z0-9/-]+$/.test(s) && !s.includes('..')));
 });
 
-test('extractValue reads Reserve Risk and never mistakes the "d" date string for the value', () => {
-  assert.equal(extractValue({ d: '2026-11-26', unixTs: 1795651200, reserveRisk: 4.477523e-4 }), 4.477523e-4);
-  assert.equal(extractValue({ d: '2026-11-26', other: 0.5 }), 0.5);
+test('extractValue never mistakes the "d" date string for the value', () => {
+  assert.equal(extractValue({ d: '2026-11-26', unixTs: 1795651200, other: 0.5 }), 0.5);
 });
 
 test('handler keeps the last good value in KV: served without an upstream call while fresh, as stale after a 429', async (t) => {
@@ -52,26 +51,26 @@ test('handler keeps the last good value in KV: served without an upstream call w
   t.after(() => { global.fetch = realFetch; __test._clearCache(); lg._resetThrottle(); });
   const store = new Map();
   const kv = { get: async (k) => JSON.parse(store.get(k) || 'null'), put: async (k, v) => { store.set(k, v); } };
-  const ev = { cloudflare: { kv }, queryStringParameters: { metric: 'reserve-risk' } };
+  const ev = { cloudflare: { kv }, queryStringParameters: { metric: 'mvrv' } };
   let calls = 0;
-  global.fetch = async () => { calls++; return { ok: true, json: async () => ({ d: '2026-11-26', unixTs: 1795651200, reserveRisk: 0.00045 }) }; };
+  global.fetch = async () => { calls++; return { ok: true, json: async () => ({ d: '2026-11-26', unixTs: 1795651200, mvrv: 1.1 }) }; };
   __test._clearCache(); lg._resetThrottle();
   let res = await handler(ev);
-  assert.equal(JSON.parse(res.body).value, 0.00045);
-  assert.ok(store.has('onchain:reserve-risk'));
+  assert.equal(JSON.parse(res.body).value, 1.1);
+  assert.ok(store.has('onchain:mvrv'));
   // a new isolate (empty memory) reads KV instead of calling the upstream again
   __test._clearCache();
   res = await handler(ev);
   assert.equal(calls, 1);
-  assert.equal(JSON.parse(res.body).value, 0.00045);
+  assert.equal(JSON.parse(res.body).value, 1.1);
   // older than the TTL and the upstream says 429 → stale value, not a 502
-  const saved = JSON.parse(store.get('onchain:reserve-risk'));
+  const saved = JSON.parse(store.get('onchain:mvrv'));
   saved.data.fetchedAt = new Date(Date.now() - 2 * 86400000).toISOString();
-  store.set('onchain:reserve-risk', JSON.stringify(saved));
+  store.set('onchain:mvrv', JSON.stringify(saved));
   __test._clearCache();
   global.fetch = async () => ({ ok: false, status: 429, json: async () => ({}) });
   res = await handler(ev);
   assert.equal(res.statusCode, 200);
   assert.equal(JSON.parse(res.body).stale, true);
-  assert.equal(JSON.parse(res.body).value, 0.00045);
+  assert.equal(JSON.parse(res.body).value, 1.1);
 });
