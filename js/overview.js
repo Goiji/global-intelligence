@@ -197,6 +197,10 @@
     'inflation worr*':1, 'inflation fear*':1, 'raise interest rates':1, 'raising interest rates':1, 'raise rates':1, 'raising rates':1, 'shares fall*':1, 'shares fell':1,
     'stocks fall*':1, 'stocks fell':1, 'sharply lower':1, 'losing run':1, 'losing streak':1, 'in correction':1.5,
     'into a correction':1.5, 'correction territory':1.5,
+    // ห่วงโซ่อุปทาน/จำกัดส่งออก (Nov 2026: "Nvidia hits pause on chip shipments to Southeast Asia" ได้ 0 เพราะไม่มีคำว่า ban/sanction)
+    'export curb*':1.5, 'export control*':1, 'export restriction*':1.5, 'export ban*':1.5, 'chip curb*':1.5, 'chip restriction*':1.5,
+    'chip ban*':1.5, 'chip shortage*':1, 'supply disruption*':1.5, 'supply shock*':1.5, 'supply shortage*':1, 'embargo*':1.5,
+    'blacklist*':1, 'entity list':1,
     wipeout:1.5, 'wiped out':1.5, rout:1.5, turmoil:1, fear:1, 'worries':1, sink:1, skid:1, falter:1, 'worsen*':1,
     losses:1, 'selling off':1, 'unravel*':1, 'violat*':1, outage:1, 'penaliz*':0.5,
     // single words
@@ -220,6 +224,9 @@
     // ไลฟ์สไตล์ / บทความแนะนำ / ลิสต์ — ไม่ใช่ข่าวความเสี่ยง (เช่น "bargains in a crash", "AI-powered gadgets")
     'gadgets?', 'home office', 'house rules', 'wildlife', 'divorce', 'showrunner', 'how to', 'should you', 'what to (?:buy|watch|know)',
     'best (?:\\w+ )?(?:bargains?|buys?|deals?|stocks to buy)', 'bargains? in a', 'could (?:be|make) (?:among )?(?:the |your )?(?:best|smarter)',
+    // คอลัมน์ถามตอบการเงินส่วนตัว — ไม่ใช่ข่าวตลาด ("I'm terrified of a market crash. Should I put $400,000 into an annuity?")
+    'should i', "i(?:'|\u2019)m (?:terrified|worried|scared|afraid|nervous|anxious)", 'my (?:retirement|nest egg|savings|401\\(?k|ira|pension|portfolio|husband|wife|parents?|kids|son|daughter)',
+    'annuit(?:y|ies)', 'moneyist', 'dear (?:abby|annie|quentin)', 'ask (?:an? )?(?:advis[eo]r|expert|planner)',
     '(?:\\d+|three|four|five|six|seven|eight|nine|ten) (?:[\\w-]+ ){0,2}(?:ways|things|tips|gadgets|stocks|investments)'
   ].join('|') + ')\\b', 'i');
   // วลีที่มีคำเสี่ยงแต่ไม่ใช่ความเสี่ยงจริง — ลบออกก่อนจับคำ
@@ -262,7 +269,10 @@
     'in correction':'เข้าเขตปรับฐาน', 'into a correction':'เข้าเขตปรับฐาน', 'correction territory':'เข้าเขตปรับฐาน',
     wipeout:'มูลค่าหายวับ', 'wiped out':'มูลค่าหายวับ', rout:'เทขายหนัก', turmoil:'ปั่นป่วน', fear:'ความกังวล', worries:'ความกังวล',
     sink:'ดิ่งลง', skid:'ไถลลง', falter:'อ่อนแรง', worsen:'แย่ลง', losses:'ขาดทุน/ร่วงลง', unravel:'พังลง', violat:'ละเมิด',
-    outage:'ระบบล่ม', penaliz:'ลงโทษ', 'inflation cool':'เงินเฟ้อชะลอ', 'inflation eas':'เงินเฟ้อชะลอ', 'soft landing':'ลงจอดนุ่มนวล' };
+    outage:'ระบบล่ม', 'export curb':'จำกัดการส่งออก', 'export control':'ควบคุมการส่งออก', 'export restriction':'จำกัดการส่งออก',
+    'export ban':'ห้ามส่งออก', 'chip curb':'จำกัดชิป', 'chip restriction':'จำกัดชิป', 'chip ban':'แบนชิป', 'chip shortage':'ชิปขาดแคลน',
+    'supply disruption':'อุปทานสะดุด', 'supply shock':'อุปทานช็อก', 'supply shortage':'สินค้าขาดแคลน', embargo:'ห้ามค้าขาย',
+    blacklist:'ขึ้นบัญชีดำ', 'entity list':'ขึ้นบัญชีดำสหรัฐฯ', 'halt shipments':'หยุดส่งสินค้า', penaliz:'ลงโทษ', 'inflation cool':'เงินเฟ้อชะลอ', 'inflation eas':'เงินเฟ้อชะลอ', 'soft landing':'ลงจอดนุ่มนวล' };
   function termRegex(term){
     const stem = term.endsWith('*');
     const body = (stem ? term.slice(0, -1) : term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -272,6 +282,9 @@
   const RISK_RULES = []
     .concat(Object.entries(HIGH_RISK_TERMS).map(([t, w]) => ({ term: t.replace('*', ''), re: termRegex(t), w })))
     .concat(Object.entries(LOW_RISK_TERMS).map(([t, w]) => ({ term: t.replace('*', ''), re: termRegex(t), w: -w })))
+    // หยุด/ระงับการส่งของ ที่มีคำคั่นกลาง: "hits pause on chip shipments", "halts exports of", "suspends deliveries"
+    .concat([{ term: 'halt shipments', w: 1.5,
+      re: /\b(?:halt|pause|paus|suspend|stop|freez|block|restrict)\w*(?:\s+[\w-]+){0,3}?\s+(?:shipments?|exports?|deliveries)\b/i }])
     .sort((a, b) => b.term.length - a.term.length);
   function isOffTopic(title){ return OFF_TOPIC_RE.test(title || ''); }
   // ตัดชื่อสำนักท้ายพาดหัว (" - Institute for the Study of War", " - The Hollywood Reporter") ไม่ให้ถูกนับเป็นคำเสี่ยง
@@ -641,7 +654,7 @@
       }).join('') : '<div class="muted" style="font-size:12px;">' + tr('ไม่มีคำบ่งชี้ความเสี่ยงในพาดหัวรอบนี้ (คะแนนกลาง ๆ)', 'No risk keywords in this round of headlines (neutral score)') + '</div>';
       return '<div class="why-cat"><div class="why-head"><b>' + esc(l) + '</b><span>' + esc((d.categories || {})[k] ?? '–') + '/100</span></div>' + list + '</div>';
     }).join('')
-      + '<div class="muted" style="font-size:11px; margin-top:8px;">' + tr('คะแนนคิดจาก 5 เรื่องล่าสุดของแต่ละหมวด (ข่าวซ้ำจากหลายสำนักนับครั้งเดียว ข่าวกีฬา/บันเทิงไม่นับ ข่าวใหม่มีน้ำหนักมากกว่า): คำบ่งชี้ความเสี่ยงยิ่งมาก คะแนนยิ่งสูง · 50 = กลาง ๆ', 'Each category is scored from its 5 latest distinct stories (duplicates across outlets count once, sports/entertainment are skipped, newer news weighs more): the more risk keywords, the higher the score · 50 = neutral') + '</div>';
+      + '<div class="muted" style="font-size:11px; margin-top:8px;">' + tr('คะแนนคิดจาก 5 เรื่องล่าสุดของแต่ละหมวด (ข่าวซ้ำจากหลายสำนักนับครั้งเดียว ข่าวกีฬา/บันเทิง/คอลัมน์ถามตอบส่วนตัวไม่นับ ข่าวใหม่มีน้ำหนักมากกว่า): คำบ่งชี้ความเสี่ยงยิ่งมาก คะแนนยิ่งสูง · 50 = กลาง ๆ', 'Each category is scored from its 5 latest distinct stories (duplicates across outlets count once, sports/entertainment/personal advice columns are skipped, newer news weighs more): the more risk keywords, the higher the score · 50 = neutral') + '</div>';
     translateRiskWhy(d, labels);
   }
   // แปลพาดหัวในกล่อง "คะแนนมาจากข่าวไหน" (ไม่เกิน 15 ข่าว) — ใช้แคชคำแปลเดียวกับรายการข่าว จึงแปลซ้ำแค่พาดหัวใหม่
