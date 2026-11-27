@@ -36,6 +36,11 @@ test('extractValue returns null for junk instead of NaN', () => {
 });
 
 test('only whitelisted metric slugs exist (the query string can never pick the upstream path)', () => {
-  assert.deepEqual(Object.keys(METRICS).sort(), ['mvrv', 'mvrv-zscore', 'nupl']);
+  assert.deepEqual(Object.keys(METRICS).sort(), ['mvrv', 'mvrv-zscore', 'nupl', 'reserve-risk']);
   assert.ok(METRICS.nupl.every((s) => /^[a-z0-9/-]+$/.test(s) && !s.includes('..')));
+});
+
+test('extractValue reads Reserve Risk and never mistakes the "d" date string for the value', () => {
+  assert.equal(extractValue({ d: '2026-11-26', unixTs: 1795651200, reserveRisk: 4.477523e-4 }), 4.477523e-4);
+  assert.equal(extractValue({ d: '2026-11-26', other: 0.5 }), 0.5);
 });
