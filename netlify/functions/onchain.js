@@ -19,7 +19,14 @@
 //
 // Usage: /.netlify/functions/onchain?metric=nupl|mvrv-zscore|mvrv|reserve-risk
 
+const { kvGetGood, kvPutGood } = require('../lib/last-good.js');
+
 const API = 'https://api.bgeometrics.com/v1/';
+// Cloudflare runs many short-lived isolates on shared IPs, so the anonymous BGeometrics quota
+// often answers 429 and the in-memory cache rarely survives. The last good value per metric is
+// therefore also kept in KV / Blobs: read first (fresh enough → no upstream call at all), and
+// served as stale for up to a week when the upstream refuses.
+const KV_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const TIMEOUT_MS = 7000;
 const TTL_MS = 8 * 60 * 60 * 1000; // these metrics only change ~once a day at the source
 
@@ -105,6 +112,14 @@ exports.handler = async function (event) {
     return { statusCode: 200, headers, body: JSON.stringify({ ...hit.payload, cached: true }) };
   }
 
+  const kvKey = `onchain:${metric}`;
+  const good = hit ? null : await kvGetGood(event, kvKey, KV_MAX_AGE_MS);
+  const goodAt = good && Date.parse(good.fetchedAt);
+  if (good && isFinite(goodAt) && (Date.now() - goodAt) < TTL_MS) {
+    memCache[metric] = { at: goodAt, payload: good };
+    return { statusCode: 200, headers, body: JSON.stringify({ ...good, cached: true }) };
+  }
+
   const token = (process.env.BGEOMETRICS_TOKEN || '').trim();
   const trail = [];
 
@@ -124,6 +139,7 @@ exports.handler = async function (event) {
         fetchedAt: new Date().toISOString()
       };
       memCache[metric] = { at: Date.now(), payload };
+      await kvPutGood(event, kvKey, payload);
       return { statusCode: 200, headers, body: JSON.stringify(payload) };
     } catch (e) {
       trail.push(`${slug}: ${e.message}`);
@@ -132,11 +148,12 @@ exports.handler = async function (event) {
 
   // Serve the last good value rather than an error — the page has its own localStorage cache and
   // a manual-entry fallback, so a 502 here just means "keep showing what you had".
-  if (hit) {
+  const last = hit ? hit.payload : good;
+  if (last) {
     return {
       statusCode: 200,
-      headers,
-      body: JSON.stringify({ ...hit.payload, stale: true, staleReason: trail.join(' | '), lastGoodAt: new Date(hit.at).toISOString() })
+      headers: { ...headers, 'Cache-Control': 'public, max-age=300, s-maxage=300' },
+      body: JSON.stringify({ ...last, stale: true, staleReason: trail.join(' | '), lastGoodAt: hit ? new Date(hit.at).toISOString() : last.fetchedAt })
     };
   }
 
