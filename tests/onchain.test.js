@@ -44,3 +44,34 @@ test('extractValue reads Reserve Risk and never mistakes the "d" date string for
   assert.equal(extractValue({ d: '2026-11-26', unixTs: 1795651200, reserveRisk: 4.477523e-4 }), 4.477523e-4);
   assert.equal(extractValue({ d: '2026-11-26', other: 0.5 }), 0.5);
 });
+
+test('handler keeps the last good value in KV: served without an upstream call while fresh, as stale after a 429', async (t) => {
+  const { handler } = require('../netlify/functions/onchain.js');
+  const lg = require('../netlify/lib/last-good.js');
+  const realFetch = global.fetch;
+  t.after(() => { global.fetch = realFetch; __test._clearCache(); lg._resetThrottle(); });
+  const store = new Map();
+  const kv = { get: async (k) => JSON.parse(store.get(k) || 'null'), put: async (k, v) => { store.set(k, v); } };
+  const ev = { cloudflare: { kv }, queryStringParameters: { metric: 'reserve-risk' } };
+  let calls = 0;
+  global.fetch = async () => { calls++; return { ok: true, json: async () => ({ d: '2026-11-26', unixTs: 1795651200, reserveRisk: 0.00045 }) }; };
+  __test._clearCache(); lg._resetThrottle();
+  let res = await handler(ev);
+  assert.equal(JSON.parse(res.body).value, 0.00045);
+  assert.ok(store.has('onchain:reserve-risk'));
+  // a new isolate (empty memory) reads KV instead of calling the upstream again
+  __test._clearCache();
+  res = await handler(ev);
+  assert.equal(calls, 1);
+  assert.equal(JSON.parse(res.body).value, 0.00045);
+  // older than the TTL and the upstream says 429 → stale value, not a 502
+  const saved = JSON.parse(store.get('onchain:reserve-risk'));
+  saved.data.fetchedAt = new Date(Date.now() - 2 * 86400000).toISOString();
+  store.set('onchain:reserve-risk', JSON.stringify(saved));
+  __test._clearCache();
+  global.fetch = async () => ({ ok: false, status: 429, json: async () => ({}) });
+  res = await handler(ev);
+  assert.equal(res.statusCode, 200);
+  assert.equal(JSON.parse(res.body).stale, true);
+  assert.equal(JSON.parse(res.body).value, 0.00045);
+});

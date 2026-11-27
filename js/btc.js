@@ -506,6 +506,9 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       await setCache('rr', v); put(v); return true;
     }catch(e){
       logAttempt('reserve-risk', url, tr('เซิร์ฟเวอร์ดึงไม่ได้: ', 'server fetch failed: ') + e.message);
+      // สำรอง: ยิงตรง/ผ่าน proxy แบบเดียวกับ NUPL/MVRV (ใช้โควต้าของ IP ผู้ใช้เอง)
+      const v2 = await tryBgSlugs(['reserve-risk/last']);
+      if(isNum(v2) && v2 > 0 && v2 < 1){ await setCache('rr', v2); put(v2); return true; }
       if(cached){ put(cached.value); return true; }
       return false;
     }
