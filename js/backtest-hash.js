@@ -89,7 +89,7 @@
   window.hrStats = hrStats; window.hrAlign = hrAlign;   // tests
 
   const tr = window.tr || ((th) => th);
-  const pct = (x, d) => x == null ? '–' : (x > 0 ? '+' : '') + (x * 100).toFixed(d == null ? 0 : d) + '%';
+  const pct = (x, d) => { if(x == null) return '–'; const t = (x * 100).toFixed(d == null ? 0 : d); return +t === 0 ? '0%' : (x > 0 ? '+' : '') + t + '%'; };
   const pc = x => x == null ? '–' : Math.round(x * 100) + '%';
   const cls = x => x == null ? '' : x < 0 ? 'neg' : 'pos';
   const loc = (window.GI_LOCALE || 'th-TH') + '-u-ca-gregory';
@@ -156,7 +156,7 @@
   }
 
   function hrChart(box, D, S){
-    const n = D.btc.length, W = 900, H = 360, L = 46, R = 46, T = 10, B = 22, MID = 222, GAP = 14;
+    const n = D.btc.length, W = 900, H = 360, L = 46, R = 46, T = 10, B = 22, MID = 218, GAP = 24;
     const x = i => L + (W - L - R) * i / (n - 1);
     const s30 = S.s30, s60 = S.s60, RMAX = 0.25;
     const ratio = s30.map((v, i) => v == null || s60[i] == null ? null : v / s60[i] - 1);
@@ -172,7 +172,7 @@
       ratio.forEach((v, i) => { if(v == null) return; const px = x(i).toFixed(1), py = yH(v).toFixed(1);
         a += 'M' + px + ' ' + z + 'V' + (v > 0 ? py : z); b += 'M' + px + ' ' + z + 'V' + (v < 0 ? py : z); });
       g += '<path d="' + a + '" stroke="rgba(69,212,131,.55)" stroke-width="1.2"/><path d="' + b + '" stroke="rgba(255,101,119,.75)" stroke-width="1.2"/>'; }
-    g += '<text x="' + L + '" y="' + (MID + GAP + 9) + '" fill="#8e9bb5" font-size="10">' + tr('hashrate 30 วัน เทียบ 60 วัน', 'hashrate 30-day vs 60-day') + '</text>';
+    g += '<text x="' + L + '" y="' + (MID + GAP - 6) + '" fill="#8e9bb5" font-size="10">' + tr('hashrate 30 วัน เทียบ 60 วัน', 'hashrate 30-day vs 60-day') + '</text>';
     g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + (MID + GAP / 2) + '" y2="' + (MID + GAP / 2) + '" stroke="#24304a"/>';
     const path = (arr, fy) => { let d = '', pen = false; arr.forEach((v, i) => { if(v == null){ pen = false; return; } d += (pen ? 'L' : 'M') + x(i).toFixed(1) + ' ' + fy(v).toFixed(1); pen = true; }); return d; };
     g += '<path d="' + path(D.btc, yP) + '" fill="none" stroke="#f7931a" stroke-width="1.6"/>';
