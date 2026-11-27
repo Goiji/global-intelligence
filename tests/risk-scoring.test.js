@@ -160,3 +160,35 @@ test('a genuine sell-off day scores clearly high', () => {
   ], NOW, 'stock market OR wall street OR bonds');
   assert.ok(r.score >= 85, `got ${r.score}`);
 });
+
+test('chip shipment pauses and export curbs count as tech risk without the words ban or sanction', () => {
+  for (const t of [
+    'Nvidia hits pause on chip shipments to Southeast Asia',
+    'TSMC halts exports of advanced chips to Chinese customers',
+    'US tightens export curbs on AI chips',
+    'Automakers warn of supply disruptions as chip shortage deepens'
+  ]) assert.ok(net(t) >= 1, t + ' → ' + net(t));
+  assert.deepEqual(terms('Nvidia hits pause on chip shipments to Southeast Asia'), ['halt shipments']);
+  assert.ok(net('Washington lifts export curbs on Nvidia chips') <= 0, 'lifting curbs is not a risk');
+});
+
+test('tech gadget, deal and game headlines stay neutral', () => {
+  for (const t of [
+    'Apple MacBook Air drops to its lowest price ever in Black Friday deal',
+    'GTA 6 trailer breaks YouTube record',
+    'Samsung Galaxy S26 review: the best Android phone you can buy'
+  ]) assert.equal(net(t), 0, t);
+});
+
+test('personal finance advice columns are skipped, not scored as market risk', () => {
+  for (const t of [
+    "I'm terrified of a market crash. Should I put $400,000 from my 401(k) into an annuity?",
+    'I’m worried about a recession. Should I move my retirement savings to cash?',
+    'My husband wants to sell all our stocks before the crash. Who is right?'
+  ]) {
+    assert.ok(api.isOffTopic(t), t);
+    assert.equal(net(t), 0, t);
+  }
+  assert.ok(!api.isOffTopic('Stock market crash wipes out $2 trillion as Nasdaq plunges'));
+  assert.ok(net('Stock market crash wipes out $2 trillion as Nasdaq plunges') >= 2);
+});
