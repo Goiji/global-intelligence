@@ -28,6 +28,10 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   const PL_POINTS    = [[0,10],[0.1,9],[0.3,7],[0.5,5],[0.7,3],[0.9,1.5],[1,1]];
   // Puell Multiple: รายได้นักขุดวันนี้ ÷ ค่าเฉลี่ย 365 วัน (ต่ำ = นักขุดลำบาก มักเป็นช่วงก้นรอบ)
   const PUELL_POINTS = [[0.4,10],[0.6,8.5],[0.8,7],[1,5.5],[1.5,3.5],[2.5,1.5],[4,1]];
+  // Reserve Risk (BGeometrics): ราคา ÷ "ความมั่นใจของคนถือยาว" (เหรียญเก่าที่ไม่ยอมขาย) ต่ำ = คนถือยาวมั่นใจแต่ราคายังถูก
+  // จุดอ้างอิงตามสเกลของ api.bgeometrics.com: ก้นรอบ 2015/2018/2020/2022 ≈ 0.0004–0.0008, ค่ากลางในอดีต ≈ 0.0013,
+  // ยอดรอบ 2021 ≈ 0.005 (ยอดแต่ละรอบต่ำลงเรื่อย ๆ จึงไม่ให้ 1 คะแนนแค่ตอนแตะยอดเก่า)
+  const RR_POINTS    = [[0.0005,10],[0.0008,8.5],[0.0013,6.5],[0.0025,4],[0.005,2],[0.01,1]];
 
   function nuplZoneLabel(v){
     if(v<0) return tr('Capitulation — โซนตื่นตระหนก', 'Capitulation');
@@ -173,7 +177,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       dd = Math.max(0, (1 - price/ath) * 100);
     }
 
-    // 4 มุมที่ไม่ซ้ำกัน ให้น้ำหนักเท่ากัน มุมไหนยังไม่มีข้อมูลก็ไม่นับ (ไม่เดาแทน)
+    // 5 มุมที่ไม่ซ้ำกัน ให้น้ำหนักเท่ากัน มุมไหนยังไม่มีข้อมูลก็ไม่นับ (ไม่เดาแทน)
     // ไม่มีโบนัส ATH drawdown แล้ว: ราคาที่ลงลึกทำให้ MVRV/STH/Power Law ต่ำลงเองอยู่แล้ว ถ้าบวกอีกจะนับซ้ำ
     const sig = window.giBtcSignals || {};
     const avg = (sNupl + sZ + sM) / 3;
@@ -181,7 +185,8 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       { key: 'val', name: tr('มูลค่าเทียบต้นทุนทั้งตลาด', 'Value vs whole-market cost'), note: 'NUPL · MVRV · MVRV-Z', v: isNaN(avg) ? null : avg },
       { key: 'sth', name: tr('ราคาเทียบต้นทุนคนถือสั้น', 'Price vs short-term holder cost'), note: isNum(sig.sthRatio) ? '× ' + sig.sthRatio.toFixed(2) : '', v: isNum(sig.sthRatio) ? interpScore(sig.sthRatio, STH_POINTS) : null },
       { key: 'pl', name: tr('ตำแหน่งเทียบ Power Law', 'Position vs power law'), note: isNum(sig.plPos) ? Math.round(sig.plPos * 100) + '%' : '', v: isNum(sig.plPos) ? interpScore(sig.plPos, PL_POINTS) : null },
-      { key: 'puell', name: tr('รายได้นักขุด (Puell)', 'Miner revenue (Puell)'), note: isNum(sig.puell) ? sig.puell.toFixed(2) : '', v: isNum(sig.puell) ? interpScore(sig.puell, PUELL_POINTS) : null }
+      { key: 'puell', name: tr('รายได้นักขุด (Puell)', 'Miner revenue (Puell)'), note: isNum(sig.puell) ? sig.puell.toFixed(2) : '', v: isNum(sig.puell) ? interpScore(sig.puell, PUELL_POINTS) : null },
+      { key: 'rr', name: tr('ความมั่นใจคนถือยาว (Reserve Risk)', 'Long-term holder conviction (Reserve Risk)'), note: isNum(sig.reserveRisk) ? sig.reserveRisk.toPrecision(2) : '', v: isNum(sig.reserveRisk) ? interpScore(sig.reserveRisk, RR_POINTS) : null }
     ];
     const have = pillars.filter(p => isNum(p.v));
     const rawTotal = have.length ? have.reduce((a, p) => a + p.v, 0) / have.length : NaN;
@@ -213,8 +218,8 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       + '<span class="bs-bar"><i style="width:' + (isNum(p.v) ? (p.v * 10).toFixed(0) : 0) + '%;background:' + (isNum(p.v) ? scoreColor(p.v) : 'transparent') + '"></i></span>'
       + '<span class="v"' + (isNum(p.v) ? ' style="color:' + scoreColor(p.v) + '"' : '') + '>' + (isNum(p.v) ? p.v.toFixed(1) : tr('รอข้อมูล', 'loading')) + '</span></div>';
     breakdown.innerHTML = pillars.map(row).join('')
-      + '<div class="bs-foot">' + tr('เฉลี่ย ' + have.length + ' จาก 4 มุมที่ไม่ซ้ำกัน · NUPL, MVRV และ MVRV-Z มาจากข้อมูลชุดเดียวกัน จึงนับรวมเป็นมุมเดียว · ใช้ดูว่าราคาถูกหรือแพงเทียบอดีต ไม่ใช่คำแนะนำการลงทุน',
-        'Average of ' + have.length + ' of 4 independent angles · NUPL, MVRV and MVRV-Z come from the same data, so they count as one · shows cheap vs expensive against history, not investment advice') + '</div>';
+      + '<div class="bs-foot">' + tr('เฉลี่ย ' + have.length + ' จาก 5 มุมที่ไม่ซ้ำกัน · NUPL, MVRV และ MVRV-Z มาจากข้อมูลชุดเดียวกัน จึงนับรวมเป็นมุมเดียว · ใช้ดูว่าราคาถูกหรือแพงเทียบอดีต ไม่ใช่คำแนะนำการลงทุน',
+        'Average of ' + have.length + ' of 5 independent angles · NUPL, MVRV and MVRV-Z come from the same data, so they count as one · shows cheap vs expensive against history, not investment advice') + '</div>';
   }
 
   // ค่า MVRV / NUPL ใช้ชุดเดียวกับการ์ดต้นทุนตลาดด้านล่าง (ราคาสด ÷ ต้นทุนเฉลี่ย) ตัวเลขทั้งแท็บจึงตรงกัน
@@ -485,11 +490,33 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     return false;
   }
 
+  // Reserve Risk สำหรับคะแนนความน่าซื้อ: ผ่านเซิร์ฟเวอร์เราเท่านั้น (BGeometrics ไม่เปิด CORS) แคช 8 ชม.
+  // ดึงไม่ได้และไม่มีแคช = มุมนี้ขึ้น "รอข้อมูล" และไม่ถูกนับ (ไม่เดาค่าแทน)
+  async function fetchReserveRisk(force){
+    const put = v => { window.giBtcSignals = Object.assign(window.giBtcSignals || {}, { reserveRisk: v }); try{ window.dispatchEvent(new Event('gi-btc-signals')); }catch(e){} };
+    const cached = await getCache('rr');
+    if(!force && cached && (Date.now() - cached.ts) < CACHE_TTL_MS){ put(cached.value); return true; }
+    const url = '/.netlify/functions/onchain?metric=reserve-risk';
+    try{
+      const r = await fetchWithTimeout(url, 8000);
+      const j = await r.json();
+      const v = parseFloat(j && j.value);
+      if(!isFinite(v) || v <= 0 || v > 1) throw new Error((j && j.error) || 'no value in response');
+      logAttempt('reserve-risk', url, 'OK → ' + v);
+      await setCache('rr', v); put(v); return true;
+    }catch(e){
+      logAttempt('reserve-risk', url, tr('เซิร์ฟเวอร์ดึงไม่ได้: ', 'server fetch failed: ') + e.message);
+      if(cached){ put(cached.value); return true; }
+      return false;
+    }
+  }
+
   async function fetchOnChainMetrics(force){
     setBadge('nuplAuto', null); setBadge('zAuto', null); setBadge('mAuto', null);
     debugLog = [];
 
-    const [nuplOk, zOk, mOk] = await Promise.all([
+    const [, nuplOk, zOk, mOk] = await Promise.all([
+      fetchReserveRisk(force),
       resolveMetric('nupl', BG_SLUGS.nupl, v => { if(window.giBtcSignals && isNum(window.giBtcSignals.nupl)) return; nuplNum.value = v.toFixed(3); nuplRange.value = Math.max(-0.5,Math.min(1,v)); }, force),
       resolveMetric('z',    BG_SLUGS.z,    v => { zNum.value = v.toFixed(2); zRange.value = Math.max(-2,Math.min(9,v)); }, force),
       resolveMetric('m',    BG_SLUGS.m,    v => { if(window.giBtcSignals && isNum(window.giBtcSignals.mvrv)) return; mNum.value = v.toFixed(2); mRange.value = Math.max(0.8,Math.min(4.5,v)); }, force)

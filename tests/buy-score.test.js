@@ -1,4 +1,4 @@
-// BTC Buy Score: 4 independent angles (no double counting), shared MVRV source, honest labels,
+// BTC Buy Score: 5 independent angles (no double counting), shared MVRV source, honest labels,
 // plus the rounding / confirmation rules on the GEX and miner cards. Run with: npm test
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -15,31 +15,45 @@ function setValuation(sb, nupl, z, m) {
   for (const [id, v] of [['nuplNum', nupl], ['zNum', z], ['mNum', m]]) g(sb, id).value = String(v);
 }
 
-test('score = mean of the 4 angles; NUPL/MVRV/MVRV-Z count as one', async () => {
+test('score = mean of the 5 angles; NUPL/MVRV/MVRV-Z count as one', async () => {
   const sb = await page();
   setValuation(sb, 0.15, 0.3, 1.18);
   sb.giBtcSignals = {};
   sb.__buyTest.recompute();
   const onlyValuation = parseFloat(g(sb, 'scoreNumber').textContent);
-  assert.match(g(sb, 'breakdown').innerHTML, /1 จาก 4 มุม/);
-  sb.giBtcSignals = { sthRatio: 0.8, plPos: 0.08, puell: 0.87 };
+  assert.match(g(sb, 'breakdown').innerHTML, /1 จาก 5 มุม/);
+  sb.giBtcSignals = { sthRatio: 0.8, plPos: 0.08, puell: 0.87, reserveRisk: 0.00045 };
   sb.__buyTest.recompute();
   const all = parseFloat(g(sb, 'scoreNumber').textContent);
-  assert.match(g(sb, 'breakdown').innerHTML, /4 จาก 4 มุม/);
+  assert.match(g(sb, 'breakdown').innerHTML, /5 จาก 5 มุม/);
   assert.ok(all > 0 && all <= 10);
   assert.notEqual(all, onlyValuation);
   assert.doesNotMatch(g(sb, 'breakdown').innerHTML, /โบนัส|bonus/i, 'no ATH bonus any more');
 });
 
+test('Reserve Risk is the 5th angle: low = cheap, high = expensive, missing = not counted', async () => {
+  const sb = await page();
+  setValuation(sb, 0.15, 0.3, 1.18);
+  sb.giBtcSignals = { reserveRisk: 0.00045 };
+  sb.__buyTest.recompute();
+  assert.match(g(sb, 'breakdown').innerHTML, /Reserve Risk/);
+  assert.match(g(sb, 'breakdown').innerHTML, /0\.00045/);
+  assert.match(g(sb, 'breakdown').innerHTML, /2 จาก 5 มุม/);
+  const cheap = parseFloat(g(sb, 'scoreNumber').textContent);
+  sb.giBtcSignals = { reserveRisk: 0.01 };
+  sb.__buyTest.recompute();
+  assert.ok(parseFloat(g(sb, 'scoreNumber').textContent) < cheap);
+});
+
 test('verdict describes price vs history, never "Strong Buy"', async () => {
   const sb = await page();
   setValuation(sb, -0.2, -1, 0.85);
-  sb.giBtcSignals = { sthRatio: 0.7, plPos: 0.02, puell: 0.45 };
+  sb.giBtcSignals = { sthRatio: 0.7, plPos: 0.02, puell: 0.45, reserveRisk: 0.0005 };
   sb.__buyTest.recompute();
   assert.match(g(sb, 'verdict').textContent, /ถูกมากเมื่อเทียบกับประวัติ/);
   assert.doesNotMatch(HTML, /Strong Buy|Accumulate\)/);
   setValuation(sb, 0.8, 8, 4);
-  sb.giBtcSignals = { sthRatio: 2.2, plPos: 0.97, puell: 3.5 };
+  sb.giBtcSignals = { sthRatio: 2.2, plPos: 0.97, puell: 3.5, reserveRisk: 0.008 };
   sb.__buyTest.recompute();
   assert.match(g(sb, 'verdict').textContent, /แพงมาก/);
 });

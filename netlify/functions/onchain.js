@@ -17,7 +17,7 @@
 // visitor. An optional BGEOMETRICS_TOKEN env var raises the quota for the whole site (set it once
 // in Netlify; visitors no longer need to paste a token into the page).
 //
-// Usage: /.netlify/functions/onchain?metric=nupl|mvrv-zscore|mvrv
+// Usage: /.netlify/functions/onchain?metric=nupl|mvrv-zscore|mvrv|reserve-risk
 
 const API = 'https://api.bgeometrics.com/v1/';
 const TIMEOUT_MS = 7000;
@@ -27,7 +27,9 @@ const TTL_MS = 8 * 60 * 60 * 1000; // these metrics only change ~once a day at t
 const METRICS = {
   'nupl': ['nupl', 'nupl/last'],
   'mvrv-zscore': ['mvrv-zscore', 'mvrv-zscore/last', 'mvrv-z-score'],
-  'mvrv': ['mvrv', 'mvrv/last']
+  'mvrv': ['mvrv', 'mvrv/last'],
+  // answers {d:'2026-11-26', unixTs, reserveRisk: 0.000447…}
+  'reserve-risk': ['reserve-risk/last', 'reserve-risk']
 };
 
 // In-memory cache, one entry per metric. Cold starts simply refetch — the CDN cache (below)
@@ -51,14 +53,14 @@ function extractValue(json) {
     const v = parseFloat(item);
     return isFinite(v) ? v : null;
   }
-  for (const key of ['value', 'last', 'close', 'y', 'current', 'nupl', 'mvrv', 'zscore', 'z_score']) {
+  for (const key of ['value', 'last', 'close', 'y', 'current', 'nupl', 'mvrv', 'zscore', 'z_score', 'reserveRisk', 'reserve_risk']) {
     if (item[key] !== undefined) {
       const v = parseFloat(item[key]);
       if (isFinite(v)) return v;
     }
   }
   for (const key of Object.keys(item)) {
-    if (/date|time|unix|timestamp/i.test(key)) continue;
+    if (/date|time|unix|timestamp|^d$/i.test(key)) continue;
     const v = parseFloat(item[key]);
     if (isFinite(v)) return v;
   }
