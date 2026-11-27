@@ -192,3 +192,21 @@ test('personal finance advice columns are skipped, not scored as market risk', (
   assert.ok(!api.isOffTopic('Stock market crash wipes out $2 trillion as Nasdaq plunges'));
   assert.ok(net('Stock market crash wipes out $2 trillion as Nasdaq plunges') >= 2);
 });
+
+test('shopping deals and holiday market-hours explainers are skipped, retail sales news is not', () => {
+  for (const t of [
+    'Is the stock market open on Black Friday? Here are the holiday trading hours - USA Today',
+    'Our favorite headphones and earbuds are cheaper than ever ahead of Black Friday - The Verge',
+    'Best Black Friday deals on TVs, laptops and AirPods',
+    'Apple Watch drops to its lowest price ever, $100 off the Series 11',
+    'Are stock markets open on Thanksgiving?'
+  ]) {
+    assert.ok(api.isOffTopic(t), t);
+    assert.equal(net(t), 0, t);
+  }
+  for (const t of [
+    'Black Friday online sales hit record $11 billion as shoppers pull back in stores',
+    'Retailers brace for weak holiday sales as tariffs push prices higher',
+    'US and China reach trade deal on chip export controls'
+  ]) assert.ok(!api.isOffTopic(t), t);
+});

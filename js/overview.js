@@ -227,6 +227,13 @@
     // คอลัมน์ถามตอบการเงินส่วนตัว — ไม่ใช่ข่าวตลาด ("I'm terrified of a market crash. Should I put $400,000 into an annuity?")
     'should i', "i(?:'|\u2019)m (?:terrified|worried|scared|afraid|nervous|anxious)", 'my (?:retirement|nest egg|savings|401\\(?k|ira|pension|portfolio|husband|wife|parents?|kids|son|daughter)',
     'annuit(?:y|ies)', 'moneyist', 'dear (?:abby|annie|quentin)', 'ask (?:an? )?(?:advis[eo]r|expert|planner)',
+    // ดีล/ช้อปปิ้ง/รีวิวสินค้า และบทความอธิบายวันหยุด ("Our favorite headphones are cheaper than ever ahead of Black Friday",
+    // "Is the stock market open on Black Friday?") — ไม่ใช่ข่าวตลาด แต่ข่าวยอดขายช่วง Black Friday ยังนับตามปกติ
+    'cheaper than ever', '(?:lowest|best) prices? (?:ever|yet|of the year)', 'on sale', 'price drop', 'coupons?', 'promo codes?',
+    '\\d+% off', '\\d+ off (?:the|an?|its|all|select|every)', '(?:black friday|cyber monday|prime day|holiday|early) deals?', 'deals? (?:on|for) (?:the |an? )?(?:\\w+ )?(?:headphones|earbuds|tvs?|laptops?|iphones?|ipads?|airpods)',
+    'gift (?:guides?|ideas)', 'our (?:favou?rite|top) (?:picks?|\\w+)', 'headphones', 'earbuds', 'airpods', 'robot vacuums?',
+    'is the (?:stock )?market (?:open|closed)', 'are (?:the )?(?:stock )?markets? (?:open|closed)', 'is (?:the )?(?:nyse|nasdaq|stock exchange|bank|post office) (?:open|closed)',
+    '(?:stock )?market hours', 'what(?:\'s| is) open', 'what time does',
     '(?:\\d+|three|four|five|six|seven|eight|nine|ten) (?:[\\w-]+ ){0,2}(?:ways|things|tips|gadgets|stocks|investments)'
   ].join('|') + ')\\b', 'i');
   // วลีที่มีคำเสี่ยงแต่ไม่ใช่ความเสี่ยงจริง — ลบออกก่อนจับคำ
@@ -405,7 +412,9 @@
     const sorted = [...feedResults].sort((a,b)=>categories[b.key]-categories[a.key]);
     const usedStories = new Set();
     const topEvents = sorted.filter(f=>f.titles.length>0).map(f => {
-      const pick = (f.items || []).find(it => !usedStories.has(storyKey(it.title))) || null;
+      // ข้ามข่าวที่ไม่ได้ใช้คิดคะแนน (กีฬา/ดีลสินค้า/บทความอธิบาย) — เดิมเอาข่าวแรกของหมวดมาโชว์ ข่าวลดราคาหูฟังเลยขึ้น Top Events
+      const pick = (f.items || []).find(it => it && it.onTopic !== false && !isOffTopic(stripSource(it.title, it.source))
+        && !usedStories.has(storyKey(it.title))) || null;
       if(pick) usedStories.add(storyKey(pick.title));
       return pick ? { f, pick } : null;
     }).filter(Boolean).slice(0,3).map(({ f, pick }, i)=>({
