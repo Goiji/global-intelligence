@@ -263,3 +263,24 @@ test('buildBrief gives a warning level, stock/crypto impact, changes, data due a
   assert.match(calm.lines[0].text, /🟢/);
   assert.match(calm.lines[3].text, /25/);              // names the next release date instead
 });
+
+// The header said "🟢 ปกติ, no warning from news, data or prices" while VIX sat at 27, BTC was down 26% in a
+// month and finance news was at 67/100 — it only looked at gold, oil and FX moves and categories ≥80.
+test('buildBrief warns on market stress, a BTC slump and tense finance news', async () => {
+  const sandbox = makeSandbox();
+  SCRIPTS.forEach((src) => vm.runInNewContext(src, sandbox, { filename: 'index.html' }));
+  await new Promise((resolve) => setImmediate(resolve));
+  const { buildBrief } = sandbox;
+  const now = Date.parse('2026-11-27T02:00:00Z');
+  const base = { score: 56, cats: { geopolitical: 54, economic: 53, energy: 50, financial: 58 }, prev: null, events: [], prices: { lpGold: 1.4 } };
+  assert.equal(buildBrief(base, now).alert.level, 0);
+  const worried = buildBrief(Object.assign({}, base, { pulse: { i: 2, hot: ['VIX 27.1', 'OVX 48'] } }), now);
+  assert.equal(worried.alert.level, 1);
+  assert.ok(worried.alert.reasons.some((r) => /VIX 27\.1/.test(r)));
+  assert.equal(buildBrief(Object.assign({}, base, { cats: Object.assign({}, base.cats, { financial: 67 }) }), now).alert.level, 1);
+  const btc = buildBrief(Object.assign({}, base, { btc: { d1: -1.4, d30: -26.5 } }), now);
+  assert.equal(btc.alert.level, 2);
+  assert.ok(btc.alert.reasons.some((r) => /BTC ▼ 27%/.test(r)));
+  assert.match(btc.lines[1].text, /27%/);              // crypto line leads with the slump
+  assert.equal(buildBrief(Object.assign({}, base, { moves: [{ txt: 'S&P 500 -1.8%', bad: true }, { txt: 'Dollar +0.6%', bad: null }] }), now).alert.reasons.join(), 'S&P 500 -1.8%');
+});

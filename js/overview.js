@@ -435,7 +435,7 @@
   //   2) ตัวเลขเศรษฐกิจที่จะประกาศวันนี้/พรุ่งนี้ (จากปฏิทิน เวลาไทย)
   //   3) ราคาที่ขยับแรงสุด (จากการ์ดราคาตลาด)
   // แต่ละแหล่งโหลดไม่พร้อมกัน จึงเก็บไว้ใน BRIEF แล้ววาดใหม่ทุกครั้งที่มีข้อมูลเข้ามา
-  const BRIEF = { score: null, cats: null, prev: null, events: null, prices: {} };
+  const BRIEF = { score: null, cats: null, prev: null, events: null, prices: {}, pulse: null, moves: null, btc: null };
   const BRIEF_PRICE_LABELS = { lpGold: tr('ทองคำ', 'Gold'), lpOil: tr('น้ำมัน WTI', 'WTI oil'), lpUsdThb: 'USD/THB',
     lpUsdJpy: 'USD/JPY', lpJpyThb: 'JPY/THB', lpCnyThb: 'CNY/THB' };
   const BRIEF_CAT_LABELS = { geopolitical: tr('ภูมิรัฐศาสตร์', 'geopolitics'), economic: tr('เศรษฐกิจ', 'economy'),
@@ -497,6 +497,22 @@
     Object.keys(cats).forEach(k => {
       if(isFinite(cats[k]) && cats[k] >= 80) add(2, tr('ข่าว' + (BRIEF_CAT_LABELS[k] || k) + 'ร้อนแรง ' + cats[k] + '/100', (BRIEF_CAT_LABELS[k] || k) + ' news running hot, ' + cats[k] + '/100'));
     });
+    // หมวดที่ร้อนพอจะดันบรรทัดหุ้น/คริปโตเป็น 🟡 (เกณฑ์เดียวกับ briefMarketView) — เดิมหัวขึ้น 🟢 ปกติ แต่บรรทัดใต้หัวบอก "กดดันปานกลาง"
+    const WARM = { geopolitical: 70, economic: 65, energy: 65, financial: 65 };
+    Object.keys(WARM).forEach(k => {
+      if(isFinite(cats[k]) && cats[k] >= WARM[k] && cats[k] < 80) add(1, tr('ข่าว' + BRIEF_CAT_LABELS[k] + 'ตึงเครียด ' + cats[k] + '/100', BRIEF_CAT_LABELS[k] + ' news tense, ' + cats[k] + '/100'));
+    });
+    // ภาวะตลาดจากราคาจริง (VIX/MOVE/HY/OVX) — ตัวเดียวกับการ์ด "ภาวะตลาดวันนี้"
+    const pl = b.pulse;
+    if(pl && pl.i >= 2){
+      const what = (pl.hot || []).join(', ');
+      add(pl.i >= 3 ? 2 : 1, (pl.i >= 3 ? tr('ตลาดตึงเครียด', 'markets stressed') : tr('ตลาดเริ่มกังวล', 'markets worried')) + (what ? ' (' + what + ')' : ''));
+    }
+    (b.moves || []).filter(m => m && m.bad === true).forEach(m => add(1, m.txt));
+    // BTC: วันเดียวร่วงแรง หรือร่วงสะสม 30 วัน
+    const bt = b.btc || {};
+    if(isFinite(bt.d1) && bt.d1 <= -3) add(bt.d1 <= -6 ? 2 : 1, 'BTC ▼ ' + Math.abs(bt.d1).toFixed(1) + tr('% ใน 24 ชม.', '% in 24h'));
+    if(isFinite(bt.d30) && bt.d30 <= -10) add(bt.d30 <= -20 ? 2 : 1, 'BTC ▼ ' + Math.abs(bt.d30).toFixed(0) + tr('% ใน 30 วัน', '% in 30 days'));
     let soon = [];
     try{ soon = briefSoonEvents(b.events, nowMs).filter(x => CAL_HIGH[x.e.key]); }catch(e){ soon = []; }
     soon.forEach(x => add(x.today ? 2 : 1, x.text + tr(' ตลาดผันผวนแรงได้', ': expect big swings')));
@@ -530,6 +546,8 @@
     if(hot('energy', 65) || px.lpOil >= 2){ p += 3; why.push(tr('น้ำมันแพงดันเงินเฟ้อ ทำให้ดอกเบี้ยลดยาก', 'pricier oil feeds inflation and delays rate cuts')); }
     if(hot('financial', 65)){ p += 4; why.push(tr('ข่าวตลาดการเงินตึงเครียด เสี่ยงแรงขายเป็นวงกว้าง', 'financial-market stress raises the risk of broad selling')); }
     if(!crypto && hot('techAi', 70)){ p += 2; why.push(tr('ข่าวเทค/AI แรง กระทบหุ้น Big Tech ที่มีน้ำหนักมากในดัชนี', 'heavy tech/AI news hits the Big Tech names that dominate the index')); }
+    if(b.pulse && b.pulse.i >= 2){ p += b.pulse.i >= 3 ? 10 : 5; why.push(tr('ราคาในตลาดบอกว่านักลงทุนกังวล (' + (b.pulse.hot || []).join(', ') + ')', 'market prices show investors are worried (' + (b.pulse.hot || []).join(', ') + ')')); }
+    if(crypto && b.btc && isFinite(b.btc.d30) && b.btc.d30 <= -10){ p += b.btc.d30 <= -20 ? 10 : 5; why.unshift(tr('BTC ร่วง ' + Math.abs(b.btc.d30).toFixed(0) + '% ใน 30 วัน ยังเป็นขาลง', 'BTC is down ' + Math.abs(b.btc.d30).toFixed(0) + '% in 30 days, still a downtrend')); }
     let high = [];
     try{ high = briefSoonEvents(b.events, nowMs).filter(x => CAL_HIGH[x.e.key] && x.today); }catch(e){ high = []; }
     if(high.length){ p += 3; why.unshift(tr('ระวังช่วง ', 'Watch ') + high.map(x => x.text.replace(/^(วันนี้|today) /, '')).join(', ') + tr(' ราคาเหวี่ยงแรงได้ทั้งสองทาง', ': prices can swing hard either way')); }
@@ -592,6 +610,18 @@
     box.innerHTML = '<div class="brief-alert ' + A.cls + '"><b>' + A.icon + ' ' + esc(A.title) + '</b> ' + esc(alert.reasons.slice(0, 3).join(' · ') || A.none || '') + '</div>'
       + lines.map(l => '<p style="margin-bottom:10px;"><b>' + esc(l.label) + ':</b> ' + esc(l.text) + '</p>').join('')
       + '<span class="muted">' + tr('— สรุปอัตโนมัติ ไม่ใช่คำแนะนำการลงทุน', '— Auto-generated. Not investment advice.') + '</span>';
+  }
+  // BTC 24 ชม. / 30 วัน จาก Binance (แท่งรายวัน) สำหรับระดับเตือน
+  async function loadBriefBtc(){
+    try{
+      const r = await fetchWithTimeout('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=31', 8000);
+      const k = await r.json();
+      const c = (Array.isArray(k) ? k : []).map(x => +x[4]).filter(isFinite);
+      if(c.length < 31) return;
+      const last = c[c.length - 1];
+      BRIEF.btc = { d1: (last / c[c.length - 2] - 1) * 100, d30: (last / c[0] - 1) * 100 };
+      renderBrief();
+    }catch(e){ /* best-effort */ }
   }
   async function loadBriefPrev(){
     try{
@@ -2258,6 +2288,13 @@
           : tr('ราคาปิด ', 'Close ') + thDay(s.date);
       });
       try{ renderPulse(S); }catch(e){ console.warn('[pulse]', e); }
+      try{
+        const pr = PULSE_GAUGES.map(g => { const v = S[g.key] && S[g.key].latest; return isValidNum(v) ? { l: pulseLevel(v, g.cuts), t: g.name + ' ' + g.fmt(v) } : null; }).filter(Boolean);
+        const st = pulseState(pr.map(x => x.l));
+        BRIEF.pulse = st ? { i: st.i, hot: pr.filter(x => x.l >= 2).map(x => x.t) } : null;
+        BRIEF.moves = pulseMoves(S);
+        renderBrief();
+      }catch(e){ console.warn('[brief]', e); }
       try{ renderBreadth(S.spxew); }catch(e){ console.warn('[breadth]', e); }
       try{ renderCape(S.cape); }catch(e){ console.warn('[cape]', e); }
       try{ renderBuffett(S.buffett); }catch(e){ console.warn('[buffett]', e); }
@@ -3513,6 +3550,7 @@
   // burned through the (then rss2json) quota for visitors who just refreshed the page a few times.
   const NEWS_CACHE_TTL_MS = 30 * 60 * 1000;
   loadBriefPrev();
+  loadBriefBtc();
   loadCache().then(function(ageMs){
     if(ageMs != null && ageMs < NEWS_CACHE_TTL_MS){
       return;
