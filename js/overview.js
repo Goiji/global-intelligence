@@ -398,6 +398,8 @@
     }).filter(Boolean).slice(0,3).map(({ f, pick }, i)=>({
       rank: i+1, catKey: f.key, category: f.label.toUpperCase(), title: cleanHeadline(pick.title, pick.source),
       rawDescription: pick.description || '',
+      link: /^https?:\/\//i.test(pick.link || '') ? pick.link : '',
+      source: pick.source || '',
       description: 'พาดหัวข่าวล่าสุดจากหมวด ' + f.label + ' (คะแนนความเสี่ยงหมวดนี้ ' + categories[f.key] + '/100)',
       marketImpact: categories[f.key]
     }));
@@ -774,13 +776,19 @@
       // โหมดอังกฤษ: พาดหัวต้นฉบับ ไม่ต้องมีบรรทัดภาษาอังกฤษซ้ำด้านล่าง
       const safeTitleTh = (!EN && ev.titleTh && !/MYMEMORY/i.test(ev.titleTh)) ? ev.titleTh : ev.title;
       const safeDescTh = (!EN && ev.descriptionTh && !/MYMEMORY/i.test(ev.descriptionTh)) ? ev.descriptionTh : genericDesc;
-      return `<div class="event">
+      // กดทั้งการ์ดเพื่อเปิดข่าวต้นทางในแท็บใหม่ (แคชรุ่นก่อนไม่มี link — แสดงเป็นการ์ดเฉยๆ)
+      const link = /^https?:\/\//i.test(ev.link || '') ? ev.link : '';
+      const tag = link ? 'a' : 'div';
+      const attrs = link ? ' href="' + esc(link) + '" target="_blank" rel="noopener noreferrer"' : '';
+      const readMore = link ? `<div class="ev-src">${ev.source ? esc(ev.source) + ' · ' : ''}${tr('อ่านข่าวต้นทาง', 'Read source')} ↗</div>` : '';
+      return `<${tag} class="event"${attrs}>
         <div class="rank">0${esc(ev.rank)} · ${esc(String(cat).toUpperCase())}</div>
         <h3>${esc(safeTitleTh)}</h3>
         ${EN ? '' : `<div class="muted" style="font-size:11px; margin-top:-6px; margin-bottom:8px;">${esc(ev.title)}</div>`}
         <p>${esc(safeDescTh)}</p>
         <div class="impact">${tr('ผลกระทบต่อตลาด', 'Market impact')} · ${esc(ev.marketImpact)}/100</div>
-      </div>`;
+        ${readMore}
+      </${tag}>`;
     }).join('');
 
     BRIEF.score = d.worldRiskScore; BRIEF.cats = d.categories || null;
