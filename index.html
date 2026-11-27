@@ -120,8 +120,8 @@
 .risk-scale .pin{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #0b1020;transform:translate(-50%,-50%);box-shadow:0 0 0 1px #fff6;transition:left .4s}
 .risk-scale .ticks{position:relative;height:14px;font-size:10px;color:var(--muted);margin-top:6px}.risk-scale .ticks span{position:absolute;transform:translateX(-50%)}.risk-scale .ticks span:first-child{transform:none}.risk-scale .ticks span:last-child{transform:translateX(-100%)}
 .chg{display:inline-block;font-size:11px;font-weight:700;margin-left:8px;min-width:58px;text-align:right}
-.full{grid-column:1/-1}.events{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.event{border:1px solid var(--line);background:var(--panel2);border-radius:14px;padding:15px}.event .rank{font-size:11px;color:var(--accent);font-weight:800}.event h3{font-size:15px;margin:7px 0}.event p{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 10px}.impact{font-size:12px;font-weight:800}.brief{font-size:15px;line-height:1.75;color:#d9e0ef}.footer{margin-top:18px;color:#68758e;font-size:12px;line-height:1.6}
-.news-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.full{grid-column:1/-1}.events{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.event{border:1px solid var(--line);background:var(--panel2);border-radius:14px;padding:15px}.event .rank{font-size:11px;color:var(--accent);font-weight:800}.event h3{font-size:15px;margin:7px 0}.event p{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 10px}.impact{font-size:12px;font-weight:800}a.event{display:block;color:inherit;text-decoration:none;cursor:pointer}a.event:hover h3{color:var(--accent)}.ev-src{font-size:11px;color:var(--accent);margin-top:8px}.brief{font-size:15px;line-height:1.75;color:#d9e0ef}.footer{margin-top:18px;color:#68758e;font-size:12px;line-height:1.6}
+.news-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;margin:-4px 0 12px}.news-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .news-filters button{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:12px;cursor:pointer}
 .news-filters button.on{border-color:var(--accent);color:var(--text);background:rgba(212,178,106,.12)}
 .news-filters button span{opacity:.6;margin-left:4px}
@@ -882,6 +882,7 @@ body{margin:0}
 
 <section class="card full">
 <h2>🗞️ <span data-en="Latest News">ข่าวล่าสุด</span> <span class="h-en" data-en="Last 48 hours">Latest News · 48 ชม.</span></h2>
+<div class="news-bar"><span class="muted" id="newsStatus" data-en="Loading news…">กำลังโหลดข่าว…</span><button type="button" id="newsRefreshBtn" style="padding:4px 10px; font-size:11px;" data-en="🔄 Refresh news">🔄 รีเฟรชข่าว</button></div>
 <div class="news-filters" id="newsFilters"></div>
 <div class="news-list" id="newsList"><div class="muted" style="font-size:12px;" data-en="Loading news…">กำลังโหลดข่าว…</div></div>
 <button type="button" class="news-more" id="newsMoreBtn" style="display:none;" data-en="More news">ดูข่าวเพิ่ม</button>
@@ -1483,9 +1484,7 @@ body{margin:0}
 </section>
 </main>
 <div class="footer">
-  <span id="newsStatus" data-en="Loading news…">กำลังโหลดข่าว…</span> ·
-  <span data-en="Not investment advice">ไม่ใช่คำแนะนำการลงทุน</span> ·
-  <button id="newsRefreshBtn" style="padding:4px 10px; font-size:11px;" data-en="🔄 Refresh news">🔄 รีเฟรชข่าว</button>
+  <span data-en="Not investment advice">ไม่ใช่คำแนะนำการลงทุน</span>
   <span id="visitorCount" hidden></span>
 </div>
 <script>
@@ -1527,7 +1526,7 @@ window.setHeaderStamp = function(){
 };
 window.setHeaderStamp();
 </script>
-<script src="js/overview.js?v=bd4907182f"></script>
+<script src="js/overview.js?v=d422428820"></script>
 
 </section>
 
