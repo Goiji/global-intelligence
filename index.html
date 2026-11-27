@@ -1572,7 +1572,7 @@ window.setHeaderStamp();
   #backtestTab .bt-what li::before{content:counter(w);position:absolute;left:10px;top:9px;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;background:var(--line);color:var(--text)}
   #backtestTab .bt-g.spx .bt-what li::before{background:#d4b26a;color:#0b1020}
   #backtestTab .bt-g.btc .bt-what li::before{background:#f7931a;color:#0b1020}
-  #backtestTab .bt-nav{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  #backtestTab .bt-nav{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
   #backtestTab .bt-nav button{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;text-align:left;font:inherit;color:var(--text);cursor:pointer;border-radius:14px;padding:12px 14px;background:var(--panel2);border:1px solid var(--line);transition:transform .15s,border-color .15s}
   #backtestTab .bt-nav button:hover{transform:translateY(-1px)}
   #backtestTab .bt-nav button span{grid-row:span 2;font-size:22px;line-height:1}
@@ -1608,10 +1608,21 @@ window.setHeaderStamp();
   #backtestTab tr.bt-normal td{background:rgba(69,212,131,.06)}
   #backtestTab .neg{color:var(--bad)} #backtestTab .pos{color:var(--good)}
   #backtestTab .bt-points{margin:0;padding-left:18px;line-height:1.8;font-size:14px}
+  #backtestTab .hr-now{display:flex;flex-direction:column;gap:4px;padding:10px 14px;border-radius:12px;margin:8px 0 10px;font-size:13px;line-height:1.6;border:1px solid var(--line)}
+  #backtestTab .hr-now b{font-size:14px}
+  #backtestTab .hr-now span{color:#d9e0ef}
+  #backtestTab .hr-now.cap{background:rgba(255,101,119,.08);border-color:rgba(255,101,119,.45)} #backtestTab .hr-now.cap>b{color:#ff8a98}
+  #backtestTab .hr-now.ok{background:rgba(69,212,131,.07);border-color:rgba(69,212,131,.4)} #backtestTab .hr-now.ok>b{color:var(--good)}
+  #backtestTab tr.hr-none td{color:var(--muted)} #backtestTab td.hr-why{text-align:left;white-space:normal;font-size:12px}
+  #backtestTab .bt-band.hr{margin-top:22px;background:linear-gradient(90deg,rgba(76,201,240,.2),rgba(76,201,240,.03) 70%);border:1px solid rgba(76,201,240,.45)}
+  #backtestTab .bt-band.hr b{color:#8fdcf5}
+  #backtestTab .bt-nav .hr{border-color:rgba(76,201,240,.5);background:linear-gradient(135deg,rgba(76,201,240,.14),rgba(76,201,240,.03))}
+  #backtestTab .bt-g.hr{border-left:4px solid #4cc9f0;background:linear-gradient(90deg,rgba(76,201,240,.06),transparent 35%),rgba(18,26,45,.94)}
+  #backtestTab .bt-g.hr .bt-what li::before{background:#4cc9f0;color:#0b1020}
 </style>
 <div class="wrap">
 <main class="grid">
-<nav class="bt-nav" aria-label="Backtest sections"><button type="button" class="spx" data-go="btGrpSpx"><span>📈</span><b data-en="US stocks · VIX">หุ้นสหรัฐ · VIX</b><small data-en="monthly since 1990">รายเดือน ตั้งแต่ 1990</small></button><button type="button" class="btc" data-go="btGrpBtc"><span>₿</span><b data-en="Bitcoin · DVOL">บิตคอยน์ · DVOL</b><small data-en="daily since 2021">รายวัน ตั้งแต่ 2021</small></button></nav>
+<nav class="bt-nav" aria-label="Backtest sections"><button type="button" class="spx" data-go="btGrpSpx"><span>📈</span><b data-en="US stocks · VIX">หุ้นสหรัฐ · VIX</b><small data-en="monthly since 1990">รายเดือน ตั้งแต่ 1990</small></button><button type="button" class="btc" data-go="btGrpBtc"><span>₿</span><b data-en="Bitcoin · DVOL">บิตคอยน์ · DVOL</b><small data-en="daily since 2021">รายวัน ตั้งแต่ 2021</small></button><button type="button" class="hr" data-go="btGrpHr"><span>⛏️</span><b data-en="Bitcoin · Hash Ribbons">บิตคอยน์ · Hash Ribbons</b><small data-en="daily since 2010">รายวัน ตั้งแต่ 2010</small></button></nav>
 <div class="bt-band spx" id="btGrpSpx"><span class="ico">📈</span><div><b data-en="US stocks: S&amp;P 500 and VIX">หุ้นสหรัฐ: S&amp;P 500 กับ VIX</b><small data-en="Monthly data, 1990 to today · from FRED">ข้อมูลรายเดือน 1990 – ปัจจุบัน · จาก FRED</small></div></div>
 <section class="card full bt-g spx">
 <h2>🧪 <span data-en="Backtest: stock-market crises vs normal times">Backtest: หุ้นสหรัฐช่วงวิกฤต เทียบช่วงปกติ</span></h2>
@@ -1665,10 +1676,37 @@ window.setHeaderStamp();
 <ul class="bt-points" id="bdvPoints"></ul>
 <details class="src-note"><summary data-en="ⓘ Sources and limits">ⓘ แหล่งข้อมูลและข้อจำกัด</summary><div class="muted" id="bdvNote"></div></details>
 </section>
+<div class="bt-band hr" id="btGrpHr"><span class="ico">⛏️</span><div><b data-en="Bitcoin: Hash Ribbons (miner capitulation)">บิตคอยน์: Hash Ribbons (นักขุดถอดใจ)</b><small data-en="Daily data, 2010 to today · from blockchain.com">ข้อมูลรายวัน 2010 – ปัจจุบัน · จาก blockchain.com</small></div></div>
+<section class="card full bt-g hr" id="hr">
+<h2>⛏️ <span data-en="Backtest: Hash Ribbons buy signal">Backtest: สัญญาณซื้อ Hash Ribbons</span></h2>
+<p class="bt-lead" data-en="Hashrate is the computing power miners point at bitcoin. When it falls for weeks, miners are switching machines off because mining no longer pays (a &quot;capitulation&quot;). The buy signal comes when hashrate recovers and the price starts rising again.">Hashrate คือพลังขุดรวมของทั้งเครือข่าย ถ้าลดลงต่อเนื่องหลายสัปดาห์ แปลว่านักขุดทยอยปิดเครื่องเพราะขุดไม่คุ้ม (นักขุดถอดใจ) สัญญาณซื้อจะเกิดเมื่อ hashrate ฟื้นกลับ และราคาเริ่มมีแรงขึ้น</p>
+<ol class="bt-what">
+<li><b data-en="Capitulation:">นักขุดถอดใจ:</b> <span data-en="the 30-day average hashrate drops below the 60-day average (red shading on the chart).">hashrate เฉลี่ย 30 วันตกลงต่ำกว่าเฉลี่ย 60 วัน (แถบแดงในกราฟ)</span></li>
+<li><b data-en="Buy signal:">สัญญาณซื้อ:</b> <span data-en="the 30-day average is back above the 60-day and the 10-day average price is above the 20-day (green triangles).">เส้น 30 วันกลับขึ้นเหนือ 60 วัน และราคาเฉลี่ย 10 วันอยู่เหนือ 20 วัน (สามเหลี่ยมเขียว)</span></li>
+<li><b data-en="What came next:">หลังจากนั้น:</b> <span data-en="BTC 30, 90, 180 days and 1 year after each signal, against buying on any day.">BTC อีก 30, 90, 180 วัน และ 1 ปีหลังสัญญาณ เทียบกับซื้อวันไหนก็ได้</span></li>
+</ol>
+<div id="hrNow"></div>
+<div class="bt-chart bt-scroll" id="hrChart"><p class="muted" id="hrStatus" data-en="Loading hashrate data…">กำลังโหลดข้อมูล hashrate…</p></div>
+<div class="bt-legend"><span><i style="background:#f7931a"></i><span data-en="BTC (log)">BTC (log)</span></span><span><i style="background:#4cc9f0"></i><span data-en="Hashrate 30-day avg">Hashrate เฉลี่ย 30 วัน</span></span><span><i style="background:#a78bfa"></i><span data-en="Hashrate 60-day avg">Hashrate เฉลี่ย 60 วัน</span></span><span><i style="background:rgba(255,101,119,.25);height:10px"></i><span data-en="Capitulation">ช่วงนักขุดถอดใจ</span></span><span><span style="color:#45d483">▲</span> <span data-en="Buy signal">สัญญาณซื้อ</span></span></div>
+</section>
+<section class="card full bt-g hr">
+<h2>📋 <span data-en="Each capitulation and what BTC did after the signal">นักขุดถอดใจแต่ละรอบ กับ BTC หลังสัญญาณซื้อ</span></h2>
+<div class="bt-scroll"><table id="hrSignals"></table></div>
+</section>
+<section class="card full bt-g hr">
+<h2>⚖️ <span data-en="Buying on the signal vs buying on any day">ซื้อตามสัญญาณ เทียบ ซื้อวันไหนก็ได้</span></h2>
+<div class="bt-scroll"><table id="hrCompare"></table></div>
+</section>
+<section class="card full bt-g hr">
+<h2>💡 <span data-en="What stands out for Hash Ribbons">สิ่งที่เห็นจาก Hash Ribbons</span></h2>
+<ul class="bt-points" id="hrPoints"></ul>
+<details class="src-note"><summary data-en="ⓘ Sources and limits">ⓘ แหล่งข้อมูลและข้อจำกัด</summary><div class="muted" id="hrNote"></div></details>
+</section>
 </main>
 </div>
 <script src="js/backtest-spx.js?v=329471354f"></script>
 <script src="js/backtest-btc.js?v=0e2072b126"></script>
+<script src="js/backtest-hash.js?v=8a67b6077c"></script>
 </section>
 
 <section id="macroTab" class="tabpage">
@@ -2707,6 +2745,7 @@ window.setHeaderStamp();
     if(tabId === 'btcTab' && typeof window.ocActivate === 'function'){ window.ocActivate(); if(window.ocRedraw) setTimeout(window.ocRedraw, 0); }
     if(tabId === 'macroTab' && typeof window.macroMapActivate === 'function') window.macroMapActivate();
     if(tabId === 'backtestTab' && typeof window.btDvolActivate === 'function') window.btDvolActivate();
+    if(tabId === 'backtestTab' && typeof window.btHashActivate === 'function') window.btHashActivate();
     if(typeof window.btcLiveSync === 'function') window.btcLiveSync();   // เปิด/ปิดสตรีมราคา BTC ตามแท็บ
   }
 
