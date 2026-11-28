@@ -229,7 +229,7 @@
     'annuit(?:y|ies)', 'moneyist', 'dear (?:abby|annie|quentin)', 'ask (?:an? )?(?:advis[eo]r|expert|planner)',
     // ดีล/ช้อปปิ้ง/รีวิวสินค้า และบทความอธิบายวันหยุด ("Our favorite headphones are cheaper than ever ahead of Black Friday",
     // "Is the stock market open on Black Friday?") — ไม่ใช่ข่าวตลาด แต่ข่าวยอดขายช่วง Black Friday ยังนับตามปกติ
-    'cheaper than ever', '(?:lowest|best) prices? (?:ever|yet|of the year)', 'on sale', 'price drop', 'coupons?', 'promo codes?',
+    'cheaper than ever', '(?:biggest|best|big|steep|rare|record|huge|massive|early|holiday|black friday|cyber monday) discounts?', 'discounted (?:to|by|for)', 'just got (?:a |its )?(?:price cut|cheaper)', 'deal alert', '(?:lowest|best) prices? (?:ever|yet|of the year)', 'on sale', 'price drop', 'coupons?', 'promo codes?',
     '\\d+% off', '\\d+ off (?:the|an?|its|all|select|every)', '(?:black friday|cyber monday|prime day|holiday|early) deals?', 'deals? (?:on|for) (?:the |an? )?(?:\\w+ )?(?:headphones|earbuds|tvs?|laptops?|iphones?|ipads?|airpods)',
     'gift (?:guides?|ideas)', 'our (?:favou?rite|top) (?:picks?|\\w+)', 'headphones', 'earbuds', 'airpods', 'robot vacuums?',
     'is the (?:stock )?market (?:open|closed)', 'are (?:the )?(?:stock )?markets? (?:open|closed)', 'is (?:the )?(?:nyse|nasdaq|stock exchange|bank|post office) (?:open|closed)',
@@ -248,7 +248,9 @@
   const NEGATION_RE = /\b(?:no|not|avoids?|avoided|averts?|averted|without|ends?|ended|ending|lifts?|lifted|eases?|eased)\s+(?:\w+\s+)?$/i;
   // คำฝั่งบวกที่ถูกปฏิเสธ = ไม่นับ: "didn't ease fears", "fails to rally", "truce unravels", "ceasefire collapses"
   const LOW_NEGATION_BEFORE_RE = /\b(?:no|not|never|didn't|did not|doesn't|does not|don't|won't|fails? to|failed to|without)\s+(?:\w+\s+)?$/i;
-  const LOW_NEGATION_AFTER_RE = /^\s*(?:\w+\s+)?(?:unravel|collapse|fail|falter|stall|break(?:s|ing)? down|broke down|violat|shatter|in doubt|at risk)/i;
+  const LOW_NEGATION_AFTER_RE = /^\s*(?:\w+\s+)?(?:unravel|collapse|fail|falter|stall|break(?:s|ing)? down|broke down|violat|shatter|in doubt|at risk|slow|fad|dim|wan(?:e|es|ed|ing)\b|weaken|cool|sputter|dwindl|evaporat)/i;
+  // คำเสี่ยงที่ตามด้วยคำว่ากำลังจางลง = ข่าวคลายตัว ไม่นับ: "tensions fade", "fears ease", "threat recedes"
+  const HIGH_NEGATION_AFTER_RE = /^\s*(?:\w+\s+)?(?:fad|eas(?:e|es|ed|ing)\b|cool|reced|subsid|abat|dissipat|recede)/i;
   // คำแปลไทยของคำบ่งชี้ — ใช้แสดงผลอย่างเดียว (ระบบยังจับคำจากพาดหัวภาษาอังกฤษตามเดิม)
   const RISK_TERM_TH = { war:'สงคราม', invasion:'การรุกราน', invade:'รุกราน', missile:'ขีปนาวุธ', nuclear:'นิวเคลียร์', coup:'รัฐประหาร',
     crash:'ร่วงหนัก', collapse:'ล่มสลาย', default:'ผิดนัดชำระหนี้', recession:'เศรษฐกิจถดถอย', conflict:'ความขัดแย้ง',
@@ -283,6 +285,8 @@
   function termRegex(term){
     const stem = term.endsWith('*');
     const body = (stem ? term.slice(0, -1) : term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // rally → rallies/rallied, recovery → recoveries
+    if(!stem && /[^aeiou]y$/i.test(body)) return new RegExp('\\b' + body.slice(0, -1) + '(?:y|ies|ied|ying)\\b', 'i');
     return new RegExp('\\b' + body + (stem ? '\\w*' : '(?:s|es|ed|d|ing)?\\b'), 'i');
   }
   // วลียาวก่อน → ถ้าวลีจับได้ คำย่อยข้างในจะไม่ถูกนับซ้ำ ("missile strike" ไม่นับ missile + strike เพิ่มอีก)
@@ -316,6 +320,7 @@
       const before = text.slice(0, m.index), after = text.slice(m.index + m[0].length);
       text = before + ' ~ ' + after;   // ไม่ให้คำย่อยถูกนับซ้ำ
       if(r.w > 0 && NEGATION_RE.test(before)) return;                                 // "no recession", "averts shutdown"
+      if(r.w > 0 && HIGH_NEGATION_AFTER_RE.test(after)) return;                      // "tensions fade", "fears ease"
       if(r.w < 0){
         const om = r.re.exec(orig);   // ดูคำถัดไปจากพาดหัวเดิม — คำอย่าง "unravels" อาจถูกจับไปก่อนแล้ว
         if(LOW_NEGATION_BEFORE_RE.test(before) || LOW_NEGATION_AFTER_RE.test(om ? orig.slice(om.index + om[0].length) : after)) return;
@@ -382,7 +387,8 @@
 
   function computeAnalysis(allFeeds){
     // หมวดที่ listOnly (ข่าวไทย) ไม่นับคะแนน — เอาไว้แสดงในรายการข่าวอย่างเดียว
-    const feedResults = allFeeds.filter(f => !f.listOnly);
+    // หมวดที่ดึงข่าวไม่ได้ (ไม่มีพาดหัวเลย) ไม่นับ — เดิมได้ 50 แล้วถูกเฉลี่ยรวม/บันทึกลงประวัติ ทำให้คะแนนรวมกับ "จากเมื่อวาน" เพี้ยน
+    const feedResults = allFeeds.filter(f => !f.listOnly && ((f.items && f.items.length) || (f.titles && f.titles.length)));
     const categories = {}, drivers = {};
     feedResults.forEach(f => { const r = scoreCategoryDetail(f.items && f.items.length ? f.items : f.titles, null, f.q); categories[f.key] = r.score; drivers[f.key] = r.drivers; });
 
@@ -399,7 +405,7 @@
     const confidence = Math.min(100, totalHeadlines * 4);
 
     // Simple heuristic asset outlook derived from category scores (NOT live prices).
-    const geo = categories.geopolitical, econ = categories.economic, energy = categories.energy;
+    const econ = categories.economic ?? worldRiskScore, energy = categories.energy ?? worldRiskScore;
     const assets = {
       gold:    Math.max(0, Math.min(100, Math.round(50 + (worldRiskScore-50)*0.6))),
       oil:     energy,
@@ -413,8 +419,11 @@
     const usedStories = new Set();
     const topEvents = sorted.filter(f=>f.titles.length>0).map(f => {
       // ข้ามข่าวที่ไม่ได้ใช้คิดคะแนน (กีฬา/ดีลสินค้า/บทความอธิบาย) — เดิมเอาข่าวแรกของหมวดมาโชว์ ข่าวลดราคาหูฟังเลยขึ้น Top Events
-      const pick = (f.items || []).find(it => it && it.onTopic !== false && !isOffTopic(stripSource(it.title, it.source))
-        && !usedStories.has(storyKey(it.title))) || null;
+      // และเลือกข่าวใน 7 วันก่อน (เกณฑ์เดียวกับตอนคิดคะแนน) — Google News บางทีส่งข่าวเก่าเป็นเดือนมาปน
+      const ok = (f.items || []).filter(it => it && it.onTopic !== false && !isOffTopic(stripSource(it.title, it.source))
+        && !usedStories.has(storyKey(it.title)));
+      const fresh = ok.filter(it => { const ts = Date.parse(it.pubDate); return !isFinite(ts) || Date.now() - ts <= STALE_DAYS * 86400000; });
+      const pick = fresh[0] || ok[0] || null;
       if(pick) usedStories.add(storyKey(pick.title));
       return pick ? { f, pick } : null;
     }).filter(Boolean).slice(0,3).map(({ f, pick }, i)=>({
@@ -551,7 +560,11 @@
     let high = [];
     try{ high = briefSoonEvents(b.events, nowMs).filter(x => CAL_HIGH[x.e.key] && x.today); }catch(e){ high = []; }
     if(high.length){ p += 3; why.unshift(tr('ระวังช่วง ', 'Watch ') + high.map(x => x.text.replace(/^(วันนี้|today) /, '')).join(', ') + tr(' ราคาเหวี่ยงแรงได้ทั้งสองทาง', ': prices can swing hard either way')); }
-    const level = p >= 70 ? 2 : p >= 55 ? 1 : 0;
+    let level = p >= 70 ? 2 : p >= 55 ? 1 : 0;
+    // สัญญาณแรงที่ทำให้หัวสรุปขึ้น 🔴 ต้องทำให้บรรทัดของสินทรัพย์นั้นแดงด้วย (เดิมหัว "เตือนแรง" แต่บรรทัดคริปโตแค่ "ปานกลาง")
+    const bt = b.btc || {};
+    if(crypto && ((isFinite(bt.d30) && bt.d30 <= -20) || (isFinite(bt.d1) && bt.d1 <= -6))) level = 2;
+    if(b.pulse && b.pulse.i >= 3) level = 2;
     const head = level === 2 ? tr('🔴 แรงกดดันสูง', '🔴 Heavy pressure') : level === 1 ? tr('🟡 กดดันปานกลาง', '🟡 Some pressure') : tr('🟢 ข่าวไม่ค่อยกดดัน', '🟢 Little pressure from the news');
     if(!why.length) why.push(level === 0 ? tr('บรรยากาศข่าวเอื้อต่อสินทรัพย์เสี่ยง', 'the news backdrop favours risk assets')
       : tr('ความเสี่ยงโลกโดยรวมสูง นักลงทุนมักลดสินทรัพย์เสี่ยง', 'overall risk is high, so investors tend to cut risk'));
@@ -619,7 +632,13 @@
       const c = (Array.isArray(k) ? k : []).map(x => +x[4]).filter(isFinite);
       if(c.length < 31) return;
       const last = c[c.length - 1];
-      BRIEF.btc = { d1: (last / c[c.length - 2] - 1) * 100, d30: (last / c[0] - 1) * 100 };
+      // "24 ชม." จริง: แท่งรายวันล่าสุดยังไม่ปิด (เริ่ม 07:00 ไทย) จึงใช้ตัวเลข 24 ชม. แบบเลื่อนจาก ticker แทน
+      let d1 = (last / c[c.length - 2] - 1) * 100;
+      try{
+        const t = await (await fetchWithTimeout('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT', 8000)).json();
+        if(t && isFinite(parseFloat(t.priceChangePercent))) d1 = parseFloat(t.priceChangePercent);
+      }catch(e){ /* keep the daily-candle estimate */ }
+      BRIEF.btc = { d1, d30: (last / c[0] - 1) * 100 };
       renderBrief();
     }catch(e){ /* best-effort */ }
   }
@@ -627,7 +646,7 @@
     try{
       const raw = await storageGet('news-score-history');
       const hist = raw ? JSON.parse(raw) : [];
-      const today = new Date().toISOString().slice(0,10);   // same day key as recordScoreHistory
+      const today = localDayKey();   // same day key as recordScoreHistory
       BRIEF.prev = (Array.isArray(hist) ? hist : []).filter(h => h && h.date < today && isFinite(h.score)).pop() || null;
     }catch(e){ BRIEF.prev = null; }
     renderBrief();
@@ -852,8 +871,10 @@
   // ---------- World Risk Score history + trend sparkline ----------
   // Every successful score computation gets appended (1 point/day, capped 30 days) so we
   // can show a trend line instead of just today's single number. Pure local storage, no API.
+  // วันตามเวลาเครื่องผู้ใช้ (ไทย) — เดิมใช้วัน UTC "เมื่อวาน" เลยตัดรอบตอน 07:00 น.
+  function localDayKey(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   async function recordScoreHistory(score, cats){
-    const today = new Date().toISOString().slice(0,10);
+    const today = localDayKey();
     let hist = [];
     try{
       const raw = await storageGet('news-score-history');
@@ -932,7 +953,7 @@
       const raw = await storageGet('news-score-history');
       if(raw) hist = JSON.parse(raw);
     }catch(e){ hist = []; }
-    const today = new Date().toISOString().slice(0,10);   // same day key as recordScoreHistory
+    const today = localDayKey();   // same day key as recordScoreHistory
     const prev = (Array.isArray(hist) ? hist : []).filter(h => h && h.date < today && isFinite(h.score)).pop();
     return prev ? newScore - prev.score : null;
   }
@@ -941,7 +962,7 @@
     el('newsStatus').textContent = tr('กำลังดึงข่าวสด…', 'Fetching live news…');
     try{
       const feedResults = await Promise.all(RSS_FEEDS.map(fetchFeed));
-      const gotAny = feedResults.some(f => f.titles.length > 0);
+      const gotAny = feedResults.some(f => !f.listOnly && f.titles.length > 0);   // ข่าวไทยอย่างเดียวคิดคะแนนไม่ได้
       if(!gotAny){
         console.warn('[news] every feed came back empty (news-feed function unreachable?)');
         el('newsStatus').textContent = tr('โหลดข่าวใหม่ไม่ได้ในขณะนี้ — แสดงข่าวล่าสุดที่มี', 'Can\'t load new headlines right now. Showing the latest available.');
@@ -1921,6 +1942,10 @@
 
   // ---------- ทองไทย (สมาคมค้าทองคำ) — ถ้าดึงไม่ได้ ประมาณจากราคาโลก × ค่าเงินบาท ----------
   const fmtBaht = (v) => Math.round(v).toLocaleString('en-US');
+  // "28/11/2569 เวลา 09:10" (พ.ศ.) → "28/11/2026 09:10" ในโหมดอังกฤษ
+  function goldUpdatedEn(s){
+    return String(s).replace(/(\d{1,2})\/(\d{1,2})\/(25\d\d)/, (_, d, m, y) => d + '/' + m + '/' + (+y - 543)).replace(/\s*เวลา\s*/, ' ').replace(/\s*น\.?\s*$/, '').trim();
+  }
   async function fetchThaiGold(){
     try{
       const r = await fetchWithTimeout('/.netlify/functions/gold-th', 9000);
@@ -1930,7 +1955,7 @@
       // j.updated มาจากเว็บสมาคมค้าทองคำเป็นภาษาไทย (เช่น "10/11/2569 เวลา 09:30") — แสดงตามต้นทาง
       el('lpGoldThSub').textContent = tr('ทองแท่งรับซื้อ ', 'Bar buy ') + fmtBaht(j.barBuy)
         + (j.ornamentSell ? tr(' · รูปพรรณขายออก ', ' · Jewellery sell ') + fmtBaht(j.ornamentSell) : '')
-        + tr(' · สมาคมค้าทองคำ', ' · Gold Traders Association') + (j.updated ? ' ' + j.updated : '');
+        + tr(' · สมาคมค้าทองคำ', ' · Gold Traders Association') + (j.updated ? ' ' + (EN ? goldUpdatedEn(j.updated) : j.updated) : '');
       return;
     }catch(e){ console.warn('[gold-th]', e); }
     // ประมาณการ: ทอง 96.5% น้ำหนัก 1 บาท = 15.244 กรัม (1 ทรอยออนซ์ = 31.1035 กรัม)

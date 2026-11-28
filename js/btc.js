@@ -97,6 +97,11 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   const ddBig=el('ddBig'), ddBar=el('ddBar');
   const needle=null, scoreNumber=el('scoreNumber'), verdict=el('verdict'), breakdown=el('breakdown');
   const statusEl=el('status');
+  // ค่าใน 3 ช่องนี้เริ่มจากค่าตั้งต้นใน HTML (0.5 / 3 / 2) ซึ่งไม่ใช่ข้อมูลจริง — ห้ามนับเข้าคะแนนจนกว่าจะได้ค่าจริง
+  // (ดึงได้ / แคช / ชุดเดียวกับการ์ดต้นทุน / ผู้ใช้กรอกเอง) เดิมถ้าดึง MVRV-Z ไม่ได้ คะแนนจะคิดจาก 3 เงียบๆ
+  [nuplNum, zNum, mNum].forEach(n => { n.dataset.placeholder = '1'; });
+  const markReal = n => { delete n.dataset.placeholder; };
+  const isReal = n => n.dataset.placeholder !== '1';
 
   // ---------- manual fallback toggle (hidden unless auto-fetch fails, or user opts in) ----------
   function wireManualToggle(btnId, rowId){
@@ -112,8 +117,8 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   wireManualToggle('mManualBtn', 'mManualRow');
 
   function syncPair(range, num){
-    range.addEventListener('input', ()=>{ num.value = range.value; recompute(); save(); });
-    num.addEventListener('input', ()=>{ range.value = num.value; recompute(); save(); });
+    range.addEventListener('input', ()=>{ num.value = range.value; markReal(num); recompute(); save(); });
+    num.addEventListener('input', ()=>{ range.value = num.value; markReal(num); recompute(); save(); });
   }
   syncPair(nuplRange, nuplNum);
   syncPair(zRange, zNum);
@@ -139,34 +144,35 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
 
   function recompute(){
     if(lastMining) renderMining();   // price moved → cost margin / miner verdict follow it
-    const nupl = parseFloat(nuplNum.value);
-    const z = parseFloat(zNum.value);
-    const m = parseFloat(mNum.value);
+    const nupl = isReal(nuplNum) ? parseFloat(nuplNum.value) : NaN;
+    const z = isReal(zNum) ? parseFloat(zNum.value) : NaN;
+    const m = isReal(mNum) ? parseFloat(mNum.value) : NaN;
     const price = parseFloat(priceInput.value);
     const ath = parseFloat(athInput.value);
 
-    const sNupl = interpScore(nupl, NUPL_POINTS);
-    const sZ = interpScore(z, Z_POINTS);
-    const sM = interpScore(m, MVRV_POINTS);
+    // interpScore(NaN) เคยได้คะแนนต่ำสุด (1) — ค่าที่ไม่มีต้องเป็น NaN แล้วไม่ถูกนับ
+    const sNupl = isNaN(nupl) ? NaN : interpScore(nupl, NUPL_POINTS);
+    const sZ = isNaN(z) ? NaN : interpScore(z, Z_POINTS);
+    const sM = isNaN(m) ? NaN : interpScore(m, MVRV_POINTS);
 
     nuplDisplay.textContent = isNaN(nupl) ? '–' : nupl.toFixed(3);
     zDisplay.textContent = isNaN(z) ? '–' : z.toFixed(2);
     mDisplay.textContent = isNaN(m) ? '–' : m.toFixed(2);
 
-    nuplPill.textContent = sNupl.toFixed(1);
+    nuplPill.textContent = isNaN(sNupl) ? '–' : sNupl.toFixed(1);
     nuplPill.style.background = 'transparent'; nuplPill.style.color = scoreColor(sNupl);
     nuplPill.style.border = '1px solid ' + scoreColor(sNupl);
-    nuplZone.textContent = nuplZoneLabel(nupl);
+    nuplZone.textContent = isNaN(nupl) ? tr('รอข้อมูล', 'loading') : nuplZoneLabel(nupl);
 
-    zPill.textContent = sZ.toFixed(1);
+    zPill.textContent = isNaN(sZ) ? '–' : sZ.toFixed(1);
     zPill.style.background='transparent'; zPill.style.color = scoreColor(sZ);
     zPill.style.border = '1px solid ' + scoreColor(sZ);
-    zZone.textContent = zZoneLabel(z);
+    zZone.textContent = isNaN(z) ? tr('รอข้อมูล', 'loading') : zZoneLabel(z);
 
-    mPill.textContent = sM.toFixed(1);
+    mPill.textContent = isNaN(sM) ? '–' : sM.toFixed(1);
     mPill.style.background='transparent'; mPill.style.color = scoreColor(sM);
     mPill.style.border = '1px solid ' + scoreColor(sM);
-    mZone.textContent = mZoneLabel(m);
+    mZone.textContent = isNaN(m) ? tr('รอข้อมูล', 'loading') : mZoneLabel(m);
 
     let dd = null;
     if(price && ath && ath>0){
@@ -176,7 +182,8 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     // 4 มุมที่ไม่ซ้ำกัน ให้น้ำหนักเท่ากัน มุมไหนยังไม่มีข้อมูลก็ไม่นับ (ไม่เดาแทน)
     // ไม่มีโบนัส ATH drawdown แล้ว: ราคาที่ลงลึกทำให้ MVRV/STH/Power Law ต่ำลงเองอยู่แล้ว ถ้าบวกอีกจะนับซ้ำ
     const sig = window.giBtcSignals || {};
-    const avg = (sNupl + sZ + sM) / 3;
+    const valParts = [sNupl, sZ, sM].filter(isNum);
+    const avg = valParts.length ? valParts.reduce((a, b) => a + b, 0) / valParts.length : NaN;
     const pillars = [
       { key: 'val', name: tr('มูลค่าเทียบต้นทุนทั้งตลาด', 'Value vs whole-market cost'), note: 'NUPL · MVRV · MVRV-Z', v: isNaN(avg) ? null : avg },
       { key: 'sth', name: tr('ราคาเทียบต้นทุนคนถือสั้น', 'Price vs short-term holder cost'), note: isNum(sig.sthRatio) ? '× ' + sig.sthRatio.toFixed(2) : '', v: isNum(sig.sthRatio) ? interpScore(sig.sthRatio, STH_POINTS) : null },
@@ -222,12 +229,12 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
   function applySharedValuation(){
     const g = window.giBtcSignals || {};
     if(isNum(g.mvrv) && el('mManualRow').style.display === 'none'){
-      mNum.value = g.mvrv.toFixed(2); mRange.value = Math.max(0.8, Math.min(4.5, g.mvrv));
+      mNum.value = g.mvrv.toFixed(2); markReal(mNum); mRange.value = Math.max(0.8, Math.min(4.5, g.mvrv));
       setBadge('mAuto', true, Date.now());
       el('mUpdated').textContent = tr('ราคาสด ÷ ต้นทุนเฉลี่ยทั้งตลาด (ชุดเดียวกับการ์ดต้นทุนด้านล่าง)', 'Live price ÷ market cost basis (same data as the cost card below)');
     }
     if(isNum(g.nupl) && el('nuplManualRow').style.display === 'none'){
-      nuplNum.value = g.nupl.toFixed(3); nuplRange.value = Math.max(-0.5, Math.min(1, g.nupl));
+      nuplNum.value = g.nupl.toFixed(3); markReal(nuplNum); nuplRange.value = Math.max(-0.5, Math.min(1, g.nupl));
       setBadge('nuplAuto', true, Date.now());
       el('nuplUpdated').textContent = tr('= 1 − 1/MVRV (ข้อมูลชุดเดียวกับ MVRV)', '= 1 − 1/MVRV (same data as MVRV)');
     }
@@ -242,6 +249,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     saveTimer = setTimeout(async ()=>{
       await storageSet('btc-score-inputs', JSON.stringify({
         nupl: nuplNum.value, z: zNum.value, m: mNum.value,
+        real: { nupl: isReal(nuplNum), z: isReal(zNum), m: isReal(mNum) },
         price: priceInput.value, ath: athInput.value,
         // เก็บ flag ไว้ด้วย ไม่งั้นเปิดหน้าใหม่แล้วราคาที่พิมพ์เองจะถูก auto-fetch ทับ
         priceManual: priceInput.dataset.manual === '1',
@@ -256,9 +264,11 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       const raw = await storageGet('btc-score-inputs');
       if(raw){
         const d = JSON.parse(raw);
-        if(d.nupl!=null){ nuplNum.value=d.nupl; nuplRange.value=d.nupl; }
-        if(d.z!=null){ zNum.value=d.z; zRange.value=d.z; }
-        if(d.m!=null){ mNum.value=d.m; mRange.value=d.m; }
+        // บันทึกรุ่นเก่าไม่มี real → ถือว่าจริงเฉพาะค่าที่ไม่ใช่ค่าตั้งต้นใน HTML
+        const wasReal = (k, n, v) => d.real ? !!d.real[k] : String(v) !== n.defaultValue;
+        if(d.nupl!=null){ nuplNum.value=d.nupl; nuplRange.value=d.nupl; if(wasReal('nupl', nuplNum, d.nupl)) markReal(nuplNum); }
+        if(d.z!=null){ zNum.value=d.z; zRange.value=d.z; if(wasReal('z', zNum, d.z)) markReal(zNum); }
+        if(d.m!=null){ mNum.value=d.m; mRange.value=d.m; if(wasReal('m', mNum, d.m)) markReal(mNum); }
         if(d.price) priceInput.value=d.price;
         if(d.ath) athInput.value=d.ath;
         if(d.priceManual) priceInput.dataset.manual='1';
@@ -490,9 +500,9 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
     debugLog = [];
 
     const [nuplOk, zOk, mOk] = await Promise.all([
-      resolveMetric('nupl', BG_SLUGS.nupl, v => { if(window.giBtcSignals && isNum(window.giBtcSignals.nupl)) return; nuplNum.value = v.toFixed(3); nuplRange.value = Math.max(-0.5,Math.min(1,v)); }, force),
-      resolveMetric('z',    BG_SLUGS.z,    v => { zNum.value = v.toFixed(2); zRange.value = Math.max(-2,Math.min(9,v)); }, force),
-      resolveMetric('m',    BG_SLUGS.m,    v => { if(window.giBtcSignals && isNum(window.giBtcSignals.mvrv)) return; mNum.value = v.toFixed(2); mRange.value = Math.max(0.8,Math.min(4.5,v)); }, force)
+      resolveMetric('nupl', BG_SLUGS.nupl, v => { if(window.giBtcSignals && isNum(window.giBtcSignals.nupl)) return; nuplNum.value = v.toFixed(3); markReal(nuplNum); nuplRange.value = Math.max(-0.5,Math.min(1,v)); }, force),
+      resolveMetric('z',    BG_SLUGS.z,    v => { zNum.value = v.toFixed(2); markReal(zNum); zRange.value = Math.max(-2,Math.min(9,v)); }, force),
+      resolveMetric('m',    BG_SLUGS.m,    v => { if(window.giBtcSignals && isNum(window.giBtcSignals.mvrv)) return; mNum.value = v.toFixed(2); markReal(mNum); mRange.value = Math.max(0.8,Math.min(4.5,v)); }, force)
     ]);
 
     renderDebugLog();

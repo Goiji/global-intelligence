@@ -74,3 +74,19 @@ test('handler keeps the last good value in KV: served without an upstream call w
   assert.equal(JSON.parse(res.body).stale, true);
   assert.equal(JSON.parse(res.body).value, 1.1);
 });
+
+test('after a 429 the handler stops asking BGeometrics for a while instead of burning the quota again', async (t) => {
+  const { handler } = require('../netlify/functions/onchain.js');
+  __test._clearCache();
+  let calls = 0;
+  const realFetch = global.fetch;
+  global.fetch = async () => { calls++; return { ok: false, status: 429, json: async () => ({}) }; };
+  t.after(() => { global.fetch = realFetch; __test._clearCache(); });
+  const a = await handler({ queryStringParameters: { metric: 'nupl' } });
+  assert.equal(a.statusCode, 502);
+  assert.equal(calls, 1, 'one 429 is enough: the other slugs share the same quota');
+  const b = await handler({ queryStringParameters: { metric: 'mvrv' } });
+  assert.equal(b.statusCode, 502);
+  assert.equal(calls, 1, 'cooling down: no upstream call');
+  assert.match(b.headers['Cache-Control'], /max-age=300/);
+});

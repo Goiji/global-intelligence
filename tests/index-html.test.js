@@ -282,5 +282,7 @@ test('buildBrief warns on market stress, a BTC slump and tense finance news', as
   assert.equal(btc.alert.level, 2);
   assert.ok(btc.alert.reasons.some((r) => /BTC ▼ 27%/.test(r)));
   assert.match(btc.lines[1].text, /27%/);              // crypto line leads with the slump
+  assert.match(btc.lines[1].text, /🔴/);               // header says strong warning → the crypto line agrees (was 🟡)
+  assert.match(btc.lines[0].text, /🟢|🟡/);            // stocks are not dragged along by a BTC-only slump
   assert.equal(buildBrief(Object.assign({}, base, { moves: [{ txt: 'S&P 500 -1.8%', bad: true }, { txt: 'Dollar +0.6%', bad: null }] }), now).alert.reasons.join(), 'S&P 500 -1.8%');
 });
