@@ -290,6 +290,23 @@
 
   // ---------- shared signals for the BTC Buy Score (one source of truth for MVRV / NUPL) ----------
   // คะแนนความน่าซื้อด้านบนอ่านค่าจากตรงนี้ ตัวเลข MVRV ทั้งแท็บจึงตรงกัน (ราคาสด ÷ ต้นทุนเฉลี่ยชุดเดียวกัน)
+  // supply รายวัน = LTH + STH supply (ไฟล์เดียวกับการ์ดคนถือ)
+  function supplyAt(D, i){
+    for(let j = i; j >= 0; j--){ const l = D.ls[j], h = D.ss[j]; if(l != null && h != null) return l + h; }
+    return null;
+  }
+  // ส่วนเบี่ยงเบนมาตรฐานของ Market Cap ทุกวันที่มีทั้งราคาและ supply (คำนวณครั้งเดียวต่อชุดข้อมูล)
+  function mcapStd(D){
+    if(D._mcapSd !== undefined) return D._mcapSd;
+    let n = 0, sum = 0, sq = 0;
+    for(let i = 0; i < D.price.length; i++){
+      const p = D.price[i], l = D.ls[i], h = D.ss[i];
+      if(p == null || l == null || h == null) continue;
+      const mc = p * (l + h); n++; sum += mc; sq += mc * mc;
+    }
+    D._mcapSd = n > 365 ? Math.sqrt(Math.max(0, sq / n - (sum / n) * (sum / n))) : null;
+    return D._mcapSd;
+  }
   function publishSignals(){
     const D = S.D; if(!D) return;
     const P = livePrice(); if(!(P > 0)) return;
@@ -299,6 +316,11 @@
     const sig = { price: P, asOf: D.t(i), mvrv: rp ? P / rp : null, sthRatio: srp ? P / srp : null,
       plPos: S.pl ? S.pl.position(Date.now(), P) : null };
     sig.nupl = sig.mvrv ? 1 - 1 / sig.mvrv : null;   // NUPL = 1 − Realized Cap ÷ Market Cap = 1 − 1/MVRV
+    // MVRV-Z = (Market Cap − Realized Cap) ÷ ส่วนเบี่ยงเบนมาตรฐานของ Market Cap ตลอดประวัติ — คิดเองจากชุดเดียวกัน
+    // (เดิมต้องขอจาก API ของ BGeometrics ซึ่งโควต้าฟรีโดนใช้หมดจาก IP ของ Cloudflare แทบตลอด)
+    const sd = mcapStd(D), sup = supplyAt(D, i);
+    sig.mvrvZ = sd && sup && rp ? sup * (P - rp) / sd : null;
+    window.__ocTest = Object.assign(window.__ocTest || {}, { supplyAt, mcapStd });
     window.giBtcSignals = Object.assign(window.giBtcSignals || {}, sig);
     try{ window.dispatchEvent(new Event('gi-btc-signals')); }catch(e){}
   }

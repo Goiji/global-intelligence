@@ -233,6 +233,11 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
       setBadge('mAuto', true, Date.now());
       el('mUpdated').textContent = tr('ราคาสด ÷ ต้นทุนเฉลี่ยทั้งตลาด (ชุดเดียวกับการ์ดต้นทุนด้านล่าง)', 'Live price ÷ market cost basis (same data as the cost card below)');
     }
+    if(isNum(g.mvrvZ) && el('zManualRow').style.display === 'none'){
+      zNum.value = g.mvrvZ.toFixed(2); markReal(zNum); zRange.value = Math.max(-2, Math.min(9, g.mvrvZ));
+      setBadge('zAuto', true, Date.now());
+      el('zUpdated').textContent = tr('คำนวณจากราคาสดกับต้นทุนเฉลี่ยชุดเดียวกับ MVRV (÷ ส่วนเบี่ยงเบนของมูลค่าตลาดตลอดประวัติ)', 'Computed from the live price and the same cost basis as MVRV (÷ the all-time spread of market cap)');
+    }
     if(isNum(g.nupl) && el('nuplManualRow').style.display === 'none'){
       nuplNum.value = g.nupl.toFixed(3); markReal(nuplNum); nuplRange.value = Math.max(-0.5, Math.min(1, g.nupl));
       setBadge('nuplAuto', true, Date.now());
@@ -501,7 +506,7 @@ if(window.giApplyStatic) window.giApplyStatic();   // ข้อความ data
 
     const [nuplOk, zOk, mOk] = await Promise.all([
       resolveMetric('nupl', BG_SLUGS.nupl, v => { if(window.giBtcSignals && isNum(window.giBtcSignals.nupl)) return; nuplNum.value = v.toFixed(3); markReal(nuplNum); nuplRange.value = Math.max(-0.5,Math.min(1,v)); }, force),
-      resolveMetric('z',    BG_SLUGS.z,    v => { zNum.value = v.toFixed(2); markReal(zNum); zRange.value = Math.max(-2,Math.min(9,v)); }, force),
+      resolveMetric('z',    BG_SLUGS.z,    v => { if(window.giBtcSignals && isNum(window.giBtcSignals.mvrvZ)) return; zNum.value = v.toFixed(2); markReal(zNum); zRange.value = Math.max(-2,Math.min(9,v)); }, force),
       resolveMetric('m',    BG_SLUGS.m,    v => { if(window.giBtcSignals && isNum(window.giBtcSignals.mvrv)) return; mNum.value = v.toFixed(2); markReal(mNum); mRange.value = Math.max(0.8,Math.min(4.5,v)); }, force)
     ]);
 

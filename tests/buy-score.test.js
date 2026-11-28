@@ -99,3 +99,19 @@ test('labels: no "Live" header over daily FX, gainers say they are a tracked lis
   assert.doesNotMatch(HTML, /netlify\.app/);
   assert.match(HTML, /<meta property="og:url" content="https:\/\/globalintelligence\.pages\.dev\/">/);
 });
+
+test('MVRV-Z comes from the shared on-chain data when the page has it (no BGeometrics API call needed)', async () => {
+  const sb = await page();
+  g(sb, 'zManualRow').style.display = 'none';
+  g(sb, 'mManualRow').style.display = 'none';
+  g(sb, 'nuplManualRow').style.display = 'none';
+  sb.giBtcSignals = { mvrv: 1.11, nupl: 1 - 1 / 1.11, mvrvZ: 0.21 };
+  sb.__buyTest.applySharedValuation();
+  assert.equal(g(sb, 'zNum').value, '0.21');
+  assert.notEqual(g(sb, 'zNum').dataset.placeholder, '1');
+  // typed value wins while the manual row is open
+  g(sb, 'zManualRow').style.display = 'flex';
+  g(sb, 'zNum').value = '4.00';
+  sb.__buyTest.applySharedValuation();
+  assert.equal(g(sb, 'zNum').value, '4.00');
+});
