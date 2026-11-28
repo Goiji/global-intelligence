@@ -90,3 +90,15 @@ test('after a 429 the handler stops asking BGeometrics for a while instead of bu
   assert.equal(calls, 1, 'cooling down: no upstream call');
   assert.match(b.headers['Cache-Control'], /max-age=300/);
 });
+
+test('a failed answer says whether a token is configured, never the token itself', async (t) => {
+  const { handler } = require('../netlify/functions/onchain.js');
+  __test._clearCache();
+  const realFetch = global.fetch, prev = process.env.BGEOMETRICS_TOKEN;
+  process.env.BGEOMETRICS_TOKEN = 'secret-token-123';
+  global.fetch = async () => ({ ok: false, status: 429, json: async () => ({}) });
+  t.after(() => { global.fetch = realFetch; if (prev === undefined) delete process.env.BGEOMETRICS_TOKEN; else process.env.BGEOMETRICS_TOKEN = prev; __test._clearCache(); });
+  const r = await handler({ queryStringParameters: { metric: 'nupl' } });
+  assert.equal(JSON.parse(r.body).tokenConfigured, true);
+  assert.doesNotMatch(r.body, /secret-token-123/);
+});

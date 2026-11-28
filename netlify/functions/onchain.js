@@ -169,6 +169,7 @@ exports.handler = async function (event) {
     body: JSON.stringify({
       error: 'all BGeometrics endpoints failed',
       details: trail,
+      tokenConfigured: !!token,   // whether BGEOMETRICS_TOKEN reached this deploy (the token itself is never echoed)
       hint: 'Free anonymous quota is 8 requests/hour and 15/day per IP. Setting the optional BGEOMETRICS_TOKEN env var raises it for the whole site.'
     })
   };
