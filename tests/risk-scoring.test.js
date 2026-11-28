@@ -210,3 +210,17 @@ test('shopping deals and holiday market-hours explainers are skipped, retail sal
     'US and China reach trade deal on chip export controls'
   ]) assert.ok(!api.isOffTopic(t), t);
 });
+
+test('review fixes (Nov 28): shopping discounts, fading worries, plural -ies', () => {
+  assert.ok(api.isOffTopic('The M5 MacBook Air just got its biggest discount since Apple raised the price'));
+  assert.ok(!api.isOffTopic('Fed cuts discount rate in emergency move'));
+  assert.ok(net('China growth slows to weakest pace in decades') >= 0, 'slowing growth is not good news');
+  assert.ok(net('Fed rate cut hopes fade as inflation stays hot') >= 0, 'fading cut hopes are not good news');
+  assert.ok(!terms('Stocks climb as tensions fade').includes('tension'), 'fading tension is not a risk');
+  assert.ok(terms('Asian stocks rallies after Wall Street rebound').includes('rally'));
+});
+
+test('a category whose feed failed is left out instead of scoring 50', () => {
+  const src = require('../tools/stamp.js').readPage();
+  assert.match(src, /feedResults = allFeeds\.filter\(f => !f\.listOnly && \(\(f\.items && f\.items\.length\) \|\| \(f\.titles && f\.titles\.length\)\)\)/);
+});

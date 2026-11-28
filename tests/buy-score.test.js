@@ -12,8 +12,23 @@ async function page() {
 const g = (sb, id) => sb.document.getElementById(id);
 
 function setValuation(sb, nupl, z, m) {
-  for (const [id, v] of [['nuplNum', nupl], ['zNum', z], ['mNum', m]]) g(sb, id).value = String(v);
+  for (const [id, v] of [['nuplNum', nupl], ['zNum', z], ['mNum', m]]) { g(sb, id).value = String(v); delete g(sb, id).dataset.placeholder; }
 }
+
+test('HTML starting values are not scored: a metric that never loaded is left out', async () => {
+  const sb = await page();
+  sb.giBtcSignals = {};
+  sb.__buyTest.recompute();
+  assert.equal(g(sb, 'scoreNumber').textContent, '–', 'nothing real yet → no score');
+  // NUPL and MVRV arrive, MVRV-Z never does: the value angle uses those two only (not Z = 3 → 5.0)
+  for (const [id, v] of [['nuplNum', 0.1], ['mNum', 1.11]]) { g(sb, id).value = String(v); delete g(sb, id).dataset.placeholder; }
+  sb.__buyTest.recompute();
+  const two = parseFloat(g(sb, 'scoreNumber').textContent);
+  g(sb, 'zNum').value = '3'; delete g(sb, 'zNum').dataset.placeholder;
+  sb.__buyTest.recompute();
+  const withZ3 = parseFloat(g(sb, 'scoreNumber').textContent);
+  assert.ok(two > withZ3, two + ' should be above ' + withZ3);
+});
 
 test('score = mean of the 4 angles; NUPL/MVRV/MVRV-Z count as one', async () => {
   const sb = await page();

@@ -779,6 +779,7 @@ body{margin:0}
   .cal-when.soon{color:#fff;background:rgba(212,178,106,.18);border:1px solid var(--gold-line);border-radius:999px;padding:3px 10px}
   /* US macro tiles: 6 tiles → 3 per row; "ประกาศครั้งถัดไป · ตลาดคาด" line under each number */
   #fedMetrics{grid-template-columns:repeat(3,1fr)}
+  .metrics>.metric{min-width:0;overflow-wrap:break-word}   /* เดิมคอลัมน์ขยายตามข้อความยาว การ์ดขวาล้นจอมือถือ 375px ไป ~10px */
   .metric .next{font-size:11px;color:var(--muted);line-height:1.5;margin-top:6px}
   .metric .next b{color:var(--text);font-weight:600}
   .metric .next.today{color:var(--warn)}
@@ -1526,7 +1527,7 @@ window.setHeaderStamp = function(){
 };
 window.setHeaderStamp();
 </script>
-<script src="js/overview.js?v=53c4b65c8e"></script>
+<script src="js/overview.js?v=1138c00910"></script>
 
 </section>
 
@@ -2628,7 +2629,7 @@ window.setHeaderStamp();
 
 </div>
 
-<script src="js/btc.js?v=bf17142b2e"></script>
+<script src="js/btc.js?v=73298e5d88"></script>
 
 <style>
   /* ---------- on-chain section (cost basis · holders · power law · Strategy) ---------- */

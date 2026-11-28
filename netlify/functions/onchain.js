@@ -26,7 +26,12 @@ const API = 'https://api.bgeometrics.com/v1/';
 // often answers 429 and the in-memory cache rarely survives. The last good value per metric is
 // therefore also kept in KV / Blobs: read first (fresh enough → no upstream call at all), and
 // served as stale for up to a week when the upstream refuses.
-const KV_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const KV_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+// After a 429 the anonymous quota stays used up for a while; calling again only keeps it that way
+// (every visitor's request used to go upstream again because 502s are never cached). So this
+// isolate stops asking for COOLDOWN_MS and answers from the last good copy, or a short-cached error.
+const COOLDOWN_MS = 30 * 60 * 1000;
+let coolUntil = 0;
 const TIMEOUT_MS = 7000;
 const TTL_MS = 8 * 60 * 60 * 1000; // these metrics only change ~once a day at the source
 
@@ -120,8 +125,10 @@ exports.handler = async function (event) {
 
   const token = (process.env.BGEOMETRICS_TOKEN || '').trim();
   const trail = [];
+  const cooling = Date.now() < coolUntil;
+  if (cooling) trail.push('upstream rate-limited, waiting before asking again');
 
-  for (const slug of slugs) {
+  for (const slug of cooling ? [] : slugs) {
     const url = `${API}${slug}` + (token ? `?token=${encodeURIComponent(token)}` : '');
     try {
       const json = await fetchWithTimeout(url, TIMEOUT_MS);
@@ -141,6 +148,7 @@ exports.handler = async function (event) {
       return { statusCode: 200, headers, body: JSON.stringify(payload) };
     } catch (e) {
       trail.push(`${slug}: ${e.message}`);
+      if (/HTTP 429/.test(e.message)) { coolUntil = Date.now() + COOLDOWN_MS; break; }
     }
   }
 
@@ -157,7 +165,7 @@ exports.handler = async function (event) {
 
   return {
     statusCode: 502,
-    headers: { ...headers, 'Cache-Control': 'no-store' },
+    headers: { ...headers, 'Cache-Control': 'public, max-age=300' },
     body: JSON.stringify({
       error: 'all BGeometrics endpoints failed',
       details: trail,
@@ -167,4 +175,4 @@ exports.handler = async function (event) {
 };
 
 // Exported for local unit testing (node --test / plain require). Netlify ignores extra exports.
-module.exports.__test = { extractValue, METRICS, _clearCache: () => { Object.keys(memCache).forEach((k) => delete memCache[k]); } };
+module.exports.__test = { extractValue, METRICS, _clearCache: () => { Object.keys(memCache).forEach((k) => delete memCache[k]); coolUntil = 0; } };
